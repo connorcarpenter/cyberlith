@@ -56,7 +56,7 @@ pub(crate) fn on_load(
     user_manager.recv_main_menu_ui(ui_manager, &ui_handle);
 }
 
-pub(crate) fn handle_events(
+pub(crate) fn handle_ui_interaction_events(
     ui_manager: &mut UiManager,
     ui_catalog: &UiCatalog,
     host_match_btn_rdr: &mut EventReader<HostMatchButtonClickedEvent>,

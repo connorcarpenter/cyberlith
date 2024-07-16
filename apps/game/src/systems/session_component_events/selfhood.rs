@@ -3,7 +3,7 @@ use bevy_ecs::{prelude::Query, event::{EventReader, EventWriter}, change_detecti
 
 use game_engine::{session::{SessionClient, SessionInsertComponentEvent, components::{Selfhood, SelfhoodUser, User}}, logging::info};
 
-use crate::{ui::events::ResyncUserUiEvent, resources::{user_manager::UserManager, selfhood_events::SelfhoodEvents}};
+use crate::{ui::events::ResyncUserListUiEvent, resources::{user_manager::UserManager, selfhood_events::SelfhoodEvents}};
 
 pub struct SelfhoodComponentEventsPlugin;
 
@@ -21,7 +21,7 @@ fn recv_inserted_selfhood_components(
     mut selfhood_events: ResMut<SelfhoodEvents>,
     mut insert_selfhood_event_reader: EventReader<SessionInsertComponentEvent<Selfhood>>,
     mut insert_selfhood_user_event_reader: EventReader<SessionInsertComponentEvent<SelfhoodUser>>,
-    mut resync_user_ui_event_writer: EventWriter<ResyncUserUiEvent>,
+    mut resync_user_ui_event_writer: EventWriter<ResyncUserListUiEvent>,
     selfhood_user_q: Query<&SelfhoodUser>,
     user_q: Query<&User>,
 ) {

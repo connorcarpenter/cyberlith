@@ -17,7 +17,7 @@ use crate::{
     },
     states::AppState,
     ui::{
-        events::{ResyncChatMessageUiEvent, ResyncLobbyUiEvent, ResyncUserUiEvent},
+        events::{ResyncMessageListUiEvent, ResyncLobbyListUiEvent, ResyncUserListUiEvent},
         on_ui_load, UiCatalog,
     },
 };
@@ -32,9 +32,9 @@ pub fn session_load_asset_events(
     mut message_manager: ResMut<ChatMessageManager>,
     mut lobby_manager: ResMut<LobbyManager>,
     mut asset_loaded_event_reader: EventReader<AssetLoadedEvent>,
-    mut resync_user_ui_events: EventWriter<ResyncUserUiEvent>,
-    mut resync_chat_message_ui_events: EventWriter<ResyncChatMessageUiEvent>,
-    mut resync_lobby_ui_events: EventWriter<ResyncLobbyUiEvent>,
+    mut resync_user_ui_events: EventWriter<ResyncUserListUiEvent>,
+    mut resync_chat_message_ui_events: EventWriter<ResyncMessageListUiEvent>,
+    mut resync_lobby_ui_events: EventWriter<ResyncLobbyListUiEvent>,
 ) {
     for event in asset_loaded_event_reader.read() {
         let asset_id = event.asset_id;

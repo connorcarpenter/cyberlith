@@ -12,7 +12,7 @@ use game_engine::{
     },
 };
 
-use crate::{resources::user_manager::UserManager, ui::events::ResyncUserUiEvent};
+use crate::{resources::user_manager::UserManager, ui::events::ResyncUserListUiEvent};
 
 pub struct UserComponentEventsPlugin;
 
@@ -31,7 +31,7 @@ impl Plugin for UserComponentEventsPlugin {
 fn recv_inserted_user_component(
     mut user_manager: ResMut<UserManager>,
     mut insert_user_event_reader: EventReader<SessionInsertComponentEvent<User>>,
-    mut resync_user_ui_event_writer: EventWriter<ResyncUserUiEvent>,
+    mut resync_user_ui_event_writer: EventWriter<ResyncUserListUiEvent>,
 ) {
     for event in insert_user_event_reader.read() {
         info!(
@@ -50,7 +50,7 @@ fn recv_inserted_user_component(
 
 fn recv_updated_user_component(
     mut update_user_component_event_reader: EventReader<SessionUpdateComponentEvent<User>>,
-    mut resync_user_ui_event_writer: EventWriter<ResyncUserUiEvent>,
+    mut resync_user_ui_event_writer: EventWriter<ResyncUserListUiEvent>,
 ) {
     for event in update_user_component_event_reader.read() {
         info!(
@@ -58,14 +58,14 @@ fn recv_updated_user_component(
             event.entity
         );
 
-        resync_user_ui_event_writer.send(ResyncUserUiEvent);
+        resync_user_ui_event_writer.send(ResyncUserListUiEvent);
     }
 }
 
 fn recv_removed_user_component(
     mut user_manager: ResMut<UserManager>,
     mut remove_user_component_event_reader: EventReader<SessionRemoveComponentEvent<User>>,
-    mut resync_user_ui_event_writer: EventWriter<ResyncUserUiEvent>,
+    mut resync_user_ui_event_writer: EventWriter<ResyncUserListUiEvent>,
 ) {
     for event in remove_user_component_event_reader.read() {
         info!(

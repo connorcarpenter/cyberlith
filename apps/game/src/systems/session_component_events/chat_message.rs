@@ -12,7 +12,7 @@ use game_engine::{
 
 use crate::{
     resources::{chat_message_events::ChatMessageEvents, chat_message_manager::ChatMessageManager},
-    ui::events::ResyncChatMessageUiEvent,
+    ui::events::ResyncMessageListUiEvent,
 };
 
 pub struct ChatMessageComponentEventsPlugin;
@@ -32,7 +32,7 @@ fn recv_inserted_chat_message_components(
     session_client: SessionClient,
     mut chat_message_manager: ResMut<ChatMessageManager>,
     mut chat_message_events: ResMut<ChatMessageEvents>,
-    mut resync_chat_message_ui_events: EventWriter<ResyncChatMessageUiEvent>,
+    mut resync_chat_message_ui_events: EventWriter<ResyncMessageListUiEvent>,
     mut chat_message_event_reader: EventReader<SessionInsertComponentEvent<ChatMessage>>,
     mut chat_message_global_event_reader: EventReader<SessionInsertComponentEvent<ChatMessageGlobal>>,
     mut chat_message_local_event_reader: EventReader<SessionInsertComponentEvent<ChatMessageLocal>>,

@@ -11,6 +11,7 @@ use game_engine::{
 };
 
 use crate::{
+    ui::UiPlugin,
     resources::{
         selfhood_events::SelfhoodEvents,
         chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
@@ -20,15 +21,6 @@ use crate::{
     systems::{
         asset_events, cube_scene, draw, initial_spinner, resize,
         session_component_events::SessionComponentEventsPlugin, walker_scene, world,
-    },
-    ui,
-    ui::{
-        events::{
-            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, ResyncChatMessageUiEvent, ResyncLobbyUiEvent,
-            ResyncUserUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent,
-        },
-        UiCatalog,
     },
 };
 
@@ -62,8 +54,7 @@ impl Plugin for GameApp {
             .init_resource::<ChatMessageManager>()
             .init_resource::<ChatMessageEvents>()
             .init_resource::<LobbyManager>()
-            .insert_resource(UiCatalog::new())
-            .insert_resource(AssetCatalog::new())
+            .init_resource::<AssetCatalog>()
             // states
             .insert_state(AppState::Loading)
             // scene systems
@@ -87,18 +78,6 @@ impl Plugin for GameApp {
             .add_systems(Update, asset_events::session_load_asset_events)
             .add_plugins(SessionComponentEventsPlugin)
             // Ui
-            .add_systems(Update, ui::handle_events)
-            .add_systems(Update, ui::handle_user_ui_events)
-            .add_systems(Update, ui::handle_chat_message_ui_events)
-            .add_systems(Update, ui::handle_lobby_ui_events)
-            .add_event::<ResyncUserUiEvent>()
-            .add_event::<ResyncChatMessageUiEvent>()
-            .add_event::<ResyncLobbyUiEvent>()
-            .add_event::<HostMatchButtonClickedEvent>()
-            .add_event::<JoinMatchButtonClickedEvent>()
-            .add_event::<GlobalChatButtonClickedEvent>()
-            .add_event::<DevlogButtonClickedEvent>()
-            .add_event::<SettingsButtonClickedEvent>()
-            .add_event::<SubmitButtonClickedEvent>();
+            .add_plugins(UiPlugin);
     }
 }

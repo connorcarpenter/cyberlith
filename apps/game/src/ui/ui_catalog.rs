@@ -13,8 +13,9 @@ pub struct UiCatalog {
     ui_handle_to_key: HashMap<UiHandle, UiKey>,
 }
 
-impl UiCatalog {
-    pub fn new() -> Self {
+impl Default for UiCatalog {
+    fn default() -> Self {
+
         let mut me = Self {
             uis: HashMap::new(),
             ui_handle_to_key: HashMap::new(),
@@ -59,7 +60,9 @@ impl UiCatalog {
 
         me
     }
+}
 
+impl UiCatalog {
     fn insert_ui(&mut self, key: UiKey, handle: UiHandle) {
         self.uis.insert(key, (handle, false));
         self.ui_handle_to_key.insert(handle, key);

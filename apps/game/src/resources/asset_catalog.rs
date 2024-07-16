@@ -4,7 +4,7 @@ use bevy_ecs::{event::EventWriter, system::Resource};
 
 use game_engine::{asset::AssetId, logging::info, ui::UiManager};
 
-use crate::ui::events::{ResyncChatMessageUiEvent, ResyncLobbyUiEvent, ResyncUserUiEvent};
+use crate::ui::events::{ResyncMessageListUiEvent, ResyncLobbyListUiEvent, ResyncUserListUiEvent};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AssetKey {
@@ -19,8 +19,8 @@ pub struct AssetCatalog {
     asset_id_to_key: HashMap<AssetId, AssetKey>,
 }
 
-impl AssetCatalog {
-    pub fn new() -> Self {
+impl Default for AssetCatalog {
+    fn default() -> Self {
         let mut me = Self {
             assets: HashMap::new(),
             asset_id_to_key: HashMap::new(),
@@ -34,7 +34,9 @@ impl AssetCatalog {
 
         me
     }
+}
 
+impl AssetCatalog {
     fn insert_asset(&mut self, key: AssetKey, asset_id: AssetId) {
         self.assets.insert(key, (asset_id, false));
         self.asset_id_to_key.insert(asset_id, key);
@@ -65,9 +67,9 @@ impl AssetCatalog {
 pub(crate) fn on_asset_load(
     ui_manager: &mut UiManager,
     asset_catalog: &mut AssetCatalog,
-    resync_user_public_info_events: &mut EventWriter<ResyncUserUiEvent>,
-    resync_global_chat_events: &mut EventWriter<ResyncChatMessageUiEvent>,
-    resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
+    resync_user_ui_events: &mut EventWriter<ResyncUserListUiEvent>,
+    resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+    resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     asset_id: AssetId,
 ) {
     if !asset_catalog.has_asset_key(&asset_id) {
@@ -85,9 +87,9 @@ pub(crate) fn on_asset_load(
     match asset_key {
         AssetKey::FontIcon => {
             ui_manager.set_text_icon_handle(asset_id);
-            resync_user_public_info_events.send(ResyncUserUiEvent);
-            resync_global_chat_events.send(ResyncChatMessageUiEvent::new(true));
-            resync_match_lobbies_events.send(ResyncLobbyUiEvent);
+            resync_user_ui_events.send(ResyncUserListUiEvent);
+            resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(true));
+            resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
         }
         AssetKey::PasswordEyeIcon => {
             ui_manager.set_eye_icon_handle(asset_id);

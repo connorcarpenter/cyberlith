@@ -101,6 +101,11 @@ impl UserManager {
         self.user_key_to_id.get(user_key).cloned()
     }
 
+    pub fn user_id_to_key(&self, user_id: &UserId) -> Option<UserKey> {
+        let data = self.user_data.get(user_id)?;
+        data.user_key()
+    }
+
     pub fn make_ready_for_world_connect(&mut self, user_key: &UserKey) -> Result<(), ()> {
         let Some(user_id) = self.user_key_to_id.get(user_key) else {
             return Err(());

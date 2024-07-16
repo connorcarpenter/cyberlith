@@ -93,6 +93,10 @@ impl PrivateUserInfo {
         self.user_entity
     }
 
+    pub fn user_key(&self) -> Option<UserKey> {
+        self.user_key
+    }
+
     pub fn connect(
         &mut self,
         commands: &mut Commands,

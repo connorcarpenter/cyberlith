@@ -23,12 +23,13 @@ use game_engine::{
 };
 
 use crate::ui::{
-    events::{ResyncLobbyUiEvent, SubmitButtonClickedEvent},
+    events::{ResyncLobbyListUiEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
     UiCatalog, UiKey,
 };
 
 #[derive(Resource)]
 pub struct LobbyManager {
+    current_lobby: Option<LobbyId>,
     lobby_entities: BTreeMap<LobbyId, Entity>,
     list_ui_ext: ListUiExt<LobbyId>,
     lobby_item_ui: Option<UiHandle>,
@@ -37,6 +38,7 @@ pub struct LobbyManager {
 impl Default for LobbyManager {
     fn default() -> Self {
         Self {
+            current_lobby: None,
             lobby_entities: BTreeMap::new(),
             list_ui_ext: ListUiExt::new(true),
             lobby_item_ui: None,
@@ -45,6 +47,43 @@ impl Default for LobbyManager {
 }
 
 impl LobbyManager {
+
+    pub(crate) fn get_current_lobby(&self) -> Option<LobbyId> {
+        self.current_lobby
+    }
+
+    pub(crate) fn set_current_lobby(
+        &mut self,
+        resync_main_menu_ui_events: &mut EventWriter<ResyncMainMenuUiEvent>,
+        resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+        resync_user_ui_events: &mut EventWriter<ResyncUserListUiEvent>,
+        lobby_id: LobbyId
+    ) {
+        if self.current_lobby.is_some() {
+            panic!("current_lobby is already set!");
+        }
+        self.current_lobby = Some(lobby_id);
+
+        resync_main_menu_ui_events.send(ResyncMainMenuUiEvent);
+        resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
+        resync_user_ui_events.send(ResyncUserListUiEvent);
+    }
+
+    pub(crate) fn leave_current_lobby(
+        &mut self,
+        resync_main_menu_ui_events: &mut EventWriter<ResyncMainMenuUiEvent>,
+        resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+        resync_user_ui_events: &mut EventWriter<ResyncUserListUiEvent>,
+    ) {
+        if self.current_lobby.is_none() {
+            panic!("current_lobby is not set!");
+        }
+        self.current_lobby = None;
+
+        resync_main_menu_ui_events.send(ResyncMainMenuUiEvent);
+        resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
+        resync_user_ui_events.send(ResyncUserListUiEvent);
+    }
 
     pub(crate) fn handle_host_match_events(
         &mut self,
@@ -93,7 +132,7 @@ impl LobbyManager {
         user_q: &Query<&User>,
         lobby_q: &Query<&Lobby>,
         input_events: &mut EventReader<InputEvent>,
-        resync_lobby_ui_events: &mut EventReader<ResyncLobbyUiEvent>,
+        resync_lobby_ui_events: &mut EventReader<ResyncLobbyListUiEvent>,
         _should_rumble: &mut bool,
     ) {
         let mut should_resync = false;
@@ -154,7 +193,7 @@ impl LobbyManager {
         &mut self,
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
-        resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
+        resync_match_lobbies_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     ) {
         let ui_key = UiKey::JoinMatch;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
@@ -167,14 +206,14 @@ impl LobbyManager {
 
             self.list_ui_ext
                 .set_container_ui(ui_manager, &ui_handle, container_id_str);
-            resync_match_lobbies_events.send(ResyncLobbyUiEvent);
+            resync_match_lobbies_events.send(ResyncLobbyListUiEvent);
         }
     }
 
     pub(crate) fn on_load_lobby_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_match_lobbies_events: &mut EventWriter<ResyncLobbyUiEvent>,
+        resync_match_lobbies_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     ) {
         let item_ui_key = UiKey::JoinMatchLobbyItem;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -182,28 +221,28 @@ impl LobbyManager {
         ui_catalog.set_loaded(item_ui_key);
 
         self.lobby_item_ui = Some(item_ui_handle.clone());
-        resync_match_lobbies_events.send(ResyncLobbyUiEvent);
+        resync_match_lobbies_events.send(ResyncLobbyListUiEvent);
     }
 
     pub fn recv_lobby(
         &mut self,
         lobby_id: LobbyId,
         lobby_entity: Entity,
-        resync_lobby_ui_events: &mut EventWriter<ResyncLobbyUiEvent>,
+        resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     ) {
         self.lobby_entities.insert(lobby_id, lobby_entity);
 
-        resync_lobby_ui_events.send(ResyncLobbyUiEvent);
+        resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
     }
 
     pub fn remove_lobby(
         &mut self,
         lobby_id: LobbyId,
-        resync_lobby_ui_events: &mut EventWriter<ResyncLobbyUiEvent>,
+        resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     ) {
         self.lobby_entities.remove(&lobby_id);
 
-        resync_lobby_ui_events.send(ResyncLobbyUiEvent);
+        resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
     }
 
     pub fn sync_with_collection(
@@ -230,13 +269,13 @@ impl LobbyManager {
                 let lobby = lobby_q.get(lobby_entity).unwrap();
 
                 let lobby_owner_entity = lobby.owner_user_entity.get(session_client).unwrap();
-                let owner_info = user_q.get(lobby_owner_entity).unwrap();
+                let owner_user = user_q.get(lobby_owner_entity).unwrap();
 
                 Self::add_lobby_item(
                     item_ctx,
                     lobby_ui_handle,
                     lobby.name.as_str(),
-                    owner_info.name.as_str(),
+                    owner_user.name.as_str(),
                 );
             },
         );

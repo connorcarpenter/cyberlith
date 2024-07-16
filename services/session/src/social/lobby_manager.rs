@@ -10,7 +10,7 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 
 use session_server_http_proto::SocialLobbyPatch;
-use session_server_naia_proto::components::Lobby;
+use session_server_naia_proto::components::{Lobby, LobbyMember};
 
 use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse};
 use social_server_types::LobbyId;
@@ -290,10 +290,14 @@ impl LobbyManager {
             }
         };
 
+        // set lobby owner
         lobby
             .owner_user_entity
             .set(naia_server, &owner_user_entity);
         commands.entity(lobby_entity).insert(lobby);
+
+        // join lobby room
+        self.join_lobby(naia_server, lobby_id, owner_user_id);
     }
 
     fn remove_lobby(&mut self, commands: &mut Commands, naia_server: &mut Server, lobby_id: &LobbyId) {
@@ -309,5 +313,40 @@ impl LobbyManager {
                 lobby_id
             );
         }
+    }
+
+    fn join_lobby(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        user_manager: &UserManager,
+        lobby_id: &LobbyId,
+        joining_user_id: &UserId
+    ) {
+        // get lobby room key & entity
+        let lobby = self.lobbies.get(lobby_id).unwrap();
+        let lobby_room_key = &lobby.room_key;
+        let lobby_entity = &lobby.lobby_entity;
+
+        // get user key & entity
+        let joining_user_key = user_manager.user_id_to_key(joining_user_id).unwrap();
+        let joining_user_entity = user_manager.get_user_entity(joining_user_id).unwrap();
+
+        // create LobbyMember entity
+        let lobby_member_id = commands.spawn_empty().enable_replication(naia_server).id();
+
+        // add user and lobbymember to room
+        naia_server
+            .room_mut(lobby_room_key)
+            // add user to lobby room
+            .add_user(&joining_user_key)
+            // add LobbyMember entity to lobby room
+            .add_entity(&lobby_member_id);
+
+        // create & setup LobbyMember component
+        let mut lobby_member = LobbyMember::new();
+        lobby_member.lobby_entity.set(naia_server, lobby_entity);
+        lobby_member.user_entity.set(naia_server, &joining_user_entity);
+        commands.entity(lobby_member_id).insert(lobby_member);
     }
 }

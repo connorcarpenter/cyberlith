@@ -11,15 +11,17 @@ use game_engine::{
     },
 };
 
-use crate::ui::{events::ResyncUserUiEvent, UiCatalog, UiKey};
+use crate::ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey};
+
+pub type UserId = u32;
 
 #[derive(Resource)]
 pub struct UserManager {
-    next_id: u32,
+    next_id: UserId,
     self_user_entity: Option<Entity>,
-    users: BTreeMap<u32, Entity>,
-    entity_to_user_id_map: HashMap<Entity, u32>,
-    list_ui_ext: ListUiExt<u32>,
+    users: BTreeMap<UserId, Entity>,
+    entity_to_user_id_map: HashMap<Entity, UserId>,
+    list_ui_ext: ListUiExt<UserId>,
     item_ui: Option<UiHandle>,
 }
 
@@ -40,7 +42,7 @@ impl UserManager {
     pub(crate) fn on_load_user_list_item_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
-        resync_user_public_info_events: &mut EventWriter<ResyncUserUiEvent>,
+        resync_user_public_info_events: &mut EventWriter<ResyncUserListUiEvent>,
     ) {
         let item_ui_key = UiKey::UserListItem;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
@@ -49,7 +51,7 @@ impl UserManager {
 
         self.item_ui = Some(item_ui_handle.clone());
 
-        resync_user_public_info_events.send(ResyncUserUiEvent);
+        resync_user_public_info_events.send(ResyncUserListUiEvent);
     }
 
     pub(crate) fn recv_main_menu_ui(
@@ -61,18 +63,22 @@ impl UserManager {
             .set_container_ui(ui_manager, main_menu_ui_handle, "user_list");
     }
 
-    pub fn set_self_user_entity(&mut self, resync_ui_events: &mut EventWriter<ResyncUserUiEvent>, user_entity: Entity) {
+    pub fn get_self_user_entity(&self) -> Option<Entity> {
+        self.self_user_entity
+    }
+
+    pub fn set_self_user_entity(&mut self, resync_ui_events: &mut EventWriter<ResyncUserListUiEvent>, user_entity: Entity) {
         if self.self_user_entity.is_some() {
             panic!("self_user_entity already set");
         }
         self.self_user_entity = Some(user_entity);
 
-        resync_ui_events.send(ResyncUserUiEvent);
+        resync_ui_events.send(ResyncUserListUiEvent);
     }
 
     pub fn insert_user(
         &mut self,
-        resync_events: &mut EventWriter<ResyncUserUiEvent>,
+        resync_events: &mut EventWriter<ResyncUserListUiEvent>,
         user_entity: Entity,
     ) {
         let user_id = self.next_id;
@@ -80,18 +86,18 @@ impl UserManager {
         self.users.insert(user_id, user_entity);
         self.entity_to_user_id_map.insert(user_entity, user_id);
 
-        resync_events.send(ResyncUserUiEvent);
+        resync_events.send(ResyncUserListUiEvent);
     }
 
     pub fn delete_user(
         &mut self,
-        resync_events: &mut EventWriter<ResyncUserUiEvent>,
+        resync_events: &mut EventWriter<ResyncUserListUiEvent>,
         user_entity: &Entity,
     ) {
         let user_id = self.entity_to_user_id_map.remove(user_entity).unwrap();
         self.users.remove(&user_id);
 
-        resync_events.send(ResyncUserUiEvent);
+        resync_events.send(ResyncUserListUiEvent);
     }
 
     pub fn sync_with_collection(
@@ -131,7 +137,7 @@ impl UserManager {
     }
 }
 
-fn add_user_item(item_ctx: &mut ListUiExtItem<u32>, ui: &UiHandle, username: &str, is_self: bool, is_online: bool) {
+fn add_user_item(item_ctx: &mut ListUiExtItem<UserId>, ui: &UiHandle, username: &str, is_self: bool, is_online: bool) {
     item_ctx.add_copied_node(ui);
     item_ctx.set_text_by_id("username", username);
     if is_self {
