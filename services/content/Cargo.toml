@@ -9,6 +9,7 @@ publish = false
 [features]
 local = [ "config/local" ]
 prod = [ "config/prod" ]
+nodeploy = []
 
 [dependencies]
 http_server = { path = "../../crates/http/http_server" }

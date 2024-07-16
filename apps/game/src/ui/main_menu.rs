@@ -220,13 +220,13 @@ pub(crate) fn handle_resync_main_menu_ui_events(
         // make left side "lobby" button visible
         // make right side "leave lobby" button visible
         // make right side "start match" button visible (if host)
-        warn!("TODODODODOD");
+        warn!("TODODODODOD main menu resync");
     } else {
         // not in a lobby
 
         // make left side "lobby" button invisible
         // make right side "leave lobby" button invisible
         // make right side "start match" button invisible
-        warn!("TODODODODOD");
+        warn!("TODODODODOD main menu resync");
     }
 }

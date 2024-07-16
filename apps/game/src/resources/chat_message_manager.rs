@@ -27,6 +27,7 @@ use crate::{resources::lobby_manager::LobbyManager, ui::{events::ResyncMessageLi
 #[derive(Resource)]
 pub struct ChatMessageManager {
     messages: HashMap<Option<LobbyId>, BTreeMap<MessageId, Entity>>,
+    last_synced_lobby_id: Option<LobbyId>,
 
     list_ui_ext: ListUiExt<MessageId>,
     message_item_ui: Option<UiHandle>,
@@ -41,6 +42,7 @@ impl Default for ChatMessageManager {
 
         Self {
             messages,
+            last_synced_lobby_id: None,
             list_ui_ext: ListUiExt::new(false),
             message_item_ui: None,
             username_and_message_item_ui: None,
@@ -263,6 +265,10 @@ impl ChatMessageManager {
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
 
         let lobby_id_opt = lobby_manager.get_current_lobby();
+        if self.last_synced_lobby_id != lobby_id_opt {
+            self.last_synced_lobby_id = lobby_id_opt.clone();
+            self.list_ui_ext.clear(ui_manager);
+        }
         if !self.messages.contains_key(&lobby_id_opt) {
             self.messages.insert(lobby_id_opt.clone(), BTreeMap::new());
         }

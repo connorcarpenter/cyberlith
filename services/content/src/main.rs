@@ -30,7 +30,7 @@ pub fn main() {
     logging::initialize();
     executor::setup(CONTENT_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
-    #[cfg(feature = "local")]
+    #[cfg(all(feature = "local", not(feature = "nodeploy")))]
     local::setup();
 
     // setup state

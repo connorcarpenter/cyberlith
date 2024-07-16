@@ -193,6 +193,55 @@ impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
         // );
     }
 
+    pub fn clear(
+        &mut self,
+        ui_manager: &mut UiManager,
+    ) {
+        let (container_ui_handle, container_ui_str) = self.container_ui.as_ref().unwrap();
+        let container_ui_handle = *container_ui_handle;
+        let container_ui_runtime = ui_manager
+            .ui_runtimes
+            .get_mut(&container_ui_handle)
+            .unwrap();
+        let container_id = container_ui_runtime
+            .get_node_id_by_id_str(container_ui_str)
+            .unwrap();
+
+        self.item_count = 0;
+        self.visible_item_min_index = 0;
+        self.visible_item_max_index = 0;
+        self.visible_item_range = 0;
+
+        let old_loaded_items = std::mem::take(&mut self.loaded_items);
+        for (_key, item) in old_loaded_items {
+            let container_ui_runtime = ui_manager
+                .ui_runtimes
+                .get_mut(&container_ui_handle)
+                .unwrap();
+            let (item_nodes, _) = item.deconstruct();
+
+            for item_node in item_nodes {
+                // remove from main panel
+                container_ui_runtime
+                    .parent_mut(&container_id)
+                    .unwrap()
+                    .remove_node(&item_node);
+
+                // delete
+                container_ui_runtime.delete_node_recurse(&item_node);
+            }
+        }
+
+        // queue ui for sync
+        ui_manager.queue_recalculate_layout();
+        ui_manager.queue_ui_for_sync(
+            self.container_ui
+                .as_ref()
+                .map(|(handle, _id_str)| handle)
+                .unwrap(),
+        );
+    }
+
     pub fn sync_with_collection<
         'a,
         Q: 'a + Into<K> + Copy,

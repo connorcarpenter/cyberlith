@@ -34,7 +34,7 @@ fn recv_inserted_chat_message_components(
     session_client: SessionClient,
     mut chat_message_manager: ResMut<ChatMessageManager>,
     mut chat_message_events: ResMut<ChatMessageEvents>,
-    mut resync_chat_message_ui_events: EventWriter<ResyncMessageListUiEvent>,
+    mut resync_message_list_ui_events: EventWriter<ResyncMessageListUiEvent>,
     mut chat_message_event_reader: EventReader<SessionInsertComponentEvent<ChatMessage>>,
     mut chat_message_global_event_reader: EventReader<
         SessionInsertComponentEvent<ChatMessageGlobal>,
@@ -54,10 +54,6 @@ fn recv_inserted_chat_message_components(
 
         let timestamp = *message.timestamp;
         let message = &*message.message;
-        info!(
-            "received Inserted ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",
-            timestamp, message_entity, message
-        );
 
         let lobby_id_opt = match is_global {
             true => None,
@@ -69,9 +65,21 @@ fn recv_inserted_chat_message_components(
             }
         };
 
+        if lobby_id_opt.is_none() {
+            info!(
+            "received Inserted Global ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",
+            timestamp, message_entity, message
+        );
+        } else {
+            info!(
+            "received Inserted Lobby({:?}) ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",
+                 lobby_id_opt.unwrap(), timestamp, message_entity, message,
+            );
+        }
+
         chat_message_manager.recv_message(
             &lobby_id_opt,
-            &mut resync_chat_message_ui_events,
+            &mut resync_message_list_ui_events,
             message_id,
             message_entity,
         );
