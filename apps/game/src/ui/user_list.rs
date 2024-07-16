@@ -6,9 +6,10 @@ use bevy_ecs::{
 
 use game_engine::{asset::AssetManager, session::components::User, ui::UiManager};
 
-use crate::{resources::user_manager::UserManager, ui::events::ResyncUserListUiEvent};
+use crate::{resources::{user_manager::UserManager, lobby_manager::LobbyManager}, ui::events::ResyncUserListUiEvent};
 
 pub(crate) fn handle_resync_user_list_ui_events(
+    lobby_manager: Res<LobbyManager>,
     mut user_manager: ResMut<UserManager>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
@@ -20,6 +21,6 @@ pub(crate) fn handle_resync_user_list_ui_events(
         resync = true;
     }
     if resync {
-        user_manager.sync_with_collection(&mut ui_manager, &asset_manager, &user_q);
+        user_manager.sync_with_collection(&mut ui_manager, &asset_manager, &lobby_manager, &user_q);
     }
 }

@@ -11,7 +11,7 @@ use game_engine::{
     },
 };
 
-use crate::ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey};
+use crate::{resources::lobby_manager::LobbyManager, ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey}};
 
 pub type UserId = u32;
 
@@ -108,6 +108,7 @@ impl UserManager {
         &mut self,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        lobby_manager: &LobbyManager,
         user_q: &Query<&User>,
     ) {
         if self.item_ui.is_none() {
@@ -116,17 +117,32 @@ impl UserManager {
 
         let item_ui_handle = self.item_ui.as_ref().unwrap();
 
+        let lobby_entity_opt = lobby_manager.get_current_lobby().map(|lid| {
+            lobby_manager.get_lobby_entity(&lid).unwrap()
+        });
+
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             asset_manager,
             self.users.iter(),
             self.users.len(),
             |item_ctx, user_id, _| {
+
                 let user_entity = self.users.get(&user_id).unwrap();
                 let user_entity = *user_entity;
-                if let Ok(user_public_info) = user_q.get(user_entity) {
-                    let username = user_public_info.name.as_str();
-                    let is_online = *user_public_info.online;
+
+                if let Some(lobby_entity) = lobby_entity_opt {
+                    // we need to check if the user is in the current lobby
+                    if !lobby_manager.user_is_in_lobby(&user_entity, &lobby_entity) {
+                        return;
+                    }
+                }
+
+                // user is in lobby
+
+                if let Ok(user) = user_q.get(user_entity) {
+                    let username = user.name.as_str();
+                    let is_online = *user.online;
                     let is_self = {
                         if let Some(self_user_entity) = self.self_user_entity {
                             self_user_entity == user_entity

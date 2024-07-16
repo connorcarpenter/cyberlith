@@ -22,6 +22,7 @@ impl Plugin for UiPlugin {
             .add_systems(Update, main_menu::handle_resync_main_menu_ui_events)
             .add_systems(Update, user_list::handle_resync_user_list_ui_events)
             .add_systems(Update, message_list::handle_resync_message_list_ui_events)
+            .add_systems(Update, message_list::handle_message_list_interaction_events)
             .add_systems(Update, host_match::handle_host_match_events)
             .add_systems(Update, join_match::handle_join_match_interaction_events)
             .add_systems(Update, join_match::handle_resync_lobby_list_ui_events)

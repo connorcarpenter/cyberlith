@@ -22,7 +22,7 @@ use game_engine::{
     },
 };
 
-use crate::ui::{events::ResyncMessageListUiEvent, go_to_sub_ui, UiCatalog, UiKey};
+use crate::{resources::lobby_manager::LobbyManager, ui::{events::ResyncMessageListUiEvent, go_to_sub_ui, UiCatalog, UiKey}};
 
 #[derive(Resource)]
 pub struct ChatMessageManager {
@@ -50,22 +50,18 @@ impl Default for ChatMessageManager {
 }
 
 impl ChatMessageManager {
-    pub(crate) fn handle_events(
+    pub(crate) fn handle_resync_events(
         &mut self,
-        ui_manager: &mut UiManager,
-        ui_catalog: &UiCatalog,
-        asset_manager: &AssetManager,
         session_client: &mut SessionClient,
-        input_events: &mut EventReader<InputEvent>,
-        resync_chat_message_ui_events: &mut EventReader<ResyncMessageListUiEvent>,
+        ui_manager: &mut UiManager,
+        asset_manager: &AssetManager,
+        lobby_manager: &LobbyManager,
         user_q: &Query<&User>,
         chat_message_q: &Query<&ChatMessage>,
-        _should_rumble: &mut bool,
+        resync_message_list_ui_events: &mut EventReader<ResyncMessageListUiEvent>,
     ) {
-        let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
-
         let mut should_resync = None;
-        for resync_event in resync_chat_message_ui_events.read() {
+        for resync_event in resync_message_list_ui_events.read() {
             if resync_event.maintain_scroll() {
                 if should_resync.is_none() {
                     should_resync = Some(true);
@@ -74,6 +70,42 @@ impl ChatMessageManager {
                 should_resync = Some(false);
             }
         }
+
+        if let Some(maintain_scroll) = should_resync {
+            let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
+
+            self.sync_with_collection(
+                session_client,
+                ui_manager,
+                asset_manager,
+                lobby_manager,
+                user_q,
+                chat_message_q,
+            );
+
+            if is_bottom_visible && maintain_scroll {
+                self.list_ui_ext.scroll_to_bottom();
+                self.sync_with_collection(
+                    session_client,
+                    ui_manager,
+                    asset_manager,
+                    lobby_manager,
+                    user_q,
+                    chat_message_q,
+                );
+            }
+        }
+    }
+
+    pub(crate) fn handle_interaction_events(
+        &mut self,
+        ui_manager: &mut UiManager,
+        ui_catalog: &UiCatalog,
+        session_client: &mut SessionClient,
+        input_events: &mut EventReader<InputEvent>,
+        resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+    ) {
+        let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
 
         for event in input_events.read() {
             match event {
@@ -84,11 +116,10 @@ impl ChatMessageManager {
                         ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
                     {
                         // do nothing, typing
-                        info!("Node Is Active");
                     } else {
                         info!("Scrolling Up");
                         self.list_ui_ext.scroll_up();
-                        should_resync = Some(false);
+                        resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
                     }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
@@ -97,11 +128,10 @@ impl ChatMessageManager {
                         ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
                     {
                         // do nothing, typing
-                        info!("Node Is Active");
                     } else {
                         info!("Scrolling Down");
                         self.list_ui_ext.scroll_down();
-                        should_resync = Some(false);
+                        resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
                     }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {
@@ -117,29 +147,6 @@ impl ChatMessageManager {
                     };
                 }
                 _ => {}
-            }
-        }
-
-        if let Some(maintain_scroll) = should_resync {
-            let is_bottom_visible = self.list_ui_ext.is_bottom_visible();
-
-            self.sync_with_collection(
-                session_client,
-                ui_manager,
-                asset_manager,
-                user_q,
-                chat_message_q,
-            );
-
-            if is_bottom_visible && maintain_scroll {
-                self.list_ui_ext.scroll_to_bottom();
-                self.sync_with_collection(
-                    session_client,
-                    ui_manager,
-                    asset_manager,
-                    user_q,
-                    chat_message_q,
-                );
             }
         }
     }
@@ -239,6 +246,7 @@ impl ChatMessageManager {
         session_client: &SessionClient,
         ui_manager: &mut UiManager,
         asset_manager: &AssetManager,
+        lobby_manager: &LobbyManager,
         user_q: &Query<&User>,
         message_q: &Query<&ChatMessage>,
     ) {
@@ -253,7 +261,8 @@ impl ChatMessageManager {
         let username_and_message_ui_handle = self.username_and_message_item_ui.as_ref().unwrap();
         let message_ui_handle = self.message_item_ui.as_ref().unwrap();
 
-        let messages = self.messages.get_mut(&None).unwrap();
+        let lobby_id_opt = lobby_manager.get_current_lobby();
+        let messages = self.messages.get_mut(&lobby_id_opt).unwrap();
 
         self.list_ui_ext.sync_with_collection(
             ui_manager,

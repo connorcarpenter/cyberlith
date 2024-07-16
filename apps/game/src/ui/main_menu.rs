@@ -14,7 +14,7 @@ use game_engine::{
 };
 
 use crate::{
-    resources::user_manager::UserManager,
+    resources::{user_manager::UserManager, lobby_manager::LobbyManager},
     states::AppState,
     ui::{
         events::{
@@ -199,13 +199,34 @@ fn handle_main_menu_ui_interaction_events_impl(
 }
 
 pub(crate) fn handle_resync_main_menu_ui_events(
+    lobby_manager: Res<LobbyManager>,
     mut resync_main_menu_ui_events: EventReader<ResyncMainMenuUiEvent>,
 ) {
+    // check if we need to resync
     let mut resync = false;
     for _ in resync_main_menu_ui_events.read() {
         resync = true;
     }
-    if resync {
+    if !resync {
+        return;
+    }
+
+    // we must resync
+    let in_lobby = lobby_manager.get_current_lobby().is_some();
+
+    if in_lobby {
+        // in a lobby
+
+        // make left side "lobby" button visible
+        // make right side "leave lobby" button visible
+        // make right side "start match" button visible (if host)
+        todo!();
+    } else {
+        // not in a lobby
+
+        // make left side "lobby" button invisible
+        // make right side "leave lobby" button invisible
+        // make right side "start match" button invisible
         todo!();
     }
 }

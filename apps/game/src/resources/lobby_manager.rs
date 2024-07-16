@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use bevy_ecs::{
     entity::Entity,
@@ -35,6 +35,9 @@ pub struct LobbyManager {
     lobby_entities: BTreeMap<LobbyId, Entity>,
     list_ui_ext: ListUiExt<LobbyId>,
     lobby_item_ui: Option<UiHandle>,
+
+    // user entity -> lobby entity
+    user_lobby_membership_map: HashMap<Entity, Entity>,
 }
 
 impl Default for LobbyManager {
@@ -44,6 +47,7 @@ impl Default for LobbyManager {
             lobby_entities: BTreeMap::new(),
             list_ui_ext: ListUiExt::new(true),
             lobby_item_ui: None,
+            user_lobby_membership_map: HashMap::new(),
         }
     }
 }
@@ -84,6 +88,31 @@ impl LobbyManager {
         resync_main_menu_ui_events.send(ResyncMainMenuUiEvent);
         resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
         resync_user_ui_events.send(ResyncUserListUiEvent);
+    }
+
+    pub(crate) fn get_lobby_entity(&self, lobby_id: &LobbyId) -> Option<Entity> {
+        self.lobby_entities.get(lobby_id).copied()
+    }
+
+    pub(crate) fn put_user_in_lobby(&mut self, user_entity: Entity, lobby_entity: Entity) {
+        if self.user_lobby_membership_map.contains_key(&user_entity) {
+            panic!("user is already in a lobby!");
+        }
+        self.user_lobby_membership_map.insert(user_entity, lobby_entity);
+    }
+
+    pub(crate) fn remove_user_from_lobby(&mut self, user_entity: &Entity) {
+        if !self.user_lobby_membership_map.contains_key(user_entity) {
+            panic!("user is not in a lobby!");
+        }
+        self.user_lobby_membership_map.remove(user_entity);
+    }
+
+    pub(crate) fn user_is_in_lobby(&self, user_entity: &Entity, lobby_entity: &Entity) -> bool {
+        match self.user_lobby_membership_map.get(user_entity) {
+            Some(lobby) => lobby == lobby_entity,
+            None => false,
+        }
     }
 
     pub(crate) fn handle_host_match_events(

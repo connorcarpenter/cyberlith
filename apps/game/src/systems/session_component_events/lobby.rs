@@ -88,6 +88,9 @@ fn recv_inserted_lobby_member_component(
         let lobby_id = *lobby.id;
         let user_entity = lobby_member.user_entity.get(&session_client).unwrap();
 
+        // insert user into lobby
+        lobby_manager.put_user_in_lobby(user_entity, lobby_entity);
+
         let Some(self_user_entity) = user_manager.get_self_user_entity() else {
             warn!("self_user_entity not set when receiving inserted LobbyMember ..");
             continue;
@@ -127,6 +130,10 @@ fn recv_removed_lobby_member_component(
         let lobby = lobby_q.get(lobby_entity).unwrap();
         let lobby_id = *lobby.id;
         let user_entity = lobby_member.user_entity.get(&session_client).unwrap();
+
+        // remove user from lobby
+        lobby_manager.remove_user_from_lobby(&user_entity);
+
         let Some(self_user_entity) = user_manager.get_self_user_entity() else {
             warn!("self_user_entity not set when receiving removed LobbyMember ..");
             continue;

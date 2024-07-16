@@ -1,14 +1,13 @@
-use std::time::Duration;
 
 use bevy_ecs::{
     change_detection::{Res, ResMut},
-    event::EventReader,
+    event::{EventReader, EventWriter},
     prelude::Query,
 };
 
 use game_engine::{
     asset::AssetManager,
-    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
+    input::InputEvent,
     session::{
         components::{ChatMessage, User},
         SessionClient,
@@ -17,22 +16,17 @@ use game_engine::{
 };
 
 use crate::{
-    resources::chat_message_manager::ChatMessageManager,
+    resources::{lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager},
     ui::{events::ResyncMessageListUiEvent, UiCatalog, UiKey},
 };
 
-pub(crate) fn handle_resync_message_list_ui_events(
+pub(crate) fn handle_message_list_interaction_events(
     ui_catalog: Res<UiCatalog>,
-    input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
-    mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut message_manager: ResMut<ChatMessageManager>,
-    user_q: Query<&User>,
-    message_q: Query<&ChatMessage>,
     mut input_events: EventReader<InputEvent>,
-    mut resync_global_chat_events: EventReader<ResyncMessageListUiEvent>,
+    mut resync_message_list_events: EventWriter<ResyncMessageListUiEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -41,36 +35,54 @@ pub(crate) fn handle_resync_message_list_ui_events(
         panic!("unexpected ui");
     }
 
-    let mut should_rumble = false;
+    if let Some(current_ui_handle) =
+        ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
+    {
+        if UiKey::GlobalChat == ui_catalog.get_ui_key(&current_ui_handle) {
+            message_manager.handle_interaction_events(
+                &mut ui_manager,
+                &ui_catalog,
+                &mut session_client,
+                &mut input_events,
+                &mut resync_message_list_events,
+            );
+        }
+    };
+}
+
+pub(crate) fn handle_resync_message_list_ui_events(
+    mut session_client: SessionClient,
+    ui_catalog: Res<UiCatalog>,
+    mut ui_manager: ResMut<UiManager>,
+    asset_manager: Res<AssetManager>,
+    mut message_manager: ResMut<ChatMessageManager>,
+    lobby_manager: Res<LobbyManager>,
+    user_q: Query<&User>,
+    message_q: Query<&ChatMessage>,
+    mut resync_message_list_events: EventReader<ResyncMessageListUiEvent>,
+) {
+    let Some(active_ui_handle) = ui_manager.active_ui() else {
+        return;
+    };
+    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
+        panic!("unexpected ui");
+    }
 
     if let Some(current_ui_handle) =
         ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
     {
         if UiKey::GlobalChat == ui_catalog.get_ui_key(&current_ui_handle) {
-            message_manager.handle_events(
-                &mut ui_manager,
-                &ui_catalog,
-                &asset_manager,
+            message_manager.handle_resync_events(
                 &mut session_client,
-                &mut input_events,
-                &mut resync_global_chat_events,
+                &mut ui_manager,
+                &asset_manager,
+                &lobby_manager,
                 &user_q,
                 &message_q,
-                &mut should_rumble,
+                &mut resync_message_list_events,
             );
         }
     };
-
-    // handle rumble
-    if should_rumble {
-        if let Some(id) = input.gamepad_first() {
-            rumble_manager.add_rumble(
-                id,
-                Duration::from_millis(200),
-                GamepadRumbleIntensity::strong_motor(0.4),
-            );
-        }
-    }
 }
 
 pub fn reset_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
