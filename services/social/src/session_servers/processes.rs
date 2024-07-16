@@ -152,7 +152,17 @@ async fn handle_match_lobby_patches(state: &mut State) {
                             creator_user_id.clone(),
                         )
                     }
-                    LobbyPatch::Delete(lobby_id) => SocialLobbyPatch::Delete(lobby_id.clone()),
+                    LobbyPatch::Join(lobby_id, user_id) => SocialLobbyPatch::Join(
+                        lobby_id.clone(),
+                        user_id.clone(),
+                    ),
+                    LobbyPatch::Leave(user_id) => SocialLobbyPatch::Leave(user_id.clone()),
+                    LobbyPatch::Message(message_id, timestamp, user_id, message) => SocialLobbyPatch::Message(
+                        message_id.clone(),
+                        timestamp.clone(),
+                        user_id.clone(),
+                        message.clone(),
+                    ),
                 })
                 .collect();
 

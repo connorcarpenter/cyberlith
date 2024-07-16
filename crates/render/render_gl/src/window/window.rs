@@ -1,6 +1,5 @@
 use bevy_app::App;
 use cfg_if::cfg_if;
-use logging::info;
 use winit::{
     dpi,
     event::{

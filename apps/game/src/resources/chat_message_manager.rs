@@ -104,7 +104,7 @@ impl ChatMessageManager {
         session_client: &mut SessionClient,
         lobby_manager: &LobbyManager,
         input_events: &mut EventReader<InputEvent>,
-        resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+        resync_message_list_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
     ) {
         let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
 
@@ -120,7 +120,7 @@ impl ChatMessageManager {
                     } else {
                         info!("Scrolling Up");
                         self.list_ui_ext.scroll_up();
-                        resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
+                        resync_message_list_ui_events.send(ResyncMessageListUiEvent::new(false));
                     }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
@@ -132,7 +132,7 @@ impl ChatMessageManager {
                     } else {
                         info!("Scrolling Down");
                         self.list_ui_ext.scroll_down();
-                        resync_chat_message_ui_events.send(ResyncMessageListUiEvent::new(false));
+                        resync_message_list_ui_events.send(ResyncMessageListUiEvent::new(false));
                     }
                 }
                 InputEvent::KeyPressed(Key::Enter, modifiers) => {

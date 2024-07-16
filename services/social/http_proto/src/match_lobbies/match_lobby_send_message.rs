@@ -1,6 +1,8 @@
+use naia_serde::SerdeInternal as Serde;
+
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
-use naia_serde::SerdeInternal as Serde;
+use social_server_types::{MessageId, Timestamp};
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
@@ -34,7 +36,19 @@ impl MatchLobbySendMessageRequest {
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct MatchLobbySendMessageResponse;
+pub struct MatchLobbySendMessageResponse {
+    pub message_id: MessageId,
+    pub timestamp: Timestamp,
+}
+
+impl MatchLobbySendMessageResponse {
+    pub fn new(message_id: MessageId, timestamp: Timestamp) -> Self {
+        Self {
+            message_id,
+            timestamp,
+        }
+    }
+}
 
 // Traits
 impl ApiRequest for MatchLobbySendMessageRequest {

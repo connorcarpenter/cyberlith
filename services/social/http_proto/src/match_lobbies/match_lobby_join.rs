@@ -7,15 +7,15 @@ use social_server_types::LobbyId;
 #[derive(Serde, PartialEq, Clone)]
 pub struct MatchLobbyJoinRequest {
     session_instance_secret: String,
-    match_lobby_id: LobbyId,
+    lobby_id: LobbyId,
     user_id: UserId,
 }
 
 impl MatchLobbyJoinRequest {
-    pub fn new(session_secret: &str, match_lobby_id: LobbyId, user_id: UserId) -> Self {
+    pub fn new(session_secret: &str, lobby_id: LobbyId, user_id: UserId) -> Self {
         Self {
             session_instance_secret: session_secret.to_string(),
-            match_lobby_id,
+            lobby_id,
             user_id,
         }
     }
@@ -24,8 +24,8 @@ impl MatchLobbyJoinRequest {
         &self.session_instance_secret
     }
 
-    pub fn match_lobby_id(&self) -> LobbyId {
-        self.match_lobby_id
+    pub fn lobby_id(&self) -> LobbyId {
+        self.lobby_id
     }
 
     pub fn user_id(&self) -> UserId {

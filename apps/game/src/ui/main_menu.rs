@@ -8,7 +8,7 @@ use bevy_ecs::{
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    logging::{, warn},
+    logging::{info, warn},
     render::components::RenderLayers,
     ui::UiManager,
 };

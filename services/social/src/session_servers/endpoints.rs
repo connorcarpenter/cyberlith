@@ -58,10 +58,7 @@ async fn async_recv_connect_session_server_request_impl(
     // get match lobbies
     let match_lobbies: Vec<(LobbyId, UserId, String)> = state
         .match_lobbies
-        .get_lobbies()
-        .iter()
-        .map(|(id, (uid, name))| (*id, *uid, name.clone()))
-        .collect();
+        .get_lobbies();
 
     // store session server details
     state

@@ -35,11 +35,15 @@ async fn async_recv_match_lobby_create_request_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
+    // create new match lobby
     let new_match_lobby_id = state.match_lobbies.create(
-        session_server_id,
+        &session_server_id,
         request.match_name(),
-        request.creator_user_id(),
+        &request.creator_user_id(),
     );
+
+    // owner joins the lobby
+    state.users.user_joins_lobby(&request.creator_user_id(), &new_match_lobby_id);
 
     // responding
     return Ok(MatchLobbyCreateResponse::new(new_match_lobby_id));
@@ -70,10 +74,15 @@ async fn async_recv_match_lobby_join_request_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
+    state.users.user_joins_lobby(
+        &request.user_id(),
+        &request.lobby_id()
+    );
+
     state.match_lobbies.join(
-        session_server_id,
-        request.match_lobby_id(),
-        request.user_id(),
+        &session_server_id,
+        &request.lobby_id(),
+        &request.user_id(),
     );
 
     // responding
@@ -105,9 +114,11 @@ async fn async_recv_match_lobby_leave_request_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
+    let lobby_id = state.users.user_leaves_lobby(&request.user_id());
+
     state
         .match_lobbies
-        .leave(session_server_id, request.user_id());
+        .leave(&session_server_id, &lobby_id, &request.user_id());
 
     // responding
     return Ok(MatchLobbyLeaveResponse);
@@ -138,10 +149,12 @@ async fn async_recv_match_lobby_send_message_request_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
-    state
+    let lobby_id = state.users.get_user_lobby_id(&request.user_id()).unwrap();
+
+    let (msg_id, timestamp) = state
         .match_lobbies
-        .send_message(session_server_id, request.user_id(), request.message());
+        .send_message(&session_server_id, &lobby_id, &request.user_id(), request.message());
 
     // responding
-    return Ok(MatchLobbySendMessageResponse);
+    return Ok(MatchLobbySendMessageResponse::new(msg_id, timestamp));
 }

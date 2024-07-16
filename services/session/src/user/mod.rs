@@ -4,5 +4,5 @@ pub use user_manager::*;
 mod plugin;
 pub use plugin::*;
 
-mod private_user_info;
+mod user_data;
 mod systems;

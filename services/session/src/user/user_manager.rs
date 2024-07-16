@@ -21,13 +21,15 @@ use auth_server_types::UserId;
 
 use session_server_naia_proto::components::User;
 
-use crate::user::private_user_info::PrivateUserInfo;
+use social_server_types::LobbyId;
+
+use crate::user::user_data::UserData;
 
 #[derive(Resource)]
 pub struct UserManager {
     login_tokens: HashMap<String, UserId>,
     user_key_to_id: HashMap<UserKey, UserId>,
-    user_data: HashMap<UserId, PrivateUserInfo>,
+    user_data: HashMap<UserId, UserData>,
     inflight_user_info_requests: HashSet<UserId>,
 }
 
@@ -103,11 +105,6 @@ impl UserManager {
 
     pub fn user_key_to_id(&self, user_key: &UserKey) -> Option<UserId> {
         self.user_key_to_id.get(user_key).cloned()
-    }
-
-    pub fn user_id_to_key(&self, user_id: &UserId) -> Option<UserKey> {
-        let data = self.user_data.get(user_id)?;
-        data.user_key()
     }
 
     pub fn make_ready_for_world_connect(&mut self, user_key: &UserKey) -> Result<(), ()> {
@@ -195,8 +192,47 @@ impl UserManager {
         self.inflight_user_info_requests.insert(*user_id);
 
         // add user data
-        let user_data = PrivateUserInfo::new(user_entity, user_info_response_key);
+        let user_data = UserData::new(user_entity, user_info_response_key);
         self.user_data.insert(*user_id, user_data);
+    }
+
+    pub(crate) fn get_or_init_user_entity(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        http_client: &mut HttpClient,
+        main_menu_room_key: &RoomKey,
+        owner_user_id: &UserId
+    ) -> Entity {
+        if let Some(user_entity) = self.get_user_entity(owner_user_id) {
+            user_entity
+        } else {
+            self.add_user_data(
+                commands,
+                naia_server,
+                http_client,
+                main_menu_room_key,
+                owner_user_id,
+            );
+
+            let user_entity = self.get_user_entity(owner_user_id).unwrap();
+            user_entity
+        }
+    }
+
+    pub(crate) fn user_join_lobby(&mut self, user_id: &UserId, lobby_id: &LobbyId, lobby_member_entity: &Entity) -> (UserKey, Entity) {
+        let user_data = self.user_data.get_mut(user_id).unwrap();
+        user_data.user_join_lobby(lobby_id, lobby_member_entity)
+    }
+
+    pub(crate) fn user_leave_lobby(&mut self, user_id: &UserId) -> (LobbyId, Entity) {
+        let user_data = self.user_data.get_mut(user_id).unwrap();
+        user_data.user_leave_lobby()
+    }
+
+    pub(crate) fn get_user_lobby_id(&self, user_id: &UserId) -> Option<LobbyId> {
+        let user_data = self.user_data.get(user_id).unwrap();
+        user_data.get_lobby_id()
     }
 
     pub(crate) fn user_set_online(&mut self, user_id: &UserId, users_q: &mut Query<&mut User>) {

@@ -36,14 +36,14 @@ impl GlobalChatSendMessageRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct GlobalChatSendMessageResponse {
-    pub global_chat_message_id: MessageId,
+    pub message_id: MessageId,
     pub timestamp: Timestamp,
 }
 
 impl GlobalChatSendMessageResponse {
-    pub fn new(global_chat_message_id: MessageId, timestamp: Timestamp) -> Self {
+    pub fn new(message_id: MessageId, timestamp: Timestamp) -> Self {
         Self {
-            global_chat_message_id,
+            message_id,
             timestamp,
         }
     }

@@ -6,16 +6,13 @@ use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
 use logging::{info, warn};
-
 use auth_server_types::UserId;
-
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::{Lobby, LobbyMember};
-
 use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse};
 use social_server_types::LobbyId;
 
-use crate::{session_instance::SessionInstance, user::UserManager};
+use crate::{social::chat_message_manager::ChatMessageManager, session_instance::SessionInstance, user::UserManager};
 
 struct MatchCreateReqQueued(UserKey, String);
 struct MatchCreateReqInFlight(UserId, String, ResponseKey<MatchLobbyCreateResponse>);
@@ -49,6 +46,14 @@ impl LobbyManager {
 
             lobbies: HashMap::new(),
         }
+    }
+
+    pub(crate) fn get_lobby_entity(&self, lobby_id: &LobbyId) -> Option<Entity> {
+        self.lobbies.get(lobby_id).map(|lobby_data| lobby_data.lobby_entity)
+    }
+
+    pub(crate) fn get_lobby_room_key(&self, lobby_id: &LobbyId) -> Option<RoomKey> {
+        self.lobbies.get(lobby_id).map(|lobby_data| lobby_data.room_key)
     }
 
     pub(crate) fn update(
@@ -138,7 +143,7 @@ impl LobbyManager {
                         // info!("received create match lobby message response from social server");
                         let lobby_id = response.match_lobby_id();
 
-                        self.add_lobby(
+                        self.create_lobby(
                             commands,
                             naia_server,
                             http_client,
@@ -216,6 +221,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        chat_message_manager: &mut ChatMessageManager,
         main_menu_room_key: &RoomKey,
         patches: &Vec<SocialLobbyPatch>,
     ) {
@@ -223,11 +229,11 @@ impl LobbyManager {
             match patch {
                 SocialLobbyPatch::Create(lobby_id, match_name, owner_id) => {
                     info!(
-                        "adding match lobby - [lobbyid {:?}]:(`{:?}`), [ownerid {:?}]",
+                        "creating lobby - [lobbyid {:?}]:(`{:?}`), [ownerid {:?}]",
                         lobby_id, match_name, owner_id
                     );
 
-                    self.add_lobby(
+                    self.create_lobby(
                         commands,
                         naia_server,
                         http_client,
@@ -238,16 +244,45 @@ impl LobbyManager {
                         owner_id,
                     );
                 }
-                SocialLobbyPatch::Delete(lobby_id) => {
-                    info!("removing match lobby - [lobbyid {:?}]", lobby_id);
+                // SocialLobbyPatch::Delete(lobby_id) => {
+                //     info!("removing match lobby - [lobbyid {:?}]", lobby_id);
+                //
+                //     self.remove_lobby(commands, naia_server, lobby_id);
+                // }
+                SocialLobbyPatch::Join(lobby_id, user_id) => {
+                    info!("joining lobby - [lobbyid {:?}], [userid {:?}]", lobby_id, user_id);
 
-                    self.remove_lobby(commands, naia_server, lobby_id);
+                    self.join_lobby(commands, naia_server, user_manager, lobby_id, user_id);
+                }
+                SocialLobbyPatch::Leave(user_id) => {
+                    info!("leaving lobby - [userid {:?}]", user_id);
+
+                    self.leave_lobby(commands, user_manager, user_id);
+                }
+                SocialLobbyPatch::Message(message_id, timestamp, user_id, message) => {
+                    info!(
+                        "sending message to lobby - [messageid {:?}], [timestamp {:?}], [userid {:?}], [message {:?}]",
+                        message_id, timestamp, user_id, message
+                    );
+
+                    chat_message_manager.patch_lobby_chat_message(
+                        commands,
+                        naia_server,
+                        http_client,
+                        user_manager,
+                        self,
+                        main_menu_room_key,
+                        message_id,
+                        timestamp,
+                        user_id,
+                        message
+                    );
                 }
             }
         }
     }
 
-    fn add_lobby(
+    fn create_lobby(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
@@ -273,22 +308,7 @@ impl LobbyManager {
         self.lobbies
             .insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key));
 
-        let owner_user_entity = {
-            if let Some(user_entity) = user_manager.get_user_entity(owner_user_id) {
-                user_entity
-            } else {
-                user_manager.add_user_data(
-                    commands,
-                    naia_server,
-                    http_client,
-                    main_menu_room_key,
-                    owner_user_id,
-                );
-
-                let user_entity = user_manager.get_user_entity(owner_user_id).unwrap();
-                user_entity
-            }
-        };
+        let owner_user_entity = user_manager.get_or_init_user_entity(commands, naia_server, http_client, main_menu_room_key, owner_user_id);
 
         // set lobby owner
         lobby.owner_user_entity.set(naia_server, &owner_user_entity);
@@ -325,7 +345,7 @@ impl LobbyManager {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
-        user_manager: &UserManager,
+        user_manager: &mut UserManager,
         lobby_id: &LobbyId,
         joining_user_id: &UserId,
     ) {
@@ -334,12 +354,11 @@ impl LobbyManager {
         let lobby_room_key = &lobby.room_key;
         let lobby_entity = &lobby.lobby_entity;
 
-        // get user key & entity
-        let joining_user_key = user_manager.user_id_to_key(joining_user_id).unwrap();
-        let joining_user_entity = user_manager.get_user_entity(joining_user_id).unwrap();
-
         // create LobbyMember entity
-        let lobby_member_id = commands.spawn_empty().enable_replication(naia_server).id();
+        let lobby_member_entity = commands.spawn_empty().enable_replication(naia_server).id();
+
+        // get user key & entity
+        let (joining_user_key, joining_user_entity) = user_manager.user_join_lobby(joining_user_id, lobby_id, &lobby_member_entity);
 
         // add user and lobbymember to room
         naia_server
@@ -347,7 +366,7 @@ impl LobbyManager {
             // add user to lobby room
             .add_user(&joining_user_key)
             // add LobbyMember entity to lobby room
-            .add_entity(&lobby_member_id);
+            .add_entity(&lobby_member_entity);
 
         // create & setup LobbyMember component
         let mut lobby_member = LobbyMember::new();
@@ -355,6 +374,18 @@ impl LobbyManager {
         lobby_member
             .user_entity
             .set(naia_server, &joining_user_entity);
-        commands.entity(lobby_member_id).insert(lobby_member);
+        commands.entity(lobby_member_entity).insert(lobby_member);
+    }
+
+    fn leave_lobby(
+        &mut self,
+        commands: &mut Commands,
+        user_manager: &mut UserManager,
+        leaving_user_id: &UserId,
+    ) {
+        // get user key & entity & lobby_id
+        let (_lobby_id, lobby_member_entity) = user_manager.user_leave_lobby(leaving_user_id);
+
+        commands.entity(lobby_member_entity).despawn();
     }
 }

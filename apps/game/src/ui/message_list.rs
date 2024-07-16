@@ -25,6 +25,7 @@ pub(crate) fn handle_message_list_interaction_events(
     mut ui_manager: ResMut<UiManager>,
     mut session_client: SessionClient,
     mut message_manager: ResMut<ChatMessageManager>,
+    lobby_manager: Res<LobbyManager>,
     mut input_events: EventReader<InputEvent>,
     mut resync_message_list_events: EventWriter<ResyncMessageListUiEvent>,
 ) {
@@ -43,6 +44,7 @@ pub(crate) fn handle_message_list_interaction_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &mut session_client,
+                &lobby_manager,
                 &mut input_events,
                 &mut resync_message_list_events,
             );

@@ -1,19 +1,60 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use auth_server_types::UserId;
 
-use social_server_types::LobbyId;
+use social_server_types::{LobbyId, MessageId, Timestamp};
 
 use crate::session_servers::SessionServerId;
 
 pub(crate) enum LobbyPatch {
     Create(LobbyId, UserId, String),
-    Delete(LobbyId),
+    Join(LobbyId, UserId),
+    Leave(UserId),
+    Message(MessageId, Timestamp, UserId, String),
+}
+
+struct LobbyData {
+    owner_user_id: UserId,
+    match_name: String,
+    users: HashSet<UserId>,
+    message_log: VecDeque<(MessageId, Timestamp, UserId, String)>,
+    next_message_id: MessageId,
+}
+
+impl LobbyData {
+    pub fn new(owner_user_id: UserId, match_name: String) -> Self {
+        let mut users = HashSet::new();
+        users.insert(owner_user_id);
+        Self {
+            owner_user_id,
+            match_name,
+            users,
+            message_log: VecDeque::new(),
+            next_message_id: MessageId::new(0),
+        }
+    }
+
+    pub fn send_message(&mut self, user_id: &UserId, message: &str) -> (MessageId, Timestamp) {
+        // get next lobby chat id
+        let next_message_id = self.next_message_id;
+        self.next_message_id = self.next_message_id.next();
+
+        // get timestamp
+        let timestamp = Timestamp::now();
+
+        // add to message log
+        self.message_log
+            .push_back((next_message_id, timestamp, *user_id, message.to_string()));
+        if self.message_log.len() > 100 {
+            self.message_log.pop_front();
+        }
+
+        (next_message_id, timestamp)
+    }
 }
 
 pub struct MatchLobbiesState {
-    // lobby id, user_id, match_name
-    lobbies: HashMap<LobbyId, (UserId, String)>,
+    lobbies: HashMap<LobbyId, LobbyData>,
     next_lobby_id: LobbyId,
 
     // the session server id here is the SENDER not the RECEIVER
@@ -32,24 +73,25 @@ impl MatchLobbiesState {
 
     pub fn create(
         &mut self,
-        session_instance_id: SessionServerId,
+        session_instance_id: &SessionServerId,
         match_name: &str,
-        creator_user_id: UserId,
+        creator_user_id: &UserId,
     ) -> LobbyId {
         let new_lobby_id = self.next_lobby_id;
         self.next_lobby_id = self.next_lobby_id.next();
 
         self.lobbies
-            .insert(new_lobby_id, (creator_user_id, match_name.to_string()));
+            .insert(new_lobby_id, LobbyData::new(*creator_user_id, match_name.to_string()));
 
+        // add to outgoing patches
         if !self.outgoing_patches.contains_key(&session_instance_id) {
             self.outgoing_patches
-                .insert(session_instance_id, Vec::new());
+                .insert(*session_instance_id, Vec::new());
         }
-        let session_server_patches = self.outgoing_patches.get_mut(&session_instance_id).unwrap();
+        let session_server_patches = self.outgoing_patches.get_mut(session_instance_id).unwrap();
         session_server_patches.push(LobbyPatch::Create(
             new_lobby_id,
-            creator_user_id,
+            *creator_user_id,
             match_name.to_string(),
         ));
 
@@ -58,28 +100,88 @@ impl MatchLobbiesState {
 
     pub fn join(
         &mut self,
-        session_server_id: SessionServerId,
-        match_lobby_id: LobbyId,
-        joining_user_id: UserId,
+        session_server_id: &SessionServerId,
+        lobby_id: &LobbyId,
+        joining_user_id: &UserId,
     ) {
-        // TODO
+        let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
+        lobby_data.users.insert(*joining_user_id);
+
+        // add to outgoing patches
+        if !self
+            .outgoing_patches
+            .contains_key(&session_server_id)
+        {
+            self.outgoing_patches
+                .insert(*session_server_id, Vec::new());
+        }
+        let session_server_patches = self
+            .outgoing_patches
+            .get_mut(&session_server_id)
+            .unwrap();
+        session_server_patches.push(LobbyPatch::Join(*lobby_id, *joining_user_id));
     }
 
-    pub fn leave(&mut self, session_server_id: SessionServerId, leaving_user_id: UserId) {
-        // TODO
+    pub fn leave(
+        &mut self,
+        session_server_id: &SessionServerId,
+        lobby_id: &LobbyId,
+        leaving_user_id: &UserId
+    ) {
+        let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
+        lobby_data.users.remove(leaving_user_id);
+
+        // add to outgoing patches
+        if !self
+            .outgoing_patches
+            .contains_key(&session_server_id)
+        {
+            self.outgoing_patches
+                .insert(*session_server_id, Vec::new());
+        }
+
+        let session_server_patches = self
+            .outgoing_patches
+            .get_mut(&session_server_id)
+            .unwrap();
+        session_server_patches.push(LobbyPatch::Leave(*leaving_user_id));
     }
 
     pub fn send_message(
         &mut self,
-        session_server_id: SessionServerId,
-        user_id: UserId,
+        sending_session_server_id: &SessionServerId,
+        lobby_id: &LobbyId,
+        user_id: &UserId,
         message: &str,
-    ) {
-        // TODO
+    ) -> (MessageId, Timestamp) {
+
+        let lobby_data = self.lobbies.get_mut(&lobby_id).unwrap();
+        let (msg_id, timestamp) = lobby_data.send_message(user_id, message);
+
+        // add to outgoing patches
+        if !self
+            .outgoing_patches
+            .contains_key(sending_session_server_id)
+        {
+            self.outgoing_patches
+                .insert(*sending_session_server_id, Vec::new());
+        }
+        let session_server_patches = self
+            .outgoing_patches
+            .get_mut(sending_session_server_id)
+            .unwrap();
+        session_server_patches.push(LobbyPatch::Message(msg_id, timestamp, *user_id, message.to_string()));
+
+        (msg_id, timestamp)
     }
 
-    pub fn get_lobbies(&self) -> &HashMap<LobbyId, (UserId, String)> {
-        &self.lobbies
+    pub fn get_lobbies(&self) -> Vec<(LobbyId, UserId, String)> {
+        self.lobbies
+            .iter()
+            .map(|(lobby_id, lobby_data)| {
+                (lobby_id.clone(), lobby_data.owner_user_id, lobby_data.match_name.clone())
+            })
+            .collect()
     }
 
     pub fn take_patches(&mut self) -> HashMap<SessionServerId, Vec<LobbyPatch>> {

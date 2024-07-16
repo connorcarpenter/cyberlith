@@ -4,7 +4,6 @@ use crate::{
     ConnectAssetServerRequest, ConnectSocialServerRequest, DisconnectAssetServerRequest,
     DisconnectSocialServerRequest, HeartbeatRequest, IncomingUserRequest,
     SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest,
-    SocialPatchMatchLobbyMessagesRequest, SocialPatchMatchLobbyUsersRequest,
     SocialPatchUsersRequest, UserAssetIdRequest,
 };
 
@@ -23,8 +22,6 @@ pub fn protocol() -> Protocol {
     protocol.add_request::<SocialPatchUsersRequest>();
     protocol.add_request::<SocialPatchGlobalChatMessagesRequest>();
     protocol.add_request::<SocialPatchMatchLobbiesRequest>();
-    protocol.add_request::<SocialPatchMatchLobbyUsersRequest>();
-    protocol.add_request::<SocialPatchMatchLobbyMessagesRequest>();
 
     protocol
 }

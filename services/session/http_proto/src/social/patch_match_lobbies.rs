@@ -2,12 +2,18 @@ use naia_serde::SerdeInternal as Serde;
 
 use auth_server_types::UserId;
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
-use social_server_types::LobbyId;
+use social_server_types::{LobbyId, MessageId, Timestamp};
 
 #[derive(Serde, PartialEq, Clone)]
 pub enum SocialLobbyPatch {
+    // lobby id, lobby name, owner user id
     Create(LobbyId, String, UserId),
-    Delete(LobbyId),
+    // lobby id, joining user id
+    Join(LobbyId, UserId),
+    // leaving user id
+    Leave(UserId),
+    // message id, timestamp, user id, message
+    Message(MessageId, Timestamp, UserId, String),
 }
 
 // Request

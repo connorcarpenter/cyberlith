@@ -52,6 +52,7 @@ pub fn message_events(
             social_manager
                 .chat_message_manager
                 .send_lobby_chat_message(
+
                     &mut http_client,
                     &user_manager,
                     social_server_url.as_ref(),

@@ -1,6 +1,7 @@
+use naia_serde::SerdeInternal as Serde;
+
 use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
-use naia_serde::SerdeInternal as Serde;
 use social_server_types::LobbyId;
 
 // Request

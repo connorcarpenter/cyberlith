@@ -1,18 +1,22 @@
 use std::time::Instant;
 
 use bevy_ecs::{entity::Entity, system::Commands};
+
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use bevy_http_client::ResponseKey;
-
 use auth_server_http_proto::UserGetResponse;
 use session_server_naia_proto::components::{Selfhood, SelfhoodUser};
+use social_server_types::LobbyId;
 
-pub(crate) struct PrivateUserInfo {
+pub(crate) struct UserData {
     user_key: Option<UserKey>,
     user_entity: Entity,
     selfhood_entity: Option<Entity>,
     room_key: Option<RoomKey>,
+
+    // lobby id, lobby member entity
+    lobby_id: Option<(LobbyId, Entity)>,
 
     world_connect_last_sent_to_region: Option<Instant>,
     ready_for_world_connect: bool,
@@ -24,13 +28,15 @@ pub(crate) struct PrivateUserInfo {
     make_online_after_info: Option<bool>,
 }
 
-impl PrivateUserInfo {
+impl UserData {
     pub fn new(user_entity: Entity, user_info_response_key: ResponseKey<UserGetResponse>) -> Self {
         Self {
             user_key: None,
             user_entity,
             selfhood_entity: None,
             room_key: None,
+
+            lobby_id: None,
 
             world_connect_last_sent_to_region: None,
             ready_for_world_connect: false,
@@ -48,6 +54,27 @@ impl PrivateUserInfo {
 
     pub(crate) fn set_offline(&mut self) {
         self.make_online_after_info = Some(false);
+    }
+
+    pub(crate) fn user_join_lobby(&mut self, lobby_id: &LobbyId, lobby_member_entity: &Entity) -> (UserKey, Entity) {
+        if self.lobby_id.is_some() {
+            panic!("User already in lobby");
+        }
+        self.lobby_id = Some((*lobby_id, *lobby_member_entity));
+        (self.user_key.unwrap(), self.user_entity)
+    }
+
+    pub(crate) fn user_leave_lobby(&mut self) -> (LobbyId, Entity) {
+        if self.lobby_id.is_none() {
+            panic!("User not in lobby");
+        }
+        let output = self.lobby_id.unwrap();
+        self.lobby_id = None;
+        output
+    }
+
+    pub(crate) fn get_lobby_id(&self) -> Option<LobbyId> {
+        self.lobby_id.map(|(lobby_id, _)| lobby_id)
     }
 
     pub fn user_info_response_key(&self) -> Option<ResponseKey<UserGetResponse>> {
@@ -88,10 +115,6 @@ impl PrivateUserInfo {
 
     pub fn user_entity(&self) -> Entity {
         self.user_entity
-    }
-
-    pub fn user_key(&self) -> Option<UserKey> {
-        self.user_key
     }
 
     pub fn connect(

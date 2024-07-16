@@ -7,11 +7,7 @@ use bevy_http_server::HttpServer;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use logging::{info, warn};
 
-use session_server_http_proto::{
-    SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse,
-    SocialPatchMatchLobbiesRequest, SocialPatchMatchLobbiesResponse, SocialPatchUsersRequest,
-    SocialPatchUsersResponse,
-};
+use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse, SocialPatchMatchLobbiesRequest, SocialPatchMatchLobbiesResponse, SocialPatchUsersRequest, SocialPatchUsersResponse};
 use session_server_naia_proto::components::User;
 
 use crate::{social::SocialManager, user::UserManager};
@@ -107,7 +103,7 @@ pub fn recv_patch_match_lobby_request(
         info!("received patch match lobbies request");
 
         let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
-        social_manager.lobby_manager.patch_match_lobbies(
+        social_manager.patch_match_lobbies(
             &mut commands,
             &mut naia_server,
             &mut http_client,

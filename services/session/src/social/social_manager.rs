@@ -6,7 +6,7 @@ use bevy_ecs::{
 use naia_bevy_server::{RoomKey, Server};
 
 use bevy_http_client::HttpClient;
-
+use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::User;
 
 use crate::{
@@ -39,6 +39,26 @@ impl SocialManager {
             lobby_manager: LobbyManager::new(),
             user_presence_manager: UserPresenceManager::new(),
         }
+    }
+
+    pub(crate) fn patch_match_lobbies(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        http_client: &mut HttpClient,
+        user_manager: &mut UserManager,
+        main_menu_room_key: &RoomKey,
+        patches: &Vec<SocialLobbyPatch>,
+    ) {
+        self.lobby_manager.patch_match_lobbies(
+            commands,
+            naia_server,
+            http_client,
+            user_manager,
+            &mut self.chat_message_manager,
+            main_menu_room_key,
+            patches,
+        );
     }
 
     pub fn main_menu_room_key(&self) -> Option<RoomKey> {
@@ -79,7 +99,7 @@ impl SocialManager {
     ) {
         let social_server_url = social_manager.get_social_server_url();
         let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
-        social_manager.chat_message_manager.update(
+        social_manager.update_impl(
             &mut commands,
             &mut naia_server,
             &mut http_client,
@@ -87,22 +107,46 @@ impl SocialManager {
             &social_server_url,
             &session_instance,
             &main_menu_room_key,
-        );
-        social_manager.lobby_manager.update(
-            &mut commands,
-            &mut naia_server,
-            &mut http_client,
-            &mut user_manager,
-            &social_server_url,
-            &session_instance,
-            &main_menu_room_key,
-        );
-        social_manager.user_presence_manager.update(
-            &mut http_client,
-            &mut user_manager,
-            &social_server_url,
-            &session_instance,
             &mut users_q,
+        );
+    }
+
+    fn update_impl(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        http_client: &mut HttpClient,
+        user_manager: &mut UserManager,
+        social_server_url: &Option<(String, u16)>,
+        session_instance: &SessionInstance,
+        main_menu_room_key: &RoomKey,
+        users_q: &mut Query<&mut User>
+    ) {
+        self.chat_message_manager.update(
+            commands,
+            naia_server,
+            http_client,
+            user_manager,
+            &self.lobby_manager,
+            social_server_url,
+            session_instance,
+            main_menu_room_key,
+        );
+        self.lobby_manager.update(
+            commands,
+            naia_server,
+            http_client,
+            user_manager,
+            social_server_url,
+            session_instance,
+            main_menu_room_key,
+        );
+        self.user_presence_manager.update(
+            http_client,
+            user_manager,
+            social_server_url,
+            session_instance,
+            users_q,
         );
     }
 }
