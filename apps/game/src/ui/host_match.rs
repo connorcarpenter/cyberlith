@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy_ecs::{
     change_detection::{Res, ResMut},
-    event::EventReader,
+    event::{EventReader, EventWriter},
 };
 
 use game_engine::{
@@ -13,7 +13,7 @@ use game_engine::{
 
 use crate::{
     resources::lobby_manager::LobbyManager,
-    ui::{events::SubmitButtonClickedEvent, UiCatalog, UiKey},
+    ui::{events::{GoToSubUiEvent, SubmitButtonClickedEvent}, UiCatalog, UiKey},
 };
 
 pub fn on_load_host_match_ui(ui_catalog: &mut UiCatalog, ui_manager: &mut UiManager) {
@@ -31,6 +31,7 @@ pub(crate) fn handle_host_match_events(
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut lobby_manager: ResMut<LobbyManager>,
+    mut sub_ui_event_writer: EventWriter<GoToSubUiEvent>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
@@ -51,6 +52,7 @@ pub(crate) fn handle_host_match_events(
                 &mut ui_manager,
                 &ui_catalog,
                 &mut session_client,
+                &mut sub_ui_event_writer,
                 &mut submit_btn_rdr,
                 &mut should_rumble,
             );
@@ -69,6 +71,11 @@ pub(crate) fn handle_host_match_events(
     }
 }
 
-pub fn reset_host_match_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
+pub fn on_enter_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
     // TODO: implement
+}
+
+pub fn on_leave_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
+    // TODO: implement
+    // clear input fields
 }

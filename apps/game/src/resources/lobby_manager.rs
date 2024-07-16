@@ -24,7 +24,7 @@ use game_engine::{
 use crate::ui::{
     events::{
         ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
-        ResyncUserListUiEvent, SubmitButtonClickedEvent,
+        ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent,
     },
     go_to_sub_ui, UiCatalog, UiKey,
 };
@@ -120,6 +120,7 @@ impl LobbyManager {
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
         session_server: &mut SessionClient,
+        sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
         submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
         should_rumble: &mut bool,
     ) {
@@ -147,7 +148,7 @@ impl LobbyManager {
             let message = messages::MatchLobbyCreate::new(&textbox_text);
             session_server.send_message::<channels::ClientActionsChannel, _>(&message);
 
-            go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
+            go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
 
             // def rumble
             *should_rumble = true;

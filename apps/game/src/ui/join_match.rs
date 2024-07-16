@@ -144,6 +144,10 @@ fn handle_resync_lobby_list_ui_events_impl(
     }
 }
 
-pub fn reset_join_match_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
+pub fn on_enter_state(resync_lobby_list_ui_event_writer: &mut EventWriter<ResyncLobbyListUiEvent>) {
+    resync_lobby_list_ui_event_writer.send(ResyncLobbyListUiEvent);
+}
+
+pub fn on_leave_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
     // TODO: implement
 }

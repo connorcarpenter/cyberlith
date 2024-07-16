@@ -39,7 +39,7 @@ pub(crate) fn handle_message_list_interaction_events(
     if let Some(current_ui_handle) =
         ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
     {
-        if UiKey::GlobalChat == ui_catalog.get_ui_key(&current_ui_handle) {
+        if UiKey::MessageList == ui_catalog.get_ui_key(&current_ui_handle) {
             message_manager.handle_interaction_events(
                 &mut ui_manager,
                 &ui_catalog,
@@ -73,7 +73,7 @@ pub(crate) fn handle_resync_message_list_ui_events(
     if let Some(current_ui_handle) =
         ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
     {
-        if UiKey::GlobalChat == ui_catalog.get_ui_key(&current_ui_handle) {
+        if UiKey::MessageList == ui_catalog.get_ui_key(&current_ui_handle) {
             message_manager.handle_resync_events(
                 &mut session_client,
                 &mut ui_manager,
@@ -87,6 +87,10 @@ pub(crate) fn handle_resync_message_list_ui_events(
     };
 }
 
-pub fn reset_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
+pub fn on_enter_state(resync_message_list_ui_event_writer: &mut EventWriter<ResyncMessageListUiEvent>,) {
+    resync_message_list_ui_event_writer.send(ResyncMessageListUiEvent::new(true));
+}
+
+pub fn on_leave_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
     // TODO: implement
 }

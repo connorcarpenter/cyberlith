@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy_ecs::{
     change_detection::{Res, ResMut},
-    event::EventReader,
+    event::{EventReader, EventWriter},
     schedule::NextState,
 };
 
@@ -19,7 +19,7 @@ use crate::{
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, ResyncMainMenuUiEvent, SettingsButtonClickedEvent,
+            JoinMatchButtonClickedEvent, ResyncMainMenuUiEvent, SettingsButtonClickedEvent, GoToSubUiEvent
         },
         go_to_sub_ui, UiCatalog, UiKey,
     },
@@ -31,6 +31,7 @@ pub(crate) fn on_main_menu_ui_load(
     ui_catalog: &mut UiCatalog,
     ui_manager: &mut UiManager,
     user_manager: &mut UserManager,
+    sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
 ) {
     if AppState::Loading != current_state {
         panic!("unexpected state");
@@ -55,8 +56,8 @@ pub(crate) fn on_main_menu_ui_load(
     ui_manager.enable_ui(&ui_handle);
 
     // set sub-ui to GlobalChat at beginning
-    if ui_catalog.get_is_loaded(UiKey::GlobalChat) {
-        go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
+    if ui_catalog.get_is_loaded(UiKey::MessageList) {
+        go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
     }
 
     // setup user list
@@ -66,9 +67,9 @@ pub(crate) fn on_main_menu_ui_load(
 pub(crate) fn handle_main_menu_interaction_events(
     ui_catalog: Res<UiCatalog>,
     input: Res<Input>,
-    mut ui_manager: ResMut<UiManager>,
+    ui_manager: Res<UiManager>,
     mut rumble_manager: ResMut<RumbleManager>,
-
+    mut sub_ui_event_writer: EventWriter<GoToSubUiEvent>,
     mut host_match_btn_rdr: EventReader<HostMatchButtonClickedEvent>,
     mut join_match_btn_rdr: EventReader<JoinMatchButtonClickedEvent>,
     mut global_chat_btn_rdr: EventReader<GlobalChatButtonClickedEvent>,
@@ -85,8 +86,7 @@ pub(crate) fn handle_main_menu_interaction_events(
     let mut should_rumble = false;
 
     handle_main_menu_ui_interaction_events_impl(
-        &mut ui_manager,
-        &ui_catalog,
+        &mut sub_ui_event_writer,
         &mut host_match_btn_rdr,
         &mut join_match_btn_rdr,
         &mut global_chat_btn_rdr,
@@ -100,7 +100,7 @@ pub(crate) fn handle_main_menu_interaction_events(
     {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
-            UiKey::HostMatch | UiKey::JoinMatch | UiKey::GlobalChat => {
+            UiKey::HostMatch | UiKey::JoinMatch | UiKey::MessageList => {
                 // handling these in another method
             }
             _ => {
@@ -129,8 +129,7 @@ pub(crate) fn handle_main_menu_interaction_events(
 }
 
 fn handle_main_menu_ui_interaction_events_impl(
-    ui_manager: &mut UiManager,
-    ui_catalog: &UiCatalog,
+    sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
     host_match_btn_rdr: &mut EventReader<HostMatchButtonClickedEvent>,
     join_match_btn_rdr: &mut EventReader<JoinMatchButtonClickedEvent>,
     global_chat_btn_rdr: &mut EventReader<GlobalChatButtonClickedEvent>,
@@ -146,7 +145,7 @@ fn handle_main_menu_ui_interaction_events_impl(
     if host_match_clicked {
         info!("host match button clicked!");
 
-        go_to_sub_ui(ui_manager, ui_catalog, UiKey::HostMatch);
+        go_to_sub_ui(sub_ui_event_writer, UiKey::HostMatch);
 
         *should_rumble = true;
     }
@@ -159,7 +158,7 @@ fn handle_main_menu_ui_interaction_events_impl(
     if join_match_clicked {
         info!("join match button clicked!");
 
-        go_to_sub_ui(ui_manager, ui_catalog, UiKey::JoinMatch);
+        go_to_sub_ui(sub_ui_event_writer, UiKey::JoinMatch);
 
         *should_rumble = true;
     }
@@ -172,7 +171,7 @@ fn handle_main_menu_ui_interaction_events_impl(
     if global_chat_clicked {
         info!("global chat button clicked!");
 
-        go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
+        go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
 
         *should_rumble = true;
     }

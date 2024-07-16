@@ -1,5 +1,7 @@
 use bevy_ecs::event::Event;
 
+use crate::ui::UiKey;
+
 #[derive(Event, Default)]
 pub struct HostMatchButtonClickedEvent;
 
@@ -19,6 +21,9 @@ pub struct SettingsButtonClickedEvent;
 pub struct SubmitButtonClickedEvent;
 
 // UI events
+
+#[derive(Event, Default)]
+pub struct GoToSubUiEvent(pub UiKey);
 
 #[derive(Event, Default)]
 pub struct ResyncMainMenuUiEvent;

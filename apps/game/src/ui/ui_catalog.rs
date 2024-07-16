@@ -37,19 +37,19 @@ impl Default for UiCatalog {
             UiHandle::new(AssetId::from_str("pup52m").unwrap()),
         );
         me.insert_ui(
-            UiKey::GlobalChat,
+            UiKey::MessageList,
             UiHandle::new(AssetId::from_str("ngffab").unwrap()),
         );
         me.insert_ui(
-            UiKey::GlobalChatDayDivider,
+            UiKey::MessageListDayDivider,
             UiHandle::new(AssetId::from_str("3wnz6n").unwrap()),
         );
         me.insert_ui(
-            UiKey::GlobalChatUsernameAndMessage,
+            UiKey::MessageListUsernameAndMessage,
             UiHandle::new(AssetId::from_str("ddbxab").unwrap()),
         );
         me.insert_ui(
-            UiKey::GlobalChatMessage,
+            UiKey::MessageListMessage,
             UiHandle::new(AssetId::from_str("cxc6zk").unwrap()),
         );
         me.insert_ui(

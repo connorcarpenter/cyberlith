@@ -22,7 +22,7 @@ use game_engine::{
     },
 };
 
-use crate::{resources::lobby_manager::LobbyManager, ui::{events::ResyncMessageListUiEvent, go_to_sub_ui, UiCatalog, UiKey}};
+use crate::{resources::lobby_manager::LobbyManager, ui::{events::{ResyncMessageListUiEvent, GoToSubUiEvent}, go_to_sub_ui, UiCatalog, UiKey}};
 
 #[derive(Resource)]
 pub struct ChatMessageManager {
@@ -108,7 +108,7 @@ impl ChatMessageManager {
         input_events: &mut EventReader<InputEvent>,
         resync_message_list_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
     ) {
-        let ui_handle = ui_catalog.get_ui_handle(UiKey::GlobalChat);
+        let ui_handle = ui_catalog.get_ui_handle(UiKey::MessageList);
 
         for event in input_events.read() {
             match event {
@@ -159,8 +159,9 @@ impl ChatMessageManager {
         ui_catalog: &mut UiCatalog,
         ui_manager: &mut UiManager,
         resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+        sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
     ) {
-        let ui_key = UiKey::GlobalChat;
+        let ui_key = UiKey::MessageList;
         let ui_handle = ui_catalog.get_ui_handle(ui_key);
 
         ui_catalog.set_loaded(ui_key);
@@ -168,7 +169,7 @@ impl ChatMessageManager {
         // set sub-ui to GlobalChat at beginning
         if let Some(active_ui_handle) = ui_manager.active_ui() {
             if ui_catalog.get_ui_key(&active_ui_handle) == UiKey::MainMenu {
-                go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
+                go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
             }
         }
 
@@ -187,7 +188,7 @@ impl ChatMessageManager {
         ui_catalog: &mut UiCatalog,
         resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
     ) {
-        let item_ui_key = UiKey::GlobalChatDayDivider;
+        let item_ui_key = UiKey::MessageListDayDivider;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
 
         ui_catalog.set_loaded(item_ui_key);
@@ -201,7 +202,7 @@ impl ChatMessageManager {
         ui_catalog: &mut UiCatalog,
         resync_global_chat_events: &mut EventWriter<ResyncMessageListUiEvent>,
     ) {
-        let item_ui_key = UiKey::GlobalChatUsernameAndMessage;
+        let item_ui_key = UiKey::MessageListUsernameAndMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
 
         ui_catalog.set_loaded(item_ui_key);
@@ -215,7 +216,7 @@ impl ChatMessageManager {
         ui_catalog: &mut UiCatalog,
         resync_global_chat_events: &mut EventWriter<ResyncMessageListUiEvent>,
     ) {
-        let item_ui_key = UiKey::GlobalChatMessage;
+        let item_ui_key = UiKey::MessageListMessage;
         let item_ui_handle = ui_catalog.get_ui_handle(item_ui_key);
 
         ui_catalog.set_loaded(item_ui_key);
@@ -396,7 +397,6 @@ impl ChatMessageManager {
 
         ui_manager.set_textbox_text(ui_handle, "message_textbox", "");
 
-        // info!("Sending message: {:?}", textbox_text);
         if lobby_manager.get_current_lobby().is_none() {
             let message = messages::GlobalChatSendMessage::new(&textbox_text);
             session_server.send_message::<channels::ClientActionsChannel, _>(&message);
