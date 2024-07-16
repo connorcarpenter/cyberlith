@@ -8,10 +8,19 @@ use bevy_ecs::{
 
 use game_engine::{
     logging::{info, warn},
-    session::{SessionClient, components::{Lobby, LobbyMember}, SessionInsertComponentEvent, SessionRemoveComponentEvent},
+    session::{
+        components::{Lobby, LobbyMember},
+        SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,
+    },
 };
 
-use crate::{resources::{user_manager::UserManager, lobby_manager::LobbyManager}, ui::events::{ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, ResyncLobbyListUiEvent}};
+use crate::{
+    resources::{lobby_manager::LobbyManager, user_manager::UserManager},
+    ui::events::{
+        ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+        ResyncUserListUiEvent,
+    },
+};
 
 pub struct LobbyComponentEventsPlugin;
 
@@ -22,12 +31,10 @@ impl Plugin for LobbyComponentEventsPlugin {
             .add_systems(Update, recv_inserted_lobby_component)
             // updated_lobby_component?
             .add_systems(Update, recv_removed_lobby_component)
-
             // LobbyMember
             .add_systems(Update, recv_inserted_lobby_member_component)
             // updated_lobby_member_component?
-            .add_systems(Update, recv_removed_lobby_member_component)
-        ;
+            .add_systems(Update, recv_removed_lobby_member_component);
     }
 }
 
@@ -91,7 +98,7 @@ fn recv_inserted_lobby_member_component(
                 &mut resync_main_menu_ui_events,
                 &mut resync_chat_message_ui_events,
                 &mut resync_user_ui_events,
-                lobby_id
+                lobby_id,
             );
         }
     }
@@ -130,7 +137,11 @@ fn recv_removed_lobby_member_component(
             if current_lobby_id != lobby_id {
                 panic!("current_lobby_id != lobby_id, when removing LobbyMember entity");
             }
-            lobby_manager.leave_current_lobby(&mut resync_main_menu_ui_events, &mut resync_chat_message_ui_events, &mut resync_user_ui_events);
+            lobby_manager.leave_current_lobby(
+                &mut resync_main_menu_ui_events,
+                &mut resync_chat_message_ui_events,
+                &mut resync_user_ui_events,
+            );
         }
     }
 }

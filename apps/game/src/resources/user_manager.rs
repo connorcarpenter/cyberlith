@@ -67,7 +67,11 @@ impl UserManager {
         self.self_user_entity
     }
 
-    pub fn set_self_user_entity(&mut self, resync_ui_events: &mut EventWriter<ResyncUserListUiEvent>, user_entity: Entity) {
+    pub fn set_self_user_entity(
+        &mut self,
+        resync_ui_events: &mut EventWriter<ResyncUserListUiEvent>,
+        user_entity: Entity,
+    ) {
         if self.self_user_entity.is_some() {
             panic!("self_user_entity already set");
         }
@@ -137,7 +141,13 @@ impl UserManager {
     }
 }
 
-fn add_user_item(item_ctx: &mut ListUiExtItem<UserId>, ui: &UiHandle, username: &str, is_self: bool, is_online: bool) {
+fn add_user_item(
+    item_ctx: &mut ListUiExtItem<UserId>,
+    ui: &UiHandle,
+    username: &str,
+    is_self: bool,
+    is_online: bool,
+) {
     item_ctx.add_copied_node(ui);
     item_ctx.set_text_by_id("username", username);
     if is_self {

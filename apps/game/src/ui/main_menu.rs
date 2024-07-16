@@ -1,12 +1,16 @@
 use std::time::Duration;
 
-use bevy_ecs::{change_detection::{Res, ResMut}, event::EventReader, schedule::NextState};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    event::EventReader,
+    schedule::NextState,
+};
 
 use game_engine::{
+    input::{GamepadRumbleIntensity, Input, RumbleManager},
     logging::info,
     render::components::RenderLayers,
-    ui::{UiManager},
-    input::{GamepadRumbleIntensity, Input, RumbleManager},
+    ui::UiManager,
 };
 
 use crate::{
@@ -15,7 +19,7 @@ use crate::{
     ui::{
         events::{
             DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, SettingsButtonClickedEvent, ResyncMainMenuUiEvent,
+            JoinMatchButtonClickedEvent, ResyncMainMenuUiEvent, SettingsButtonClickedEvent,
         },
         go_to_sub_ui, UiCatalog, UiKey,
     },

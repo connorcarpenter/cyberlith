@@ -7,7 +7,10 @@ use bevy_ecs::{
 
 use game_engine::{
     logging::info,
-    session::{SessionClient, components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby}, SessionInsertComponentEvent},
+    session::{
+        components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby},
+        SessionClient, SessionInsertComponentEvent,
+    },
 };
 
 use crate::{
@@ -24,7 +27,6 @@ impl Plugin for ChatMessageComponentEventsPlugin {
             // updated_chat_message_component?
             // removed_chat_message_component?
         ;
-
     }
 }
 
@@ -34,7 +36,9 @@ fn recv_inserted_chat_message_components(
     mut chat_message_events: ResMut<ChatMessageEvents>,
     mut resync_chat_message_ui_events: EventWriter<ResyncMessageListUiEvent>,
     mut chat_message_event_reader: EventReader<SessionInsertComponentEvent<ChatMessage>>,
-    mut chat_message_global_event_reader: EventReader<SessionInsertComponentEvent<ChatMessageGlobal>>,
+    mut chat_message_global_event_reader: EventReader<
+        SessionInsertComponentEvent<ChatMessageGlobal>,
+    >,
     mut chat_message_local_event_reader: EventReader<SessionInsertComponentEvent<ChatMessageLocal>>,
     chat_message_q: Query<&ChatMessage>,
     local_chat_message_q: Query<&ChatMessageLocal>,
@@ -45,7 +49,6 @@ fn recv_inserted_chat_message_components(
         &mut chat_message_global_event_reader,
         &mut chat_message_local_event_reader,
     ) {
-
         let message = chat_message_q.get(message_entity).unwrap();
         let message_id = *message.id;
 
@@ -57,9 +60,7 @@ fn recv_inserted_chat_message_components(
         );
 
         let lobby_id_opt = match is_global {
-            true => {
-                None
-            }
+            true => None,
             false => {
                 let local_message = local_chat_message_q.get(message_entity).unwrap();
                 let lobby_entity = local_message.lobby_entity.get(&session_client).unwrap();
@@ -76,4 +77,3 @@ fn recv_inserted_chat_message_components(
         );
     }
 }
-

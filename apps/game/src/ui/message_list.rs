@@ -1,10 +1,25 @@
 use std::time::Duration;
 
-use bevy_ecs::{prelude::Query, event::EventReader, change_detection::{Res, ResMut}};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    event::EventReader,
+    prelude::Query,
+};
 
-use game_engine::{ui::{UiManager, UiHandle}, session::{SessionClient, components::{ChatMessage, User}}, asset::AssetManager, input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager}};
+use game_engine::{
+    asset::AssetManager,
+    input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager},
+    session::{
+        components::{ChatMessage, User},
+        SessionClient,
+    },
+    ui::{UiHandle, UiManager},
+};
 
-use crate::{ui::{UiCatalog, UiKey, events::ResyncMessageListUiEvent}, resources::{chat_message_manager::ChatMessageManager}};
+use crate::{
+    resources::chat_message_manager::ChatMessageManager,
+    ui::{events::ResyncMessageListUiEvent, UiCatalog, UiKey},
+};
 
 pub(crate) fn handle_resync_message_list_ui_events(
     ui_catalog: Res<UiCatalog>,

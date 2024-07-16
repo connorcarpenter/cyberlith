@@ -1,9 +1,24 @@
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    event::{EventReader, EventWriter},
+    prelude::Query,
+};
 
-use bevy_ecs::{prelude::Query, event::{EventWriter, EventReader}, change_detection::{Res, ResMut}};
+use game_engine::{
+    asset::AssetManager,
+    input::{InputEvent, Key},
+    logging::info,
+    session::{
+        components::{Lobby, User},
+        SessionClient,
+    },
+    ui::{UiHandle, UiManager},
+};
 
-use game_engine::{logging::info, ui::{UiManager, UiHandle}, session::{components::{Lobby, User}, SessionClient}, input::{Key, InputEvent}, asset::AssetManager};
-
-use crate::{ui::{UiCatalog, UiKey, events::ResyncLobbyListUiEvent}, resources::lobby_manager::LobbyManager};
+use crate::{
+    resources::lobby_manager::LobbyManager,
+    ui::{events::ResyncLobbyListUiEvent, UiCatalog, UiKey},
+};
 
 pub(crate) fn handle_join_match_interaction_events(
     ui_catalog: Res<UiCatalog>,
@@ -119,7 +134,13 @@ fn handle_resync_lobby_list_ui_events_impl(
     }
 
     if should_resync {
-        lobby_manager.sync_with_collection(session_client, ui_manager, asset_manager, user_q, lobby_q);
+        lobby_manager.sync_with_collection(
+            session_client,
+            ui_manager,
+            asset_manager,
+            user_q,
+            lobby_q,
+        );
     }
 }
 

@@ -17,7 +17,7 @@ use crate::{
     },
     states::AppState,
     ui::{
-        events::{ResyncMessageListUiEvent, ResyncLobbyListUiEvent, ResyncUserListUiEvent},
+        events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
         on_ui_load, UiCatalog,
     },
 };

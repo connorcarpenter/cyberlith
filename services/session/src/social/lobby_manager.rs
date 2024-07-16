@@ -32,7 +32,6 @@ impl LobbyData {
             room_key,
         }
     }
-
 }
 
 pub struct LobbyManager {
@@ -271,7 +270,8 @@ impl LobbyManager {
         let lobby_room_key = naia_server.make_room().key();
 
         // add to collection
-        self.lobbies.insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key));
+        self.lobbies
+            .insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key));
 
         let owner_user_entity = {
             if let Some(user_entity) = user_manager.get_user_entity(owner_user_id) {
@@ -291,18 +291,24 @@ impl LobbyManager {
         };
 
         // set lobby owner
-        lobby
-            .owner_user_entity
-            .set(naia_server, &owner_user_entity);
+        lobby.owner_user_entity.set(naia_server, &owner_user_entity);
         commands.entity(lobby_entity).insert(lobby);
 
         // join lobby room
         self.join_lobby(naia_server, lobby_id, owner_user_id);
     }
 
-    fn remove_lobby(&mut self, commands: &mut Commands, naia_server: &mut Server, lobby_id: &LobbyId) {
+    fn remove_lobby(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        lobby_id: &LobbyId,
+    ) {
         if let Some(lobby_data) = self.lobbies.remove(lobby_id) {
-            let LobbyData { lobby_entity, room_key } = lobby_data;
+            let LobbyData {
+                lobby_entity,
+                room_key,
+            } = lobby_data;
             // despawn entity
             commands.entity(lobby_entity).despawn();
             // remove room
@@ -321,7 +327,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         user_manager: &UserManager,
         lobby_id: &LobbyId,
-        joining_user_id: &UserId
+        joining_user_id: &UserId,
     ) {
         // get lobby room key & entity
         let lobby = self.lobbies.get(lobby_id).unwrap();
@@ -346,7 +352,9 @@ impl LobbyManager {
         // create & setup LobbyMember component
         let mut lobby_member = LobbyMember::new();
         lobby_member.lobby_entity.set(naia_server, lobby_entity);
-        lobby_member.user_entity.set(naia_server, &joining_user_entity);
+        lobby_member
+            .user_entity
+            .set(naia_server, &joining_user_entity);
         commands.entity(lobby_member_id).insert(lobby_member);
     }
 }

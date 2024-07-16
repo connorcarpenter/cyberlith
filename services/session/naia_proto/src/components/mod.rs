@@ -41,7 +41,6 @@ impl ProtocolPlugin for ComponentsPlugin {
             .add_component::<Lobby>()
             .add_component::<LobbyMember>()
             .add_component::<Selfhood>()
-            .add_component::<SelfhoodUser>()
-            ;
+            .add_component::<SelfhoodUser>();
     }
 }

@@ -1,15 +1,22 @@
 use std::time::Duration;
 
-use bevy_ecs::{change_detection::{Res, ResMut}, event::EventReader};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    event::EventReader,
+};
 
-use game_engine::{ui::{UiManager, UiHandle}, session::SessionClient, input::{GamepadRumbleIntensity, Input, RumbleManager}};
+use game_engine::{
+    input::{GamepadRumbleIntensity, Input, RumbleManager},
+    session::SessionClient,
+    ui::{UiHandle, UiManager},
+};
 
-use crate::{ui::{UiCatalog, UiKey, events::SubmitButtonClickedEvent}, resources::lobby_manager::LobbyManager};
+use crate::{
+    resources::lobby_manager::LobbyManager,
+    ui::{events::SubmitButtonClickedEvent, UiCatalog, UiKey},
+};
 
-pub fn on_load_host_match_ui(
-    ui_catalog: &mut UiCatalog,
-    ui_manager: &mut UiManager,
-) {
+pub fn on_load_host_match_ui(ui_catalog: &mut UiCatalog, ui_manager: &mut UiManager) {
     let ui_key = UiKey::HostMatch;
     let ui_handle = ui_catalog.get_ui_handle(ui_key);
 

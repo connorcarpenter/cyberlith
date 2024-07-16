@@ -1,6 +1,14 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::{ui::{UiCatalog, host_match, main_menu, join_match, user_list, message_list, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent}}};
+use crate::ui::{
+    events::{
+        DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+        JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent,
+        ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent,
+        SubmitButtonClickedEvent,
+    },
+    host_match, join_match, main_menu, message_list, user_list, UiCatalog,
+};
 
 pub struct UiPlugin;
 

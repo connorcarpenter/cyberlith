@@ -21,7 +21,13 @@ use game_engine::{
     },
 };
 
-use crate::ui::{events::{ResyncLobbyListUiEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}, go_to_sub_ui, UiCatalog, UiKey};
+use crate::ui::{
+    events::{
+        ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+        ResyncUserListUiEvent, SubmitButtonClickedEvent,
+    },
+    go_to_sub_ui, UiCatalog, UiKey,
+};
 
 #[derive(Resource)]
 pub struct LobbyManager {
@@ -43,7 +49,6 @@ impl Default for LobbyManager {
 }
 
 impl LobbyManager {
-
     pub(crate) fn get_current_lobby(&self) -> Option<LobbyId> {
         self.current_lobby
     }
@@ -53,7 +58,7 @@ impl LobbyManager {
         resync_main_menu_ui_events: &mut EventWriter<ResyncMainMenuUiEvent>,
         resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
         resync_user_ui_events: &mut EventWriter<ResyncUserListUiEvent>,
-        lobby_id: LobbyId
+        lobby_id: LobbyId,
     ) {
         if self.current_lobby.is_some() {
             panic!("current_lobby is already set!");

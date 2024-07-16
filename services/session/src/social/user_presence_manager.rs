@@ -58,7 +58,6 @@ impl UserPresenceManager {
                     info!("adding user - [userid {:?}]", user_id);
 
                     if !user_manager.has_user_data(user_id) {
-
                         user_manager.add_user_data(
                             commands,
                             naia_server,

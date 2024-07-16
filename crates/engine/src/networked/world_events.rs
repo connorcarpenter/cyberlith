@@ -7,10 +7,13 @@ use bevy_ecs::{
     system::{Res, SystemState},
 };
 
-use naia_bevy_client::{component_events::{
-    component_events_startup, get_component_events, AppRegisterComponentEvents,
-    InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
-}, events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent}};
+use naia_bevy_client::{
+    component_events::{
+        component_events_startup, get_component_events, AppRegisterComponentEvents,
+        InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
+    },
+    events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent},
+};
 
 use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
@@ -41,7 +44,6 @@ impl Plugin for WorldEventsPlugin {
             .add_event::<WorldSpawnEntityEvent>()
             .add_systems(Update, despawn_entity_events)
             .add_event::<WorldDespawnEntityEvent>()
-
             // component events
             .add_systems(Startup, component_events_startup::<World>)
             .add_systems(Update, component_events_update)

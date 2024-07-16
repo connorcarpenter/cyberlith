@@ -5,7 +5,7 @@ use game_engine::render::{
     Window,
 };
 
-use crate::ui::events::{ResyncMessageListUiEvent, ResyncLobbyListUiEvent, ResyncUserListUiEvent};
+use crate::ui::events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,

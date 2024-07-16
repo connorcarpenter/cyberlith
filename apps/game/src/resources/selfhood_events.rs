@@ -1,8 +1,14 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{prelude::Resource, event::EventReader, entity::Entity};
+use bevy_ecs::{entity::Entity, event::EventReader, prelude::Resource};
 
-use game_engine::{logging::info, session::{SessionInsertComponentEvent, components::{Selfhood, SelfhoodUser}}};
+use game_engine::{
+    logging::info,
+    session::{
+        components::{Selfhood, SelfhoodUser},
+        SessionInsertComponentEvent,
+    },
+};
 
 struct SelfhoodRecord {
     has_selfhood: Option<()>,
@@ -13,7 +19,7 @@ impl SelfhoodRecord {
     pub fn new() -> Self {
         Self {
             has_selfhood: None,
-            has_user: None
+            has_user: None,
         }
     }
 
@@ -32,13 +38,13 @@ impl SelfhoodRecord {
 
 #[derive(Resource)]
 pub(crate) struct SelfhoodEvents {
-    insert_events: HashMap<Entity, SelfhoodRecord>
+    insert_events: HashMap<Entity, SelfhoodRecord>,
 }
 
 impl Default for SelfhoodEvents {
     fn default() -> Self {
         Self {
-            insert_events: HashMap::new()
+            insert_events: HashMap::new(),
         }
     }
 }
@@ -50,18 +56,26 @@ impl SelfhoodEvents {
         user_rdr: &mut EventReader<SessionInsertComponentEvent<SelfhoodUser>>,
     ) -> Vec<Entity> {
         for event in rdr.read() {
-            info!("received Inserted Selfhood from Session Server!  [ {:?} ]", &event.entity);
+            info!(
+                "received Inserted Selfhood from Session Server!  [ {:?} ]",
+                &event.entity
+            );
             if !self.insert_events.contains_key(&event.entity) {
-                self.insert_events.insert(event.entity, SelfhoodRecord::new());
+                self.insert_events
+                    .insert(event.entity, SelfhoodRecord::new());
             }
             let record = self.insert_events.get_mut(&event.entity).unwrap();
             record.recv_selfhood();
         }
 
         for event in user_rdr.read() {
-            info!("received Inserted SelfhoodUser from Session Server!  [ {:?} ]", &event.entity);
+            info!(
+                "received Inserted SelfhoodUser from Session Server!  [ {:?} ]",
+                &event.entity
+            );
             if !self.insert_events.contains_key(&event.entity) {
-                self.insert_events.insert(event.entity, SelfhoodRecord::new());
+                self.insert_events
+                    .insert(event.entity, SelfhoodRecord::new());
             }
             let record = self.insert_events.get_mut(&event.entity).unwrap();
             record.recv_user();

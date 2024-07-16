@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{prelude::Resource, event::EventReader, entity::Entity};
+use bevy_ecs::{entity::Entity, event::EventReader, prelude::Resource};
 
-use game_engine::{session::{components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal}, SessionInsertComponentEvent}};
+use game_engine::session::{
+    components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal},
+    SessionInsertComponentEvent,
+};
 
 struct ChatMessageRecord {
     has_message: Option<()>,
@@ -13,7 +16,7 @@ impl ChatMessageRecord {
     pub fn new() -> Self {
         Self {
             has_message: None,
-            is_global: None
+            is_global: None,
         }
     }
 
@@ -36,13 +39,13 @@ impl ChatMessageRecord {
 
 #[derive(Resource)]
 pub(crate) struct ChatMessageEvents {
-    insert_events: HashMap<Entity, ChatMessageRecord>
+    insert_events: HashMap<Entity, ChatMessageRecord>,
 }
 
 impl Default for ChatMessageEvents {
     fn default() -> Self {
         Self {
-            insert_events: HashMap::new()
+            insert_events: HashMap::new(),
         }
     }
 }
@@ -52,11 +55,12 @@ impl ChatMessageEvents {
         &mut self,
         rdr: &mut EventReader<SessionInsertComponentEvent<ChatMessage>>,
         global_rdr: &mut EventReader<SessionInsertComponentEvent<ChatMessageGlobal>>,
-        local_rdr: &mut EventReader<SessionInsertComponentEvent<ChatMessageLocal>>
+        local_rdr: &mut EventReader<SessionInsertComponentEvent<ChatMessageLocal>>,
     ) -> Vec<(Entity, bool)> {
         for event in rdr.read() {
             if !self.insert_events.contains_key(&event.entity) {
-                self.insert_events.insert(event.entity, ChatMessageRecord::new());
+                self.insert_events
+                    .insert(event.entity, ChatMessageRecord::new());
             }
             let record = self.insert_events.get_mut(&event.entity).unwrap();
             record.recv_message();
@@ -64,7 +68,8 @@ impl ChatMessageEvents {
 
         for event in global_rdr.read() {
             if !self.insert_events.contains_key(&event.entity) {
-                self.insert_events.insert(event.entity, ChatMessageRecord::new());
+                self.insert_events
+                    .insert(event.entity, ChatMessageRecord::new());
             }
             let record = self.insert_events.get_mut(&event.entity).unwrap();
             record.recv_global();
@@ -72,7 +77,8 @@ impl ChatMessageEvents {
 
         for event in local_rdr.read() {
             if !self.insert_events.contains_key(&event.entity) {
-                self.insert_events.insert(event.entity, ChatMessageRecord::new());
+                self.insert_events
+                    .insert(event.entity, ChatMessageRecord::new());
             }
             let record = self.insert_events.get_mut(&event.entity).unwrap();
             record.recv_local();

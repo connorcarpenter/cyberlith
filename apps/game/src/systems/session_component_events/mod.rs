@@ -1,12 +1,12 @@
 mod chat_message;
 mod lobby;
-mod user;
 mod selfhood;
+mod user;
 
 pub use chat_message::*;
 pub use lobby::*;
-pub use user::*;
 pub use selfhood::*;
+pub use user::*;
 
 //
 

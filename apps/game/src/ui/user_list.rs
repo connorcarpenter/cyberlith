@@ -1,8 +1,12 @@
-use bevy_ecs::{prelude::Query, event::EventReader, change_detection::{Res, ResMut}};
+use bevy_ecs::{
+    change_detection::{Res, ResMut},
+    event::EventReader,
+    prelude::Query,
+};
 
-use game_engine::{ui::UiManager, session::components::User, asset::AssetManager};
+use game_engine::{asset::AssetManager, session::components::User, ui::UiManager};
 
-use crate::{ui::events::ResyncUserListUiEvent, resources::user_manager::UserManager};
+use crate::{resources::user_manager::UserManager, ui::events::ResyncUserListUiEvent};
 
 pub(crate) fn handle_resync_user_list_ui_events(
     mut user_manager: ResMut<UserManager>,

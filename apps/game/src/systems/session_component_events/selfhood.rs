@@ -1,17 +1,28 @@
 use bevy_app::{App, Plugin, Update};
-use bevy_ecs::{prelude::Query, event::{EventReader, EventWriter}, change_detection::ResMut};
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::{EventReader, EventWriter},
+    prelude::Query,
+};
 
-use game_engine::{session::{SessionClient, SessionInsertComponentEvent, components::{Selfhood, SelfhoodUser, User}}, logging::info};
+use game_engine::{
+    logging::info,
+    session::{
+        components::{Selfhood, SelfhoodUser, User},
+        SessionClient, SessionInsertComponentEvent,
+    },
+};
 
-use crate::{ui::events::ResyncUserListUiEvent, resources::{user_manager::UserManager, selfhood_events::SelfhoodEvents}};
+use crate::{
+    resources::{selfhood_events::SelfhoodEvents, user_manager::UserManager},
+    ui::events::ResyncUserListUiEvent,
+};
 
 pub struct SelfhoodComponentEventsPlugin;
 
 impl Plugin for SelfhoodComponentEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, recv_inserted_selfhood_components)
-        ;
+        app.add_systems(Update, recv_inserted_selfhood_components);
     }
 }
 

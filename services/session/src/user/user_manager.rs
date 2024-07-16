@@ -60,17 +60,21 @@ impl UserManager {
         self.login_tokens.remove(token)
     }
 
-    pub fn accept_user(
-        &mut self,
-        user_key: UserKey,
-        user_id: UserId,
-    ) {
+    pub fn accept_user(&mut self, user_key: UserKey, user_id: UserId) {
         self.user_key_to_id.insert(user_key, user_id);
     }
 
-    pub fn disconnect_user(&mut self, commands: &mut Commands, naia_server: &mut Server, user_key: &UserKey) -> Option<UserId> {
+    pub fn disconnect_user(
+        &mut self,
+        commands: &mut Commands,
+        naia_server: &mut Server,
+        user_key: &UserKey,
+    ) -> Option<UserId> {
         let user_id = self.user_key_to_id.remove(user_key)?;
-        self.user_data.get_mut(&user_id).unwrap().disconnect(commands, naia_server);
+        self.user_data
+            .get_mut(&user_id)
+            .unwrap()
+            .disconnect(commands, naia_server);
         Some(user_id)
     }
 
@@ -80,7 +84,7 @@ impl UserManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_key: &UserKey,
-        main_menu_room_key: &RoomKey
+        main_menu_room_key: &RoomKey,
     ) {
         let user_id = self.user_key_to_id(user_key).unwrap();
         if !self.has_user_data(&user_id) {
@@ -191,10 +195,7 @@ impl UserManager {
         self.inflight_user_info_requests.insert(*user_id);
 
         // add user data
-        let user_data = PrivateUserInfo::new(
-            user_entity,
-            user_info_response_key
-        );
+        let user_data = PrivateUserInfo::new(user_entity, user_info_response_key);
         self.user_data.insert(*user_id, user_data);
     }
 

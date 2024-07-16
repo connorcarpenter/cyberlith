@@ -4,22 +4,24 @@ use bevy_ecs::{
     prelude::World as BevyWorld,
 };
 
-use naia_bevy_client::{NaiaClientError,
-    component_events::{component_events_startup, get_component_events, AppRegisterComponentEvents,
-    InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent},
+use naia_bevy_client::{
+    component_events::{
+        component_events_startup, get_component_events, AppRegisterComponentEvents,
+        InsertComponentEvent, RemoveComponentEvent, UpdateComponentEvent,
+    },
+    NaiaClientError,
 };
 
 use kernel::AppExitAction;
 use logging::{info, warn};
 
-use session_server_naia_proto::components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby, LobbyMember, Selfhood, SelfhoodUser, User};
+use session_server_naia_proto::components::{
+    ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby, LobbyMember, Selfhood, SelfhoodUser,
+    User,
+};
 
 use crate::{
-    networked::{
-        client_markers::Session,
-
-        connection_manager::ConnectionManager,
-    },
+    networked::{client_markers::Session, connection_manager::ConnectionManager},
     session::{SessionDespawnEntityEvent, SessionErrorEvent, SessionSpawnEntityEvent},
 };
 
@@ -41,7 +43,6 @@ impl Plugin for SessionEventsPlugin {
             .add_event::<SessionSpawnEntityEvent>()
             .add_systems(Update, despawn_entity_events)
             .add_event::<SessionDespawnEntityEvent>()
-
             // component events
             .add_systems(Startup, component_events_startup::<Session>)
             .add_systems(Update, component_events_update)

@@ -15,7 +15,6 @@ pub struct UiCatalog {
 
 impl Default for UiCatalog {
     fn default() -> Self {
-
         let mut me = Self {
             uis: HashMap::new(),
             ui_handle_to_key: HashMap::new(),

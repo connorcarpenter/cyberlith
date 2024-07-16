@@ -27,10 +27,7 @@ pub fn auth_events(
             if let Some(user_id) = user_manager.take_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
-                user_manager.accept_user(
-                    user_key,
-                    user_id,
-                );
+                user_manager.accept_user(user_key, user_id);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -96,7 +93,9 @@ pub fn disconnect_events(
         // TODO: probably need to deregister user from global too?
 
         // remove from user manager
-        let user_id = user_manager.disconnect_user(&mut commands, &mut naia_server, user_key).unwrap();
+        let user_id = user_manager
+            .disconnect_user(&mut commands, &mut naia_server, user_key)
+            .unwrap();
 
         // remove from asset manager
         asset_manager.deregister_user(user_key);

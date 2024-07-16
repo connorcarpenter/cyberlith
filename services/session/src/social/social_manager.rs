@@ -63,7 +63,6 @@ impl SocialManager {
 
     // used as a system
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
-
         let main_menu_room_key = naia_server.make_room().key();
         social_manager.main_menu_room_key = Some(main_menu_room_key);
     }

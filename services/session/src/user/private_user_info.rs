@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use bevy_ecs::{system::Commands, entity::Entity};
+use bevy_ecs::{entity::Entity, system::Commands};
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
 use bevy_http_client::ResponseKey;
@@ -25,10 +25,7 @@ pub(crate) struct PrivateUserInfo {
 }
 
 impl PrivateUserInfo {
-    pub fn new(
-        user_entity: Entity,
-        user_info_response_key: ResponseKey<UserGetResponse>,
-    ) -> Self {
+    pub fn new(user_entity: Entity, user_info_response_key: ResponseKey<UserGetResponse>) -> Self {
         Self {
             user_key: None,
             user_entity,
@@ -101,7 +98,7 @@ impl PrivateUserInfo {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
-        user_key: &UserKey
+        user_key: &UserKey,
     ) {
         if self.user_key.is_some() {
             panic!("User key already set");
@@ -113,10 +110,7 @@ impl PrivateUserInfo {
         self.room_key = Some(user_room_key);
 
         // make selfhood entity
-        let selfhood_entity = commands
-            .spawn_empty()
-            .enable_replication(naia_server)
-            .id();
+        let selfhood_entity = commands.spawn_empty().enable_replication(naia_server).id();
         self.selfhood_entity = Some(selfhood_entity);
 
         naia_server
@@ -128,8 +122,11 @@ impl PrivateUserInfo {
 
         // add selfhood components
         let mut selfhood_user = SelfhoodUser::new();
-        selfhood_user.user_entity.set(naia_server, &self.user_entity);
-        commands.entity(selfhood_entity)
+        selfhood_user
+            .user_entity
+            .set(naia_server, &self.user_entity);
+        commands
+            .entity(selfhood_entity)
             .insert(Selfhood::new())
             .insert(selfhood_user);
     }

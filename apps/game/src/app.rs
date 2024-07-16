@@ -11,17 +11,17 @@ use game_engine::{
 };
 
 use crate::{
-    ui::UiPlugin,
     resources::{
-        selfhood_events::SelfhoodEvents,
-        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
-        user_manager::UserManager, AssetCatalog, chat_message_events::ChatMessageEvents,
+        chat_message_events::ChatMessageEvents, chat_message_manager::ChatMessageManager,
+        lobby_manager::LobbyManager, selfhood_events::SelfhoodEvents, user_manager::UserManager,
+        AssetCatalog,
     },
     states::AppState,
     systems::{
         asset_events, cube_scene, draw, initial_spinner, resize,
         session_component_events::SessionComponentEventsPlugin, walker_scene, world,
     },
+    ui::UiPlugin,
 };
 
 pub struct GameApp {
