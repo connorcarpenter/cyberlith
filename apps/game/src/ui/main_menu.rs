@@ -3,7 +3,7 @@ use bevy_ecs::{event::EventReader, schedule::NextState};
 use game_engine::{
     logging::info,
     render::components::RenderLayers,
-    ui::{UiHandle, UiManager},
+    ui::{UiManager},
 };
 
 use crate::{
@@ -124,8 +124,4 @@ pub(crate) fn handle_ui_interaction_events(
         info!("settings button clicked!");
         *should_rumble = true;
     }
-}
-
-pub fn reset_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
-    panic!("should never leave main menu?")
 }

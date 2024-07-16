@@ -8,7 +8,6 @@ use bevy_ecs::{
 
 use game_engine::{
     asset::AssetManager,
-    input::{InputEvent, Key},
     logging::info,
     session::{
         channels,
@@ -22,10 +21,7 @@ use game_engine::{
     },
 };
 
-use crate::ui::{
-    events::{ResyncLobbyListUiEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
-    UiCatalog, UiKey,
-};
+use crate::ui::{events::{ResyncLobbyListUiEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}, go_to_sub_ui, UiCatalog, UiKey};
 
 #[derive(Resource)]
 pub struct LobbyManager {
@@ -117,63 +113,14 @@ impl LobbyManager {
             let message = messages::MatchLobbyCreate::new(&textbox_text);
             session_server.send_message::<channels::ClientActionsChannel, _>(&message);
 
-            // TODO: GO TO MATCH LOBBY INSIDE!
+            go_to_sub_ui(ui_manager, ui_catalog, UiKey::GlobalChat);
 
             // def rumble
             *should_rumble = true;
         }
     }
 
-    pub(crate) fn handle_join_match_events(
-        &mut self,
-        ui_manager: &mut UiManager,
-        asset_manager: &AssetManager,
-        session_client: &mut SessionClient,
-        user_q: &Query<&User>,
-        lobby_q: &Query<&Lobby>,
-        input_events: &mut EventReader<InputEvent>,
-        resync_lobby_ui_events: &mut EventReader<ResyncLobbyListUiEvent>,
-        _should_rumble: &mut bool,
-    ) {
-        let mut should_resync = false;
-        for _resync_event in resync_lobby_ui_events.read() {
-            should_resync = true;
-        }
-
-        for event in input_events.read() {
-            match event {
-                // TODO this probably doesn't belong here! this is where it is required to be selecting the textbox!!!
-                InputEvent::KeyPressed(Key::I, _) => {
-                    info!("I Key Pressed");
-
-                    info!("Scrolling Up");
-                    self.list_ui_ext.scroll_up();
-                    should_resync = true;
-                }
-                InputEvent::KeyPressed(Key::J, _) => {
-                    info!("J Key Pressed");
-
-                    info!("Scrolling Down");
-                    self.list_ui_ext.scroll_down();
-                    should_resync = true;
-                }
-                InputEvent::KeyPressed(Key::Enter, _modifiers) => {
-                    // TODO: enter into lobby?
-                }
-                _ => {}
-            }
-        }
-
-        if should_resync {
-            self.sync_with_collection(session_client, ui_manager, asset_manager, user_q, lobby_q);
-        }
-    }
-
     pub fn reset_host_match_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
-        // TODO: implement
-    }
-
-    pub fn reset_join_match_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
         // TODO: implement
     }
 
@@ -243,6 +190,14 @@ impl LobbyManager {
         self.lobby_entities.remove(&lobby_id);
 
         resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
+    }
+
+    pub fn scroll_up(&mut self) {
+        self.list_ui_ext.scroll_up();
+    }
+
+    pub fn scroll_down(&mut self) {
+        self.list_ui_ext.scroll_up();
     }
 
     pub fn sync_with_collection(

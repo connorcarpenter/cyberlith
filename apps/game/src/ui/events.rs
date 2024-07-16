@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy_ecs::{prelude::Query, event::{Event, EventReader}, change_detection::{Res, ResMut}};
 
-use game_engine::{ui::UiManager, session::{SessionClient, components::{ChatMessage, Lobby, User}}, input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager}, asset::AssetManager};
+use game_engine::{ui::UiManager, session::{SessionClient, components::{ChatMessage, User}}, input::{GamepadRumbleIntensity, Input, InputEvent, RumbleManager}, asset::AssetManager};
 
 use crate::{ui::{main_menu, UiCatalog, UiKey}, resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
 
@@ -196,19 +196,14 @@ pub(crate) fn handle_resync_message_list_ui_events(
     }
 }
 
-pub(crate) fn handle_resync_lobby_list_ui_events(
+pub(crate) fn handle_host_match_events(
     ui_catalog: Res<UiCatalog>,
     input: Res<Input>,
     mut ui_manager: ResMut<UiManager>,
-    asset_manager: Res<AssetManager>,
     mut rumble_manager: ResMut<RumbleManager>,
     mut session_client: SessionClient,
     mut lobby_manager: ResMut<LobbyManager>,
-    user_q: Query<&User>,
-    lobby_q: Query<&Lobby>,
     mut submit_btn_rdr: EventReader<SubmitButtonClickedEvent>,
-    mut input_events: EventReader<InputEvent>,
-    mut resync_match_lobbies_events: EventReader<ResyncLobbyListUiEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -223,31 +218,14 @@ pub(crate) fn handle_resync_lobby_list_ui_events(
         ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
     {
         let ui_key = ui_catalog.get_ui_key(&current_ui_handle);
-        match ui_key {
-            UiKey::HostMatch => {
-                lobby_manager.handle_host_match_events(
-                    &mut ui_manager,
-                    &ui_catalog,
-                    &mut session_client,
-                    &mut submit_btn_rdr,
-                    &mut should_rumble,
-                );
-            }
-            UiKey::JoinMatch => {
-                lobby_manager.handle_join_match_events(
-                    &mut ui_manager,
-                    &asset_manager,
-                    &mut session_client,
-                    &user_q,
-                    &lobby_q,
-                    &mut input_events,
-                    &mut resync_match_lobbies_events,
-                    &mut should_rumble,
-                );
-            }
-            _ => {
-                // handled elsewhere
-            }
+        if UiKey::HostMatch == ui_key {
+            lobby_manager.handle_host_match_events(
+                &mut ui_manager,
+                &ui_catalog,
+                &mut session_client,
+                &mut submit_btn_rdr,
+                &mut should_rumble,
+            );
         }
     };
 

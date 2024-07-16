@@ -6,6 +6,8 @@ pub use ui_catalog::UiCatalog;
 mod main_menu;
 
 mod plugin;
+mod join_match;
+
 pub use plugin::UiPlugin;
 
 use bevy_ecs::{
@@ -24,10 +26,10 @@ use crate::{
         user_manager::UserManager,
     },
     states::AppState,
-    ui::events::{
+    ui::{join_match::reset_join_match_state, events::{
         ResyncMessageListUiEvent, ResyncLobbyListUiEvent,
         ResyncUserListUiEvent,
-    },
+    }},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -70,35 +72,23 @@ pub(crate) fn on_ui_load(
     let ui_key = ui_catalog.get_ui_key(&ui_handle);
 
     match ui_key {
-        UiKey::MainMenu => {
-            main_menu::on_load(state, next_state, ui_catalog, ui_manager, user_manager)
-        }
-        UiKey::UserListItem => {
-            user_manager.on_load_user_list_item_ui(ui_catalog, resync_user_list_ui_events)
-        }
+        UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager, user_manager),
+        UiKey::UserListItem => user_manager.on_load_user_list_item_ui(ui_catalog, resync_user_list_ui_events),
 
         UiKey::HostMatch => lobby_manager.on_load_host_match_ui(ui_catalog, ui_manager),
 
-        UiKey::JoinMatch => {
-            lobby_manager.on_load_lobby_list_ui(ui_catalog, ui_manager, resync_lobby_list_ui_events)
-        }
-        UiKey::JoinMatchLobbyItem => {
-            lobby_manager.on_load_lobby_item_ui(ui_catalog, resync_lobby_list_ui_events)
-        }
+        UiKey::JoinMatch => lobby_manager.on_load_lobby_list_ui(ui_catalog, ui_manager, resync_lobby_list_ui_events),
+        UiKey::JoinMatchLobbyItem => lobby_manager.on_load_lobby_item_ui(ui_catalog, resync_lobby_list_ui_events),
 
         UiKey::GlobalChat => chat_message_manager.on_load_container_ui(
             ui_catalog,
             ui_manager,
             resync_message_list_ui_events,
         ),
-        UiKey::GlobalChatDayDivider => {
-            chat_message_manager.on_load_day_divider_item_ui(ui_catalog, resync_message_list_ui_events)
-        }
+        UiKey::GlobalChatDayDivider => chat_message_manager.on_load_day_divider_item_ui(ui_catalog, resync_message_list_ui_events),
         UiKey::GlobalChatUsernameAndMessage => chat_message_manager
             .on_load_username_and_message_item_ui(ui_catalog, resync_message_list_ui_events),
-        UiKey::GlobalChatMessage => {
-            chat_message_manager.on_load_message_item_ui(ui_catalog, resync_message_list_ui_events)
-        }
+        UiKey::GlobalChatMessage => chat_message_manager.on_load_message_item_ui(ui_catalog, resync_message_list_ui_events),
 
         _ => {
             unimplemented!("ui not implemented");
@@ -126,7 +116,7 @@ pub(crate) fn go_to_sub_ui(ui_manager: &mut UiManager, ui_catalog: &UiCatalog, s
                 LobbyManager::reset_host_match_state(ui_manager, &current_ui_handle)
             }
             UiKey::JoinMatch => {
-                LobbyManager::reset_join_match_state(ui_manager, &current_ui_handle)
+                reset_join_match_state(ui_manager, &current_ui_handle)
             }
             UiKey::GlobalChat => ChatMessageManager::reset_state(ui_manager, &current_ui_handle),
             _ => {
