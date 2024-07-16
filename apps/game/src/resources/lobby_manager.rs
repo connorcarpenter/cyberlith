@@ -120,22 +120,6 @@ impl LobbyManager {
         }
     }
 
-    pub fn reset_host_match_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
-        // TODO: implement
-    }
-
-    pub fn on_load_host_match_ui(
-        &mut self,
-        ui_catalog: &mut UiCatalog,
-        ui_manager: &mut UiManager,
-    ) {
-        let ui_key = UiKey::HostMatch;
-        let ui_handle = ui_catalog.get_ui_handle(ui_key);
-
-        ui_catalog.set_loaded(ui_key);
-        ui_manager.register_ui_event::<SubmitButtonClickedEvent>(&ui_handle, "submit_button");
-    }
-
     pub(crate) fn on_load_lobby_list_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,

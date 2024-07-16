@@ -7,6 +7,9 @@ mod main_menu;
 
 mod plugin;
 mod join_match;
+mod host_match;
+mod user_list;
+mod message_list;
 
 pub use plugin::UiPlugin;
 
@@ -26,7 +29,7 @@ use crate::{
         user_manager::UserManager,
     },
     states::AppState,
-    ui::{join_match::reset_join_match_state, events::{
+    ui::{events::{
         ResyncMessageListUiEvent, ResyncLobbyListUiEvent,
         ResyncUserListUiEvent,
     }},
@@ -72,10 +75,10 @@ pub(crate) fn on_ui_load(
     let ui_key = ui_catalog.get_ui_key(&ui_handle);
 
     match ui_key {
-        UiKey::MainMenu => main_menu::on_load(state, next_state, ui_catalog, ui_manager, user_manager),
+        UiKey::MainMenu => main_menu::on_main_menu_ui_load(state, next_state, ui_catalog, ui_manager, user_manager),
         UiKey::UserListItem => user_manager.on_load_user_list_item_ui(ui_catalog, resync_user_list_ui_events),
 
-        UiKey::HostMatch => lobby_manager.on_load_host_match_ui(ui_catalog, ui_manager),
+        UiKey::HostMatch => host_match::on_load_host_match_ui(ui_catalog, ui_manager),
 
         UiKey::JoinMatch => lobby_manager.on_load_lobby_list_ui(ui_catalog, ui_manager, resync_lobby_list_ui_events),
         UiKey::JoinMatchLobbyItem => lobby_manager.on_load_lobby_item_ui(ui_catalog, resync_lobby_list_ui_events),
@@ -112,13 +115,9 @@ pub(crate) fn go_to_sub_ui(ui_manager: &mut UiManager, ui_catalog: &UiCatalog, s
     {
         match ui_catalog.get_ui_key(&current_ui_handle) {
             UiKey::MainMenu => panic!("invalid sub-ui"),
-            UiKey::HostMatch => {
-                LobbyManager::reset_host_match_state(ui_manager, &current_ui_handle)
-            }
-            UiKey::JoinMatch => {
-                reset_join_match_state(ui_manager, &current_ui_handle)
-            }
-            UiKey::GlobalChat => ChatMessageManager::reset_state(ui_manager, &current_ui_handle),
+            UiKey::HostMatch => host_match::reset_host_match_state(ui_manager, &current_ui_handle),
+            UiKey::JoinMatch => join_match::reset_join_match_state(ui_manager, &current_ui_handle),
+            UiKey::GlobalChat => message_list::reset_state(ui_manager, &current_ui_handle),
             _ => {
                 unimplemented!("ui not implemented");
             }

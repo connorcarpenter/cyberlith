@@ -1,7 +1,6 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::{ui::{UiCatalog, events::{handle_host_match_events, DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, handle_resync_message_list_ui_events, handle_ui_interaction_events, handle_resync_user_list_ui_events, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent, handle_resync_main_menu_ui_events}}};
-use crate::ui::join_match::{handle_join_match_interaction_events, handle_resync_lobby_list_ui_events};
+use crate::{ui::{UiCatalog, host_match, main_menu, join_match, user_list, message_list, events::{DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, SubmitButtonClickedEvent, ResyncMainMenuUiEvent}}};
 
 pub struct UiPlugin;
 
@@ -11,13 +10,13 @@ impl Plugin for UiPlugin {
             // resources
             .init_resource::<UiCatalog>()
             // event handling systems
-            .add_systems(Update, handle_ui_interaction_events)
-            .add_systems(Update, handle_resync_main_menu_ui_events)
-            .add_systems(Update, handle_resync_user_list_ui_events)
-            .add_systems(Update, handle_resync_message_list_ui_events)
-            .add_systems(Update, handle_host_match_events)
-            .add_systems(Update, handle_join_match_interaction_events)
-            .add_systems(Update, handle_resync_lobby_list_ui_events)
+            .add_systems(Update, main_menu::handle_main_menu_interaction_events)
+            .add_systems(Update, main_menu::handle_resync_main_menu_ui_events)
+            .add_systems(Update, user_list::handle_resync_user_list_ui_events)
+            .add_systems(Update, message_list::handle_resync_message_list_ui_events)
+            .add_systems(Update, host_match::handle_host_match_events)
+            .add_systems(Update, join_match::handle_join_match_interaction_events)
+            .add_systems(Update, join_match::handle_resync_lobby_list_ui_events)
             // resync events
             .add_event::<ResyncMainMenuUiEvent>()
             .add_event::<ResyncUserListUiEvent>()

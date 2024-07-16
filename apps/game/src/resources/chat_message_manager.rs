@@ -144,10 +144,6 @@ impl ChatMessageManager {
         }
     }
 
-    pub fn reset_state(_ui_manager: &mut UiManager, _ui_handle: &UiHandle) {
-        // TODO: implement
-    }
-
     pub(crate) fn on_load_container_ui(
         &mut self,
         ui_catalog: &mut UiCatalog,
