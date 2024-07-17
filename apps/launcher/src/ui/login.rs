@@ -82,10 +82,10 @@ pub(crate) fn handle_events(
 
         // get data from textboxes
         let user_handle = ui_manager
-            .get_textbox_text(&login_ui_handle, "username_textbox")
+            .get_text(&login_ui_handle, "username_textbox")
             .unwrap_or("".to_string());
         let password = ui_manager
-            .get_textbox_text(&login_ui_handle, "password_textbox")
+            .get_text(&login_ui_handle, "password_textbox")
             .unwrap_or("".to_string());
 
         // validate
@@ -215,7 +215,7 @@ fn backend_send_request(
     global.user_login_response_key_opt = Some(key);
 
     info!(
-        "sending login request... (userhandle: {}, password: {}",
+        "sending login request... (userhandle: {}, password: {})",
         user_handle, password
     );
 

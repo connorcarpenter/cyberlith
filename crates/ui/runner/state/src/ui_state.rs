@@ -108,26 +108,13 @@ impl UiState {
         Some(textbox_mut)
     }
 
-    pub fn get_textbox_text(&self, node_id: &NodeId) -> Option<String> {
-        let node = self.store.get_node(node_id)?;
-        let textbox = node.widget_textbox_ref()?;
-        Some(textbox.text.to_string())
-    }
-
-    pub fn set_textbox_text(&mut self, node_id: &NodeId, val: &str) {
-        let Some(node) = self.store.get_node_mut(node_id) else {
-            return;
-        };
-        let Some(textbox) = node.widget_textbox_mut() else {
-            return;
-        };
-        textbox.text = AsciiString::from_str(val).unwrap();
-    }
-
     pub fn get_text(&self, node_id: &NodeId) -> Option<String> {
         let node = self.store.get_node(node_id)?;
-        let text = node.widget_text_ref()?;
-        Some(text.text.clone())
+        match &node.widget {
+            WidgetState::Text(text) => Some(text.text.clone()),
+            WidgetState::Textbox(textbox) => Some(textbox.text.to_string()),
+            _ => None,
+        }
     }
 
     pub fn set_text(&mut self, node_id: &NodeId, val: &str) {

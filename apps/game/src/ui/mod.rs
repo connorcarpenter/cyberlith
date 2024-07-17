@@ -26,7 +26,7 @@ use crate::{
         user_manager::UserManager,
     },
     states::AppState,
-    ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
+    ui::events::{ResyncMainMenuUiEvent, GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -114,6 +114,7 @@ pub(crate) fn go_to_sub_ui(
 pub(crate) fn process_go_to_sub_ui_events(
     mut ui_manager: ResMut<UiManager>,
     ui_catalog: Res<UiCatalog>,
+    mut resync_main_menu_ui_event_writer: EventWriter<ResyncMainMenuUiEvent>,
     mut resync_lobby_list_ui_event_writer: EventWriter<ResyncLobbyListUiEvent>,
     mut resync_message_list_ui_event_writer: EventWriter<ResyncMessageListUiEvent>,
     mut sub_ui_event_reader: EventReader<GoToSubUiEvent>,
@@ -164,4 +165,6 @@ pub(crate) fn process_go_to_sub_ui_events(
             unimplemented!("ui not implemented");
         }
     }
+
+    resync_main_menu_ui_event_writer.send(ResyncMainMenuUiEvent);
 }

@@ -55,10 +55,10 @@ pub(crate) fn handle_events(
 
         // get data from textboxes
         let password = ui_manager
-            .get_textbox_text(&ui_handle, "password_textbox")
+            .get_text(&ui_handle, "password_textbox")
             .unwrap_or("".to_string());
         let confirm_password = ui_manager
-            .get_textbox_text(&ui_handle, "confirm_password_textbox")
+            .get_text(&ui_handle, "confirm_password_textbox")
             .unwrap_or("".to_string());
 
         // validate

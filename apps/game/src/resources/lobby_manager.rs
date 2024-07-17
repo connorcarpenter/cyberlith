@@ -135,12 +135,12 @@ impl LobbyManager {
             let ui_handle = ui_catalog.get_ui_handle(UiKey::HostMatch);
 
             // get name textbox text
-            let Some(textbox_text) = ui_manager.get_textbox_text(&ui_handle, "name_textbox") else {
+            let Some(textbox_text) = ui_manager.get_text(&ui_handle, "name_textbox") else {
                 return;
             };
 
             // clear name textbox
-            ui_manager.set_textbox_text(&ui_handle, "name_textbox", "");
+            ui_manager.set_text(&ui_handle, "name_textbox", "");
 
             // info!("Creating Match Lobby: {:?}", textbox_text);
 

@@ -266,25 +266,6 @@ impl UiRuntime {
         self.state.set_button_enabled(node_id, enabled);
     }
 
-    pub(crate) fn get_textbox_text(&self, id_str: &str) -> Option<String> {
-        // get node_id from id_str
-        let node_id = self.get_node_id_by_id_str(id_str)?;
-
-        // get result from state
-        self.state.get_textbox_text(&node_id)
-    }
-
-    pub(crate) fn set_textbox_text(&mut self, id_str: &str, val: &str) {
-        // get node_id from id_str
-        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
-            warn!("set_textbox_text: node_id not found for id_str: {}", id_str);
-            return;
-        };
-
-        // set text
-        self.state.set_textbox_text(&node_id, val);
-    }
-
     pub(crate) fn get_text_by_id_str(&self, id_str: &str) -> Option<String> {
         // get node_id from id_str
         let node_id = self.get_node_id_by_id_str(id_str)?;

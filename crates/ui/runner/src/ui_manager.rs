@@ -576,22 +576,6 @@ impl UiManager {
         ui_runtime.get_textbox_validator(id_str)
     }
 
-    pub fn get_textbox_text(&self, ui_handle: &UiHandle, id_str: &str) -> Option<String> {
-        let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) else {
-            warn!("ui data not loaded 1: {:?}", ui_handle.asset_id());
-            return None;
-        };
-        ui_runtime.get_textbox_text(id_str)
-    }
-
-    pub fn set_textbox_text(&mut self, ui_handle: &UiHandle, id_str: &str, val: &str) {
-        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
-            ui_runtime.set_textbox_text(id_str, val)
-        } else {
-            warn!("ui data not loaded 2: {:?}", ui_handle.asset_id());
-        }
-    }
-
     pub fn get_node_active_state(&self, ui_id: &UiHandle, node_id: &NodeId) -> NodeActiveState {
         self.input_state
             .get_active_state(&ui_id.asset_id(), node_id)
@@ -644,6 +628,18 @@ impl UiManager {
             self.queue_recalculate_layout();
         } else {
             warn!("ui data not loaded 6: {:?}", ui_handle.asset_id());
+        }
+    }
+
+    pub fn set_button_enabled(&mut self, ui_handle: &UiHandle, id_str: &str, val: bool) {
+        if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
+            let Some(node_id) = ui_runtime.get_node_id_by_id_str(id_str) else {
+                panic!("no node_id for id_str: {:?}", id_str);
+            };
+            ui_runtime.set_button_enabled(&node_id, val);
+            self.queue_recalculate_layout();
+        } else {
+            warn!("ui data not loaded 7: {:?}", ui_handle.asset_id());
         }
     }
 

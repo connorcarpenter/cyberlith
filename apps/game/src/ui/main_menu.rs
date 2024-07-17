@@ -245,6 +245,12 @@ pub(crate) fn handle_resync_main_menu_ui_events(
     if let Some(current_lobby_id) = current_lobby_id {
         // in a lobby
 
+        // disable "host_match" "join_match" "chat" buttons
+        ui_manager.set_button_enabled(&active_ui_handle, "host_match_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "join_match_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "chat_button", false);
+
+        // get current lobby
         let current_lobby_entity = lobby_manager.get_lobby_entity(&current_lobby_id).unwrap();
         let current_lobby = lobby_q.get(current_lobby_entity).unwrap();
 
@@ -270,6 +276,11 @@ pub(crate) fn handle_resync_main_menu_ui_events(
         }
     } else {
         // not in a lobby
+
+        // enable "host_match" "join_match" "chat" buttons
+        ui_manager.set_button_enabled(&active_ui_handle, "host_match_button", true);
+        ui_manager.set_button_enabled(&active_ui_handle, "join_match_button", true);
+        ui_manager.set_button_enabled(&active_ui_handle, "chat_button", true);
 
         // make left side "lobby" button invisible
         ui_manager.set_node_visible(&active_ui_handle, "current_lobby_button", false);

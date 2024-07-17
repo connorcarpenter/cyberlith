@@ -71,7 +71,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     let right_user_list_style = ui_config.create_panel_style(|s| {
         s.set_background_color(Color::DARK_GRAY)
             .set_width_pc(100.0)
-            .set_height_vp(85.0)
+            .set_height_vp(75.0)
             .set_children_valign(Alignment::Start);
     });
 
@@ -165,6 +165,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             // current lobby
             c.add_button("current_lobby_button")
                 .set_visible(false)
+                .set_enabled(false)
                 .set_style(side_button_style)
                 .contents(|c| {
                     c.add_text_with_id("-", "current_lobby_button_text").set_style(base_button_text_style);
@@ -208,11 +209,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 });
 
             // leave button
-            c.add_button("leave")
+            c.add_button("leave_button")
                 .set_visible(false)
                 .set_style(side_button_style)
                 .contents(|c| {
-                    c.add_text("leave lobby").set_style(base_button_text_style);
+                    c.add_text("leave").set_style(base_button_text_style);
                 });
         });
     });

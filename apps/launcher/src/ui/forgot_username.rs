@@ -67,7 +67,7 @@ pub(crate) fn handle_events(
 
         // get data from textboxes
         let email = ui_manager
-            .get_textbox_text(&ui_handle, "email_textbox")
+            .get_text(&ui_handle, "email_textbox")
             .unwrap_or("".to_string());
 
         // validate

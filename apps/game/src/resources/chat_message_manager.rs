@@ -391,11 +391,11 @@ impl ChatMessageManager {
         ui_handle: &UiHandle,
         session_server: &mut SessionClient,
     ) {
-        let Some(textbox_text) = ui_manager.get_textbox_text(ui_handle, "message_textbox") else {
+        let Some(textbox_text) = ui_manager.get_text(ui_handle, "message_textbox") else {
             return;
         };
 
-        ui_manager.set_textbox_text(ui_handle, "message_textbox", "");
+        ui_manager.set_text(ui_handle, "message_textbox", "");
 
         if lobby_manager.get_current_lobby().is_none() {
             let message = messages::GlobalChatSendMessage::new(&textbox_text);

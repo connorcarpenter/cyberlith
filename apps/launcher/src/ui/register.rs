@@ -74,16 +74,16 @@ pub(crate) fn handle_events(
 
         // get data from textboxes
         let username = ui_manager
-            .get_textbox_text(&register_ui_handle, "username_textbox")
+            .get_text(&register_ui_handle, "username_textbox")
             .unwrap_or("".to_string());
         let email = ui_manager
-            .get_textbox_text(&register_ui_handle, "email_textbox")
+            .get_text(&register_ui_handle, "email_textbox")
             .unwrap_or("".to_string());
         let password = ui_manager
-            .get_textbox_text(&register_ui_handle, "password_textbox")
+            .get_text(&register_ui_handle, "password_textbox")
             .unwrap_or("".to_string());
         let confirm_password = ui_manager
-            .get_textbox_text(&register_ui_handle, "confirm_password_textbox")
+            .get_text(&register_ui_handle, "confirm_password_textbox")
             .unwrap_or("".to_string());
 
         // validate
