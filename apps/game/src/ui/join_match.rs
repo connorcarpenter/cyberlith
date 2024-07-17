@@ -80,7 +80,6 @@ pub(crate) fn handle_join_match_click_events(
 }
 
 pub(crate) fn handle_resync_lobby_list_ui_events(
-    ui_catalog: Res<UiCatalog>,
     mut ui_manager: ResMut<UiManager>,
     asset_manager: Res<AssetManager>,
     mut session_client: SessionClient,
@@ -89,29 +88,15 @@ pub(crate) fn handle_resync_lobby_list_ui_events(
     lobby_q: Query<&Lobby>,
     mut resync_lobby_list_ui_events: EventReader<ResyncLobbyListUiEvent>,
 ) {
-    let Some(active_ui_handle) = ui_manager.active_ui() else {
-        return;
-    };
-    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
-        panic!("unexpected ui");
-    }
-
-    if let Some(current_ui_handle) =
-        ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
-    {
-        let ui_key = ui_catalog.get_ui_key(&current_ui_handle);
-        if ui_key == UiKey::JoinMatch {
-            handle_resync_lobby_list_ui_events_impl(
-                &mut lobby_manager,
-                &mut ui_manager,
-                &asset_manager,
-                &mut session_client,
-                &user_q,
-                &lobby_q,
-                &mut resync_lobby_list_ui_events,
-            );
-        }
-    }
+    handle_resync_lobby_list_ui_events_impl(
+        &mut lobby_manager,
+        &mut ui_manager,
+        &asset_manager,
+        &mut session_client,
+        &user_q,
+        &lobby_q,
+        &mut resync_lobby_list_ui_events,
+    );
 }
 
 fn handle_join_match_input_events_impl(

@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
     iter::{Peekable, Rev},
+    fmt::Debug,
 };
 
 use bevy_ecs::{world::World, event::{Event, Events}};
@@ -38,10 +39,14 @@ impl LoadedItem {
     }
 
     fn actions_are_equal(&self, new_actions: &Vec<ListItemAction>) -> bool {
-        if self.old_actions.len() != new_actions.len() {
+        let old_actions_len = self.old_actions.len();
+        let new_actions_len = new_actions.len();
+        // info!("actions len compare - (old: {:?}, new: {:?})", old_actions_len, new_actions_len);
+
+        if old_actions_len != new_actions_len {
             return false;
         }
-        for i in 0..self.old_actions.len() {
+        for i in 0..old_actions_len {
             if self.old_actions[i] != new_actions[i] {
                 return false;
             }
@@ -88,7 +93,7 @@ impl<I: DoubleEndedIterator> PeekableIterator for RevPeekableIteratorImpl<I> {
     }
 }
 
-pub struct ListUiExt<K: 'static + Hash + Eq + Copy + Clone + PartialEq> {
+pub struct ListUiExt<K: 'static + Hash + Eq + Copy + Clone + PartialEq + Debug> {
     container_ui: Option<(UiHandle, String)>,
     loaded_items: HashMap<K, LoadedItem>,
     item_count: usize,
@@ -97,7 +102,7 @@ pub struct ListUiExt<K: 'static + Hash + Eq + Copy + Clone + PartialEq> {
     visible_item_range: usize,
 }
 
-impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
+impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq + Debug> ListUiExt<K> {
     pub fn new(_top_align: bool) -> Self {
         Self {
             container_ui: None,
@@ -329,6 +334,8 @@ impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
 
             // info!("item_index: {:?}", item_index);
 
+            let mut unvisited_data_keys: HashSet<K> = self.loaded_items.keys().copied().collect();
+
             loop {
                 let Some((data_key, _)) = boxed_iterator.next() else {
                     break;
@@ -340,6 +347,10 @@ impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                 // info!("item_index: {:?}", item_index);
 
                 let data_key = (*data_key).into();
+
+                unvisited_data_keys.remove(&data_key);
+
+                // info!("sync_collection() ... data_key: {:?}", data_key);
 
                 if !iterator_incrementing {
                     let loaded_nodes = if let Some(item) = self.loaded_items.get(&data_key) {
@@ -389,25 +400,7 @@ impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                     }
                 } else {
                     // remove any nodes not visible
-                    if self.loaded_items.contains_key(&data_key) {
-                        let container_ui_runtime = ui_manager
-                            .ui_runtimes
-                            .get_mut(&container_ui_handle)
-                            .unwrap();
-                        let (item_nodes, _) =
-                            self.loaded_items.remove(&data_key).unwrap().deconstruct();
-
-                        for item_node in item_nodes {
-                            // remove from main panel
-                            container_ui_runtime
-                                .parent_mut(&container_id)
-                                .unwrap()
-                                .remove_node(&item_node);
-
-                            // delete
-                            container_ui_runtime.delete_node_recurse(&item_node);
-                        }
-                    }
+                    self.remove_non_visible_node(ui_manager, &container_ui_handle, &container_id, &data_key);
                 }
 
                 if iterator_incrementing {
@@ -420,6 +413,11 @@ impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                     }
                 }
             }
+
+            for unvisited_data_key in unvisited_data_keys {
+                // remove any nodes not visible
+                self.remove_non_visible_node(ui_manager, &container_ui_handle, &container_id, &unvisited_data_key);
+            }
         }
 
         // queue ui for sync
@@ -430,6 +428,28 @@ impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
                 .map(|(handle, _id_str)| handle)
                 .unwrap(),
         );
+    }
+
+    fn remove_non_visible_node(&mut self, ui_manager: &mut UiManager, container_ui_handle: &UiHandle, container_id: &NodeId, data_key: &K) {
+        if self.loaded_items.contains_key(&data_key) {
+            let container_ui_runtime = ui_manager
+                .ui_runtimes
+                .get_mut(&container_ui_handle)
+                .unwrap();
+            let (item_nodes, _) =
+                self.loaded_items.remove(&data_key).unwrap().deconstruct();
+
+            for item_node in item_nodes {
+                // remove from main panel
+                container_ui_runtime
+                    .parent_mut(&container_id)
+                    .unwrap()
+                    .remove_node(&item_node);
+
+                // delete
+                container_ui_runtime.delete_node_recurse(&item_node);
+            }
+        }
     }
 
     pub(crate) fn get_id_str_to_node_map_mut(
@@ -471,7 +491,7 @@ enum ListItemAction {
     SetButtonEnabled(String, bool),
 }
 
-pub struct ListUiExtItem<'a, K: 'static + Hash + Eq + Copy + Clone + PartialEq> {
+pub struct ListUiExtItem<'a, K: 'static + Hash + Eq + Copy + Clone + PartialEq + Debug> {
     item_visible_index: usize,
     used_space: &'a mut f32,
     item_key: K,
@@ -482,7 +502,7 @@ pub struct ListUiExtItem<'a, K: 'static + Hash + Eq + Copy + Clone + PartialEq> 
     actions: Vec<ListItemAction>,
 }
 
-impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
+impl<'a, K: Hash + Eq + Copy + Clone + PartialEq + Debug> ListUiExtItem<'a, K> {
     pub fn new(
         item_visible_index: usize,
         used_space: &'a mut f32,

@@ -247,6 +247,7 @@ impl LobbyManager {
         resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     ) {
         self.lobby_entities.insert(lobby_id, lobby_entity);
+        // info!("LobbyManager recv_lobby(): {:?}", self.lobby_entities);
 
         resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
     }
@@ -257,6 +258,7 @@ impl LobbyManager {
         resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     ) {
         self.lobby_entities.remove(&lobby_id);
+        // info!("LobbyManager remove_lobby(): {:?}", self.lobby_entities);
 
         resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
     }
@@ -283,12 +285,16 @@ impl LobbyManager {
 
         let lobby_ui_handle = self.lobby_item_ui.as_ref().unwrap();
 
+        // info!("LobbyManager sync_with_collection(): {:?}", self.lobby_entities);
         self.list_ui_ext.sync_with_collection(
             ui_manager,
             asset_manager,
             self.lobby_entities.iter(),
             self.lobby_entities.len(),
             |item_ctx, lobby_id, _| {
+
+                // info!("LobbyManager sync_with_collection() lobby_id: {:?}", lobby_id);
+
                 let lobby_entity = *(self.lobby_entities.get(&lobby_id).unwrap());
                 let lobby = lobby_q.get(lobby_entity).unwrap();
 
