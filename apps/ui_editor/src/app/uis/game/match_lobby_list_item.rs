@@ -29,7 +29,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_background_color(Color::DARK_BLUE)
             .set_down_color(Color::RED)
             .set_hover_color(Color::BLUE)
-            .set_disabled_color(Color::YELLOW)
             .set_size_pc(100.0, 100.0)
             .set_horizontal()
             .set_col_between_vp(2.0)
@@ -58,7 +57,6 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         .contents(|c| {
             c.add_button("lobby_button")
                 .set_style(button_style)
-                .set_enabled(false)
                 .contents(|c| {
                     // match name
                     c.add_text_with_id("my super cool match", "match_name")

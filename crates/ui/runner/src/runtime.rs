@@ -44,7 +44,7 @@ impl UiRuntime {
 
     fn default_camera_bundle() -> CameraBundle {
         let mut default_bundle =
-            CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
+            CameraBundle::default_3d_orthographic(&Viewport::new_at_origin(0, 0));
 
         default_bundle.camera.clear_operation = ClearOperation {
             red: None,
@@ -57,6 +57,22 @@ impl UiRuntime {
             Transform::from_xyz(0.0, 0.0, 1000.0).looking_at(Vec3::ZERO, Vec3::NEG_Y);
 
         default_bundle
+
+        // 3d
+        //         let mut default_bundle =
+        //             CameraBundle::default_3d_perspective(&Viewport::new_at_origin(0, 0));
+        //
+        //         default_bundle.camera.clear_operation = ClearOperation {
+        //             red: None,
+        //             green: None,
+        //             blue: None,
+        //             alpha: None,
+        //             depth: Some(1.0),
+        //         };
+        //         default_bundle.transform =
+        //             Transform::from_xyz(0.0, 0.0, 1000.0).looking_at(Vec3::ZERO, Vec3::NEG_Y);
+        //
+        //         default_bundle
     }
 
     pub(crate) fn update_state(&mut self, delta_ms: f32) {
@@ -71,19 +87,34 @@ impl UiRuntime {
 
             self.camera.camera.viewport = Some(*viewport);
 
-            let Projection::Perspective(perspective) = &self.camera.projection else {
-                panic!("expected perspective projection");
+            match &self.camera.projection {
+                Projection::Orthographic(orthographic) => {
+
+                    let x = viewport.width as f32 * 0.5;
+                    let y = viewport.height as f32 * 0.5;
+
+                    let near = orthographic.near;
+                    let far = orthographic.far;
+                    let z = (far - near) * 0.5;
+
+                    self.camera.transform.translation.x = x;
+                    self.camera.transform.translation.y = y;
+                    self.camera.transform.translation.z = z;
+                    self.camera.transform.look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
+                }
+                Projection::Perspective(perspective) => {
+                    let distance = ((viewport.height as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
+                    //let distance = 1000.0;
+                    let x = viewport.width as f32 * 0.5;
+                    let y = viewport.height as f32 * 0.5;
+                    self.camera.transform.translation.x = x;
+                    self.camera.transform.translation.y = y;
+                    self.camera.transform.translation.z = distance;
+                    self.camera
+                        .transform
+                        .look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
+                }
             };
-            let distance = ((viewport.height as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
-            //let distance = 1000.0;
-            let x = viewport.width as f32 * 0.5;
-            let y = viewport.height as f32 * 0.5;
-            self.camera.transform.translation.x = x;
-            self.camera.transform.translation.y = y;
-            self.camera.transform.translation.z = distance;
-            self.camera
-                .transform
-                .look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
 
             return true;
         }
