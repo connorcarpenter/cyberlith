@@ -225,6 +225,7 @@ impl UserManager {
         user_data.user_join_lobby(lobby_id, lobby_member_entity)
     }
 
+    // returns (lobby id, lobby member entity)
     pub(crate) fn user_leave_lobby(&mut self, user_id: &UserId) -> (LobbyId, Entity) {
         let user_data = self.user_data.get_mut(user_id).unwrap();
         user_data.user_leave_lobby()

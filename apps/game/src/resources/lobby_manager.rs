@@ -24,7 +24,7 @@ use game_engine::{
 use crate::ui::{
     events::{
         ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
-        ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent, LobbyListItemClickedEvent,
+        ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent, LobbyListItemClickedEvent, LeaveLobbyButtonClickedEvent,
     },
     go_to_sub_ui, UiCatalog, UiKey,
 };
@@ -149,6 +149,37 @@ impl LobbyManager {
             session_client.send_message::<channels::ClientActionsChannel, _>(&message);
 
             go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
+
+            // def rumble
+            *should_rumble = true;
+        }
+    }
+
+    pub(crate) fn handle_leave_lobby_events(
+        &mut self,
+        session_client: &mut SessionClient,
+        resync_main_menu_ui_events: &mut EventWriter<ResyncMainMenuUiEvent>,
+        resync_chat_message_ui_events: &mut EventWriter<ResyncMessageListUiEvent>,
+        resync_user_ui_events: &mut EventWriter<ResyncUserListUiEvent>,
+        leave_lobby_btn_rdr: &mut EventReader<LeaveLobbyButtonClickedEvent>,
+        should_rumble: &mut bool,
+    ) {
+        if self.current_lobby.is_none() {
+            return;
+        }
+        // Leavy Lobby Button Click
+        let mut leave_lobby_clicked = false;
+        for _ in leave_lobby_btn_rdr.read() {
+            leave_lobby_clicked = true;
+        }
+        if leave_lobby_clicked {
+            info!("leave lobby button clicked!");
+
+            // send request to session server
+            session_client.send_message::<channels::ClientActionsChannel, _>(&messages::MatchLobbyLeave);
+
+            // set current_lobby prematurely to de-dupe requests
+            self.leave_current_lobby(resync_main_menu_ui_events, resync_chat_message_ui_events, resync_user_ui_events);
 
             // def rumble
             *should_rumble = true;

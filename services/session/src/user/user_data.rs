@@ -64,13 +64,14 @@ impl UserData {
         (self.user_key.unwrap(), self.user_entity)
     }
 
+    // returns (lobby id, lobby member entity)
     pub(crate) fn user_leave_lobby(&mut self) -> (LobbyId, Entity) {
         if self.lobby_id.is_none() {
             panic!("User not in lobby");
         }
-        let output = self.lobby_id.unwrap();
+        let (lobby_id, lobby_member_entity) = self.lobby_id.unwrap();
         self.lobby_id = None;
-        output
+        (lobby_id, lobby_member_entity)
     }
 
     pub(crate) fn get_lobby_id(&self) -> Option<LobbyId> {

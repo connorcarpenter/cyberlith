@@ -20,7 +20,7 @@ use crate::{
     states::AppState,
     ui::{
         events::{
-            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent,
             JoinMatchButtonClickedEvent, ResyncMainMenuUiEvent, SettingsButtonClickedEvent, GoToSubUiEvent, CurrentLobbyButtonClickedEvent, LeaveLobbyButtonClickedEvent, StartMatchButtonClickedEvent
         },
         go_to_sub_ui, UiCatalog, UiKey,
@@ -82,7 +82,6 @@ pub(crate) fn handle_main_menu_interaction_events(
     mut settings_btn_rdr: EventReader<SettingsButtonClickedEvent>,
     mut current_lobby_btn_rdr: EventReader<CurrentLobbyButtonClickedEvent>,
     mut start_match_btn_rdr: EventReader<StartMatchButtonClickedEvent>,
-    mut leave_lobby_btn_rdr: EventReader<LeaveLobbyButtonClickedEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -186,17 +185,47 @@ pub(crate) fn handle_main_menu_interaction_events(
         }
     }
 
-    // Leave Lobby Button Click
-    {
-        let mut leave_lobby_clicked = false;
-        for _ in leave_lobby_btn_rdr.read() {
-            leave_lobby_clicked = true;
-        }
-        if leave_lobby_clicked {
-            info!("leave lobby button clicked!");
-            should_rumble = true;
+    // handle rumble
+    if should_rumble {
+        if let Some(id) = input.gamepad_first() {
+            rumble_manager.add_rumble(
+                id,
+                Duration::from_millis(200),
+                GamepadRumbleIntensity::strong_motor(0.4),
+            );
         }
     }
+}
+
+pub(crate) fn handle_leave_lobby_events(
+    ui_manager: Res<UiManager>,
+    ui_catalog: Res<UiCatalog>,
+    input: Res<Input>,
+    mut session_client: SessionClient,
+    mut lobby_manager: ResMut<LobbyManager>,
+    mut rumble_manager: ResMut<RumbleManager>,
+    mut resync_main_menu_ui_events: EventWriter<ResyncMainMenuUiEvent>,
+    mut resync_chat_message_ui_events: EventWriter<ResyncMessageListUiEvent>,
+    mut resync_user_ui_events: EventWriter<ResyncUserListUiEvent>,
+    mut leave_lobby_btn_rdr: EventReader<LeaveLobbyButtonClickedEvent>,
+) {
+    let Some(active_ui_handle) = ui_manager.active_ui() else {
+        return;
+    };
+    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
+        panic!("unexpected ui");
+    }
+
+    let mut should_rumble = false;
+
+    lobby_manager.handle_leave_lobby_events(
+        &mut session_client,
+        &mut resync_main_menu_ui_events,
+        &mut resync_chat_message_ui_events,
+        &mut resync_user_ui_events,
+        &mut leave_lobby_btn_rdr,
+        &mut should_rumble,
+    );
 
     // handle rumble
     if should_rumble {

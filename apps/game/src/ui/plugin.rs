@@ -17,6 +17,7 @@ impl Plugin for UiPlugin {
             // event handling systems
             .add_systems(Update, process_go_to_sub_ui_events)
             .add_systems(Update, main_menu::handle_main_menu_interaction_events)
+            .add_systems(Update, main_menu::handle_leave_lobby_events)
             .add_systems(Update, main_menu::handle_resync_main_menu_ui_events)
             .add_systems(Update, user_list::handle_resync_user_list_ui_events)
             .add_systems(Update, message_list::handle_resync_message_list_ui_events)

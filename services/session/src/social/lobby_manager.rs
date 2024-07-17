@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap};
 
 use bevy_ecs::{entity::Entity, system::Commands};
 
@@ -9,7 +9,7 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::{Lobby, LobbyMember};
-use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse};
+use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse};
 use social_server_types::LobbyId;
 
 use crate::{social::chat_message_manager::ChatMessageManager, session_instance::SessionInstance, user::UserManager};
@@ -17,24 +17,38 @@ use crate::{social::chat_message_manager::ChatMessageManager, session_instance::
 enum LobbyReqQueued {
     MatchCreate(UserKey, String),
     MatchJoin(UserKey, LobbyId),
+    MatchLeave(UserKey),
 }
 
 enum LobbyReqInFlight {
     MatchCreate(UserId, String, ResponseKey<MatchLobbyCreateResponse>),
     MatchJoin(UserId, LobbyId, ResponseKey<MatchLobbyJoinResponse>),
+    MatchLeave(UserId, ResponseKey<MatchLobbyLeaveResponse>)
 }
 
 struct LobbyData {
+    lobby_owner_user_id: UserId,
     lobby_entity: Entity,
     room_key: RoomKey,
+    lobby_member_entities: HashMap<Entity, UserId>,
 }
 
 impl LobbyData {
-    fn new(lobby_entity: Entity, room_key: RoomKey) -> Self {
+    fn new(lobby_entity: Entity, room_key: RoomKey, lobby_owner_user_id: UserId) -> Self {
         Self {
+            lobby_owner_user_id,
             lobby_entity,
             room_key,
+            lobby_member_entities: HashMap::new(),
         }
+    }
+
+    pub(crate) fn add_lobby_member_entity(&mut self, lobby_member_entity: Entity, user_id: UserId) {
+        self.lobby_member_entities.insert(lobby_member_entity, user_id);
+    }
+
+    pub(crate) fn remove_lobby_member_entity(&mut self, lobby_member_entity: &Entity) {
+        self.lobby_member_entities.remove(lobby_member_entity);
     }
 }
 
@@ -125,6 +139,15 @@ impl LobbyManager {
                         session_instance,
                         &user_key,
                         &lobby_id,
+                    );
+                }
+                LobbyReqQueued::MatchLeave(user_key) => {
+                    self.send_match_lobby_leave(
+                        http_client,
+                        user_manager,
+                        social_server_url.as_ref(),
+                        session_instance,
+                        &user_key,
                     );
                 }
             }
@@ -219,6 +242,38 @@ impl LobbyManager {
                         continuing_requests.push(req);
                     }
                 }
+                LobbyReqInFlight::MatchLeave(user_id, response_key) => {
+                    if let Some(response_result) = http_client.recv(response_key) {
+                        let host = "session";
+                        let remote = "social";
+                        bevy_http_client::log_util::recv_res(
+                            host,
+                            remote,
+                            MatchLobbyLeaveResponse::name(),
+                        );
+
+                        match response_result {
+                            Ok(_response) => {
+                                // info!("received leave match lobby message response from social server");
+
+                                self.leave_lobby(
+                                    commands,
+                                    naia_server,
+                                    user_manager,
+                                    user_id,
+                                );
+                            }
+                            Err(e) => {
+                                warn!(
+                                    "error receiving leave match lobby response from social server: {:?}",
+                                    e.to_string()
+                                );
+                            }
+                        }
+                    } else {
+                        continuing_requests.push(req);
+                    }
+                }
             }
         }
 
@@ -286,7 +341,7 @@ impl LobbyManager {
         };
 
         let Some((social_server_addr, social_server_port)) = social_server_url else {
-            warn!("received create match lobby request but no social server is available!");
+            warn!("received join match lobby request but no social server is available!");
 
             self.queued_requests.push(LobbyReqQueued::MatchJoin(
                 *user_key,
@@ -311,6 +366,48 @@ impl LobbyManager {
         self.in_flight_requests.push(LobbyReqInFlight::MatchJoin(
             user_id,
             *lobby_id,
+            response_key,
+        ));
+
+        return;
+    }
+
+    pub(crate) fn send_match_lobby_leave(
+        &mut self,
+        http_client: &mut HttpClient,
+        user_manager: &UserManager,
+        social_server_url: Option<&(String, u16)>,
+        session_instance: &SessionInstance,
+        user_key: &UserKey,
+    ) {
+        let Some(user_id) = user_manager.user_key_to_id(user_key) else {
+            warn!("User not found: {:?}", user_key);
+            return;
+        };
+
+        let Some((social_server_addr, social_server_port)) = social_server_url else {
+            warn!("received leave match lobby request but no social server is available!");
+
+            self.queued_requests.push(LobbyReqQueued::MatchLeave(
+                *user_key,
+            ));
+
+            return;
+        };
+
+        // info!("sending match lobby leave request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
+        let request = MatchLobbyLeaveRequest::new(
+            session_instance.instance_secret(),
+            user_id,
+        );
+
+        let host = "session";
+        let remote = "social";
+        bevy_http_client::log_util::send_req(host, remote, MatchLobbyLeaveRequest::name());
+        let response_key = http_client.send(social_server_addr, *social_server_port, request);
+
+        self.in_flight_requests.push(LobbyReqInFlight::MatchLeave(
+            user_id,
             response_key,
         ));
 
@@ -359,7 +456,7 @@ impl LobbyManager {
                 SocialLobbyPatch::Leave(user_id) => {
                     info!("leaving lobby - [userid {:?}]", user_id);
 
-                    self.leave_lobby(commands, user_manager, user_id);
+                    self.leave_lobby(commands, naia_server, user_manager, user_id);
                 }
                 SocialLobbyPatch::Message(message_id, timestamp, user_id, message) => {
                     info!(
@@ -408,7 +505,7 @@ impl LobbyManager {
 
         // add to collection
         self.lobbies
-            .insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key));
+            .insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key, *owner_user_id));
 
         let owner_user_entity = user_manager.get_or_init_user_entity(commands, naia_server, http_client, main_menu_room_key, owner_user_id);
 
@@ -424,17 +521,30 @@ impl LobbyManager {
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,
+        user_manager: &mut UserManager,
         lobby_id: &LobbyId,
     ) {
         if let Some(lobby_data) = self.lobbies.remove(lobby_id) {
             let LobbyData {
                 lobby_entity,
                 room_key,
+                lobby_member_entities,
+                ..
             } = lobby_data;
-            // despawn entity
+
+            // despawn lobby entity
             commands.entity(lobby_entity).despawn();
             // remove room
             naia_server.room_mut(&room_key).destroy();
+
+            // despawn lobby member entities, and remove link to user
+            for (lobby_member_entity, user_id) in lobby_member_entities {
+                // despawn lobby member entity
+                commands.entity(lobby_member_entity).despawn();
+
+                // remove link to user
+                user_manager.user_leave_lobby(&user_id);
+            }
         } else {
             warn!(
                 "attempted to remove non-existent match lobby - [lobbyid {:?}]",
@@ -451,13 +561,17 @@ impl LobbyManager {
         lobby_id: &LobbyId,
         joining_user_id: &UserId,
     ) {
-        // get lobby room key & entity
-        let lobby = self.lobbies.get(lobby_id).unwrap();
-        let lobby_room_key = &lobby.room_key;
-        let lobby_entity = &lobby.lobby_entity;
-
         // create LobbyMember entity
         let lobby_member_entity = commands.spawn_empty().enable_replication(naia_server).id();
+
+        let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
+
+        // add lobby member entity to collection
+        lobby_data.add_lobby_member_entity(lobby_member_entity, *joining_user_id);
+
+        // get lobby room key & entity
+        let lobby_room_key = &lobby_data.room_key;
+        let lobby_entity = &lobby_data.lobby_entity;
 
         // get user key & entity
         let (joining_user_key, joining_user_entity) = user_manager.user_join_lobby(joining_user_id, lobby_id, &lobby_member_entity);
@@ -482,12 +596,26 @@ impl LobbyManager {
     fn leave_lobby(
         &mut self,
         commands: &mut Commands,
+        naia_server: &mut Server,
         user_manager: &mut UserManager,
         leaving_user_id: &UserId,
     ) {
         // get user key & entity & lobby_id
-        let (_lobby_id, lobby_member_entity) = user_manager.user_leave_lobby(leaving_user_id);
+        let (lobby_id, lobby_member_entity) = user_manager.user_leave_lobby(leaving_user_id);
 
+        // despawn lobby_member entity
         commands.entity(lobby_member_entity).despawn();
+        {
+            let lobby_data = self.lobbies.get_mut(&lobby_id).unwrap();
+            lobby_data.remove_lobby_member_entity(&lobby_member_entity);
+        }
+
+        // determine if this is the owner
+        let lobby_data = self.lobbies.get(&lobby_id).unwrap();
+        let lobby_owner_user_id = lobby_data.lobby_owner_user_id;
+        if lobby_owner_user_id == *leaving_user_id {
+            // delete the lobby
+            self.remove_lobby(commands, naia_server, user_manager, &lobby_id);
+        }
     }
 }

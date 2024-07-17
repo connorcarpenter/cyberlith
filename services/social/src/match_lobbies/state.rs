@@ -131,6 +131,12 @@ impl MatchLobbiesState {
         let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
         lobby_data.users.remove(leaving_user_id);
 
+        let owner_user_id = lobby_data.owner_user_id;
+        if owner_user_id == *leaving_user_id {
+            // delete the lobby
+            self.lobbies.remove(lobby_id);
+        }
+
         // add to outgoing patches
         if !self
             .outgoing_patches
