@@ -1,9 +1,9 @@
 use bevy_app::{App, Plugin, Update};
 
 use crate::ui::{events::{
-    DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, LobbyButtonClickedEvent,
+    DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, LobbyListItemClickedEvent,
     JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent,
-    ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent,
+    ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, CurrentLobbyButtonClickedEvent, LeaveLobbyButtonClickedEvent, StartMatchButtonClickedEvent,
     SubmitButtonClickedEvent, GoToSubUiEvent,
 }, host_match, join_match, main_menu, message_list, user_list, UiCatalog, process_go_to_sub_ui_events};
 
@@ -37,7 +37,11 @@ impl Plugin for UiPlugin {
             .add_event::<GlobalChatButtonClickedEvent>()
             .add_event::<DevlogButtonClickedEvent>()
             .add_event::<SettingsButtonClickedEvent>()
+            .add_event::<CurrentLobbyButtonClickedEvent>()
+            .add_event::<StartMatchButtonClickedEvent>()
+            .add_event::<LeaveLobbyButtonClickedEvent>()
+
             .add_event::<SubmitButtonClickedEvent>()
-            .add_event::<LobbyButtonClickedEvent>();
+            .add_event::<LobbyListItemClickedEvent>();
     }
 }

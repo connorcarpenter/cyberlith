@@ -146,8 +146,9 @@ impl AssetMetadataStore {
                         Some(Ok(result)) => {
                             let metadata_bytes = result.bytes;
                             let mut metadata_reader = BitReader::new(&metadata_bytes);
-                            let metadata_payload =
-                                AssetMetadataSerde::de(&mut metadata_reader).unwrap();
+                            let Ok(metadata_payload) = AssetMetadataSerde::de(&mut metadata_reader) else {
+                                panic!("Failed to deserialize metadata file: {:?}", file_path);
+                            };
 
                             let asset_etag = metadata_payload.etag;
                             let asset_type = metadata_payload.asset_type;

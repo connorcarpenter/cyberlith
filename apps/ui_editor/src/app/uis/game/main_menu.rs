@@ -167,7 +167,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 .set_visible(false)
                 .set_style(side_button_style)
                 .contents(|c| {
-                    c.add_text("-").set_style(base_button_text_style);
+                    c.add_text_with_id("-", "current_lobby_button_text").set_style(base_button_text_style);
                 });
         });
 
@@ -204,11 +204,11 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 .set_visible(false)
                 .set_style(side_button_style)
                 .contents(|c| {
-                    c.add_text("start match").set_style(base_button_text_style);
+                    c.add_text("start").set_style(base_button_text_style);
                 });
 
             // leave button
-            c.add_button("leave_button")
+            c.add_button("leave")
                 .set_visible(false)
                 .set_style(side_button_style)
                 .contents(|c| {

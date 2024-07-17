@@ -58,15 +58,15 @@ pub fn setup(
 
     // ui setup
 
-    // global.load_ui(ui_manager, launcher::start::ui_define()); // start
-    // global.load_ui(ui_manager, launcher::login::ui_define()); // login
-    // global.load_ui(ui_manager, launcher::register::ui_define()); // register
-    // global.load_ui(ui_manager, launcher::register_finish::ui_define()); // register_finish
-    // global.load_ui(ui_manager, launcher::forgot_username::ui_define()); // forgot username
-    // global.load_ui(ui_manager, launcher::forgot_username_finish::ui_define()); // forgot username finish
-    // global.load_ui(ui_manager, launcher::forgot_password::ui_define()); // forgot password
-    // global.load_ui(ui_manager, launcher::forgot_password_finish::ui_define()); // forgot password finish
-    // global.load_ui(ui_manager, launcher::reset_password::ui_define()); // reset password
+    // global.load_ui(&mut ui_manager, launcher::start::ui_define()); // start
+    // global.load_ui(&mut ui_manager, launcher::login::ui_define()); // login
+    // global.load_ui(&mut ui_manager, launcher::register::ui_define()); // register
+    // global.load_ui(&mut ui_manager, launcher::register_finish::ui_define()); // register_finish
+    // global.load_ui(&mut ui_manager, launcher::forgot_username::ui_define()); // forgot username
+    // global.load_ui(&mut ui_manager, launcher::forgot_username_finish::ui_define()); // forgot username finish
+    // global.load_ui(&mut ui_manager, launcher::forgot_password::ui_define()); // forgot password
+    // global.load_ui(&mut ui_manager, launcher::forgot_password_finish::ui_define()); // forgot password finish
+    // global.load_ui(&mut ui_manager, launcher::reset_password::ui_define()); // reset password
 
     let main_menu_ui_handle = global.load_ui(&mut ui_manager, game::main_menu::ui_define()); // game main menu
 

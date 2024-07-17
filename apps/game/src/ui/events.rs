@@ -20,18 +20,27 @@ pub struct DevlogButtonClickedEvent;
 pub struct SettingsButtonClickedEvent;
 
 #[derive(Event, Default)]
+pub struct CurrentLobbyButtonClickedEvent;
+
+#[derive(Event, Default)]
+pub struct StartMatchButtonClickedEvent;
+
+#[derive(Event, Default)]
+pub struct LeaveLobbyButtonClickedEvent;
+
+#[derive(Event, Default)]
 pub struct SubmitButtonClickedEvent;
 
 #[derive(Event)]
-pub struct LobbyButtonClickedEvent {
+pub struct LobbyListItemClickedEvent {
     lobby_id: LobbyId,
 }
-impl Default for LobbyButtonClickedEvent {
+impl Default for LobbyListItemClickedEvent {
     fn default() -> Self {
-        panic!("LobbyButtonClickedEvent::default() should not be used");
+        panic!("LobbyListItemClickedEvent::default() should not be used");
     }
 }
-impl LobbyButtonClickedEvent {
+impl LobbyListItemClickedEvent {
     pub fn new(lobby_id: LobbyId) -> Self {
         Self { lobby_id }
     }
@@ -39,7 +48,7 @@ impl LobbyButtonClickedEvent {
         self.lobby_id
     }
 }
-impl From<LobbyId> for LobbyButtonClickedEvent {
+impl From<LobbyId> for LobbyListItemClickedEvent {
     fn from(lobby_id: LobbyId) -> Self {
         Self::new(lobby_id)
     }

@@ -638,7 +638,7 @@ fn ui_update_hover(
     let Some((width, height, child_offset_x, child_offset_y, _)) =
         ui_state.cache.bounds(node_id)
     else {
-        warn!("no bounds for id 2: {:?}", node_id);
+        // warn!("no bounds for id 2: {:?}", node_id);
         return;
     };
 

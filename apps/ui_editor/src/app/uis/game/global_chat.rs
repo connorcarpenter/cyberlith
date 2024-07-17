@@ -35,7 +35,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_hover_color(Color::RED)
             .set_active_color(Color::BLUE)
             .set_selection_color(Color::DARK_BLUE)
-            .set_size_pc(100., 4.);
+            .set_width_pc(100.)
+            .set_height_vp(4.0);
     });
 
     // nodes

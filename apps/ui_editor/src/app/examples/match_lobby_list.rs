@@ -105,11 +105,11 @@ pub(crate) fn setup_match_lobby_test_case(
     let mut match_lobby_state = MatchLobbyListState::new(&match_lobby_list_item_ui_handle);
 
     // setup sub ui
-    ui_manager.set_ui_container_contents(
-        &main_menu_ui_handle,
-        "center_container",
-        &join_match_ui_handle,
-    );
+    // ui_manager.set_ui_container_contents(
+    //     &main_menu_ui_handle,
+    //     "center_container",
+    //     &join_match_ui_handle,
+    // );
 
     // setup match lobby list
     match_lobby_state

@@ -18,7 +18,7 @@ use game_engine::{
 
 use crate::{
     resources::lobby_manager::LobbyManager,
-    ui::{go_to_sub_ui, events::{GoToSubUiEvent, ResyncLobbyListUiEvent, LobbyButtonClickedEvent}, UiCatalog, UiKey},
+    ui::{go_to_sub_ui, events::{GoToSubUiEvent, ResyncLobbyListUiEvent, LobbyListItemClickedEvent}, UiCatalog, UiKey},
 };
 
 pub(crate) fn handle_join_match_input_events(
@@ -55,7 +55,7 @@ pub(crate) fn handle_join_match_click_events(
     mut session_client: SessionClient,
     mut resync_lobby_list_ui_events: EventWriter<ResyncLobbyListUiEvent>,
     mut sub_ui_event_writer: EventWriter<GoToSubUiEvent>,
-    mut click_events: EventReader<LobbyButtonClickedEvent>,
+    mut click_events: EventReader<LobbyListItemClickedEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -150,7 +150,7 @@ fn handle_join_match_click_events_impl(
     session_client: &mut SessionClient,
     resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
-    click_events: &mut EventReader<LobbyButtonClickedEvent>,
+    click_events: &mut EventReader<LobbyListItemClickedEvent>,
 ) {
     let mut should_resync = false;
 

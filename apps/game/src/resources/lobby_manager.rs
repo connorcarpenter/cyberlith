@@ -24,7 +24,7 @@ use game_engine::{
 use crate::ui::{
     events::{
         ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
-        ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent, LobbyButtonClickedEvent,
+        ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent, LobbyListItemClickedEvent,
     },
     go_to_sub_ui, UiCatalog, UiKey,
 };
@@ -265,6 +265,6 @@ impl LobbyManager {
 
         item_ctx.set_text_by_id("match_name", lobby_name);
         item_ctx.set_text_by_id("username", owner_name);
-        item_ctx.register_ui_event::<LobbyButtonClickedEvent>("lobby_button"); // uses container_ui_handle
+        item_ctx.register_ui_event::<LobbyListItemClickedEvent>("lobby_button"); // uses container_ui_handle
     }
 }
