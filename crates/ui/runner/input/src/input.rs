@@ -624,8 +624,8 @@ fn ui_update_hover(
     mouse_x: f32,
     mouse_y: f32,
 ) {
-    let Some(visible) = ui_manager
-        .ui_state(ui_asset_id)
+    let ui_state = ui_manager.ui_state(ui_asset_id);
+    let Some(visible) = ui_state
         .visibility_store
         .get_node_visibility(node_id)
     else {
@@ -636,7 +636,7 @@ fn ui_update_hover(
         return;
     }
     let Some((width, height, child_offset_x, child_offset_y, _)) =
-        ui_manager.ui_state(ui_asset_id).cache.bounds(node_id)
+        ui_state.cache.bounds(node_id)
     else {
         warn!("no bounds for id 2: {:?}", node_id);
         return;
@@ -658,12 +658,14 @@ fn ui_update_hover(
     match node.widget_kind() {
         WidgetKind::Button => {
             if is_point_inside {
-                ui_manager
-                    .ui_input_state_mut()
-                    .set_cursor_icon(CursorIcon::Hand);
-                ui_manager
-                    .ui_input_state_mut()
-                    .receive_hover(ui_asset_id, node_id);
+                if ui_state.store.button_ref(node_id).unwrap().enabled {
+                    ui_manager
+                        .ui_input_state_mut()
+                        .set_cursor_icon(CursorIcon::Hand);
+                    ui_manager
+                        .ui_input_state_mut()
+                        .receive_hover(ui_asset_id, node_id);
+                }
             }
         }
         WidgetKind::Textbox => {
