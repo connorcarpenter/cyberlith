@@ -25,6 +25,10 @@ impl LobbyId {
         }
         Self::new(id)
     }
+
+    pub fn to_u16(&self) -> u16 {
+        self.id.to()
+    }
 }
 
 impl PartialOrd for LobbyId {

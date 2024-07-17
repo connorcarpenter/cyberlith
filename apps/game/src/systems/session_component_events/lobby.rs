@@ -97,12 +97,16 @@ fn recv_inserted_lobby_member_component(
         };
 
         if self_user_entity == user_entity {
+            // self user joined lobby
             lobby_manager.set_current_lobby(
                 &mut resync_main_menu_ui_events,
                 &mut resync_chat_message_ui_events,
                 &mut resync_user_ui_events,
                 lobby_id,
             );
+        } else {
+            // new user joined lobby
+            resync_user_ui_events.send(ResyncUserListUiEvent);
         }
     }
 }

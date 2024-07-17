@@ -119,7 +119,7 @@ impl LobbyManager {
         &mut self,
         ui_manager: &mut UiManager,
         ui_catalog: &UiCatalog,
-        session_server: &mut SessionClient,
+        session_client: &mut SessionClient,
         sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
         submit_btn_rdr: &mut EventReader<SubmitButtonClickedEvent>,
         should_rumble: &mut bool,
@@ -146,7 +146,7 @@ impl LobbyManager {
 
             // send request to session server
             let message = messages::MatchLobbyCreate::new(&textbox_text);
-            session_server.send_message::<channels::ClientActionsChannel, _>(&message);
+            session_client.send_message::<channels::ClientActionsChannel, _>(&message);
 
             go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
 

@@ -9,13 +9,20 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::{Lobby, LobbyMember};
-use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse};
+use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse};
 use social_server_types::LobbyId;
 
 use crate::{social::chat_message_manager::ChatMessageManager, session_instance::SessionInstance, user::UserManager};
 
-struct MatchCreateReqQueued(UserKey, String);
-struct MatchCreateReqInFlight(UserId, String, ResponseKey<MatchLobbyCreateResponse>);
+enum LobbyReqQueued {
+    MatchCreate(UserKey, String),
+    MatchJoin(UserKey, LobbyId),
+}
+
+enum LobbyReqInFlight {
+    MatchCreate(UserId, String, ResponseKey<MatchLobbyCreateResponse>),
+    MatchJoin(UserId, LobbyId, ResponseKey<MatchLobbyJoinResponse>),
+}
 
 struct LobbyData {
     lobby_entity: Entity,
@@ -32,8 +39,8 @@ impl LobbyData {
 }
 
 pub struct LobbyManager {
-    queued_requests: Vec<MatchCreateReqQueued>,
-    in_flight_requests: Vec<MatchCreateReqInFlight>,
+    queued_requests: Vec<LobbyReqQueued>,
+    in_flight_requests: Vec<LobbyReqInFlight>,
 
     lobbies: HashMap<LobbyId, LobbyData>,
 }
@@ -99,14 +106,28 @@ impl LobbyManager {
 
         let queued_requests = std::mem::take(&mut self.queued_requests);
         for request in queued_requests {
-            self.send_match_lobby_create(
-                http_client,
-                user_manager,
-                social_server_url.as_ref(),
-                session_instance,
-                &request.0,
-                &request.1,
-            );
+            match request {
+                LobbyReqQueued::MatchCreate(owner_user_key, match_name) => {
+                    self.send_match_lobby_create(
+                        http_client,
+                        user_manager,
+                        social_server_url.as_ref(),
+                        session_instance,
+                        &owner_user_key,
+                        &match_name
+                    );
+                }
+                LobbyReqQueued::MatchJoin(user_key, lobby_id) => {
+                    self.send_match_lobby_join(
+                        http_client,
+                        user_manager,
+                        social_server_url.as_ref(),
+                        session_instance,
+                        &user_key,
+                        &lobby_id,
+                    );
+                }
+            }
         }
     }
 
@@ -127,42 +148,77 @@ impl LobbyManager {
         let in_flight_requests = std::mem::take(&mut self.in_flight_requests);
 
         for req in in_flight_requests {
-            let MatchCreateReqInFlight(owner_user_id, match_name, response_key) = &req;
-
-            if let Some(response_result) = http_client.recv(response_key) {
-                let host = "session";
-                let remote = "social";
-                bevy_http_client::log_util::recv_res(
-                    host,
-                    remote,
-                    MatchLobbyCreateResponse::name(),
-                );
-
-                match response_result {
-                    Ok(response) => {
-                        // info!("received create match lobby message response from social server");
-                        let lobby_id = response.match_lobby_id();
-
-                        self.create_lobby(
-                            commands,
-                            naia_server,
-                            http_client,
-                            user_manager,
-                            main_menu_room_key,
-                            &lobby_id,
-                            match_name,
-                            owner_user_id,
+            match &req {
+                LobbyReqInFlight::MatchCreate(owner_user_id, match_name, response_key) => {
+                    if let Some(response_result) = http_client.recv(response_key) {
+                        let host = "session";
+                        let remote = "social";
+                        bevy_http_client::log_util::recv_res(
+                            host,
+                            remote,
+                            MatchLobbyCreateResponse::name(),
                         );
-                    }
-                    Err(e) => {
-                        warn!(
+
+                        match response_result {
+                            Ok(response) => {
+                                // info!("received create match lobby message response from social server");
+                                let lobby_id = response.match_lobby_id();
+
+                                self.create_lobby(
+                                    commands,
+                                    naia_server,
+                                    http_client,
+                                    user_manager,
+                                    main_menu_room_key,
+                                    &lobby_id,
+                                    match_name,
+                                    owner_user_id,
+                                );
+                            }
+                            Err(e) => {
+                                warn!(
                             "error receiving create match lobby response from social server: {:?}",
                             e.to_string()
                         );
+                            }
+                        }
+                    } else {
+                        continuing_requests.push(req);
                     }
                 }
-            } else {
-                continuing_requests.push(req);
+                LobbyReqInFlight::MatchJoin(user_id, lobby_id, response_key) => {
+                    if let Some(response_result) = http_client.recv(response_key) {
+                        let host = "session";
+                        let remote = "social";
+                        bevy_http_client::log_util::recv_res(
+                            host,
+                            remote,
+                            MatchLobbyJoinResponse::name(),
+                        );
+
+                        match response_result {
+                            Ok(_response) => {
+                                // info!("received join match lobby message response from social server");
+
+                                self.join_lobby(
+                                    commands,
+                                    naia_server,
+                                    user_manager,
+                                    &lobby_id,
+                                    user_id,
+                                );
+                            }
+                            Err(e) => {
+                                warn!(
+                                    "error receiving join match lobby response from social server: {:?}",
+                                    e.to_string()
+                                );
+                            }
+                        }
+                    } else {
+                        continuing_requests.push(req);
+                    }
+                }
             }
         }
 
@@ -186,7 +242,7 @@ impl LobbyManager {
         let Some((social_server_addr, social_server_port)) = social_server_url else {
             warn!("received create match lobby request but no social server is available!");
 
-            self.queued_requests.push(MatchCreateReqQueued(
+            self.queued_requests.push(LobbyReqQueued::MatchCreate(
                 *owner_user_key,
                 match_name.to_string(),
             ));
@@ -206,9 +262,55 @@ impl LobbyManager {
         bevy_http_client::log_util::send_req(host, remote, MatchLobbyCreateRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(MatchCreateReqInFlight(
+        self.in_flight_requests.push(LobbyReqInFlight::MatchCreate(
             owner_user_id,
             match_name.to_string(),
+            response_key,
+        ));
+
+        return;
+    }
+
+    pub(crate) fn send_match_lobby_join(
+        &mut self,
+        http_client: &mut HttpClient,
+        user_manager: &UserManager,
+        social_server_url: Option<&(String, u16)>,
+        session_instance: &SessionInstance,
+        user_key: &UserKey,
+        lobby_id: &LobbyId,
+    ) {
+        let Some(user_id) = user_manager.user_key_to_id(user_key) else {
+            warn!("User not found: {:?}", user_key);
+            return;
+        };
+
+        let Some((social_server_addr, social_server_port)) = social_server_url else {
+            warn!("received create match lobby request but no social server is available!");
+
+            self.queued_requests.push(LobbyReqQueued::MatchJoin(
+                *user_key,
+                *lobby_id,
+            ));
+
+            return;
+        };
+
+        // info!("sending match lobby join request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
+        let request = MatchLobbyJoinRequest::new(
+            session_instance.instance_secret(),
+            *lobby_id,
+            user_id,
+        );
+
+        let host = "session";
+        let remote = "social";
+        bevy_http_client::log_util::send_req(host, remote, MatchLobbyJoinRequest::name());
+        let response_key = http_client.send(social_server_addr, *social_server_port, request);
+
+        self.in_flight_requests.push(LobbyReqInFlight::MatchJoin(
+            user_id,
+            *lobby_id,
             response_key,
         ));
 

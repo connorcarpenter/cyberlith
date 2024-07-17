@@ -9,6 +9,7 @@ use game_engine::{
     input::{InputEvent, Key},
     logging::info,
     session::{
+        channels, messages,
         components::{Lobby, User},
         SessionClient,
     },
@@ -17,7 +18,7 @@ use game_engine::{
 
 use crate::{
     resources::lobby_manager::LobbyManager,
-    ui::{events::{ResyncLobbyListUiEvent, LobbyButtonClickedEvent}, UiCatalog, UiKey},
+    ui::{go_to_sub_ui, events::{GoToSubUiEvent, ResyncLobbyListUiEvent, LobbyButtonClickedEvent}, UiCatalog, UiKey},
 };
 
 pub(crate) fn handle_join_match_input_events(
@@ -51,7 +52,9 @@ pub(crate) fn handle_join_match_input_events(
 pub(crate) fn handle_join_match_click_events(
     ui_catalog: Res<UiCatalog>,
     ui_manager: Res<UiManager>,
+    mut session_client: SessionClient,
     mut resync_lobby_list_ui_events: EventWriter<ResyncLobbyListUiEvent>,
+    mut sub_ui_event_writer: EventWriter<GoToSubUiEvent>,
     mut click_events: EventReader<LobbyButtonClickedEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
@@ -67,7 +70,9 @@ pub(crate) fn handle_join_match_click_events(
         let ui_key = ui_catalog.get_ui_key(&current_ui_handle);
         if ui_key == UiKey::JoinMatch {
             handle_join_match_click_events_impl(
+                &mut session_client,
                 &mut resync_lobby_list_ui_events,
+                &mut sub_ui_event_writer,
                 &mut click_events,
             );
         }
@@ -142,15 +147,27 @@ fn handle_join_match_input_events_impl(
 }
 
 fn handle_join_match_click_events_impl(
+    session_client: &mut SessionClient,
     resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
+    sub_ui_event_writer: &mut EventWriter<GoToSubUiEvent>,
     click_events: &mut EventReader<LobbyButtonClickedEvent>,
 ) {
     let mut should_resync = false;
 
     for event in click_events.read() {
-        let lobby_id = event.lobby_id();
-        info!("Joining lobby: {:?}", lobby_id);
-        should_resync = true;
+
+        if !should_resync { // prevent multiple clicks
+
+            let lobby_id = event.lobby_id();
+            info!("Joining lobby: {:?}", lobby_id.to_u16());
+
+            let message = messages::MatchLobbyJoin::new(lobby_id);
+            session_client.send_message::<channels::ClientActionsChannel, _>(&message);
+
+            go_to_sub_ui(sub_ui_event_writer, UiKey::MessageList);
+
+            should_resync = true;
+        }
     }
 
     if should_resync {

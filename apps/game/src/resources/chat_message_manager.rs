@@ -114,7 +114,7 @@ impl ChatMessageManager {
             match event {
                 // TODO this probably doesn't belong here! this is where it is required to be selecting the textbox!!!
                 InputEvent::KeyPressed(Key::I, _) => {
-                    info!("I Key Pressed");
+                    // info!("I Key Pressed");
                     if let Some(NodeActiveState::Active) =
                         ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
                     {
@@ -126,7 +126,7 @@ impl ChatMessageManager {
                     }
                 }
                 InputEvent::KeyPressed(Key::J, _) => {
-                    info!("J Key Pressed");
+                    // info!("J Key Pressed");
                     if let Some(NodeActiveState::Active) =
                         ui_manager.get_node_active_state_from_id(&ui_handle, "message_textbox")
                     {

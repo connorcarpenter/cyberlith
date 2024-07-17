@@ -8,7 +8,7 @@ use logging::warn;
 
 use session_server_naia_proto::{
     channels::ClientActionsChannel,
-    messages::{GlobalChatSendMessage, MatchLobbySendMessage, MatchLobbyCreate, WorldConnectRequest},
+    messages::{GlobalChatSendMessage, MatchLobbyJoin, MatchLobbySendMessage, MatchLobbyCreate, WorldConnectRequest},
 };
 
 use crate::{session_instance::SessionInstance, social::SocialManager, user::UserManager};
@@ -21,6 +21,7 @@ pub fn message_events(
     mut event_reader: EventReader<MessageEvents>,
 ) {
     for events in event_reader.read() {
+
         // World Connect Request
         for (user_key, _req) in events.read::<ClientActionsChannel, WorldConnectRequest>() {
             if user_manager
@@ -71,6 +72,18 @@ pub fn message_events(
                 &session_instance,
                 &user_key,
                 &req.match_name,
+            );
+        }
+
+        // Join Match Lobby
+        for (user_key, req) in events.read::<ClientActionsChannel, MatchLobbyJoin>() {
+            social_manager.lobby_manager.send_match_lobby_join(
+                &mut http_client,
+                &user_manager,
+                social_server_url.as_ref(),
+                &session_instance,
+                &user_key,
+                &req.match_id,
             );
         }
     }
