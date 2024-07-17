@@ -28,6 +28,12 @@ impl<'a> ButtonMut<'a> {
         self
     }
 
+    pub fn set_visible(&mut self, visible: bool) -> &mut Self {
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
+        node.set_visible(visible);
+        self
+    }
+
     pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.set_style_id(style_id);
