@@ -4,11 +4,14 @@ use std::{
     iter::{Peekable, Rev},
 };
 
+use bevy_ecs::{world::World, event::{Event, Events}};
+
 use asset_loader::AssetManager;
 
 use ui_runner::{
     config::{Alignment, NodeId, NodeStore, StyleId, UiRuntimeConfig},
     UiHandle, UiManager,
+    input::{UiNodeEvent, UiNodeEventHandler, UiNodeEventHandlerTrait},
 };
 
 pub struct LoadedItem {
@@ -85,7 +88,7 @@ impl<I: DoubleEndedIterator> PeekableIterator for RevPeekableIteratorImpl<I> {
     }
 }
 
-pub struct ListUiExt<K: Hash + Eq + Copy + Clone + PartialEq> {
+pub struct ListUiExt<K: 'static + Hash + Eq + Copy + Clone + PartialEq> {
     container_ui: Option<(UiHandle, String)>,
     loaded_items: HashMap<K, LoadedItem>,
     item_count: usize,
@@ -94,7 +97,7 @@ pub struct ListUiExt<K: Hash + Eq + Copy + Clone + PartialEq> {
     visible_item_range: usize,
 }
 
-impl<K: Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
+impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq> ListUiExt<K> {
     pub fn new(_top_align: bool) -> Self {
         Self {
             container_ui: None,
@@ -464,9 +467,10 @@ enum ListItemAction {
     AddCopiedNode(UiHandle),
     SetTextById(String, String),
     SetStyleById(String, String),
+    RegisterUiEvent(String, ListUiEventHandler),
 }
 
-pub struct ListUiExtItem<'a, K: Hash + Eq + Copy + Clone + PartialEq> {
+pub struct ListUiExtItem<'a, K: 'static + Hash + Eq + Copy + Clone + PartialEq> {
     item_visible_index: usize,
     used_space: &'a mut f32,
     item_key: K,
@@ -515,6 +519,13 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
         self.actions.push(ListItemAction::SetStyleById(
             node_id_str.to_string(),
             style_id_str.to_string(),
+        ));
+    }
+
+    pub fn register_ui_event<E: 'static + From<K> + Event>(&mut self, id_str: &str) {
+        self.actions.push(ListItemAction::RegisterUiEvent(
+            id_str.to_string(),
+            ListUiEventHandler::from(ListItemUiEventHandler::<K, E>::new(self.item_key)),
         ));
     }
 
@@ -616,6 +627,16 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
         container_ui_runtime.set_style_id(node_id, &style_id);
     }
 
+    fn register_ui_event_impl(&mut self, item_id_str: &str, event_handler: UiNodeEventHandler) {
+        let node_id = self
+            .list_ui_ext
+            .get_node_id_by_str(self.item_key, item_id_str)
+            .unwrap();
+        let asset_id = self.container_ui_handle.asset_id();
+
+        self.ui_manager.insert_ui_node_event_handler(asset_id, *node_id, event_handler);
+    }
+
     pub fn finished(mut self, parent_height: f32) {
         let should_add: bool;
         let actions_are_equal: bool;
@@ -676,6 +697,9 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
                     ListItemAction::SetStyleById(node_id_str, style_id_str) => {
                         self.set_style_by_id_impl(&node_id_str, &style_id_str)
                     }
+                    ListItemAction::RegisterUiEvent(id_str, event_handler) => {
+                        self.register_ui_event_impl(&id_str, event_handler.deconstruct())
+                    }
                 }
             }
         }
@@ -701,5 +725,64 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             }
         }
         item_height
+    }
+}
+
+struct ListUiEventHandler(UiNodeEventHandler);
+
+impl Eq for ListUiEventHandler {}
+impl PartialEq for ListUiEventHandler {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+impl Clone for ListUiEventHandler {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq, E: 'static + From<K> + Event> From<ListItemUiEventHandler<K, E>> for ListUiEventHandler {
+    fn from(handler: ListItemUiEventHandler<K, E>) -> Self {
+        Self::new(UiNodeEventHandler::custom(handler))
+    }
+}
+
+impl ListUiEventHandler {
+    pub fn new(ui_node_event_handler: UiNodeEventHandler) -> Self {
+        Self(ui_node_event_handler)
+    }
+
+    pub fn deconstruct(self) -> UiNodeEventHandler {
+        self.0
+    }
+}
+
+struct ListItemUiEventHandler<K: 'static + Hash + Eq + Copy + Clone + PartialEq, E: 'static + From<K> + Event> {
+    item_key: K,
+    phantom_e: std::marker::PhantomData<E>,
+}
+
+impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq, E: 'static + From<K> + Event> ListItemUiEventHandler<K, E> {
+    pub fn new(item_key: K) -> Self {
+        Self { item_key, phantom_e: std::marker::PhantomData }
+    }
+}
+
+unsafe impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq, E: 'static + From<K> + Event> Send for ListItemUiEventHandler<K, E> {}
+unsafe impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq, E: 'static + From<K> + Event> Sync for ListItemUiEventHandler<K, E> {}
+
+impl<K: 'static + Hash + Eq + Copy + Clone + PartialEq, E: 'static + From<K> + Event> UiNodeEventHandlerTrait for ListItemUiEventHandler<K, E> {
+    fn handle(&self, world: &mut World, event: UiNodeEvent) {
+        match event {
+            UiNodeEvent::Clicked => {
+                let mut event_writer = world.get_resource_mut::<Events<E>>().unwrap();
+                event_writer.send(self.item_key.into());
+            }
+        }
+    }
+
+    fn clone_box(&self) -> Box<dyn UiNodeEventHandlerTrait> {
+        Box::new(Self::new(self.item_key))
     }
 }

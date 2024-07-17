@@ -1,5 +1,7 @@
 use bevy_ecs::event::Event;
 
+use game_engine::social::LobbyId;
+
 use crate::ui::UiKey;
 
 #[derive(Event, Default)]
@@ -19,6 +21,29 @@ pub struct SettingsButtonClickedEvent;
 
 #[derive(Event, Default)]
 pub struct SubmitButtonClickedEvent;
+
+#[derive(Event)]
+pub struct LobbyButtonClickedEvent {
+    lobby_id: LobbyId,
+}
+impl Default for LobbyButtonClickedEvent {
+    fn default() -> Self {
+        panic!("LobbyButtonClickedEvent::default() should not be used");
+    }
+}
+impl LobbyButtonClickedEvent {
+    pub fn new(lobby_id: LobbyId) -> Self {
+        Self { lobby_id }
+    }
+    pub fn lobby_id(&self) -> LobbyId {
+        self.lobby_id
+    }
+}
+impl From<LobbyId> for LobbyButtonClickedEvent {
+    fn from(lobby_id: LobbyId) -> Self {
+        Self::new(lobby_id)
+    }
+}
 
 // UI events
 

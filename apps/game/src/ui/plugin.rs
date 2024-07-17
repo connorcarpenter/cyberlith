@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin, Update};
 
 use crate::ui::{events::{
-    DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent,
+    DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, LobbyButtonClickedEvent,
     JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent,
     ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent,
     SubmitButtonClickedEvent, GoToSubUiEvent,
@@ -22,7 +22,8 @@ impl Plugin for UiPlugin {
             .add_systems(Update, message_list::handle_resync_message_list_ui_events)
             .add_systems(Update, message_list::handle_message_list_interaction_events)
             .add_systems(Update, host_match::handle_host_match_events)
-            .add_systems(Update, join_match::handle_join_match_interaction_events)
+            .add_systems(Update, join_match::handle_join_match_input_events)
+            .add_systems(Update, join_match::handle_join_match_click_events)
             .add_systems(Update, join_match::handle_resync_lobby_list_ui_events)
             // resync events
             .add_event::<ResyncMainMenuUiEvent>()
@@ -36,6 +37,7 @@ impl Plugin for UiPlugin {
             .add_event::<GlobalChatButtonClickedEvent>()
             .add_event::<DevlogButtonClickedEvent>()
             .add_event::<SettingsButtonClickedEvent>()
-            .add_event::<SubmitButtonClickedEvent>();
+            .add_event::<SubmitButtonClickedEvent>()
+            .add_event::<LobbyButtonClickedEvent>();
     }
 }

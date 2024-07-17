@@ -17,10 +17,10 @@ use game_engine::{
 
 use crate::{
     resources::lobby_manager::LobbyManager,
-    ui::{events::ResyncLobbyListUiEvent, UiCatalog, UiKey},
+    ui::{events::{ResyncLobbyListUiEvent, LobbyButtonClickedEvent}, UiCatalog, UiKey},
 };
 
-pub(crate) fn handle_join_match_interaction_events(
+pub(crate) fn handle_join_match_input_events(
     ui_catalog: Res<UiCatalog>,
     ui_manager: Res<UiManager>,
     mut lobby_manager: ResMut<LobbyManager>,
@@ -39,10 +39,36 @@ pub(crate) fn handle_join_match_interaction_events(
     {
         let ui_key = ui_catalog.get_ui_key(&current_ui_handle);
         if ui_key == UiKey::JoinMatch {
-            handle_join_match_interaction_events_impl(
+            handle_join_match_input_events_impl(
                 &mut lobby_manager,
                 &mut resync_lobby_list_ui_events,
                 &mut input_events,
+            );
+        }
+    };
+}
+
+pub(crate) fn handle_join_match_click_events(
+    ui_catalog: Res<UiCatalog>,
+    ui_manager: Res<UiManager>,
+    mut resync_lobby_list_ui_events: EventWriter<ResyncLobbyListUiEvent>,
+    mut click_events: EventReader<LobbyButtonClickedEvent>,
+) {
+    let Some(active_ui_handle) = ui_manager.active_ui() else {
+        return;
+    };
+    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
+        panic!("unexpected ui");
+    }
+
+    if let Some(current_ui_handle) =
+        ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
+    {
+        let ui_key = ui_catalog.get_ui_key(&current_ui_handle);
+        if ui_key == UiKey::JoinMatch {
+            handle_join_match_click_events_impl(
+                &mut resync_lobby_list_ui_events,
+                &mut click_events,
             );
         }
     };
@@ -83,7 +109,7 @@ pub(crate) fn handle_resync_lobby_list_ui_events(
     }
 }
 
-fn handle_join_match_interaction_events_impl(
+fn handle_join_match_input_events_impl(
     lobby_manager: &mut LobbyManager,
     resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
     input_events: &mut EventReader<InputEvent>,
@@ -94,15 +120,11 @@ fn handle_join_match_interaction_events_impl(
         match event {
             // TODO this probably doesn't belong here! this is where it is required to be selecting the textbox!!!
             InputEvent::KeyPressed(Key::I, _) => {
-                info!("I Key Pressed");
-
                 info!("Scrolling Up");
                 lobby_manager.scroll_up();
                 should_resync = true;
             }
             InputEvent::KeyPressed(Key::J, _) => {
-                info!("J Key Pressed");
-
                 info!("Scrolling Down");
                 lobby_manager.scroll_down();
                 should_resync = true;
@@ -112,6 +134,23 @@ fn handle_join_match_interaction_events_impl(
             }
             _ => {}
         }
+    }
+
+    if should_resync {
+        resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
+    }
+}
+
+fn handle_join_match_click_events_impl(
+    resync_lobby_ui_events: &mut EventWriter<ResyncLobbyListUiEvent>,
+    click_events: &mut EventReader<LobbyButtonClickedEvent>,
+) {
+    let mut should_resync = false;
+
+    for event in click_events.read() {
+        let lobby_id = event.lobby_id();
+        info!("Joining lobby: {:?}", lobby_id);
+        should_resync = true;
     }
 
     if should_resync {

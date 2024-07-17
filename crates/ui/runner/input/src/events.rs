@@ -24,13 +24,28 @@ impl UiNodeEventHandler {
         }
     }
 
+    pub fn custom(inner: impl UiNodeEventHandlerTrait) -> Self {
+        Self {
+            inner: Box::new(inner),
+        }
+    }
+
     pub fn handle(&self, world: &mut World, event: UiNodeEvent) {
         self.inner.handle(world, event);
     }
 }
 
-trait UiNodeEventHandlerTrait: Send + Sync + 'static {
+impl Clone for UiNodeEventHandler {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone_box(),
+        }
+    }
+}
+
+pub trait UiNodeEventHandlerTrait: Send + Sync + 'static {
     fn handle(&self, world: &mut World, event: UiNodeEvent);
+    fn clone_box(&self) -> Box<dyn UiNodeEventHandlerTrait>;
 }
 
 struct UiNodeEventHandlerImpl<T: Event + Default> {
@@ -45,6 +60,12 @@ impl<T: Event + Default> UiNodeEventHandlerImpl<T> {
     }
 }
 
+impl<T: Event + Default> Clone for UiNodeEventHandlerImpl<T> {
+    fn clone(&self) -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Event + Default> UiNodeEventHandlerTrait for UiNodeEventHandlerImpl<T> {
     fn handle(&self, world: &mut World, event: UiNodeEvent) {
         match event {
@@ -53,5 +74,9 @@ impl<T: Event + Default> UiNodeEventHandlerTrait for UiNodeEventHandlerImpl<T> {
                 event_writer.send(T::default());
             }
         }
+    }
+
+    fn clone_box(&self) -> Box<dyn UiNodeEventHandlerTrait> {
+        Box::new(self.clone())
     }
 }

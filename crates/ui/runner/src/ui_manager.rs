@@ -343,8 +343,7 @@ impl UiManager {
                     let Some(node_id) = ui_runtime.get_node_id_by_id_str(&id_str) else {
                         panic!("no node_id for id_str: {:?}", id_str);
                     };
-                    self.ui_node_event_handlers
-                        .insert((asset_id, node_id), handler);
+                    self.insert_ui_node_event_handler(asset_id, node_id, handler);
                 }
             }
         }
@@ -413,8 +412,7 @@ impl UiManager {
                 panic!("no node_id for id_str: {:?}", id_str);
             };
 
-            self.ui_node_event_handlers
-                .insert((asset_id, node_id), event_handler);
+            self.insert_ui_node_event_handler(asset_id, node_id, event_handler);
         } else {
             if !self.queued_ui_node_event_handlers.contains_key(&ui_handle) {
                 self.queued_ui_node_event_handlers
@@ -425,6 +423,10 @@ impl UiManager {
                 .unwrap()
                 .push((id_str.to_string(), event_handler));
         }
+    }
+
+    pub fn insert_ui_node_event_handler(&mut self, asset_id: AssetId, node_id: NodeId, event_handler: UiNodeEventHandler) {
+        self.ui_node_event_handlers.insert((asset_id, node_id), event_handler);
     }
 
     pub fn queue_recalculate_layout(&mut self) {
