@@ -107,6 +107,7 @@ pub(crate) struct ButtonStyleBits {
     panel: PanelStyleBits,
     hover_color: Option<ColorBits>,
     down_color: Option<ColorBits>,
+    disabled_color: Option<ColorBits>,
 }
 
 #[derive(Serde, Clone, PartialEq)]
@@ -229,6 +230,7 @@ pub(crate) struct TextBits {
 pub(crate) struct ButtonBits {
     panel: PanelBits,
     navigation: NavigationBits,
+    enabled: bool,
 }
 
 #[derive(Serde, Clone, PartialEq, Debug)]

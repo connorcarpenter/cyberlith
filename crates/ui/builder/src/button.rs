@@ -22,6 +22,12 @@ impl<'a> ButtonMut<'a> {
         self
     }
 
+    pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {
+        let node = self.ui_config.node_mut(&self.node_id).unwrap();
+        node.widget_button_mut().unwrap().enabled = enabled;
+        self
+    }
+
     pub fn set_style(&mut self, style_id: StyleId) -> &mut Self {
         let node = self.ui_config.node_mut(&self.node_id).unwrap();
         node.set_style_id(style_id);
@@ -212,6 +218,11 @@ impl<'a> ButtonStyleMut<'a> {
 
     pub fn set_background_color(&mut self, color: Color) -> &mut Self {
         self.get_button_style_mut().panel.background_color = Some(color);
+        self
+    }
+
+    pub fn set_disabled_color(&mut self, color: Color) -> &mut Self {
+        self.get_button_style_mut().disabled_color = Some(color);
         self
     }
 

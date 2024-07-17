@@ -385,10 +385,13 @@ fn draw_ui_button(
     let Some(button_style_state) = ui_state.button_style_state(ui_config, node_id) else {
         panic!("no button style state ref for node_id: {:?}", node_id);
     };
+    let Some(button_state) = ui_state.store.button_ref(node_id) else {
+        panic!("no button state for node_id: {:?}", node_id);
+    };
 
     // draw button
     let active_state = ui_manager.get_node_active_state(ui_id, node_id);
-    if let Some(mat_handle) = button_style_state.current_color_handle(active_state) {
+    if let Some(mat_handle) = button_style_state.current_color_handle(button_state, active_state) {
         let background_alpha = ui_config.node_background_alpha(node_id);
         if background_alpha > 0.0 {
             if background_alpha != 1.0 {

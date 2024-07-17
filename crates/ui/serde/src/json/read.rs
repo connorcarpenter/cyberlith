@@ -126,9 +126,10 @@ fn convert_nodes_recurse_panel(
                 let WidgetJson::Button(child_widget_serde) = &child_node_serde.widget else {
                     panic!("Expected button widget");
                 };
+                let child = Button::new(child_widget_serde.enabled);
                 let child_node_id = ui_config.create_node(
                     child_node_serde.id_str.as_ref().map(|s| s.as_str()),
-                    Widget::Button(Button::new()),
+                    Widget::Button(child),
                 );
                 let Widget::Panel(panel_parent) =
                     &mut ui_config.node_mut(parent_panel_id).unwrap().widget
@@ -541,6 +542,7 @@ impl Into<ButtonStyle> for ButtonStyleJson {
             panel: self.panel.into(),
             hover_color: self.hover_color.map(Into::into),
             down_color: self.down_color.map(Into::into),
+            disabled_color: self.disabled_color.map(Into::into),
         }
     }
 }

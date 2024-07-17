@@ -91,6 +91,9 @@ impl TextboxStyleState {
             NodeActiveState::Normal => self.background_color_handle,
             NodeActiveState::Hover => self.hover_color_handle,
             NodeActiveState::Active => self.active_color_handle,
+            NodeActiveState::Disabled => {
+                panic!("Disabled state not implemented for TextboxStyleState")
+            }
         }
     }
 

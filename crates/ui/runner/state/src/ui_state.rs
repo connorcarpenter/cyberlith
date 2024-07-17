@@ -80,6 +80,22 @@ impl UiState {
         self.store.get_node_mut(&id)
     }
 
+    pub fn get_button_enabled(&self, node_id: &NodeId) -> Option<bool> {
+        let node = self.store.get_node(node_id)?;
+        let button = node.widget_button_ref()?;
+        Some(button.enabled)
+    }
+
+    pub fn set_button_enabled(&mut self, node_id: &NodeId, val: bool) {
+        let Some(node) = self.store.get_node_mut(node_id) else {
+            return;
+        };
+        let Some(button) = node.widget_button_mut() else {
+            return;
+        };
+        button.enabled = val;
+    }
+
     pub fn textbox_ref(&self, id: &NodeId) -> Option<&TextboxState> {
         let node_ref = self.node_ref(id)?;
         let textbox_ref = node_ref.widget_textbox_ref()?;
@@ -349,6 +365,14 @@ impl UiState {
                             .unwrap_or(Color::BLACK);
                         let down_color_handle = materials.add(down_color);
                         button_style_mut.set_down_color_handle(down_color_handle);
+
+                        // disabled color
+                        let disabled_color = button_style
+                            .map(|style| style.disabled_color)
+                            .flatten()
+                            .unwrap_or(Color::BLACK);
+                        let disabled_color_handle = materials.add(disabled_color);
+                        button_style_mut.set_disabled_color_handle(disabled_color_handle);
                     } else {
                         // warn!("do not need to load cpu data for style: {:?}", style_id);
                     }

@@ -130,6 +130,7 @@ impl From<&ButtonStyle> for ButtonStyleJson {
             panel: From::from(&style.panel),
             hover_color: style.hover_color.map(From::from),
             down_color: style.down_color.map(From::from),
+            disabled_color: style.disabled_color.map(From::from),
         }
     }
 }
@@ -283,6 +284,7 @@ impl From<&Button> for ButtonJson {
         Self {
             panel: panel_json,
             navigation: From::from(&button.navigation),
+            enabled: button.enabled,
         }
     }
 }

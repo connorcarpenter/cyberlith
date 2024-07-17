@@ -7,13 +7,19 @@ use crate::{Panel, PanelStyle};
 pub struct Button {
     pub panel: Panel,
     pub navigation: Navigation,
+    pub enabled: bool,
 }
 
 impl Button {
-    pub fn new() -> Self {
+    pub fn default() -> Self {
+        Self::new(true)
+    }
+
+    pub fn new(enabled: bool) -> Self {
         Self {
             panel: Panel::new(),
             navigation: Navigation::new(),
+            enabled,
         }
     }
 
@@ -49,6 +55,7 @@ pub struct ButtonStyle {
 
     pub hover_color: Option<Color>,
     pub down_color: Option<Color>,
+    pub disabled_color: Option<Color>,
 }
 
 impl ButtonStyle {
@@ -56,6 +63,7 @@ impl ButtonStyle {
         self.panel.merge(&other.panel, false);
         self.hover_color = other.hover_color.or(self.hover_color);
         self.down_color = other.down_color.or(self.down_color);
+        self.disabled_color = other.disabled_color.or(self.disabled_color);
     }
 }
 
@@ -65,6 +73,7 @@ impl ButtonStyle {
             panel: PanelStyle::empty(),
             hover_color: None,
             down_color: None,
+            disabled_color: None,
         }
     }
 

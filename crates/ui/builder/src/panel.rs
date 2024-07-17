@@ -114,7 +114,7 @@ impl<'a> PanelContentsMut<'a> {
         // creates a new button, returning a context for it
         let new_id = self
             .ui_config
-            .create_node(Some(button_id_str), Widget::Button(Button::new()));
+            .create_node(Some(button_id_str), Widget::Button(Button::default()));
 
         // add new panel to children
         self.get_panel_mut().add_child(new_id);

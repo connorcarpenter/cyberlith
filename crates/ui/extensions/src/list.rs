@@ -468,6 +468,7 @@ enum ListItemAction {
     SetTextById(String, String),
     SetStyleById(String, String),
     RegisterUiEvent(String, ListUiEventHandler),
+    SetButtonEnabled(String, bool),
 }
 
 pub struct ListUiExtItem<'a, K: 'static + Hash + Eq + Copy + Clone + PartialEq> {
@@ -526,6 +527,13 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
         self.actions.push(ListItemAction::RegisterUiEvent(
             id_str.to_string(),
             ListUiEventHandler::from(ListItemUiEventHandler::<K, E>::new(self.item_key)),
+        ));
+    }
+
+    pub fn set_button_enabled(&mut self, id_str: &str, enabled: bool) {
+        self.actions.push(ListItemAction::SetButtonEnabled(
+            id_str.to_string(),
+            enabled,
         ));
     }
 
@@ -637,6 +645,20 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
         self.ui_manager.insert_ui_node_event_handler(asset_id, *node_id, event_handler);
     }
 
+    fn set_button_enabled_impl(&mut self, item_id_str: &str, enabled: bool) {
+        let node_id = self
+            .list_ui_ext
+            .get_node_id_by_str(self.item_key, item_id_str)
+            .unwrap();
+
+        let container_ui_runtime = self
+            .ui_manager
+            .ui_runtimes
+            .get_mut(self.container_ui_handle)
+            .unwrap();
+        container_ui_runtime.set_button_enabled(node_id, enabled);
+    }
+
     pub fn finished(mut self, parent_height: f32) {
         let should_add: bool;
         let actions_are_equal: bool;
@@ -688,18 +710,11 @@ impl<'a, K: Hash + Eq + Copy + Clone + PartialEq> ListUiExtItem<'a, K> {
             // execute actions
             for action in new_actions {
                 match action {
-                    ListItemAction::AddCopiedNode(ui_handle) => {
-                        self.add_copied_node_impl(&ui_handle)
-                    }
-                    ListItemAction::SetTextById(id_str, text) => {
-                        self.set_text_by_id_impl(&id_str, &text)
-                    }
-                    ListItemAction::SetStyleById(node_id_str, style_id_str) => {
-                        self.set_style_by_id_impl(&node_id_str, &style_id_str)
-                    }
-                    ListItemAction::RegisterUiEvent(id_str, event_handler) => {
-                        self.register_ui_event_impl(&id_str, event_handler.deconstruct())
-                    }
+                    ListItemAction::AddCopiedNode(ui_handle) => self.add_copied_node_impl(&ui_handle),
+                    ListItemAction::SetTextById(id_str, text) => self.set_text_by_id_impl(&id_str, &text),
+                    ListItemAction::SetStyleById(node_id_str, style_id_str) => self.set_style_by_id_impl(&node_id_str, &style_id_str),
+                    ListItemAction::RegisterUiEvent(id_str, event_handler) => self.register_ui_event_impl(&id_str, event_handler.deconstruct()),
+                    ListItemAction::SetButtonEnabled(id_str, enabled) => self.set_button_enabled_impl(&id_str, enabled),
                 }
             }
         }

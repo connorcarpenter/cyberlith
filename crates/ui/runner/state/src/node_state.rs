@@ -1,6 +1,7 @@
 use ui_runner_config::UiNode;
 
 use crate::{text::TextState, textbox::TextboxState, widget::WidgetState, UiContainerState};
+use crate::button::ButtonState;
 
 #[derive(Clone)]
 pub struct UiNodeState {
@@ -16,6 +17,20 @@ impl UiNodeState {
         let widget_state = WidgetState::from_widget(&node.widget);
 
         Self::new(widget_state)
+    }
+
+    pub fn widget_button_ref(&self) -> Option<&ButtonState> {
+        match &self.widget {
+            WidgetState::Button(button) => Some(button),
+            _ => None,
+        }
+    }
+
+    pub fn widget_button_mut(&mut self) -> Option<&mut ButtonState> {
+        match &mut self.widget {
+            WidgetState::Button(button) => Some(button),
+            _ => None,
+        }
     }
 
     pub fn widget_text_ref(&self) -> Option<&TextState> {

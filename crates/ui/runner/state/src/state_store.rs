@@ -15,6 +15,7 @@ use crate::{
     textbox::TextboxStyleState,
     UiNodeState,
 };
+use crate::button::ButtonState;
 
 pub struct UiStateStore {
     asset_id: AssetId,
@@ -67,6 +68,10 @@ impl UiStateStore {
 
     pub(crate) fn get_node_mut(&mut self, id: &NodeId) -> Option<&mut UiNodeState> {
         self.nodes.get_mut(id)
+    }
+
+    pub fn button_ref(&self, id: &NodeId) -> Option<&ButtonState> {
+        self.get_node(id)?.widget_button_ref()
     }
 
     pub fn text_ref(&self, id: &NodeId) -> Option<&TextState> {

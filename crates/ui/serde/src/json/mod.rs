@@ -104,6 +104,7 @@ pub(crate) struct ButtonStyleJson {
     panel: PanelStyleJson,
     hover_color: Option<ColorJson>,
     down_color: Option<ColorJson>,
+    disabled_color: Option<ColorJson>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -235,6 +236,7 @@ pub(crate) struct TextJson {
 pub(crate) struct ButtonJson {
     panel: PanelJson,
     navigation: NavigationJson,
+    enabled: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

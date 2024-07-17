@@ -199,6 +199,7 @@ impl From<&ButtonStyle> for ButtonStyleBits {
             panel: From::from(&style.panel),
             hover_color: style.hover_color.map(From::from),
             down_color: style.down_color.map(From::from),
+            disabled_color: style.disabled_color.map(From::from),
         }
     }
 }
@@ -454,6 +455,7 @@ impl ButtonBits {
         Self {
             panel: panel_bits,
             navigation: nav_bits,
+            enabled: button.enabled,
         }
     }
 }

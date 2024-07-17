@@ -17,7 +17,7 @@ pub struct MatchLobbyListState {
     pub match_lobbies_list_ui_ext: ListUiExt<u32>,
 
     // username, lobby name
-    pub match_lobbies: BTreeMap<u32, (String, String)>,
+    pub match_lobbies: BTreeMap<u32, (String, String, bool)>,
 
     match_lobby_list_item_ui_handle: UiHandle,
 }
@@ -64,7 +64,7 @@ impl MatchLobbyListState {
             self.match_lobbies.iter(),
             self.match_lobbies.len(),
             |item_ctx, lobby_id, _| {
-                let (username, lobbyname) = self.match_lobbies.get(&lobby_id).unwrap();
+                let (username, lobbyname, disabled) = self.match_lobbies.get(&lobby_id).unwrap();
 
                 // just add message
                 add_lobby_item(
@@ -72,6 +72,7 @@ impl MatchLobbyListState {
                     &self.match_lobby_list_item_ui_handle,
                     username,
                     lobbyname,
+                    *disabled,
                 );
             },
         );
@@ -83,10 +84,12 @@ fn add_lobby_item(
     ui: &UiHandle,
     username: &str,
     lobby_name: &str,
+    disabled: bool,
 ) {
     item_ctx.add_copied_node(ui);
     item_ctx.set_text_by_id("username", username);
     item_ctx.set_text_by_id("match_name", lobby_name);
+    item_ctx.set_button_enabled("lobby_button", !disabled);
 }
 
 pub(crate) fn setup_match_lobby_test_case(
@@ -121,7 +124,7 @@ pub(crate) fn setup_match_lobby_test_case(
     match_lobby_state
 }
 
-fn setup_match_lobbies() -> BTreeMap<u32, (String, String)> {
+fn setup_match_lobbies() -> BTreeMap<u32, (String, String, bool)> {
     let mut users = Vec::new();
     users.push("tom");
     users.push("ben");
@@ -140,7 +143,7 @@ fn setup_match_lobbies() -> BTreeMap<u32, (String, String)> {
     matchnames.push("snipin all day!!!");
     matchnames.push("no camping");
 
-    let mut match_lobbies = BTreeMap::<u32, (String, String)>::new();
+    let mut match_lobbies = BTreeMap::<u32, (String, String, bool)>::new();
 
     let mut current_user_index = 0;
 
@@ -153,6 +156,7 @@ fn setup_match_lobbies() -> BTreeMap<u32, (String, String)> {
             &mut match_lobbies,
             users[current_user_index],
             matchnames[matchname_index],
+            random::gen_bool(),
         );
     }
 
@@ -160,15 +164,16 @@ fn setup_match_lobbies() -> BTreeMap<u32, (String, String)> {
 }
 
 fn setup_global_chat(
-    match_lobbies: &mut BTreeMap<u32, (String, String)>,
+    match_lobbies: &mut BTreeMap<u32, (String, String, bool)>,
     username: &str,
     matchname: &str,
+    disabled: bool,
 ) {
     let id = match_lobbies.len() as u32;
     let matchname_str = format!("{:?} {:?}", id, matchname);
 
     match_lobbies.insert(
         match_lobbies.len() as u32,
-        (username.to_string(), matchname_str),
+        (username.to_string(), matchname_str, disabled),
     );
 }

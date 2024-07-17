@@ -227,6 +227,14 @@ impl UiRuntime {
         textbox.validation.clone()
     }
 
+    pub fn get_button_enabled(&self, node_id: &NodeId) -> Option<bool> {
+        self.state.get_button_enabled(node_id)
+    }
+
+    pub fn set_button_enabled(&mut self, node_id: &NodeId, enabled: bool) {
+        self.state.set_button_enabled(node_id, enabled);
+    }
+
     pub(crate) fn get_textbox_text(&self, id_str: &str) -> Option<String> {
         // get node_id from id_str
         let node_id = self.get_node_id_by_id_str(id_str)?;
