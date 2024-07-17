@@ -1,6 +1,3 @@
-use std::str::FromStr;
-
-use ascii::AsciiString;
 
 use asset_id::AssetId;
 use logging::{info, warn};
@@ -112,7 +109,7 @@ impl UiState {
         let node = self.store.get_node(node_id)?;
         match &node.widget {
             WidgetState::Text(text) => Some(text.text.clone()),
-            WidgetState::Textbox(textbox) => Some(textbox.text.to_string()),
+            WidgetState::Textbox(textbox) => Some(textbox.get_text_string()),
             _ => None,
         }
     }
@@ -127,7 +124,7 @@ impl UiState {
                 text.text = val.to_string();
             }
             WidgetState::Textbox(textbox) => {
-                textbox.text = AsciiString::from_str(val).unwrap();
+                textbox.set_text(val);
             }
             _ => {
                 warn!(

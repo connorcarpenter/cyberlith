@@ -1,4 +1,7 @@
-use ascii::AsciiString;
+use std::str::FromStr;
+
+use ascii::{AsciiChar, AsciiString};
+use unicode_segmentation::UnicodeSegmentation;
 
 use render_api::base::CpuMaterial;
 use storage::Handle;
@@ -8,7 +11,7 @@ use crate::NodeActiveState;
 
 #[derive(Clone)]
 pub struct TextboxState {
-    pub text: AsciiString,
+    text: AsciiString,
     pub offset_index: usize,
     pub password_mask: bool,
     pub eye_hover: bool,
@@ -26,6 +29,58 @@ impl TextboxState {
 
     pub fn get_masked_text(&self) -> String {
         "*".repeat(self.text.len())
+    }
+
+    pub fn get_text_string(&self) -> String {
+        self.text.to_string()
+    }
+
+    pub fn get_text_str(&self) -> &str {
+        self.text.as_str()
+    }
+
+    pub fn set_text(&mut self, val: &str) {
+        self.text = AsciiString::from_str(val).unwrap();
+    }
+
+    pub fn text_len(&self) -> usize {
+        self.text.len()
+    }
+
+    pub fn drain_text(&mut self, start: usize, end: usize) {
+        ascii_string_drain(&mut self.text, start, end);
+    }
+
+    pub fn text_unicode_word_indices(&self) -> impl DoubleEndedIterator<Item = (usize, &str)> {
+        self.text.as_str().unicode_word_indices()
+    }
+
+    pub fn text_remove_at(&mut self, index: usize) {
+        let text_len = self.text.len();
+        if index >= text_len {
+            return;
+        }
+        let _ = self.text.remove(index);
+    }
+
+    pub fn get_text_range_as_string(&self, start: usize, end: usize) -> String {
+        self.text[start..end].to_string()
+    }
+
+    pub fn get_text_range_as_str(&self, start: usize, end: usize) -> &str {
+        &self.text[start..end].as_str()
+    }
+
+    pub fn text_replace_range(&mut self, start: usize, end: usize, new_text: &AsciiString) {
+        ascii_string_replace_range(&mut self.text, start, end, new_text);
+    }
+
+    pub fn text_insert_str(&mut self, index: usize, text: &AsciiString) {
+        self.text.insert_str(index, text);
+    }
+
+    pub fn text_insert_char(&mut self, index: usize, chara: AsciiChar) {
+        self.text.insert(index, chara);
     }
 
     pub fn receive_hover(
@@ -124,4 +179,45 @@ impl TextboxStyleState {
     pub fn select_color_handle(&self) -> Option<Handle<CpuMaterial>> {
         self.select_color_handle
     }
+}
+
+fn ascii_string_drain(text: &mut AsciiString, start: usize, end: usize) {
+    // Make sure that `start` and `end` is a valid range for the text
+    let valid = start <= end && end <= text.len();
+
+    if !valid {
+        return;
+    }
+
+    // Convert AsciiString to Vec<AsciiChar>
+    let mut chars: Vec<AsciiChar> = text.chars().collect();
+
+    // Remove the specified range
+    chars.drain(start..=end);
+
+    // Convert back to AsciiString
+    *text = AsciiString::from(chars);
+}
+
+fn ascii_string_replace_range(
+    text: &mut AsciiString,
+    start: usize,
+    end: usize,
+    new_text: &AsciiString,
+) {
+    // Make sure that `start` and `end` is a valid range for the text
+    let valid = start <= end && end < text.len();
+
+    if !valid {
+        return;
+    }
+
+    // Convert AsciiString to Vec<AsciiChar>
+    let mut chars: Vec<AsciiChar> = text.chars().collect();
+
+    // Replace the specified range
+    chars.splice(start..end, new_text.chars());
+
+    // Convert back to AsciiString
+    *text = AsciiString::from(chars);
 }
