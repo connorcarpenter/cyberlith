@@ -36,8 +36,11 @@ pub struct LobbyManager {
     list_ui_ext: ListUiExt<LobbyId>,
     lobby_item_ui: Option<UiHandle>,
 
-    // user entity -> lobby entity
-    user_lobby_membership_map: HashMap<Entity, Entity>,
+    // user entity -> lobby id
+    user_lobby_membership_map: HashMap<Entity, LobbyId>,
+
+    // lobby_member_entity -> user_entity
+    lobby_member_to_user_map: HashMap<Entity, Entity>
 }
 
 impl Default for LobbyManager {
@@ -48,6 +51,7 @@ impl Default for LobbyManager {
             list_ui_ext: ListUiExt::new(true),
             lobby_item_ui: None,
             user_lobby_membership_map: HashMap::new(),
+            lobby_member_to_user_map: HashMap::new(),
         }
     }
 }
@@ -94,23 +98,38 @@ impl LobbyManager {
         self.lobby_entities.get(lobby_id).copied()
     }
 
-    pub(crate) fn put_user_in_lobby(&mut self, user_entity: Entity, lobby_entity: Entity) {
+    pub(crate) fn put_user_in_lobby(&mut self, user_entity: Entity, lobby_id: LobbyId, lobby_member_entity: Entity) {
         if self.user_lobby_membership_map.contains_key(&user_entity) {
             panic!("user is already in a lobby!");
         }
-        self.user_lobby_membership_map.insert(user_entity, lobby_entity);
+        self.user_lobby_membership_map.insert(user_entity, lobby_id);
+
+        if self.lobby_member_to_user_map.contains_key(&lobby_member_entity) {
+            panic!("lobby member is already registered!");
+        }
+        self.lobby_member_to_user_map.insert(lobby_member_entity, user_entity);
     }
 
-    pub(crate) fn remove_user_from_lobby(&mut self, user_entity: &Entity) {
-        if !self.user_lobby_membership_map.contains_key(user_entity) {
+    // returns (lobby_id, user_entity)
+    pub(crate) fn remove_user_from_lobby(&mut self, lobby_member_entity: &Entity) -> (LobbyId, Entity) {
+
+        let Some(user_entity) = self.lobby_member_to_user_map.remove(lobby_member_entity) else {
+            panic!("lobby member is not registered!");
+        };
+        let Some(lobby_id) = self.user_lobby_membership_map.remove(&user_entity) else {
             panic!("user is not in a lobby!");
-        }
-        self.user_lobby_membership_map.remove(user_entity);
+        };
+        (lobby_id, user_entity)
     }
 
     pub(crate) fn user_is_in_lobby(&self, user_entity: &Entity, lobby_entity: &Entity) -> bool {
         match self.user_lobby_membership_map.get(user_entity) {
-            Some(lobby) => lobby == lobby_entity,
+            Some(user_lobby_id) => {
+                let Some(user_lobby_entity) = self.lobby_entities.get(user_lobby_id) else {
+                    return false;
+                };
+                user_lobby_entity == lobby_entity
+            },
             None => false,
         }
     }

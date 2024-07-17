@@ -82,14 +82,15 @@ fn recv_inserted_lobby_member_component(
     mut insert_lobby_member_event_reader: EventReader<SessionInsertComponentEvent<LobbyMember>>,
 ) {
     for event in insert_lobby_member_event_reader.read() {
-        let lobby_member = lobby_member_q.get(event.entity).unwrap();
+        let lobby_member_entity = event.entity.clone();
+        let lobby_member = lobby_member_q.get(lobby_member_entity).unwrap();
         let lobby_entity = lobby_member.lobby_entity.get(&session_client).unwrap();
         let lobby = lobby_q.get(lobby_entity).unwrap();
         let lobby_id = *lobby.id;
         let user_entity = lobby_member.user_entity.get(&session_client).unwrap();
 
         // insert user into lobby
-        lobby_manager.put_user_in_lobby(user_entity, lobby_entity);
+        lobby_manager.put_user_in_lobby(user_entity, lobby_id, lobby_member_entity);
 
         let Some(self_user_entity) = user_manager.get_self_user_entity() else {
             warn!("self_user_entity not set when receiving inserted LobbyMember ..");
@@ -112,10 +113,8 @@ fn recv_inserted_lobby_member_component(
 }
 
 fn recv_removed_lobby_member_component(
-    session_client: SessionClient,
     user_manager: Res<UserManager>,
     mut lobby_manager: ResMut<LobbyManager>,
-    lobby_q: Query<&Lobby>,
     mut resync_main_menu_ui_events: EventWriter<ResyncMainMenuUiEvent>,
     mut resync_chat_message_ui_events: EventWriter<ResyncMessageListUiEvent>,
     mut resync_user_ui_events: EventWriter<ResyncUserListUiEvent>,
@@ -123,20 +122,16 @@ fn recv_removed_lobby_member_component(
 ) {
     for event in remove_lobby_member_event_reader.read() {
         let lobby_member_entity = event.entity.clone();
-        let lobby_member = event.component.clone();
 
         info!(
             "received Removed Lobby Member from Session Server! (entity: {:?})",
             lobby_member_entity
         );
 
-        let lobby_entity = lobby_member.lobby_entity.get(&session_client).unwrap();
-        let lobby = lobby_q.get(lobby_entity).unwrap();
-        let lobby_id = *lobby.id;
-        let user_entity = lobby_member.user_entity.get(&session_client).unwrap();
-
         // remove user from lobby
-        lobby_manager.remove_user_from_lobby(&user_entity);
+        let (lobby_id, user_entity) = lobby_manager.remove_user_from_lobby(&lobby_member_entity);
+
+        resync_user_ui_events.send(ResyncUserListUiEvent);
 
         let Some(self_user_entity) = user_manager.get_self_user_entity() else {
             warn!("self_user_entity not set when receiving removed LobbyMember ..");
@@ -144,15 +139,16 @@ fn recv_removed_lobby_member_component(
         };
 
         if user_entity == self_user_entity {
-            let current_lobby_id = lobby_manager.get_current_lobby().unwrap();
-            if current_lobby_id != lobby_id {
-                panic!("current_lobby_id != lobby_id, when removing LobbyMember entity");
+            if let Some(current_lobby_id) = lobby_manager.get_current_lobby() {
+                if current_lobby_id != lobby_id {
+                    panic!("current_lobby_id != lobby_id, when removing LobbyMember entity");
+                }
+                lobby_manager.leave_current_lobby(
+                    &mut resync_main_menu_ui_events,
+                    &mut resync_chat_message_ui_events,
+                    &mut resync_user_ui_events,
+                );
             }
-            lobby_manager.leave_current_lobby(
-                &mut resync_main_menu_ui_events,
-                &mut resync_chat_message_ui_events,
-                &mut resync_user_ui_events,
-            );
         }
     }
 }
