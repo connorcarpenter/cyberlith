@@ -8,7 +8,7 @@ use social_server_http_proto::{
     ConnectSessionServerRequest, ConnectSessionServerResponse, DisconnectSessionServerRequest,
     DisconnectSessionServerResponse,
 };
-use social_server_types::{LobbyId, MessageId, Timestamp};
+use social_server_types::{MessageId, Timestamp};
 
 use crate::state::State;
 
@@ -56,7 +56,7 @@ async fn async_recv_connect_session_server_request_impl(
         .collect();
 
     // get match lobbies
-    let match_lobbies: Vec<(LobbyId, UserId, String)> = state
+    let match_lobbies = state
         .match_lobbies
         .get_lobbies();
 

@@ -10,6 +10,8 @@ use session_server_http_proto::{
 };
 use social_server_types::{LobbyId, MessageId, Timestamp};
 
+use crate::match_lobbies::LobbyState;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SessionServerId {
     val: u64,
@@ -63,7 +65,7 @@ impl SessionServersState {
         recv_port: u16,
         present_users: Vec<UserId>,
         global_chat_full_log: Vec<(MessageId, Timestamp, UserId, String)>,
-        match_lobbies: Vec<(LobbyId, UserId, String)>,
+        match_lobbies: Vec<(LobbyId, UserId, String, Vec<UserId>, LobbyState)>,
     ) {
         let id = self.next_session_id();
         self.instances
@@ -126,14 +128,20 @@ impl SessionServersState {
 
         // sync match lobbies
         {
-            let match_lobbies = match_lobbies
-                .iter()
-                .map(|(lobby_id, user_id, match_name)| {
-                    SocialLobbyPatch::Create(*lobby_id, match_name.clone(), *user_id)
-                })
-                .collect();
+            let mut patches = Vec::new();
+
+            for (lobby_id, owner_user_id, match_name, member_ids, state) in &match_lobbies {
+                patches.push(SocialLobbyPatch::Create(*lobby_id, match_name.clone(), *owner_user_id));
+                for member_id in member_ids {
+                    patches.push(SocialLobbyPatch::Join(*lobby_id, *member_id));
+                }
+                if let LobbyState::InProgress = state {
+                    patches.push(SocialLobbyPatch::Start(*lobby_id));
+                }
+            }
+
             let request =
-                SocialPatchMatchLobbiesRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, match_lobbies);
+                SocialPatchMatchLobbiesRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, patches);
             let response = HttpClient::send(recv_addr, recv_port, request).await;
             match response {
                 Ok(_) => {

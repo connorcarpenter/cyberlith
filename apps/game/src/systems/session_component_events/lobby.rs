@@ -9,13 +9,13 @@ use bevy_ecs::{
 use game_engine::{
     logging::{info, warn},
     session::{
-        components::{Lobby, LobbyMember},
+        components::{Lobby, LobbyMember}, SessionUpdateComponentEvent,
         SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,
     },
 };
 
 use crate::{
-    resources::{lobby_manager::LobbyManager, user_manager::UserManager},
+    resources::{match_manager::MatchManager, lobby_manager::LobbyManager, user_manager::UserManager},
     ui::events::{
         ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
         ResyncUserListUiEvent,
@@ -29,7 +29,7 @@ impl Plugin for LobbyComponentEventsPlugin {
         app
             // Lobby
             .add_systems(Update, recv_inserted_lobby_component)
-            // updated_lobby_component?
+            .add_systems(Update, recv_updated_lobby_component)
             .add_systems(Update, recv_removed_lobby_component)
             // LobbyMember
             .add_systems(Update, recv_inserted_lobby_member_component)
@@ -52,6 +52,46 @@ fn recv_inserted_lobby_component(
         info!("incoming lobby: [ {:?} | {:?} ]", event.entity, lobby_name);
 
         lobby_manager.recv_lobby(lobby_id, event.entity, &mut resync_lobby_ui_events);
+    }
+}
+
+fn recv_updated_lobby_component(
+    lobby_manager: Res<LobbyManager>,
+    mut match_manager: ResMut<MatchManager>,
+    mut resync_main_menu_ui_events: EventWriter<ResyncMainMenuUiEvent>,
+    mut resync_lobby_list_ui_events: EventWriter<ResyncLobbyListUiEvent>,
+    lobby_q: Query<&Lobby>,
+    mut update_lobby_component_event_reader: EventReader<SessionUpdateComponentEvent<Lobby>>,
+) {
+    let mut resync = false;
+
+    for event in update_lobby_component_event_reader.read() {
+
+        resync = true;
+
+
+        let Some(current_lobby_id) = lobby_manager.get_current_lobby() else {
+            continue;
+        };
+
+        let lobby = lobby_q.get(event.entity).unwrap();
+        let lobby_id = *lobby.id;
+
+        if current_lobby_id != lobby_id {
+            continue;
+        }
+
+        if match_manager.in_match() {
+            continue;
+        }
+
+        if lobby.is_in_progress() {
+            match_manager.start_match(&mut resync_main_menu_ui_events);
+        }
+    }
+
+    if resync {
+        resync_lobby_list_ui_events.send(ResyncLobbyListUiEvent);
     }
 }
 

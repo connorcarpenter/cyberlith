@@ -16,7 +16,7 @@ use game_engine::{
 };
 
 use crate::{
-    resources::{user_manager::UserManager, lobby_manager::LobbyManager},
+    resources::{user_manager::UserManager, lobby_manager::LobbyManager, match_manager::MatchManager},
     states::AppState,
     ui::{
         events::{
@@ -81,7 +81,6 @@ pub(crate) fn handle_main_menu_interaction_events(
     mut devlog_btn_rdr: EventReader<DevlogButtonClickedEvent>,
     mut settings_btn_rdr: EventReader<SettingsButtonClickedEvent>,
     mut current_lobby_btn_rdr: EventReader<CurrentLobbyButtonClickedEvent>,
-    mut start_match_btn_rdr: EventReader<StartMatchButtonClickedEvent>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -173,17 +172,45 @@ pub(crate) fn handle_main_menu_interaction_events(
         }
     }
 
-    // Start Match Button Click
-    {
-        let mut start_match_clicked = false;
-        for _ in start_match_btn_rdr.read() {
-            start_match_clicked = true;
-        }
-        if start_match_clicked {
-            info!("start match button clicked!");
-            should_rumble = true;
+    // handle rumble
+    if should_rumble {
+        if let Some(id) = input.gamepad_first() {
+            rumble_manager.add_rumble(
+                id,
+                Duration::from_millis(200),
+                GamepadRumbleIntensity::strong_motor(0.4),
+            );
         }
     }
+}
+
+pub(crate) fn handle_start_match_events(
+    ui_manager: Res<UiManager>,
+    ui_catalog: Res<UiCatalog>,
+    input: Res<Input>,
+    mut session_client: SessionClient,
+    mut lobby_manager: ResMut<LobbyManager>,
+    mut match_manager: ResMut<MatchManager>,
+    mut rumble_manager: ResMut<RumbleManager>,
+    mut resync_main_menu_ui_events: EventWriter<ResyncMainMenuUiEvent>,
+    mut start_match_btn_rdr: EventReader<StartMatchButtonClickedEvent>,
+) {
+    let Some(active_ui_handle) = ui_manager.active_ui() else {
+        return;
+    };
+    if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
+        panic!("unexpected ui");
+    }
+
+    let mut should_rumble = false;
+
+    lobby_manager.handle_start_match_events(
+        &mut session_client,
+        &mut match_manager,
+        &mut resync_main_menu_ui_events,
+        &mut start_match_btn_rdr,
+        &mut should_rumble,
+    );
 
     // handle rumble
     if should_rumble {
@@ -245,6 +272,7 @@ pub(crate) fn handle_resync_main_menu_ui_events(
     ui_catalog: Res<UiCatalog>,
     user_manager: Res<UserManager>,
     lobby_manager: Res<LobbyManager>,
+    match_manager: Res<MatchManager>,
     lobby_q: Query<&Lobby>,
     mut resync_main_menu_ui_events: EventReader<ResyncMainMenuUiEvent>,
 ) {
@@ -269,6 +297,20 @@ pub(crate) fn handle_resync_main_menu_ui_events(
     }
 
     // we must resync
+
+    if match_manager.in_match() {
+        // in a match
+        ui_manager.set_button_enabled(&active_ui_handle, "host_match_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "join_match_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "chat_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "current_lobby_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "start_button", false);
+        ui_manager.set_button_enabled(&active_ui_handle, "leave_button", false);
+        // TODO: disable chat bar
+
+        return;
+    }
+
     let current_lobby_id = lobby_manager.get_current_lobby();
 
     if let Some(current_lobby_id) = current_lobby_id {
@@ -290,6 +332,7 @@ pub(crate) fn handle_resync_main_menu_ui_events(
 
         // make right side "leave lobby" button visible
         ui_manager.set_node_visible(&active_ui_handle, "leave_button", true);
+        ui_manager.set_button_enabled(&active_ui_handle, "leave_button", true);
 
         // make right side "start match" button visible (if host)
         let self_is_owner_of_lobby: bool = {
@@ -302,6 +345,7 @@ pub(crate) fn handle_resync_main_menu_ui_events(
 
         if self_is_owner_of_lobby {
             ui_manager.set_node_visible(&active_ui_handle, "start_button", true);
+            ui_manager.set_button_enabled(&active_ui_handle, "start_button", true);
         }
     } else {
         // not in a lobby

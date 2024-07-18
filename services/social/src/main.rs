@@ -48,6 +48,7 @@ pub fn main() {
     match_lobbies::recv_match_lobby_join_request(host, &mut server, state.clone());
     match_lobbies::recv_match_lobby_leave_request(host, &mut server, state.clone());
     match_lobbies::recv_match_lobby_send_message_request(host, &mut server, state.clone());
+    match_lobbies::recv_match_lobby_start_request(host, &mut server, state.clone());
 
     global_chat::recv_global_chat_send_message_request(host, &mut server, state.clone());
 

@@ -21,13 +21,13 @@ use game_engine::{
     },
 };
 
-use crate::ui::{
+use crate::{ui::{
     events::{
-        ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+        StartMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
         ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent, LobbyListItemClickedEvent, LeaveLobbyButtonClickedEvent,
     },
     go_to_sub_ui, UiCatalog, UiKey,
-};
+}, resources::match_manager::MatchManager};
 
 #[derive(Resource)]
 pub struct LobbyManager {
@@ -174,6 +174,35 @@ impl LobbyManager {
         }
     }
 
+    pub(crate) fn handle_start_match_events(
+        &mut self,
+        session_client: &mut SessionClient,
+        match_manager: &mut MatchManager,
+        resync_main_menu_ui_events: &mut EventWriter<ResyncMainMenuUiEvent>,
+        start_match_btn_rdr: &mut EventReader<StartMatchButtonClickedEvent>,
+        should_rumble: &mut bool,
+    ) {
+        if match_manager.in_match() {
+            return;
+        }
+        // Start Match Button Click
+        let mut start_match_clicked = false;
+        for _ in start_match_btn_rdr.read() {
+            start_match_clicked = true;
+        }
+        if start_match_clicked {
+            info!("start match button clicked!");
+
+            // send request to session server
+            session_client.send_message::<channels::ClientActionsChannel, _>(&messages::MatchLobbyGameStart);
+
+            match_manager.start_match(resync_main_menu_ui_events);
+
+            // def rumble
+            *should_rumble = true;
+        }
+    }
+
     pub(crate) fn handle_leave_lobby_events(
         &mut self,
         session_client: &mut SessionClient,
@@ -297,6 +326,11 @@ impl LobbyManager {
 
                 let lobby_entity = *(self.lobby_entities.get(&lobby_id).unwrap());
                 let lobby = lobby_q.get(lobby_entity).unwrap();
+
+                // filter out lobbies that are in progress
+                if lobby.is_in_progress() {
+                    return;
+                }
 
                 let lobby_owner_entity = lobby.owner_user_entity.get(session_client).unwrap();
                 let owner_user = user_q.get(lobby_owner_entity).unwrap();

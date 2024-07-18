@@ -14,7 +14,7 @@ use crate::{
     resources::{
         chat_message_events::ChatMessageEvents, chat_message_manager::ChatMessageManager,
         lobby_manager::LobbyManager, selfhood_events::SelfhoodEvents, user_manager::UserManager,
-        AssetCatalog,
+        asset_catalog::AssetCatalog, match_manager::MatchManager,
     },
     states::AppState,
     systems::{
@@ -55,6 +55,7 @@ impl Plugin for GameApp {
             .init_resource::<ChatMessageEvents>()
             .init_resource::<LobbyManager>()
             .init_resource::<AssetCatalog>()
+            .init_resource::<MatchManager>()
             // states
             .insert_state(AppState::Loading)
             // scene systems

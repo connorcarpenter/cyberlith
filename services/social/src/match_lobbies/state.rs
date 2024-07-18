@@ -1,16 +1,22 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use auth_server_types::UserId;
-
 use social_server_types::{LobbyId, MessageId, Timestamp};
 
 use crate::session_servers::SessionServerId;
+
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub(crate) enum LobbyState {
+    WaitingToStart,
+    InProgress,
+}
 
 pub(crate) enum LobbyPatch {
     Create(LobbyId, UserId, String),
     Join(LobbyId, UserId),
     Leave(UserId),
     Message(MessageId, Timestamp, UserId, String),
+    Start(LobbyId),
 }
 
 struct LobbyData {
@@ -19,6 +25,7 @@ struct LobbyData {
     users: HashSet<UserId>,
     message_log: VecDeque<(MessageId, Timestamp, UserId, String)>,
     next_message_id: MessageId,
+    state: LobbyState,
 }
 
 impl LobbyData {
@@ -31,6 +38,7 @@ impl LobbyData {
             users,
             message_log: VecDeque::new(),
             next_message_id: MessageId::new(0),
+            state: LobbyState::WaitingToStart,
         }
     }
 
@@ -181,13 +189,51 @@ impl MatchLobbiesState {
         (msg_id, timestamp)
     }
 
-    pub fn get_lobbies(&self) -> Vec<(LobbyId, UserId, String)> {
-        self.lobbies
-            .iter()
-            .map(|(lobby_id, lobby_data)| {
-                (lobby_id.clone(), lobby_data.owner_user_id, lobby_data.match_name.clone())
-            })
-            .collect()
+    pub fn start(
+        &mut self,
+        session_server_id: &SessionServerId,
+        lobby_id: &LobbyId,
+        starting_user_id: &UserId
+    ) -> Result<(), String> {
+        let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
+        if lobby_data.owner_user_id != *starting_user_id {
+            return Err("user is not the owner of the lobby".to_string());
+        }
+        if lobby_data.state != LobbyState::WaitingToStart {
+            return Err("lobby is not waiting to start".to_string());
+        }
+        lobby_data.state = LobbyState::InProgress;
+
+        // add to outgoing patches
+        if !self
+            .outgoing_patches
+            .contains_key(&session_server_id)
+        {
+            self.outgoing_patches
+                .insert(*session_server_id, Vec::new());
+        }
+
+        let session_server_patches = self
+            .outgoing_patches
+            .get_mut(&session_server_id)
+            .unwrap();
+        session_server_patches.push(LobbyPatch::Start(*lobby_id));
+
+        return Ok(());
+    }
+
+    pub fn get_lobbies(&self) -> Vec<(LobbyId, UserId, String, Vec<UserId>, LobbyState)> {
+        let mut output = Vec::new();
+
+        for (lobby_id, lobby_data) in self.lobbies.iter() {
+            let owner_user_id = lobby_data.owner_user_id;
+            let match_name = lobby_data.match_name.clone();
+            let users = lobby_data.users.iter().map(|x| *x).collect();
+            let state = lobby_data.state.clone();
+            output.push((*lobby_id, owner_user_id, match_name, users, state));
+        }
+
+        output
     }
 
     pub fn take_patches(&mut self) -> HashMap<SessionServerId, Vec<LobbyPatch>> {

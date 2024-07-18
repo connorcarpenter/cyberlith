@@ -2,11 +2,7 @@ use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
 
-use social_server_http_proto::{
-    MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest,
-    MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse,
-    MatchLobbySendMessageRequest, MatchLobbySendMessageResponse,
-};
+use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse, MatchLobbySendMessageRequest, MatchLobbySendMessageResponse, MatchLobbyStartRequest, MatchLobbyStartResponse};
 
 use crate::state::State;
 
@@ -122,6 +118,48 @@ async fn async_recv_match_lobby_leave_request_impl(
 
     // responding
     return Ok(MatchLobbyLeaveResponse);
+}
+
+pub fn recv_match_lobby_start_request(
+    host_name: &str,
+    server: &mut Server,
+    state: Arc<RwLock<State>>,
+) {
+    server.api_endpoint(host_name, None, move |_addr, req| {
+        let state = state.clone();
+        async move { async_recv_match_lobby_start_request_impl(state, req).await }
+    });
+}
+
+async fn async_recv_match_lobby_start_request_impl(
+    state: Arc<RwLock<State>>,
+    request: MatchLobbyStartRequest,
+) -> Result<MatchLobbyStartResponse, ResponseError> {
+    let mut state = state.write().await;
+
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&request.session_instance_secret())
+    else {
+        warn!("invalid request instance secret");
+        return Err(ResponseError::Unauthenticated);
+    };
+
+    let Some(lobby_id) = state.users.get_user_lobby_id(&request.user_id()) else {
+        warn!("user is not in a lobby");
+        return Err(ResponseError::InternalServerError("user is not in a lobby".to_string()));
+    };
+
+    if let Err(err) =
+    state
+        .match_lobbies
+        .start(&session_server_id, &lobby_id, &request.user_id()) {
+        warn!("failed to start lobby: {}", err);
+        return Err(ResponseError::InternalServerError(err));
+    }
+
+    // responding
+    return Ok(MatchLobbyStartResponse::new(lobby_id));
 }
 
 pub fn recv_match_lobby_send_message_request(

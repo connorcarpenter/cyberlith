@@ -1,6 +1,6 @@
 use std::collections::{HashMap};
 
-use bevy_ecs::{entity::Entity, system::Commands};
+use bevy_ecs::{entity::Entity, system::{Query, Commands}};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
@@ -9,21 +9,29 @@ use logging::{info, warn};
 use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::{Lobby, LobbyMember};
-use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse};
+use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse, MatchLobbyStartRequest, MatchLobbyStartResponse};
 use social_server_types::LobbyId;
 
 use crate::{social::chat_message_manager::ChatMessageManager, session_instance::SessionInstance, user::UserManager};
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+enum LobbyState {
+    WaitingToStart,
+    InProgress,
+}
 
 enum LobbyReqQueued {
     MatchCreate(UserKey, String),
     MatchJoin(UserKey, LobbyId),
     MatchLeave(UserKey),
+    MatchStart(UserKey),
 }
 
 enum LobbyReqInFlight {
     MatchCreate(UserId, String, ResponseKey<MatchLobbyCreateResponse>),
     MatchJoin(UserId, LobbyId, ResponseKey<MatchLobbyJoinResponse>),
-    MatchLeave(UserId, ResponseKey<MatchLobbyLeaveResponse>)
+    MatchLeave(UserId, ResponseKey<MatchLobbyLeaveResponse>),
+    MatchStart(UserId, ResponseKey<MatchLobbyStartResponse>),
 }
 
 struct LobbyData {
@@ -31,6 +39,7 @@ struct LobbyData {
     lobby_entity: Entity,
     room_key: RoomKey,
     lobby_member_entities: HashMap<Entity, UserId>,
+    state: LobbyState,
 }
 
 impl LobbyData {
@@ -40,6 +49,7 @@ impl LobbyData {
             lobby_entity,
             room_key,
             lobby_member_entities: HashMap::new(),
+            state: LobbyState::WaitingToStart,
         }
     }
 
@@ -49,6 +59,13 @@ impl LobbyData {
 
     pub(crate) fn remove_lobby_member_entity(&mut self, lobby_member_entity: &Entity) {
         self.lobby_member_entities.remove(lobby_member_entity);
+    }
+
+    pub(crate) fn start(&mut self) {
+        if self.state != LobbyState::WaitingToStart {
+            panic!("Lobby is not waiting to start");
+        }
+        self.state = LobbyState::InProgress;
     }
 }
 
@@ -83,6 +100,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        lobby_q: &mut Query<&mut Lobby>,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
         user_presence_room_key: &RoomKey,
@@ -92,6 +110,7 @@ impl LobbyManager {
             naia_server,
             http_client,
             user_manager,
+            lobby_q,
             user_presence_room_key,
         );
         self.process_queued_requests(
@@ -150,6 +169,15 @@ impl LobbyManager {
                         &user_key,
                     );
                 }
+                LobbyReqQueued::MatchStart(user_key) => {
+                    self.send_match_lobby_start(
+                        http_client,
+                        user_manager,
+                        social_server_url.as_ref(),
+                        session_instance,
+                        &user_key,
+                    );
+                }
             }
         }
     }
@@ -160,6 +188,7 @@ impl LobbyManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        lobby_q: &mut Query<&mut Lobby>,
         main_menu_room_key: &RoomKey,
     ) {
         if self.in_flight_requests.is_empty() {
@@ -274,6 +303,37 @@ impl LobbyManager {
                         continuing_requests.push(req);
                     }
                 }
+                LobbyReqInFlight::MatchStart(_user_id, response_key) => {
+                    if let Some(response_result) = http_client.recv(response_key) {
+                        let host = "session";
+                        let remote = "social";
+                        bevy_http_client::log_util::recv_res(
+                            host,
+                            remote,
+                            MatchLobbyStartResponse::name(),
+                        );
+
+                        match response_result {
+                            Ok(response) => {
+                                // info!("received start match lobby message response from social server");
+                                let lobby_id = response.lobby_id();
+
+                                self.start_lobby(
+                                    lobby_q,
+                                    &lobby_id,
+                                );
+                            }
+                            Err(e) => {
+                                warn!(
+                                    "error receiving start match lobby response from social server: {:?}",
+                                    e.to_string()
+                                );
+                            }
+                        }
+                    } else {
+                        continuing_requests.push(req);
+                    }
+                }
             }
         }
 
@@ -372,6 +432,48 @@ impl LobbyManager {
         return;
     }
 
+    pub(crate) fn send_match_lobby_start(
+        &mut self,
+        http_client: &mut HttpClient,
+        user_manager: &UserManager,
+        social_server_url: Option<&(String, u16)>,
+        session_instance: &SessionInstance,
+        user_key: &UserKey,
+    ) {
+        let Some(user_id) = user_manager.user_key_to_id(user_key) else {
+            warn!("User not found: {:?}", user_key);
+            return;
+        };
+
+        let Some((social_server_addr, social_server_port)) = social_server_url else {
+            warn!("received start match lobby request but no social server is available!");
+
+            self.queued_requests.push(LobbyReqQueued::MatchStart(
+                *user_key,
+            ));
+
+            return;
+        };
+
+        // info!("sending match lobby start request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
+        let request = MatchLobbyStartRequest::new(
+            session_instance.instance_secret(),
+            user_id,
+        );
+
+        let host = "session";
+        let remote = "social";
+        bevy_http_client::log_util::send_req(host, remote, MatchLobbyStartRequest::name());
+        let response_key = http_client.send(social_server_addr, *social_server_port, request);
+
+        self.in_flight_requests.push(LobbyReqInFlight::MatchStart(
+            user_id,
+            response_key,
+        ));
+
+        return;
+    }
+
     pub(crate) fn send_match_lobby_leave(
         &mut self,
         http_client: &mut HttpClient,
@@ -421,6 +523,7 @@ impl LobbyManager {
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
         chat_message_manager: &mut ChatMessageManager,
+        lobby_q: &mut Query<&mut Lobby>,
         main_menu_room_key: &RoomKey,
         patches: &Vec<SocialLobbyPatch>,
     ) {
@@ -476,6 +579,11 @@ impl LobbyManager {
                         user_id,
                         message
                     );
+                }
+                SocialLobbyPatch::Start(lobby_id) => {
+                    info!("starting lobby match - [lobbyid {:?}]", lobby_id);
+
+                    self.start_lobby(lobby_q, lobby_id);
                 }
             }
         }
@@ -617,5 +725,17 @@ impl LobbyManager {
             // delete the lobby
             self.remove_lobby(commands, naia_server, user_manager, &lobby_id);
         }
+    }
+
+    fn start_lobby(
+        &mut self,
+        lobby_q: &mut Query<&mut Lobby>,
+        lobby_id: &LobbyId,
+    ) {
+        let lobby_data = self.lobbies.get_mut(&lobby_id).unwrap();
+        lobby_data.start();
+        let lobby_entity = lobby_data.lobby_entity;
+        let mut lobby = lobby_q.get_mut(lobby_entity).unwrap();
+        lobby.start();
     }
 }

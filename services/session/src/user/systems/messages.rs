@@ -8,7 +8,7 @@ use logging::warn;
 
 use session_server_naia_proto::{
     channels::ClientActionsChannel,
-    messages::{GlobalChatSendMessage, MatchLobbyLeave, MatchLobbyJoin, MatchLobbySendMessage, MatchLobbyCreate, WorldConnectRequest},
+    messages::{GlobalChatSendMessage, MatchLobbyGameStart, MatchLobbyLeave, MatchLobbyJoin, MatchLobbySendMessage, MatchLobbyCreate, WorldConnectRequest},
 };
 
 use crate::{session_instance::SessionInstance, social::SocialManager, user::UserManager};
@@ -84,6 +84,17 @@ pub fn message_events(
                 &session_instance,
                 &user_key,
                 &req.match_id,
+            );
+        }
+
+        // Start Match
+        for (user_key, _req) in events.read::<ClientActionsChannel, MatchLobbyGameStart>() {
+            social_manager.lobby_manager.send_match_lobby_start(
+                &mut http_client,
+                &user_manager,
+                social_server_url.as_ref(),
+                &session_instance,
+                &user_key,
             );
         }
 

@@ -14,6 +14,8 @@ pub enum SocialLobbyPatch {
     Leave(UserId),
     // message id, timestamp, user id, message
     Message(MessageId, Timestamp, UserId, String),
+    // lobby id
+    Start(LobbyId),
 }
 
 // Request

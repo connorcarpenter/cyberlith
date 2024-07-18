@@ -7,7 +7,7 @@ use naia_bevy_server::{RoomKey, Server};
 
 use bevy_http_client::HttpClient;
 use session_server_http_proto::SocialLobbyPatch;
-use session_server_naia_proto::components::User;
+use session_server_naia_proto::components::{Lobby, User};
 
 use crate::{
     session_instance::SessionInstance,
@@ -47,6 +47,7 @@ impl SocialManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        lobby_q: &mut Query<&mut Lobby>,
         main_menu_room_key: &RoomKey,
         patches: &Vec<SocialLobbyPatch>,
     ) {
@@ -56,6 +57,7 @@ impl SocialManager {
             http_client,
             user_manager,
             &mut self.chat_message_manager,
+            lobby_q,
             main_menu_room_key,
             patches,
         );
@@ -96,6 +98,7 @@ impl SocialManager {
         session_instance: Res<SessionInstance>,
         mut user_manager: ResMut<UserManager>,
         mut users_q: Query<&mut User>,
+        mut lobby_q: Query<&mut Lobby>,
     ) {
         let social_server_url = social_manager.get_social_server_url();
         let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
@@ -104,6 +107,7 @@ impl SocialManager {
             &mut naia_server,
             &mut http_client,
             &mut user_manager,
+            &mut lobby_q,
             &social_server_url,
             &session_instance,
             &main_menu_room_key,
@@ -117,6 +121,7 @@ impl SocialManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         user_manager: &mut UserManager,
+        lobby_q: &mut Query<&mut Lobby>,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
         main_menu_room_key: &RoomKey,
@@ -137,6 +142,7 @@ impl SocialManager {
             naia_server,
             http_client,
             user_manager,
+            lobby_q,
             social_server_url,
             session_instance,
             main_menu_room_key,

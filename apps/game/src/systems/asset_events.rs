@@ -12,8 +12,8 @@ use game_engine::{
 
 use crate::{
     resources::{
-        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager, on_asset_load,
-        user_manager::UserManager, AssetCatalog,
+        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
+        user_manager::UserManager, asset_catalog::{AssetCatalog, on_asset_load},
     },
     states::AppState,
     ui::{

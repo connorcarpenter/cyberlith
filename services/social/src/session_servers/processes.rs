@@ -163,6 +163,7 @@ async fn handle_match_lobby_patches(state: &mut State) {
                         user_id.clone(),
                         message.clone(),
                     ),
+                    LobbyPatch::Start(lobby_id) => SocialLobbyPatch::Start(lobby_id.clone()),
                 })
                 .collect();
 
