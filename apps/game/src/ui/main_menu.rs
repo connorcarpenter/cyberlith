@@ -82,6 +82,8 @@ pub(crate) fn handle_main_menu_interaction_events(
     mut settings_btn_rdr: EventReader<SettingsButtonClickedEvent>,
     mut current_lobby_btn_rdr: EventReader<CurrentLobbyButtonClickedEvent>,
     mut start_match_btn_rdr: EventReader<StartMatchButtonClickedEvent>,
+    mut session_client: SessionClient,
+    mut lobby_manager: ResMut<LobbyManager>,
 ) {
     let Some(active_ui_handle) = ui_manager.active_ui() else {
         return;
@@ -181,6 +183,19 @@ pub(crate) fn handle_main_menu_interaction_events(
         }
         if start_match_clicked {
             info!("start match button clicked!");
+
+            // Trigger WorldRoom creation process
+            match lobby_manager.create_world_room(&mut session_client) {
+                Ok(()) => {
+                    info!("WorldRoom creation process initiated successfully");
+                    // TODO: Implement logic to distribute tokens to users in the lobby
+                },
+                Err(e) => {
+                    error!("Failed to create WorldRoom: {:?}", e);
+                    // TODO: Implement error handling, e.g., show error message to user
+                }
+            }
+
             should_rumble = true;
         }
     }
