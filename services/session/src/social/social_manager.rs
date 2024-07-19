@@ -22,7 +22,7 @@ use crate::{
 pub struct SocialManager {
     social_server_opt: Option<(String, u16)>,
 
-    main_menu_room_key: Option<RoomKey>,
+    global_room_key: Option<RoomKey>,
 
     pub(crate) chat_message_manager: ChatMessageManager,
     pub(crate) lobby_manager: LobbyManager,
@@ -33,7 +33,7 @@ impl SocialManager {
     pub fn new() -> Self {
         Self {
             social_server_opt: None,
-            main_menu_room_key: None,
+            global_room_key: None,
 
             chat_message_manager: ChatMessageManager::new(),
             lobby_manager: LobbyManager::new(),
@@ -63,8 +63,8 @@ impl SocialManager {
         );
     }
 
-    pub fn main_menu_room_key(&self) -> Option<RoomKey> {
-        self.main_menu_room_key
+    pub fn global_room_key(&self) -> Option<RoomKey> {
+        self.global_room_key
     }
 
     // Social Server
@@ -86,7 +86,7 @@ impl SocialManager {
     // used as a system
     pub fn startup(mut naia_server: Server, mut social_manager: ResMut<Self>) {
         let main_menu_room_key = naia_server.make_room().key();
-        social_manager.main_menu_room_key = Some(main_menu_room_key);
+        social_manager.global_room_key = Some(main_menu_room_key);
     }
 
     // used as a system
@@ -101,7 +101,7 @@ impl SocialManager {
         mut lobby_q: Query<&mut Lobby>,
     ) {
         let social_server_url = social_manager.get_social_server_url();
-        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
+        let global_room_key = social_manager.global_room_key().unwrap();
         social_manager.update_impl(
             &mut commands,
             &mut naia_server,
@@ -110,7 +110,7 @@ impl SocialManager {
             &mut lobby_q,
             &social_server_url,
             &session_instance,
-            &main_menu_room_key,
+            &global_room_key,
             &mut users_q,
         );
     }
@@ -124,7 +124,7 @@ impl SocialManager {
         lobby_q: &mut Query<&mut Lobby>,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
-        main_menu_room_key: &RoomKey,
+        global_room_key: &RoomKey,
         users_q: &mut Query<&mut User>
     ) {
         self.chat_message_manager.update(
@@ -135,7 +135,7 @@ impl SocialManager {
             &self.lobby_manager,
             social_server_url,
             session_instance,
-            main_menu_room_key,
+            global_room_key,
         );
         self.lobby_manager.update(
             commands,
@@ -145,7 +145,7 @@ impl SocialManager {
             lobby_q,
             social_server_url,
             session_instance,
-            main_menu_room_key,
+            global_room_key,
         );
         self.user_presence_manager.update(
             http_client,

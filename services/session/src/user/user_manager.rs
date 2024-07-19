@@ -110,6 +110,12 @@ impl UserManager {
 
     // World Connection
 
+    pub fn user_has_world_connection(&self, user_key: &UserKey) -> bool {
+        let user_id = self.user_key_to_id(user_key).unwrap();
+        let user_data = self.user_data.get(&user_id).unwrap();
+        user_data.get_world_connected()
+    }
+
     pub fn user_set_world_connected(&mut self, user_key: &UserKey, world_instance_secret: &str) {
         let user_id = self.user_key_to_id(user_key).unwrap();
         let user_data = self.user_data.get_mut(&user_id).unwrap();

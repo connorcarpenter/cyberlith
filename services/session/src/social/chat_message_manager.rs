@@ -51,7 +51,7 @@ impl ChatMessageManager {
         lobby_manager: &LobbyManager,
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
-        main_menu_room_key: &RoomKey,
+        global_room_key: &RoomKey,
     ) {
         self.process_in_flight_requests(
             commands,
@@ -59,7 +59,7 @@ impl ChatMessageManager {
             http_client,
             user_manager,
             lobby_manager,
-            main_menu_room_key,
+            global_room_key,
         );
         self.process_queued_requests(
             http_client,

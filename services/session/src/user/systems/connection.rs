@@ -56,7 +56,7 @@ pub fn connect_events(
 
         info!("Server connected to: {}", address);
 
-        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
+        let main_menu_room_key = social_manager.global_room_key().unwrap();
 
         user_manager.connect_user(
             &mut commands,

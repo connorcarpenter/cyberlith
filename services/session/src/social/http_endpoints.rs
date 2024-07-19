@@ -1,7 +1,7 @@
-use bevy_ecs::{change_detection::ResMut, prelude::Query, system::Commands};
+use bevy_ecs::{change_detection::ResMut, prelude::Query, system::{Commands, Res}};
 
-use naia_bevy_server::{Server, UserKey};
-use auth_server_types::UserId;
+use naia_bevy_server::{Server};
+
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
@@ -30,7 +30,7 @@ pub fn recv_patch_users_request(
         }
 
         info!("received patch users request");
-        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
+        let main_menu_room_key = social_manager.global_room_key().unwrap();
         social_manager.user_presence_manager.patch_users(
             &mut commands,
             &mut naia_server,
@@ -64,7 +64,7 @@ pub fn recv_patch_global_chat_messages_request(
         }
 
         info!("received patch global chat messages request");
-        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
+        let main_menu_room_key = social_manager.global_room_key().unwrap();
 
         social_manager
             .chat_message_manager
@@ -102,7 +102,7 @@ pub fn recv_patch_match_lobby_request(
 
         info!("received patch match lobbies request");
 
-        let main_menu_room_key = social_manager.main_menu_room_key().unwrap();
+        let main_menu_room_key = social_manager.global_room_key().unwrap();
         social_manager.patch_match_lobbies(
             &mut commands,
             &mut naia_server,
@@ -123,6 +123,7 @@ pub fn recv_world_connect(
     mut http_server: ResMut<HttpServer>,
     mut user_manager: ResMut<UserManager>,
     mut world_manager: ResMut<WorldManager>,
+    social_manager: Res<SocialManager>,
 ) {
     while let Some((_addr, request, response_key)) =
         http_server.receive::<SocialWorldConnectRequest>()
@@ -135,46 +136,56 @@ pub fn recv_world_connect(
 
         info!("received world connect request");
 
+        let world_instance_secret = request.world_instance_secret();
+        let lobby_id = request.lobby_id();
+
+        let global_room_key = social_manager.global_room_key().unwrap();
+        let lobby_room_key = social_manager.lobby_manager.get_lobby_room_key(&lobby_id).unwrap();
+        let lobby_entity = social_manager.lobby_manager.get_lobby_entity(&lobby_id).unwrap();
+
+        // move lobby entity from global room to lobby room
+        naia_server
+            .room_mut(&global_room_key)
+            .remove_entity(&lobby_entity);
+        naia_server
+            .room_mut(&lobby_room_key)
+            .add_entity(&lobby_entity);
+
+        // handle user login tokens
         for (user_id, login_token) in request.login_tokens() {
             let user_key = user_manager.user_id_to_key(user_id).unwrap();
-            recv_world_connect_impl(
-                &mut naia_server,
-                &mut user_manager,
-                &mut world_manager,
-                request.world_instance_secret(),
+
+            // store world instance secret with user key
+            user_manager.user_set_world_connected(
                 &user_key,
-                user_id,
-                login_token,
+                world_instance_secret,
             );
+            world_manager.world_set_user_connected(
+                user_id,
+                &user_key,
+                world_instance_secret,
+            );
+
+            let user_entity = user_manager.get_user_entity(user_id).unwrap();
+
+            naia_server
+                .room_mut(&global_room_key)
+                // remove user entity from global room
+                .remove_entity(&user_entity)
+                // remove user from global room
+                .remove_user(&user_key);
+
+            naia_server
+                .room_mut(&lobby_room_key)
+                .add_entity(&user_entity);
+
+            // send world connect token to user
+            // info!("sending world connect token to user");
+            let token = WorldConnectToken::new(login_token);
+            naia_server.send_message::<PrimaryChannel, WorldConnectToken>(&user_key, &token);
         }
 
         // responding
         http_server.respond(response_key, Ok(SocialWorldConnectResponse));
     }
-}
-
-fn recv_world_connect_impl(
-    naia_server: &mut Server,
-    user_manager: &mut UserManager,
-    world_manager: &mut WorldManager,
-    world_instance_secret: &str,
-    user_key: &UserKey,
-    user_id: &UserId,
-    login_token: &str,
-) {
-    // store world instance secret with user key
-    user_manager.user_set_world_connected(
-        user_key,
-        world_instance_secret,
-    );
-    world_manager.world_set_user_connected(
-        user_id,
-        user_key,
-        world_instance_secret,
-    );
-
-    // send world connect token to user
-    // info!("sending world connect token to user");
-    let token = WorldConnectToken::new(login_token);
-    naia_server.send_message::<PrimaryChannel, WorldConnectToken>(user_key, &token);
 }

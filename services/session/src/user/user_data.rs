@@ -87,6 +87,10 @@ impl UserData {
         output
     }
 
+    pub fn get_world_connected(&self) -> bool {
+        self.world_instance_secret.is_some()
+    }
+
     pub fn set_world_connected(&mut self, world_instance_secret: &str) {
         self.world_instance_secret = Some(world_instance_secret.to_string());
     }
