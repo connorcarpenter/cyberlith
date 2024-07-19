@@ -44,21 +44,21 @@ pub(crate) fn on_main_menu_ui_load(
     let layer = RenderLayers::layer(0);
     ui_manager.set_target_render_layer(layer);
 
-    let ui_key = UiKey::MainMenu;
-    let ui_handle = ui_catalog.get_ui_handle(ui_key);
+    let main_menu_ui_key = UiKey::MainMenu;
+    let main_menu_ui_handle = ui_catalog.get_ui_handle(main_menu_ui_key);
 
-    ui_catalog.set_loaded(ui_key);
+    ui_catalog.set_loaded(main_menu_ui_key);
 
-    ui_manager.register_ui_event::<HostMatchButtonClickedEvent>(&ui_handle, "host_match_button");
-    ui_manager.register_ui_event::<JoinMatchButtonClickedEvent>(&ui_handle, "join_match_button");
-    ui_manager.register_ui_event::<GlobalChatButtonClickedEvent>(&ui_handle, "chat_button");
-    ui_manager.register_ui_event::<DevlogButtonClickedEvent>(&ui_handle, "devlog_button");
-    ui_manager.register_ui_event::<SettingsButtonClickedEvent>(&ui_handle, "settings_button");
-    ui_manager.register_ui_event::<CurrentLobbyButtonClickedEvent>(&ui_handle, "current_lobby_button");
-    ui_manager.register_ui_event::<StartMatchButtonClickedEvent>(&ui_handle, "start_button");
-    ui_manager.register_ui_event::<LeaveLobbyButtonClickedEvent>(&ui_handle, "leave_button");
+    ui_manager.register_ui_event::<HostMatchButtonClickedEvent>(&main_menu_ui_handle, "host_match_button");
+    ui_manager.register_ui_event::<JoinMatchButtonClickedEvent>(&main_menu_ui_handle, "join_match_button");
+    ui_manager.register_ui_event::<GlobalChatButtonClickedEvent>(&main_menu_ui_handle, "chat_button");
+    ui_manager.register_ui_event::<DevlogButtonClickedEvent>(&main_menu_ui_handle, "devlog_button");
+    ui_manager.register_ui_event::<SettingsButtonClickedEvent>(&main_menu_ui_handle, "settings_button");
+    ui_manager.register_ui_event::<CurrentLobbyButtonClickedEvent>(&main_menu_ui_handle, "current_lobby_button");
+    ui_manager.register_ui_event::<StartMatchButtonClickedEvent>(&main_menu_ui_handle, "start_button");
+    ui_manager.register_ui_event::<LeaveLobbyButtonClickedEvent>(&main_menu_ui_handle, "leave_button");
 
-    ui_manager.enable_ui(&ui_handle);
+    ui_manager.enable_ui(&main_menu_ui_handle);
 
     // set sub-ui to GlobalChat at beginning
     if ui_catalog.get_is_loaded(UiKey::MessageList) {
@@ -66,7 +66,7 @@ pub(crate) fn on_main_menu_ui_load(
     }
 
     // setup user list
-    user_manager.recv_main_menu_ui(ui_manager, &ui_handle);
+    user_manager.recv_main_menu_ui(ui_manager, &main_menu_ui_handle);
 }
 
 pub(crate) fn handle_main_menu_interaction_events(

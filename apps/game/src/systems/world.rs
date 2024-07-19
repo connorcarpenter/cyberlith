@@ -1,4 +1,4 @@
-use bevy_ecs::{event::EventReader, system::Commands};
+use bevy_ecs::{prelude::NextState, entity::Entity, event::EventReader, system::{Query, ResMut, Commands}};
 
 use game_engine::{
     asset::{
@@ -7,14 +7,53 @@ use game_engine::{
     },
     logging::info,
     math::{Quat, Vec3},
-    render::components::{RenderLayers, Transform, Visibility},
+    render::{base::{CpuMaterial, CpuMesh}, components::{RenderLayers,RenderLayer, Transform, Visibility}},
     world::{
-        components::{Alt1, Main, Position},
+        components::{Alt1, Main, Position}, WorldConnectEvent,
         WorldInsertAssetRefEvent, WorldInsertComponentEvent, WorldSpawnEntityEvent,
     },
+    storage::Storage,
+    ui::UiManager,
 };
 
-use crate::systems::walker_scene::{WalkAnimation, WalkerMarker};
+use crate::{systems::{walker_scene, walker_scene::{WalkAnimation, WalkerMarker}}, states::AppState};
+
+pub fn world_connect_events(
+    mut commands: Commands,
+    mut next_state: ResMut<NextState<AppState>>,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
+    mut ui_manager: ResMut<UiManager>,
+    render_layer_q: Query<(Entity, &RenderLayer)>,
+
+    mut event_reader: EventReader<WorldConnectEvent>,
+) {
+    for _ in event_reader.read() {
+        info!("received Connect to World Server!");
+
+        // despawning all entities with RenderLayer(0)
+        let render_layer_0 = RenderLayers::layer(0);
+        for (entity, layer) in render_layer_q.iter() {
+            if *layer == render_layer_0 {
+                commands.entity(entity).despawn();
+            }
+        }
+
+        // setup walker scene
+        walker_scene::scene_setup(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+        );
+
+        // disable ui
+        ui_manager.disable_ui();
+
+        // set to appropriate AppState
+        next_state.set(AppState::InGame);
+        return;
+    }
+}
 
 pub fn world_spawn_entity_events(mut event_reader: EventReader<WorldSpawnEntityEvent>) {
     for event in event_reader.read() {

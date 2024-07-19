@@ -8,7 +8,7 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{
-    events::{ConnectEvent, DisconnectEvent, MessageEvents, RejectEvent, RequestEvents},
+    events::{MessageEvents, RequestEvents},
     transport::webrtc::Socket as WebrtcSocket,
     Client, Timer,
 };
@@ -28,6 +28,7 @@ use world_server_naia_proto::messages::Auth as WorldAuth;
 
 use super::client_markers::{Session, World};
 use crate::{
+    world::{WorldConnectEvent, WorldDisconnectEvent}, session::{SessionDisconnectEvent, SessionRejectEvent, SessionConnectEvent},
     asset_cache::{AssetCache, AssetLoadedEvent},
     networked::asset_cache_checker::AssetCacheChecker,
 };
@@ -35,7 +36,7 @@ use crate::{
 type SessionClient<'a> = Client<'a, Session>;
 type WorldClient<'a> = Client<'a, World>;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum ConnectionState {
     Disconnected,
     SendingSessionConnect,
@@ -64,7 +65,7 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_session_connect_events(
         client: SessionClient,
-        mut session_connect_event_reader: EventReader<ConnectEvent<Session>>,
+        mut session_connect_event_reader: EventReader<SessionConnectEvent>,
         mut connection_manager: ResMut<Self>,
     ) {
         for _ in session_connect_event_reader.read() {
@@ -87,7 +88,7 @@ impl ConnectionManager {
 
     // used as a system
     pub fn handle_session_disconnect_events(
-        mut session_disconnect_event_reader: EventReader<DisconnectEvent<Session>>,
+        mut session_disconnect_event_reader: EventReader<SessionDisconnectEvent>,
         mut connection_manager: ResMut<Self>,
     ) {
         for _ in session_disconnect_event_reader.read() {
@@ -99,7 +100,7 @@ impl ConnectionManager {
 
     // used as a system
     pub fn handle_session_reject_events(
-        mut session_reject_event_reader: EventReader<RejectEvent<Session>>,
+        mut session_reject_event_reader: EventReader<SessionRejectEvent>,
         mut connection_manager: ResMut<Self>,
     ) {
         for _ in session_reject_event_reader.read() {
@@ -112,7 +113,7 @@ impl ConnectionManager {
     // used as a system
     pub fn handle_world_connect_events(
         client: WorldClient,
-        mut event_reader: EventReader<ConnectEvent<World>>,
+        mut event_reader: EventReader<WorldConnectEvent>,
         mut connection_manager: ResMut<Self>,
     ) {
         for _ in event_reader.read() {
@@ -129,6 +130,24 @@ impl ConnectionManager {
             };
 
             connection_manager.connection_state = ConnectionState::ConnectedToWorld;
+        }
+    }
+
+    // used as a system
+    pub fn handle_world_disconnect_events(
+        mut event_reader: EventReader<WorldDisconnectEvent>,
+        mut connection_manager: ResMut<Self>,
+    ) {
+        for _ in event_reader.read() {
+            info!(
+                "Client disconnected from world server",
+            );
+
+            let ConnectionState::ConnectedToWorld = &connection_manager.connection_state else {
+                panic!("Shouldn't happen .. state is: {:?}", &connection_manager.connection_state);
+            };
+
+            connection_manager.connection_state = ConnectionState::ConnectedToSession;
         }
     }
 

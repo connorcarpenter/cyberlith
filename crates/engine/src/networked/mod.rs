@@ -7,14 +7,17 @@ mod session_events;
 mod world_events;
 
 pub mod world {
-    use naia_bevy_client::{events::SpawnEntityEvent, Client};
+    use naia_bevy_client::{events::{RejectEvent, DisconnectEvent, SpawnEntityEvent, ConnectEvent, DespawnEntityEvent, ErrorEvent}, Client};
 
     use super::client_markers::World;
 
     pub type WorldClient<'w> = Client<'w, World>;
+    pub type WorldConnectEvent = ConnectEvent<World>;
+    pub type WorldDisconnectEvent = DisconnectEvent<World>;
+    pub type WorldRejectEvent = RejectEvent<World>;
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
-    pub type WorldDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<World>;
-    pub type WorldErrorEvent = naia_bevy_client::events::ErrorEvent<World>;
+    pub type WorldDespawnEntityEvent = DespawnEntityEvent<World>;
+    pub type WorldErrorEvent = ErrorEvent<World>;
 
     pub use super::world_events::{
         InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent,
@@ -26,14 +29,17 @@ pub mod world {
 
 pub mod session {
 
-    use naia_bevy_client::{events::SpawnEntityEvent, Client};
+    use naia_bevy_client::{events::{RejectEvent, ConnectEvent, DisconnectEvent, SpawnEntityEvent, DespawnEntityEvent, ErrorEvent}, Client};
 
     use super::client_markers::Session;
 
     pub type SessionClient<'w> = Client<'w, Session>;
+    pub type SessionConnectEvent = ConnectEvent<Session>;
+    pub type SessionDisconnectEvent = DisconnectEvent<Session>;
+    pub type SessionRejectEvent = RejectEvent<Session>;
     pub type SessionSpawnEntityEvent = SpawnEntityEvent<Session>;
-    pub type SessionDespawnEntityEvent = naia_bevy_client::events::DespawnEntityEvent<Session>;
-    pub type SessionErrorEvent = naia_bevy_client::events::ErrorEvent<Session>;
+    pub type SessionDespawnEntityEvent = DespawnEntityEvent<Session>;
+    pub type SessionErrorEvent = ErrorEvent<Session>;
 
     pub use super::session_events::{
         SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent,

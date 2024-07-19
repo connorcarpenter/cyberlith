@@ -43,9 +43,9 @@ impl WalkAnimation {
 }
 
 pub fn scene_setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Storage<CpuMesh>>,
-    mut materials: ResMut<Storage<CpuMaterial>>,
+    commands: &mut Commands,
+    meshes: &mut Storage<CpuMesh>,
+    materials: &mut Storage<CpuMaterial>,
 ) {
     let layer = RenderLayers::layer(0);
 

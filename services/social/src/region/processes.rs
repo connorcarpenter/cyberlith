@@ -155,7 +155,12 @@ async fn handle_world_connect(state: Arc<RwLock<State>>) {
                 .get_recv_addr(session_server_id)
                 .unwrap();
 
-            let request = SocialWorldConnectRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, &world_server_instance_secret, outgoing_message);
+            let request = SocialWorldConnectRequest::new(
+                SOCIAL_SERVER_GLOBAL_SECRET,
+                &world_server_instance_secret,
+                starting_lobby_id,
+                outgoing_message
+            );
             let response = HttpClient::send(recv_addr, recv_port, request).await;
             match response {
                 Ok(_) => {

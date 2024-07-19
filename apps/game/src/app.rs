@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::{prelude::in_state, schedule::IntoSystemConfigs};
+use bevy_ecs::{prelude::{in_state, not}, schedule::IntoSystemConfigs};
 
 use game_engine::{
     http::CookieStore,
@@ -60,8 +60,8 @@ impl Plugin for GameApp {
             .insert_state(AppState::Loading)
             // scene systems
             .add_systems(Startup, cube_scene::setup)
-            .add_systems(Update, cube_scene::step)
-            .add_systems(Update, walker_scene::step)
+            .add_systems(Update, cube_scene::step.run_if(not(in_state(AppState::InGame))))
+            .add_systems(Update, walker_scene::step.run_if(in_state(AppState::InGame)))
             // resize window listener
             .add_systems(Update, resize::handle_viewport_resize)
             // general drawing
@@ -72,10 +72,11 @@ impl Plugin for GameApp {
                 initial_spinner::draw.run_if(in_state(AppState::Loading)),
             )
             // Network Systems
-            .add_systems(Update, world::world_spawn_entity_events)
-            .add_systems(Update, world::world_main_insert_position_events)
-            .add_systems(Update, world::world_main_insert_asset_ref_events)
-            .add_systems(Update, world::world_alt1_insert_asset_ref_events)
+            .add_systems(Update, world::world_connect_events.run_if(not(in_state(AppState::InGame))))
+            .add_systems(Update, world::world_spawn_entity_events.run_if(in_state(AppState::InGame)))
+            .add_systems(Update, world::world_main_insert_position_events.run_if(in_state(AppState::InGame)))
+            .add_systems(Update, world::world_main_insert_asset_ref_events.run_if(in_state(AppState::InGame)))
+            .add_systems(Update, world::world_alt1_insert_asset_ref_events.run_if(in_state(AppState::InGame)))
             .add_systems(Update, asset_events::session_load_asset_events)
             .add_plugins(SessionComponentEventsPlugin)
             // Ui
