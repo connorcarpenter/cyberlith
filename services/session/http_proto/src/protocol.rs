@@ -1,11 +1,6 @@
 use bevy_http_shared::Protocol;
 
-use crate::{
-    ConnectAssetServerRequest, ConnectSocialServerRequest, DisconnectAssetServerRequest,
-    DisconnectSocialServerRequest, HeartbeatRequest, IncomingUserRequest,
-    SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest,
-    SocialPatchUsersRequest, UserAssetIdRequest,
-};
+use crate::{ConnectAssetServerRequest, ConnectSocialServerRequest, DisconnectAssetServerRequest, DisconnectSocialServerRequest, HeartbeatRequest, IncomingUserRequest, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest, SocialPatchUsersRequest, SocialWorldConnectRequest, UserAssetIdRequest};
 
 pub fn protocol() -> Protocol {
     let mut protocol = Protocol::new();
@@ -22,6 +17,7 @@ pub fn protocol() -> Protocol {
     protocol.add_request::<SocialPatchUsersRequest>();
     protocol.add_request::<SocialPatchGlobalChatMessagesRequest>();
     protocol.add_request::<SocialPatchMatchLobbiesRequest>();
+    protocol.add_request::<SocialWorldConnectRequest>();
 
     protocol
 }

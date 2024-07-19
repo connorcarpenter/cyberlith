@@ -64,7 +64,7 @@ async fn async_recv_connect_session_server_request_impl(
     state
         .session_servers
         .init_instance(
-            request.session_secret(),
+            request.instance_secret(),
             request.http_addr(),
             request.http_port(),
             present_users,

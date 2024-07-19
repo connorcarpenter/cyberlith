@@ -25,7 +25,7 @@ impl ConnectSessionServerRequest {
         &self.region_secret
     }
 
-    pub fn session_secret(&self) -> &str {
+    pub fn instance_secret(&self) -> &str {
         &self.session_secret
     }
 

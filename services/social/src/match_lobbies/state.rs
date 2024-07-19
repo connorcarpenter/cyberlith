@@ -65,6 +65,8 @@ pub struct MatchLobbiesState {
     lobbies: HashMap<LobbyId, LobbyData>,
     next_lobby_id: LobbyId,
 
+    starting_lobbies: Vec<LobbyId>,
+
     // the session server id here is the SENDER not the RECEIVER
     outgoing_patches: HashMap<SessionServerId, Vec<LobbyPatch>>,
 }
@@ -74,6 +76,8 @@ impl MatchLobbiesState {
         Self {
             lobbies: HashMap::new(),
             next_lobby_id: LobbyId::new(0),
+
+            starting_lobbies: Vec::new(),
 
             outgoing_patches: HashMap::new(),
         }
@@ -204,6 +208,8 @@ impl MatchLobbiesState {
         }
         lobby_data.state = LobbyState::InProgress;
 
+        self.starting_lobbies.push(*lobby_id);
+
         // add to outgoing patches
         if !self
             .outgoing_patches
@@ -236,7 +242,16 @@ impl MatchLobbiesState {
         output
     }
 
+    pub fn get_lobby_users(&self, lobby_id: &LobbyId) -> Vec<UserId> {
+        let lobby_data = self.lobbies.get(lobby_id).unwrap();
+        lobby_data.users.iter().map(|x| *x).collect()
+    }
+
     pub fn take_patches(&mut self) -> HashMap<SessionServerId, Vec<LobbyPatch>> {
         std::mem::take(&mut self.outgoing_patches)
+    }
+
+    pub fn take_starting_lobbies(&mut self) -> Vec<LobbyId> {
+        std::mem::take(&mut self.starting_lobbies)
     }
 }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use auth_server_types::UserId;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
@@ -26,14 +26,30 @@ impl SessionServerId {
 struct SessionInstance {
     addr: String,
     port: u16,
+    instance_secret: String,
+    connected_users: HashSet<UserId>,
 }
 
 impl SessionInstance {
-    pub fn new(addr: &str, port: u16) -> Self {
+    pub fn new(addr: &str, port: u16, instance_secret: &str) -> Self {
         Self {
             addr: addr.to_string(),
             port,
+            instance_secret: instance_secret.to_string(),
+            connected_users: HashSet::new(),
         }
+    }
+
+    pub fn has_user_connected(&self, user_id: &UserId) -> bool {
+        self.connected_users.contains(user_id)
+    }
+
+    pub fn insert_connected_user(&mut self, user_id: UserId) {
+        self.connected_users.insert(user_id);
+    }
+
+    pub fn remove_connected_user(&mut self, user_id: &UserId) {
+        self.connected_users.remove(user_id);
     }
 }
 
@@ -69,7 +85,7 @@ impl SessionServersState {
     ) {
         let id = self.next_session_id();
         self.instances
-            .insert(id, SessionInstance::new(recv_addr, recv_port));
+            .insert(id, SessionInstance::new(recv_addr, recv_port, instance_secret));
         self.secret_to_session_server_id
             .insert(instance_secret.to_string(), id);
 
@@ -181,6 +197,12 @@ impl SessionServersState {
             .copied()
     }
 
+    pub fn get_session_instance_secret(&self, session_server_id: &SessionServerId) -> Option<&str> {
+        self.instances
+            .get(session_server_id)
+            .map(|instance| instance.instance_secret.as_str())
+    }
+
     pub fn all_session_ids(&self) -> Vec<SessionServerId> {
         self.instances.keys().copied().collect()
     }
@@ -189,5 +211,24 @@ impl SessionServersState {
         self.instances
             .get(&session_server_id)
             .map(|instance| (instance.addr.as_str(), instance.port))
+    }
+
+    pub(crate) fn session_server_user_connect(&mut self, session_server_id: &SessionServerId, user_id: &UserId) {
+        self.instances
+            .get_mut(session_server_id)
+            .map(|instance| instance.insert_connected_user(*user_id));
+    }
+
+    pub(crate) fn session_server_user_disconnect(&mut self, session_server_id: &SessionServerId, user_id: &UserId) {
+        self.instances
+            .get_mut(session_server_id)
+            .map(|instance| instance.remove_connected_user(user_id));
+    }
+
+    pub fn session_server_has_user_connected(&self, session_server_id: &SessionServerId, user_id: &UserId) -> bool {
+        self.instances
+            .get(session_server_id)
+            .map(|instance| instance.has_user_connected(user_id))
+            .unwrap_or(false)
     }
 }

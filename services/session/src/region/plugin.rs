@@ -35,12 +35,10 @@ impl Plugin for RegionPlugin {
             Update,
             (
                 systems::send_register_instance_request,
-                systems::send_world_connect_requests,
                 systems::process_region_server_disconnect,
                 http_endpoints::recv_register_instance_response,
                 http_endpoints::recv_heartbeat_request,
                 http_endpoints::recv_login_request,
-                http_endpoints::recv_world_connect_response,
                 http_endpoints::recv_connect_social_server_request,
                 http_endpoints::recv_disconnect_social_server_request,
                 http_endpoints::recv_connect_asset_server_request,

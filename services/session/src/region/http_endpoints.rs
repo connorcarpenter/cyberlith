@@ -1,24 +1,21 @@
 use bevy_ecs::change_detection::ResMut;
 
-use naia_bevy_server::Server;
-
 use bevy_http_client::{log_util, ApiRequest, ApiResponse, HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 use config::REGION_SERVER_SECRET;
-use logging::{info, warn};
+use logging::{warn};
 
-use region_server_http_proto::{SessionRegisterInstanceResponse, WorldConnectResponse};
+use region_server_http_proto::SessionRegisterInstanceResponse;
 use session_server_http_proto::{
     ConnectAssetServerRequest, ConnectAssetServerResponse, ConnectSocialServerRequest,
     ConnectSocialServerResponse, DisconnectAssetServerRequest, DisconnectAssetServerResponse,
     DisconnectSocialServerRequest, DisconnectSocialServerResponse, HeartbeatRequest,
     HeartbeatResponse, IncomingUserRequest, IncomingUserResponse,
 };
-use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 
 use crate::{
     asset::asset_manager::AssetManager, region::RegionManager, social::SocialManager,
-    user::UserManager, world::WorldManager,
+    user::UserManager,
 };
 
 pub fn recv_register_instance_response(
@@ -89,47 +86,6 @@ pub fn recv_login_request(mut user_manager: ResMut<UserManager>, mut server: Res
 
         log_util::send_res(host, IncomingUserResponse::name());
         server.respond(response_key, Ok(IncomingUserResponse));
-    }
-}
-
-pub fn recv_world_connect_response(
-    mut server: Server,
-    mut http_client: ResMut<HttpClient>,
-    mut user_manager: ResMut<UserManager>,
-    mut world_connections: ResMut<WorldManager>,
-) {
-    for (response_key, user_key) in world_connections.world_connect_response_keys() {
-        if let Some(result) = http_client.recv(&response_key) {
-            let host = "session";
-            let remote = "region";
-            log_util::recv_res(host, remote, WorldConnectResponse::name());
-
-            world_connections.remove_world_connect_response_key(&response_key);
-            match result {
-                Ok(response) => {
-                    info!("(login_token: {:?})", response.login_token);
-
-                    // store world instance secret with user key
-                    user_manager.user_set_world_connected(
-                        &user_key,
-                        &response.world_server_instance_secret,
-                    );
-                    world_connections.world_set_user_connected(
-                        &user_key,
-                        &response.world_server_instance_secret,
-                        response.world_server_user_id,
-                    );
-
-                    // send world connect token to user
-                    // info!("sending world connect token to user");
-                    let token = WorldConnectToken::new(&response.login_token);
-                    server.send_message::<PrimaryChannel, WorldConnectToken>(&user_key, &token);
-                }
-                Err(_) => {
-                    warn!("error receiving message from region server..");
-                }
-            }
-        }
     }
 }
 

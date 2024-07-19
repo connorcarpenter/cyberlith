@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    time::{Duration, Instant},
-};
+use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{
     change_detection::ResMut,
@@ -107,50 +104,11 @@ impl UserManager {
         self.user_key_to_id.get(user_key).cloned()
     }
 
-    pub fn make_ready_for_world_connect(&mut self, user_key: &UserKey) -> Result<(), ()> {
-        let Some(user_id) = self.user_key_to_id.get(user_key) else {
-            return Err(());
-        };
-        let user_data = self.user_data.get_mut(user_id);
-        match user_data {
-            Some(user_data) => {
-                user_data.make_ready_for_world_connect();
-                Ok(())
-            }
-            None => Err(()),
-        }
+    pub fn user_id_to_key(&self, user_id: &UserId) -> Option<UserKey> {
+        self.user_data.get(user_id)?.user_key()
     }
 
     // World Connection
-
-    pub fn get_users_ready_to_connect_to_world(
-        &mut self,
-        world_connect_resend_rate: &Duration,
-    ) -> Vec<(UserKey, UserId)> {
-        let now = Instant::now();
-
-        let mut worldless_users = Vec::new();
-        for (user_key, user_id) in self.user_key_to_id.iter() {
-            let user_data = self.user_data.get_mut(user_id).unwrap();
-            if user_data.is_world_connected() {
-                continue;
-            }
-            if !user_data.ready_for_world_connect() {
-                continue;
-            }
-            if let Some(last_sent) = user_data.world_connect_last_sent_to_region() {
-                let time_since_last_sent = now.duration_since(last_sent);
-                if time_since_last_sent >= *world_connect_resend_rate {
-                    worldless_users.push((*user_key, *user_id));
-                    user_data.set_world_connect_last_sent_to_region(now);
-                }
-            } else {
-                worldless_users.push((*user_key, *user_id));
-                user_data.set_world_connect_last_sent_to_region(now);
-            }
-        }
-        worldless_users
-    }
 
     pub fn user_set_world_connected(&mut self, user_key: &UserKey, world_instance_secret: &str) {
         let user_id = self.user_key_to_id(user_key).unwrap();

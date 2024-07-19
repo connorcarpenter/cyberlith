@@ -1,45 +1,52 @@
-use auth_server_types::UserId;
+
 use naia_serde::SerdeInternal as Serde;
 
+use auth_server_types::UserId;
 use bevy_http_shared::{ApiRequest, ApiResponse, Method};
+use social_server_types::LobbyId;
+
+// this is sent by the region server
 
 // Request
 #[derive(Serde, PartialEq, Clone)]
 pub struct WorldConnectRequest {
     region_secret: String,
-    pub session_server_addr: String,
-    pub session_server_port: u16,
-    pub user_id: UserId,
-    pub login_token: String,
+    lobby_id: LobbyId,
+    // session server addr, session server port, Vec<(UserId, login_token)>
+    login_tokens: Vec<(String, u16, Vec<(UserId, String)>)>,
 }
 
 impl WorldConnectRequest {
     pub fn new(
         region_secret: &str,
-        session_server_addr: &str,
-        session_server_port: u16,
-        user_id: UserId,
-        login_token: &str,
+        lobby_id: LobbyId,
+        login_tokens: Vec<(String, u16, Vec<(UserId, String)>)>,
     ) -> Self {
         Self {
+            lobby_id,
             region_secret: region_secret.to_string(),
-            session_server_addr: session_server_addr.to_string(),
-            session_server_port,
-            user_id,
-            login_token: login_token.to_string(),
+            login_tokens,
         }
     }
 
     pub fn region_secret(&self) -> &str {
         &self.region_secret
     }
+
+    pub fn lobby_id(&self) -> LobbyId {
+        self.lobby_id
+    }
+
+    pub fn login_tokens(&self) -> &Vec<(String, u16, Vec<(UserId, String)>)> {
+        &self.login_tokens
+    }
 }
 
 // Response
 #[derive(Serde, PartialEq, Clone)]
-pub struct IncomingUserResponse;
+pub struct WorldConnectResponse;
 
-impl IncomingUserResponse {
+impl WorldConnectResponse {
     pub fn new() -> Self {
         Self
     }
@@ -47,7 +54,7 @@ impl IncomingUserResponse {
 
 // Traits
 impl ApiRequest for WorldConnectRequest {
-    type Response = IncomingUserResponse;
+    type Response = WorldConnectResponse;
 
     fn name() -> &'static str {
         "WorldConnectRequest"
@@ -58,12 +65,12 @@ impl ApiRequest for WorldConnectRequest {
     }
 
     fn path() -> &'static str {
-        "incoming_user"
+        "world/connect"
     }
 }
 
-impl ApiResponse for IncomingUserResponse {
+impl ApiResponse for WorldConnectResponse {
     fn name() -> &'static str {
-        "IncomingUserResponse"
+        "WorldConnectResponse"
     }
 }

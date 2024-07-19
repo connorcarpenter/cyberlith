@@ -163,7 +163,7 @@ impl UserPresenceManager {
 
                 match response_result {
                     Ok(_response) => {
-                        info!("received user disconnect response from social server");
+                        // info!("received user disconnect response from social server");
 
                         user_manager.user_set_offline(user_id, users_q);
                     }

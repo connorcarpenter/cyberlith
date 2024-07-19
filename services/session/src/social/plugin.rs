@@ -25,6 +25,7 @@ impl Plugin for SocialPlugin {
                     http_endpoints::recv_patch_users_request,
                     http_endpoints::recv_patch_global_chat_messages_request,
                     http_endpoints::recv_patch_match_lobby_request,
+                    http_endpoints::recv_world_connect,
                 )
                     .in_set(ReceiveEvents),
             );

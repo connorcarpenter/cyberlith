@@ -24,6 +24,14 @@ async fn async_impl(
 
     let state = state.read().await;
 
+    // select a session server
+    let Some(session_server) = state.get_available_session_server() else {
+        warn!("no available session server");
+        return Err(ResponseError::InternalServerError(
+            "no available session server".to_string(),
+        ));
+    };
+
     // send user connection request to social server
     {
         let Some(social_server) = state.get_social_server() else {
@@ -37,7 +45,7 @@ async fn async_impl(
         let request_method = UserConnectedRequest::method();
         let request_path = UserConnectedRequest::path();
 
-        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, user_id);
+        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, user_id, session_server.instance_secret());
 
         let host = "region";
         let remote = "social";
@@ -70,12 +78,6 @@ async fn async_impl(
 
     // send user connection request to session server
     {
-        let Some(session_server) = state.get_available_session_server() else {
-            warn!("no available session server");
-            return Err(ResponseError::InternalServerError(
-                "no available session server".to_string(),
-            ));
-        };
         let session_addr = session_server.http_addr();
         let session_port = session_server.http_port();
         let request_method = IncomingUserRequest::method();

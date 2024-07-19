@@ -7,13 +7,15 @@ use naia_serde::SerdeInternal as Serde;
 pub struct UserConnectedRequest {
     region_secret: String,
     user_id: UserId,
+    session_instance_secret: String,
 }
 
 impl UserConnectedRequest {
-    pub fn new(region_secret: &str, user_id: UserId) -> Self {
+    pub fn new(region_secret: &str, user_id: UserId, session_instance_secret: &str) -> Self {
         Self {
             region_secret: region_secret.to_string(),
             user_id,
+            session_instance_secret: session_instance_secret.to_string(),
         }
     }
 
@@ -23,6 +25,10 @@ impl UserConnectedRequest {
 
     pub fn user_id(&self) -> UserId {
         self.user_id
+    }
+
+    pub fn session_instance_secret(&self) -> &str {
+        &self.session_instance_secret
     }
 }
 

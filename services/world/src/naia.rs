@@ -51,12 +51,10 @@ pub fn init(mut commands: Commands, mut server: Server) {
 
     // set up global
     let instance_secret = random::generate_random_string(16);
-    let main_room_key = server.make_room().key();
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(61);
     commands.insert_resource(Global::new(
         &instance_secret,
-        main_room_key,
         registration_resend_rate,
         region_server_disconnect_timeout,
     ));
@@ -102,8 +100,9 @@ pub fn connect_events(
         info!("Server connected to: {}", address);
 
         // add user to main room
-        let main_room_key = global.main_room_key();
-        server.room_mut(&main_room_key).add_user(&user_key);
+        let lobby_id = global.get_user_lobby_id(user_key).unwrap();
+        let lobby_room_key = global.lobby_room_key(&lobby_id).unwrap();
+        server.room_mut(&lobby_room_key).add_user(&user_key);
 
         // give user an entity
         let entity = commands
@@ -126,7 +125,7 @@ pub fn connect_events(
             .id();
 
         // add entity to main room
-        server.room_mut(&main_room_key).add_entity(&entity);
+        server.room_mut(&lobby_room_key).add_entity(&entity);
 
         // TODO: need to clean up this entity on disconnect
 

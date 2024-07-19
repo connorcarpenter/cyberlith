@@ -11,12 +11,14 @@ pub(crate) enum UserPatch {
 }
 
 struct UserData {
+    session_server_id: SessionServerId,
     lobby_id: Option<LobbyId>,
 }
 
 impl UserData {
-    pub fn new() -> Self {
+    pub fn new(session_server_id: &SessionServerId) -> Self {
         Self {
+            session_server_id: *session_server_id,
             lobby_id: None,
         }
     }
@@ -41,8 +43,8 @@ impl UsersState {
         self.users.contains_key(user_id)
     }
 
-    pub fn connect_user(&mut self, user_id: &UserId) {
-        self.users.insert(*user_id, UserData::new());
+    pub fn connect_user(&mut self, user_id: &UserId, session_server_id: &SessionServerId) {
+        self.users.insert(*user_id, UserData::new(session_server_id));
 
         self.outgoing_patches.push(UserPatch::Add(*user_id));
     }
@@ -65,6 +67,10 @@ impl UsersState {
     pub fn get_user_lobby_id(&self, user_id: &UserId) -> Option<LobbyId> {
         let user_data = self.users.get(user_id)?;
         user_data.lobby_id
+    }
+
+    pub fn get_user_session_server_id(&self, user_id: &UserId) -> SessionServerId {
+        self.users.get(user_id).unwrap().session_server_id
     }
 
     pub fn user_joins_lobby(&mut self, user_id: &UserId, lobby_id: &LobbyId) {

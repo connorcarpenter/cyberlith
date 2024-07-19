@@ -1,4 +1,3 @@
-use std::time::Duration;
 
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::prelude::IntoSystemConfigs;
@@ -7,21 +6,17 @@ use naia_bevy_server::ReceiveEvents;
 
 use super::{http_endpoints, world_manager::WorldManager};
 
-pub struct WorldPlugin {
-    world_connect_resend_rate: Duration,
-}
+pub struct WorldPlugin;
 
 impl WorldPlugin {
-    pub fn new(world_connect_resend_rate: Duration) -> Self {
-        Self {
-            world_connect_resend_rate,
-        }
+    pub fn new() -> Self {
+        Self
     }
 }
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WorldManager::new(self.world_connect_resend_rate))
+        app.insert_resource(WorldManager::new())
             .add_systems(
                 Update,
                 http_endpoints::recv_added_asset_id_request.in_set(ReceiveEvents),

@@ -33,10 +33,6 @@ impl SocialInstance {
         self.last_heard.clone()
     }
 
-    pub fn key(&self) -> (String, u16) {
-        (self.http_addr.clone(), self.http_port)
-    }
-
     pub fn insert_connected_session_server(&mut self, instance_secret: &str) {
         self.connected_session_servers
             .insert(instance_secret.to_string());
@@ -48,14 +44,5 @@ impl SocialInstance {
 
     pub fn has_connected_session_server(&self, instance_secret: &str) -> bool {
         self.connected_session_servers.contains(instance_secret)
-    }
-
-    pub fn clear_connected_session_servers(&mut self) -> Vec<String> {
-        let mut connected_session_servers = Vec::new();
-        for instance_secret in self.connected_session_servers.iter() {
-            connected_session_servers.push(instance_secret.clone());
-        }
-        self.connected_session_servers.clear();
-        connected_session_servers
     }
 }

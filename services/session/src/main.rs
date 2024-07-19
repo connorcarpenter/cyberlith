@@ -27,7 +27,6 @@ fn main() {
     let instance_secret = random::generate_random_string(16);
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(61);
-    let world_connect_resend_rate = Duration::from_secs(5);
 
     // Build App
     App::default()
@@ -39,7 +38,7 @@ fn main() {
             region_server_disconnect_timeout,
         ))
         .add_plugins(SocialPlugin::new())
-        .add_plugins(WorldPlugin::new(world_connect_resend_rate))
+        .add_plugins(WorldPlugin::new())
         .add_plugins(AssetPlugin::new())
         .add_plugins(UserPlugin::new())
         // Resources

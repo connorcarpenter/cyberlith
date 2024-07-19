@@ -26,7 +26,9 @@ use crate::{
 pub struct State {
     disconnect_timeout: Duration,
 
-    session_instances: HashMap<(String, u16), SessionInstance>,
+    session_instances: HashMap<String, SessionInstance>,
+    session_url_to_instance_map: HashMap<(String, u16), String>,
+
     world_instances: HashMap<(String, u16), WorldInstance>,
     asset_instance: Option<AssetInstance>,
     social_instance: Option<SocialInstance>,
@@ -38,6 +40,8 @@ impl State {
             disconnect_timeout,
 
             session_instances: HashMap::new(),
+            session_url_to_instance_map: HashMap::new(),
+
             world_instances: HashMap::new(),
             asset_instance: None,
             social_instance: None,
@@ -54,13 +58,15 @@ impl State {
 
         let key = session_instance.key();
 
-        if self.session_instances.contains_key(&key) {
+        if self.session_url_to_instance_map.contains_key(&key) {
             info!("session instance restart detected. received re-registration request. details: {:?}", key);
 
-            self.deregister_session_instance(http_addr, http_port).await;
+            let old_instance_secret = self.session_url_to_instance_map.remove(&key).unwrap();
+            self.deregister_session_instance(&old_instance_secret).await;
         }
 
-        self.session_instances.insert(key.clone(), session_instance);
+        self.session_instances.insert(instance_secret.to_string(), session_instance);
+        self.session_url_to_instance_map.insert(key, instance_secret.to_string());
     }
 
     pub async fn register_world_instance(
@@ -122,21 +128,20 @@ impl State {
         self.social_instance = Some(instance);
     }
 
-    pub async fn deregister_session_instance(&mut self, http_addr: &str, http_port: u16) {
-        let key = (http_addr.to_string(), http_port);
+    pub async fn deregister_session_instance(&mut self, old_instance_secret: &str) {
 
-        let old_session_instance = self.session_instances.remove(&key).unwrap();
+        self.session_instances.remove(old_instance_secret);
 
         if let Some(social_instance) = self.social_instance.as_mut() {
-            let session_instance_secret = old_session_instance.instance_secret();
-            if social_instance.has_connected_session_server(session_instance_secret) {
+
+            if social_instance.has_connected_session_server(old_instance_secret) {
                 // tell social server to disconnect old session server instance
                 send_disconnect_session_server_message_to_social_instance(
-                    &session_instance_secret,
+                    &old_instance_secret,
                     social_instance,
                 )
                 .await;
-                social_instance.remove_connected_session_server(session_instance_secret);
+                social_instance.remove_connected_session_server(old_instance_secret);
             }
         }
 
@@ -189,9 +194,7 @@ impl State {
         &self,
         instance_secret: &str,
     ) -> Option<&SessionInstance> {
-        self.session_instances
-            .values()
-            .find(|instance| instance.instance_secret() == instance_secret)
+        self.session_instances.get(instance_secret)
     }
 
     pub fn get_available_world_server(&self) -> Option<&WorldInstance> {
@@ -271,16 +274,16 @@ impl State {
         // disconnect session instances
         {
             let mut disconnected_instances = Vec::new();
-            for (addr, instance) in self.session_instances.iter() {
+            for (instance_secret, instance) in self.session_instances.iter() {
                 let last_heard = *instance.last_heard().read().await;
                 let elapsed = now.duration_since(last_heard);
                 if elapsed.as_secs() > timeout.as_secs() {
-                    disconnected_instances.push(addr.clone());
+                    disconnected_instances.push(instance_secret.clone());
                 }
             }
-            for (addr, port) in disconnected_instances {
-                info!("session instance {:?}:{:?} disconnected", addr, port);
-                self.deregister_session_instance(&addr, port).await;
+            for instance_secret in disconnected_instances {
+                info!("session instance {:?} disconnected", instance_secret);
+                self.deregister_session_instance(&instance_secret).await;
             }
         }
 

@@ -1,4 +1,3 @@
-use std::time::Instant;
 
 use bevy_ecs::{entity::Entity, system::Commands};
 
@@ -18,9 +17,6 @@ pub(crate) struct UserData {
     // lobby id, lobby member entity
     lobby_id: Option<(LobbyId, Entity)>,
 
-    world_connect_last_sent_to_region: Option<Instant>,
-    ready_for_world_connect: bool,
-
     // LATER this may be used to send meaningful data about a user back to the given world server instance..
     world_instance_secret: Option<String>,
 
@@ -38,14 +34,15 @@ impl UserData {
 
             lobby_id: None,
 
-            world_connect_last_sent_to_region: None,
-            ready_for_world_connect: false,
-
             world_instance_secret: None, // tells us whether user is connected
 
             user_info_response_key: Some(user_info_response_key),
             make_online_after_info: None,
         }
+    }
+
+    pub(crate) fn user_key(&self) -> Option<UserKey> {
+        self.user_key
     }
 
     pub(crate) fn set_online(&mut self) {
@@ -88,26 +85,6 @@ impl UserData {
         let output = self.make_online_after_info;
         self.make_online_after_info = None;
         output
-    }
-
-    pub fn ready_for_world_connect(&self) -> bool {
-        self.ready_for_world_connect
-    }
-
-    pub fn make_ready_for_world_connect(&mut self) {
-        self.ready_for_world_connect = true;
-    }
-
-    pub fn world_connect_last_sent_to_region(&self) -> Option<Instant> {
-        self.world_connect_last_sent_to_region
-    }
-
-    pub fn set_world_connect_last_sent_to_region(&mut self, instant: Instant) {
-        self.world_connect_last_sent_to_region = Some(instant);
-    }
-
-    pub fn is_world_connected(&self) -> bool {
-        self.world_instance_secret.is_some()
     }
 
     pub fn set_world_connected(&mut self, world_instance_secret: &str) {

@@ -9,9 +9,6 @@ pub use auth::{Auth, AuthInner};
 mod world_connect_token;
 pub use world_connect_token::WorldConnectToken;
 
-mod world_connect_request;
-pub use world_connect_request::WorldConnectRequest;
-
 mod load_asset_request;
 pub use load_asset_request::{LoadAssetRequest, LoadAssetResponse, LoadAssetResponseValue};
 
@@ -32,7 +29,6 @@ impl ProtocolPlugin for MessagesPlugin {
         protocol
             .add_plugin(social::SocialMessagesPlugin)
             .add_message::<Auth>()
-            .add_message::<WorldConnectRequest>()
             .add_message::<WorldConnectToken>()
             .add_message::<LoadAssetWithData>()
             .add_request::<LoadAssetRequest>();

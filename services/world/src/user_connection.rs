@@ -1,36 +1,42 @@
 use bevy_ecs::change_detection::ResMut;
-use logging::{info, warn};
 
+use naia_bevy_server::Server;
+
+use logging::{info, warn};
 use bevy_http_client::ResponseError;
 use bevy_http_server::HttpServer;
-
 use config::REGION_SERVER_SECRET;
-use world_server_http_proto::{IncomingUserResponse, WorldConnectRequest};
+use world_server_http_proto::{WorldConnectResponse, WorldConnectRequest};
 
 use crate::global::Global;
 
-pub fn recv_login_request(mut global: ResMut<Global>, mut server: ResMut<HttpServer>) {
-    while let Some((_addr, request, response_key)) = server.receive::<WorldConnectRequest>() {
+pub fn recv_world_connect_request(
+    mut global: ResMut<Global>,
+    mut http_server: ResMut<HttpServer>,
+    mut naia_server: Server,
+) {
+    while let Some((_addr, request, response_key)) = http_server.receive::<WorldConnectRequest>() {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
-            server.respond(response_key, Err(ResponseError::Unauthenticated));
+            http_server.respond(response_key, Err(ResponseError::Unauthenticated));
             continue;
         }
 
         info!(
-            "Login request received from region server: Login(token: {})",
-            request.login_token
+            "Login request received from region server: (lobby_id: {:?}, tokens: {:?})",
+            request.lobby_id(),
+            request.login_tokens()
         );
 
         global.add_login_token(
-            &request.session_server_addr,
-            request.session_server_port,
-            request.user_id,
-            &request.login_token,
+            &request.lobby_id(),
+            request.login_tokens(),
         );
+        let lobby_room_key = naia_server.make_room().key();
+        global.insert_lobby_room_key(request.lobby_id(), lobby_room_key);
 
         info!("Sending login response to region server ..");
 
-        server.respond(response_key, Ok(IncomingUserResponse::new()));
+        http_server.respond(response_key, Ok(WorldConnectResponse::new()));
     }
 }

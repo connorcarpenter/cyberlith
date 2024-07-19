@@ -7,16 +7,11 @@ use http_server::{
     Server,
 };
 use logging::{info, warn};
-
-use session_server_http_proto::{
-    SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest,
-    SocialPatchUsersRequest, SocialUserPatch,
-};
-
+use session_server_http_proto::{SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest, SocialPatchUsersRequest, SocialUserPatch, SocialWorldConnectRequest};
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 
 use crate::{
-    match_lobbies::LobbyPatch, session_servers::SessionServerId, state::State, users::UserPatch,
+    match_lobbies::LobbyPatch, session_servers::SessionServerId, state::State, users::UserPatch, region::send_world_connect_request,
 };
 
 pub fn start_processes(state: Arc<RwLock<State>>) {
@@ -29,6 +24,7 @@ pub fn start_processes(state: Arc<RwLock<State>>) {
             handle_user_patches(state).await;
             handle_global_chat_patches(state).await;
             handle_match_lobby_patches(state).await;
+            handle_world_connect(state).await;
             Timer::after(Duration::from_secs(5)).await;
         }
     });
@@ -179,6 +175,94 @@ async fn handle_match_lobby_patches(state: &mut State) {
                 Err(e) => {
                     warn!(
                         "from {:?}:{} - match lobbies patches send failed: {:?}",
+                        recv_addr,
+                        recv_port,
+                        e.to_string()
+                    );
+                }
+            }
+        }
+    }
+}
+
+async fn handle_world_connect(state: &mut State) {
+    let starting_lobby_ids = state.match_lobbies.take_starting_lobbies();
+    for starting_lobby_id in starting_lobby_ids {
+
+        let lobby_user_ids = state.match_lobbies.get_lobby_users(&starting_lobby_id);
+
+        // give notice to world server via region server, get tokens
+        let mut req_data = HashMap::new();
+        for user_id in lobby_user_ids {
+            let session_server_id = state
+                .users
+                .get_user_session_server_id(&user_id);
+            if !req_data.contains_key(&session_server_id) {
+                req_data.insert(session_server_id, Vec::new());
+            }
+            let session_server = req_data.get_mut(&session_server_id).unwrap();
+            session_server.push(user_id);
+        }
+        let mut req_data_2 = Vec::new();
+        for (session_server_id, user_id) in req_data {
+            let instance_secret = state
+                .session_servers
+                .get_session_instance_secret(&session_server_id)
+                .unwrap()
+                .to_string();
+            req_data_2.push((instance_secret, user_id));
+        }
+
+        let (world_server_instance_secret, login_tokens) = match send_world_connect_request(
+            &mut state.region_server,
+            starting_lobby_id,
+            req_data_2,
+        ).await {
+            Ok((world_server_instance_secret, login_tokens)) => {
+                (world_server_instance_secret, login_tokens)
+            }
+            Err(err) => {
+                warn!("failed to send world connect request: {:?}", err.to_string());
+                return;
+            }
+        };
+
+        let mut session_servers = HashMap::new();
+        for (user_id, login_token) in login_tokens {
+            let session_server_id = state
+                .users
+                .get_user_session_server_id(&user_id);
+            if !state.session_servers.session_server_has_user_connected(&session_server_id, &user_id) {
+                warn!("session server does not have user! should not be possible.");
+                continue;
+            }
+            if !session_servers.contains_key(&session_server_id) {
+                session_servers.insert(session_server_id, Vec::new());
+            }
+            let session_server = session_servers.get_mut(&session_server_id).unwrap();
+            session_server.push((user_id, login_token));
+        }
+
+        // send world connect deets to all session servers
+        for (session_server_id, outgoing_message) in session_servers {
+
+            let (recv_addr, recv_port) = state
+                .session_servers
+                .get_recv_addr(session_server_id)
+                .unwrap();
+
+            let request = SocialWorldConnectRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, &world_server_instance_secret, outgoing_message);
+            let response = HttpClient::send(recv_addr, recv_port, request).await;
+            match response {
+                Ok(_) => {
+                    info!(
+                        "from {:?}:{} - world connect sent",
+                        recv_addr, recv_port
+                    );
+                }
+                Err(e) => {
+                    warn!(
+                        "from {:?}:{} - world connect send failed: {:?}",
                         recv_addr,
                         recv_port,
                         e.to_string()

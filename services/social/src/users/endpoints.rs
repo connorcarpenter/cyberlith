@@ -32,16 +32,28 @@ async fn async_recv_user_connected_request_impl(
         return Err(ResponseError::Unauthenticated);
     }
 
+    let session_instance_secret = request.session_instance_secret().to_string();
+    let user_id = request.user_id();
+
+
     let mut state = state.write().await;
 
     // setting last heard
     state.region_server.heard_from_region_server();
 
-    if state.users.is_user_online(&request.user_id()) {
+    if state.users.is_user_online(&user_id) {
         return Ok(UserConnectedResponse::already_connected());
     }
 
-    state.users.connect_user(&request.user_id());
+    let Some(session_server_id) = state
+        .session_servers
+        .get_session_server_id(&session_instance_secret)
+    else {
+        warn!("invalid request instance secret");
+        return Err(ResponseError::Unauthenticated);
+    };
+    state.users.connect_user(&user_id, &session_server_id);
+    state.session_servers.session_server_user_connect(&session_server_id, &user_id);
 
     // responding
     return Ok(UserConnectedResponse::success());
@@ -77,6 +89,7 @@ async fn async_recv_user_disconnected_request_impl(
     state
         .users
         .disconnect_user(session_server_id, request.user_id());
+    state.session_servers.session_server_user_disconnect(&session_server_id, &request.user_id());
 
     // responding
     return Ok(UserDisconnectedResponse);

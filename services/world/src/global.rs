@@ -4,19 +4,22 @@ use bevy_ecs::system::Resource;
 
 use auth_server_types::UserId;
 use naia_bevy_server::{RoomKey, UserKey};
+use social_server_types::LobbyId;
 
 use crate::region_connection::RegionServerState;
 
 pub struct UserData {
     pub user_id: UserId,
+    pub lobby_id: LobbyId,
     pub session_server_addr: String,
     pub session_server_port: u16,
 }
 
 impl UserData {
-    fn new(user_id: UserId, session_server_addr: &str, session_server_port: u16) -> Self {
+    fn new(user_id: UserId, lobby_id: LobbyId, session_server_addr: &str, session_server_port: u16) -> Self {
         Self {
             user_id,
+            lobby_id,
             session_server_addr: session_server_addr.to_string(),
             session_server_port,
         }
@@ -29,13 +32,12 @@ pub struct Global {
     pub region_server: RegionServerState,
     login_tokens: HashMap<String, UserData>,
     users: HashMap<UserKey, UserData>,
-    main_room_key: RoomKey,
+    lobby_room_keys: HashMap<LobbyId, RoomKey>,
 }
 
 impl Global {
     pub fn new(
         instance_secret: &str,
-        main_room_key: RoomKey,
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,
     ) -> Self {
@@ -47,7 +49,7 @@ impl Global {
             ),
             login_tokens: HashMap::new(),
             users: HashMap::new(),
-            main_room_key,
+            lobby_room_keys: HashMap::new(),
         }
     }
 
@@ -69,15 +71,17 @@ impl Global {
 
     pub fn add_login_token(
         &mut self,
-        session_server_addr: &str,
-        session_server_port: u16,
-        user_id: UserId,
-        token: &str,
+        lobby_id: &LobbyId,
+        login_tokens: &Vec<(String, u16, Vec<(UserId, String)>)>,
     ) {
-        self.login_tokens.insert(
-            token.to_string(),
-            UserData::new(user_id, session_server_addr, session_server_port),
-        );
+        for (session_server_addr, session_server_port, tokens) in login_tokens {
+            for (user_id, token) in tokens {
+                self.login_tokens.insert(
+                    token.to_string(),
+                    UserData::new(*user_id, *lobby_id, session_server_addr, *session_server_port),
+                );
+            }
+        }
     }
 
     pub fn take_login_token(&mut self, token: &str) -> Option<UserData> {
@@ -93,6 +97,11 @@ impl Global {
         Some(user_data.user_id)
     }
 
+    pub fn get_user_lobby_id(&self, user_key: &UserKey) -> Option<LobbyId> {
+        let user_data = self.users.get(user_key)?;
+        Some(user_data.lobby_id)
+    }
+
     pub fn get_user_session_server(&self, user_key: &UserKey) -> Option<(String, u16)> {
         let user_data = self.users.get(user_key)?;
         Some((
@@ -102,7 +111,11 @@ impl Global {
     }
     //
 
-    pub fn main_room_key(&self) -> RoomKey {
-        self.main_room_key
+    pub fn lobby_room_key(&self, lobby_id: &LobbyId) -> Option<RoomKey> {
+        self.lobby_room_keys.get(lobby_id).cloned()
+    }
+
+    pub fn insert_lobby_room_key(&mut self, lobby_id: LobbyId, room_key: RoomKey) {
+        self.lobby_room_keys.insert(lobby_id, room_key);
     }
 }

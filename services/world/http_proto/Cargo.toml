@@ -10,5 +10,6 @@ publish = false
 
 [dependencies]
 auth_server_types = { path = "../../auth/types" }
+social_server_types = { path = "../../social/types" }
 naia-serde = { path = "../../../../naia/shared/serde" }
 bevy_http_shared = { path = "../../../crates/http/bevy_http_shared" }

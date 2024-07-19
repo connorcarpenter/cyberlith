@@ -7,14 +7,9 @@ use config::{
 };
 use logging::info;
 
-use region_server_http_proto::{SessionRegisterInstanceRequest, WorldConnectRequest};
+use region_server_http_proto::SessionRegisterInstanceRequest;
 
-use crate::asset::asset_manager::AssetManager;
-use crate::social::SocialManager;
-use crate::{
-    region::RegionManager, session_instance::SessionInstance, user::UserManager,
-    world::WorldManager,
-};
+use crate::{asset::asset_manager::AssetManager, social::SocialManager, region::RegionManager, session_instance::SessionInstance};
 
 pub fn send_register_instance_request(
     session_instance: Res<SessionInstance>,
@@ -66,24 +61,5 @@ pub fn process_region_server_disconnect(
 
             // TODO: disconnect from world servers
         }
-    }
-}
-
-pub fn send_world_connect_requests(
-    session_instance: Res<SessionInstance>,
-    mut http_client: ResMut<HttpClient>,
-    mut user_manager: ResMut<UserManager>,
-    mut world_connections: ResMut<WorldManager>,
-) {
-    let worldless_users = user_manager
-        .get_users_ready_to_connect_to_world(world_connections.world_connect_resend_rate());
-    for (user_key, user_id) in worldless_users {
-        let request = WorldConnectRequest::new(session_instance.instance_secret(), user_id);
-
-        let host = "session";
-        let remote = "region";
-        log_util::send_req(host, remote, WorldConnectRequest::name());
-        let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
-        world_connections.add_world_connect_response_key(&user_key, key);
     }
 }
