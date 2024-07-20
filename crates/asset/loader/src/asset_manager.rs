@@ -90,8 +90,13 @@ impl AssetManager {
         self.store.get_icon_frame_height(handle, index)
     }
 
-    pub fn get_animation_duration(&self, handle: &AssetHandle<AnimationData>) -> f32 {
+    pub fn get_animation_duration_ms(&self, handle: &AssetHandle<AnimationData>) -> f32 {
         let data = self.store.animations.get(handle).unwrap();
-        data.get_duration()
+        data.get_duration_ms()
+    }
+
+    pub fn get_animation_frame_count(&self, handle: &AssetHandle<AnimationData>) -> usize {
+        let data = self.store.animations.get(handle).unwrap();
+        data.get_frame_count()
     }
 }

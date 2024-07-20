@@ -73,8 +73,12 @@ impl AnimationData {
         }
     }
 
-    pub fn get_duration(&self) -> f32 {
+    pub fn get_duration_ms(&self) -> f32 {
         self.total_duration
+    }
+
+    pub fn get_frame_count(&self) -> usize {
+        self.frames.len()
     }
 
     pub fn get_animated_components(

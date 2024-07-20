@@ -81,7 +81,7 @@ pub fn draw(
             model_handle,
             &walk_anim.anim_handle,
             transform,
-            walk_anim.image_index,
+            walk_anim.animation_index_ms,
             render_layer_opt,
         );
     }
