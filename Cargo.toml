@@ -68,8 +68,6 @@ members = [
     "apps/editor/server",
     # Ui Editor
     "apps/ui_editor",
-    # Physics Tester
-    "apps/physics_tester",
 
     ### Crates ###
     # Engine
@@ -98,8 +96,6 @@ members = [
     "crates/timequeue",
     # Time
     "crates/instant",
-    # Physics
-    "crates/physics",
     # Kernel
     "crates/kernel",
     # Clipboard
