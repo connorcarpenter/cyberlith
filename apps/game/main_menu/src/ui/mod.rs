@@ -21,7 +21,7 @@ use game_engine::{
 
 use game_app_common::AppState;
 
-use crate::main_menu::{ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}, resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
+use crate::{ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}, resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {

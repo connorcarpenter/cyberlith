@@ -1,6 +1,6 @@
 use bevy_ecs::{system::Resource, event::EventWriter};
 
-use crate::main_menu::ui::events::ResyncMainMenuUiEvent;
+use crate::ui::events::ResyncMainMenuUiEvent;
 
 #[derive(Resource)]
 pub struct MatchManager {

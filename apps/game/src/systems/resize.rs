@@ -1,12 +1,11 @@
-use bevy_ecs::{change_detection::ResMut, event::{EventWriter, Event}, prelude::Query};
+use bevy_ecs::{change_detection::ResMut, event::{EventWriter}, prelude::Query};
 
 use game_engine::render::{
     components::{Camera, Viewport},
     Window,
 };
 
-#[derive(Event)]
-pub struct ViewportResizeEvent;
+use game_app_common::ViewportResizeEvent;
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,

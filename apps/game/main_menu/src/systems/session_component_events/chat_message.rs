@@ -13,7 +13,7 @@ use game_engine::{
     },
 };
 
-use crate::main_menu::{ui::events::ResyncMessageListUiEvent, resources::{chat_message_manager::ChatMessageManager, chat_message_events::ChatMessageEvents}};
+use crate::{ui::events::ResyncMessageListUiEvent, resources::{chat_message_manager::ChatMessageManager, chat_message_events::ChatMessageEvents}};
 
 pub struct ChatMessageComponentEventsPlugin;
 

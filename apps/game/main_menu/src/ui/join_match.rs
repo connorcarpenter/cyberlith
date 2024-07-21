@@ -16,7 +16,7 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::main_menu::{ui::{events::{GoToSubUiEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{ui::{events::{GoToSubUiEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
 
 pub(crate) fn handle_join_match_input_events(
     ui_catalog: Res<UiCatalog>,

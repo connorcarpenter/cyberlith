@@ -21,6 +21,7 @@ members = [
     "apps/launcher",
     # Game
     "apps/game",
+    "apps/game/main_menu",
     "apps/game/inworld",
     "apps/game/common",
 

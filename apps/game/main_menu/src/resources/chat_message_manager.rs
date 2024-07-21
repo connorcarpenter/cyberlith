@@ -22,7 +22,7 @@ use game_engine::{
     },
 };
 
-use crate::main_menu::{ui::{events::{GoToSubUiEvent, ResyncMessageListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{ui::{events::{GoToSubUiEvent, ResyncMessageListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
 
 #[derive(Resource)]
 pub struct ChatMessageManager {

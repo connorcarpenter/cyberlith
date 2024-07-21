@@ -1,6 +1,6 @@
 use bevy_app::{App, Plugin, Update};
 
-use crate::main_menu::ui::{events::{
+use crate::ui::{events::{
     DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, LobbyListItemClickedEvent,
     JoinMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent,
     ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, CurrentLobbyButtonClickedEvent, LeaveLobbyButtonClickedEvent, StartMatchButtonClickedEvent,

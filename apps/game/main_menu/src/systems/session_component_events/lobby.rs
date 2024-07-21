@@ -14,7 +14,7 @@ use game_engine::{
     },
 };
 
-use crate::main_menu::{ui::events::{
+use crate::{ui::events::{
     ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
     ResyncUserListUiEvent,
 }, resources::{user_manager::UserManager, match_manager::MatchManager, lobby_manager::LobbyManager}};

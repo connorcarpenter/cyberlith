@@ -9,16 +9,13 @@ use game_engine::{
     render::{Draw, resources::WindowSettings},
 };
 
-use game_app_common::AppState;
-
+use game_app_common::{AppState, ViewportResizeEvent};
 use game_app_inworld::InWorldPlugin;
+use game_app_main_menu::MainMenuPlugin;
 
-use crate::{
-    main_menu::MainMenuPlugin,
-    systems::{
-        draw, resize, resize::ViewportResizeEvent,
-    },
-};
+use crate::systems::{
+        draw, resize,
+    };
 
 pub struct GameApp {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,

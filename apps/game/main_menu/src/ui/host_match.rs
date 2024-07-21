@@ -11,7 +11,7 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::main_menu::{ui::{events::{GoToSubUiEvent, SubmitButtonClickedEvent}, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{ui::{events::{GoToSubUiEvent, SubmitButtonClickedEvent}, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
 
 pub fn on_load_host_match_ui(ui_catalog: &mut UiCatalog, ui_manager: &mut UiManager) {
     let ui_key = UiKey::HostMatch;

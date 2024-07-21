@@ -17,7 +17,7 @@ use game_engine::{
 
 use game_app_common::AppState;
 
-use crate::{main_menu::{
+use crate::{
     ui::{
         events::{
             CurrentLobbyButtonClickedEvent, DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, GoToSubUiEvent, HostMatchButtonClickedEvent,
@@ -29,7 +29,7 @@ use crate::{main_menu::{
                 lobby_manager::LobbyManager,
                 match_manager::MatchManager,
     },
-}};
+};
 
 pub(crate) fn on_main_menu_ui_load(
     current_state: AppState,

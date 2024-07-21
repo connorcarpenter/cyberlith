@@ -12,7 +12,7 @@ use game_engine::{
     },
 };
 
-use crate::main_menu::{ui::events::ResyncUserListUiEvent, resources::user_manager::UserManager};
+use crate::{ui::events::ResyncUserListUiEvent, resources::user_manager::UserManager};
 
 pub struct UserComponentEventsPlugin;
 

@@ -4,7 +4,7 @@ use bevy_ecs::{event::EventWriter, system::Resource};
 
 use game_engine::{asset::AssetId, logging::info, ui::UiManager};
 
-use crate::main_menu::ui::events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
+use crate::ui::events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum AssetKey {

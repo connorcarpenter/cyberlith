@@ -21,7 +21,7 @@ use game_engine::{
     },
 };
 
-use crate::main_menu::{ui::{
+use crate::{ui::{
     events::{
         GoToSubUiEvent, LeaveLobbyButtonClickedEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent,
         ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, StartMatchButtonClickedEvent, SubmitButtonClickedEvent,
