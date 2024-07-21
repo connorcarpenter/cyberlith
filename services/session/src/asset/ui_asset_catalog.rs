@@ -5,9 +5,9 @@ use bevy_http_client::HttpClient;
 
 use crate::asset::asset_manager::AssetManager;
 
-pub struct AssetCatalog;
+pub struct UiAssetCatalog;
 
-impl AssetCatalog {
+impl UiAssetCatalog {
     pub fn game_main_menu_ui() -> AssetId {
         AssetId::from_str("kmqkp9").unwrap()
     }
@@ -60,17 +60,17 @@ pub(crate) fn user_load_default_assets(
     user_key: &UserKey,
 ) {
     for asset_id in [
-        AssetCatalog::text_icon(),
-        AssetCatalog::password_eye_icon(),
-        AssetCatalog::game_main_menu_ui(),
-        AssetCatalog::game_host_match_ui(),
-        AssetCatalog::game_join_match_ui(),
-        AssetCatalog::game_join_match_lobby_list_item_ui(),
-        AssetCatalog::game_global_chat_ui(),
-        AssetCatalog::game_global_chat_day_divider_item_ui(),
-        AssetCatalog::game_global_chat_username_and_message_item_ui(),
-        AssetCatalog::game_global_chat_message_item_ui(),
-        AssetCatalog::game_user_list_item_ui(),
+        UiAssetCatalog::text_icon(),
+        UiAssetCatalog::password_eye_icon(),
+        UiAssetCatalog::game_main_menu_ui(),
+        UiAssetCatalog::game_host_match_ui(),
+        UiAssetCatalog::game_join_match_ui(),
+        UiAssetCatalog::game_join_match_lobby_list_item_ui(),
+        UiAssetCatalog::game_global_chat_ui(),
+        UiAssetCatalog::game_global_chat_day_divider_item_ui(),
+        UiAssetCatalog::game_global_chat_username_and_message_item_ui(),
+        UiAssetCatalog::game_global_chat_message_item_ui(),
+        UiAssetCatalog::game_user_list_item_ui(),
     ]
     .iter()
     {

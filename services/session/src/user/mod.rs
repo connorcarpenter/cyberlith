@@ -12,7 +12,11 @@ cfg_if::cfg_if!(
         mod user_info_service {
             pub(crate) use crate::odst::user_info_service_mock::*;
         }
+        mod user_login_token_store {
+            pub(crate) use crate::odst::user_login_token_store_mock::*;
+        }
     } else {
         mod user_info_service;
+        mod user_login_token_store;
     }
 );

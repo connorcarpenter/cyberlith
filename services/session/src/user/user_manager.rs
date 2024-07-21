@@ -15,11 +15,11 @@ use auth_server_types::UserId;
 use session_server_naia_proto::components::User;
 use social_server_types::LobbyId;
 
-use crate::user::{user_data::UserData, user_info_service::UserInfoService};
+use crate::user::{user_data::UserData, user_info_service::UserInfoService, user_login_token_store::UserLoginTokenStore};
 
 #[derive(Resource)]
 pub struct UserManager {
-    login_tokens: HashMap<String, UserId>,
+    login_token_store: UserLoginTokenStore,
     user_key_to_id: HashMap<UserKey, UserId>,
     user_data: HashMap<UserId, UserData>,
     user_info_service: UserInfoService,
@@ -28,7 +28,7 @@ pub struct UserManager {
 impl UserManager {
     pub fn new() -> Self {
         Self {
-            login_tokens: HashMap::new(),
+            login_token_store: UserLoginTokenStore::new(),
             user_key_to_id: HashMap::new(),
             user_data: HashMap::new(),
             user_info_service: UserInfoService::new(),
@@ -63,12 +63,12 @@ impl UserManager {
 
     // Client login
 
-    pub fn add_login_token(&mut self, user_id: &UserId, token: &str) {
-        self.login_tokens.insert(token.to_string(), user_id.clone());
+    pub fn recv_login_token(&mut self, user_id: &UserId, token: &str) {
+        self.login_token_store.recv_login_token(user_id, token);
     }
 
-    pub fn take_login_token(&mut self, token: &str) -> Option<UserId> {
-        self.login_tokens.remove(token)
+    pub fn spend_login_token(&mut self, token: &str) -> Option<UserId> {
+        self.login_token_store.spend_login_token(token)
     }
 
     pub fn accept_user(&mut self, user_key: UserKey, user_id: UserId) {

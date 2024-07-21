@@ -11,7 +11,7 @@ use logging::{info, warn};
 use session_server_naia_proto::messages::Auth;
 
 use crate::{
-    asset::{asset_manager::AssetManager, user_load_default_assets},
+    asset::{asset_manager::AssetManager},
     session_instance::SessionInstance,
     social::SocialManager,
     user::UserManager,
@@ -24,7 +24,7 @@ pub fn auth_events(
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if let Some(user_id) = user_manager.take_login_token(&auth.token()) {
+            if let Some(user_id) = user_manager.spend_login_token(&auth.token()) {
                 info!("Accepted connection. Token: {}", auth.token());
 
                 user_manager.accept_user(user_key, user_id);
@@ -54,7 +54,7 @@ pub fn connect_events(
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
-        info!("Server connected to: {}", address);
+        info!("Server connected to User: {}", address);
 
         let main_menu_room_key = social_manager.global_room_key().unwrap();
 
@@ -72,8 +72,12 @@ pub fn connect_events(
         // Assets
         asset_manager.register_user(user_key);
 
-        // load "default" assets
-        user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
+        cfg_if::cfg_if!(
+            if #[cfg(feature = "odst")] {} else {
+                // load "default" assets
+                asset::user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
+            }
+        );
     }
 }
 
