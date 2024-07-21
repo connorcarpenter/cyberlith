@@ -24,7 +24,7 @@ pub fn start_processes(state: Arc<RwLock<State>>) {
             send_register_instance_request(state_clone.clone()).await;
             process_region_server_disconnect(state_clone.clone()).await;
             handle_world_connect(state_clone.clone()).await;
-            Timer::after(Duration::from_secs(5)).await;
+            Timer::after(Duration::from_secs(1)).await;
         }
     });
 }

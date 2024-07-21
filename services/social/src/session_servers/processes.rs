@@ -24,7 +24,7 @@ pub fn start_processes(state: Arc<RwLock<State>>) {
             handle_user_patches(state).await;
             handle_global_chat_patches(state).await;
             handle_match_lobby_patches(state).await;
-            Timer::after(Duration::from_secs(5)).await;
+            Timer::after(Duration::from_secs(1)).await;
         }
     });
 }

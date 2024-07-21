@@ -44,6 +44,8 @@ pub fn main() {
     server.start();
 
     let state_clone = state.clone();
+    let state_clone2 = state.clone();
+
     Server::spawn(async move {
         loop {
             let mut state = state_clone.write().await;
@@ -52,21 +54,12 @@ pub fn main() {
         }
     });
 
-    let state_clone = state.clone();
     Server::spawn(async move {
         loop {
-            let mut state = state_clone.write().await;
+            let mut state = state_clone2.write().await;
             state.sync_asset_session_instances().await;
-            Timer::after(Duration::from_secs(5)).await;
-        }
-    });
-
-    let state_clone = state.clone();
-    Server::spawn(async move {
-        loop {
-            let mut state = state_clone.write().await;
             state.sync_social_session_instances().await;
-            Timer::after(Duration::from_secs(5)).await;
+            Timer::after(Duration::from_secs(1)).await;
         }
     });
 

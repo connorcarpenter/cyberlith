@@ -61,23 +61,17 @@ pub fn main() {
 
     server.start();
 
-    // send registration
     let state_clone = state.clone();
     Server::spawn(async move {
         loop {
-            let state_clone_2 = state_clone.clone();
-            region_connection::send_register_instance_request(state_clone_2).await;
-            Timer::after(Duration::from_secs(5)).await;
-        }
-    });
 
-    // handle disconnection
-    let state_clone = state.clone();
-    Server::spawn(async move {
-        loop {
-            let state_clone_2 = state_clone.clone();
-            region_connection::process_region_server_disconnect(state_clone_2).await;
-            Timer::after(Duration::from_secs(5)).await;
+            // send registration
+            region_connection::send_register_instance_request(state_clone.clone()).await;
+
+            // handle disconnection
+            region_connection::process_region_server_disconnect(state_clone.clone()).await;
+
+            Timer::after(Duration::from_secs(1)).await;
         }
     });
 
