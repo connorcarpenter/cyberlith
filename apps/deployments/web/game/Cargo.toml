@@ -20,7 +20,7 @@ wgpu_renderer = [ "game_app/wgpu_renderer" ]
 [dependencies]
 kernel = { path = "../../../../crates/kernel" }
 logging = { path = "../../../../crates/logging" }
-game_app = { path = "../../../game" }
+game_app = { path = "../../../game", features = ["no_odst"] }
 config = { path = "../../../../config", features = ["client"] }
 
 cfg-if = { version = "1.0" }

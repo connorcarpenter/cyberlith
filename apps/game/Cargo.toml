@@ -7,13 +7,13 @@ edition = "2021"
 publish = false
 
 [features]
-default = [ "game_app_main_menu" ]
-local = [ "game_engine/local", "game_app_inworld/local", "game_app_common/local", "game_app_main_menu/local" ]
-prod = [ "game_engine/prod", "game_app_inworld/prod", "game_app_common/prod", "game_app_main_menu/prod" ]
-gl_renderer = [ "game_engine/gl_renderer", "game_app_inworld/gl_renderer", "game_app_common/gl_renderer", "game_app_main_menu/gl_renderer" ]
-wgpu_renderer = [ "game_engine/wgpu_renderer", "game_app_inworld/wgpu_renderer", "game_app_common/wgpu_renderer", "game_app_main_menu/wgpu_renderer" ]
+local = [ "game_engine/local", "game_app_inworld/local", "game_app_common/local", "game_app_main_menu?/local" ]
+prod = [ "game_engine/prod", "game_app_inworld/prod", "game_app_common/prod", "game_app_main_menu?/prod" ]
+gl_renderer = [ "game_engine/gl_renderer", "game_app_inworld/gl_renderer", "game_app_common/gl_renderer", "game_app_main_menu?/gl_renderer" ]
+wgpu_renderer = [ "game_engine/wgpu_renderer", "game_app_inworld/wgpu_renderer", "game_app_common/wgpu_renderer", "game_app_main_menu?/wgpu_renderer" ]
 autodriver = [ "game_app_main_menu/autodriver"]
 odst = [ "game_engine/odst", "game_app_inworld/odst", "game_app_common/odst" ]
+no_odst = [ "game_app_main_menu/no_odst" ]
 
 [dependencies]
 # Internal

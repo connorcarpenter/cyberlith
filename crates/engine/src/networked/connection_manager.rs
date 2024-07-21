@@ -262,6 +262,34 @@ impl ConnectionManager {
                 // previous below
                 self.connection_state = ConnectionState::WaitingForSessionConnect;
 
+                Self::send_session_connect(http_client, session_client);
+            }
+            ConnectionState::WaitingForSessionConnect => {}
+            ConnectionState::ConnectedToSession => {}
+            ConnectionState::ConnectedToWorld => {
+                info!("world : connected!");
+            }
+        }
+    }
+
+    cfg_if! {
+        if #[cfg(feature = "odst")] {
+            fn send_session_connect(
+                _http_client: &HttpClient,
+                session_client: &mut SessionClient
+            ) {
+                let url = format!("{}://{}:{}", config::PUBLIC_PROTOCOL, config::PUBLIC_IP_ADDR, config::SESSION_SERVER_SIGNAL_PORT);
+
+                info!("connecting to session server: {}", url);
+                session_client.auth(session_server_naia_proto::messages::Auth::new("odst"));
+                let socket = WebrtcSocket::new(&url, session_client.socket_config());
+                session_client.connect(socket);
+            }
+        } else {
+            fn send_session_connect(
+                http_client: &HttpClient,
+                session_client: &mut SessionClient
+            ) {
                 let url = TargetEnv::gateway_url();
 
                 info!("connecting to session server: {}", url);
@@ -272,11 +300,6 @@ impl ConnectionManager {
                     session_client.auth_headers(headers);
                 }
                 session_client.connect(socket);
-            }
-            ConnectionState::WaitingForSessionConnect => {}
-            ConnectionState::ConnectedToSession => {}
-            ConnectionState::ConnectedToWorld => {
-                info!("world : connected!");
             }
         }
     }

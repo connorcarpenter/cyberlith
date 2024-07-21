@@ -10,3 +10,9 @@ cfg_if::cfg_if! {
         mod autodriver;
     } else {}
 }
+
+cfg_if::cfg_if! {
+    if #[cfg(not(feature = "no_odst"))] {
+        compile_error!("Requires 'no_odst' feature.");
+    }
+}

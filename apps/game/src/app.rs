@@ -11,6 +11,8 @@ use game_engine::{
 
 use game_app_common::{AppState, ViewportResizeEvent};
 use game_app_inworld::InWorldPlugin;
+
+#[cfg(feature = "no_odst")]
 use game_app_main_menu::MainMenuPlugin;
 
 use crate::systems::{
@@ -34,6 +36,9 @@ impl Plugin for GameApp {
     fn build(&self, app: &mut App) {
         let networked_engine_plugin = NetworkedEnginePlugin::new(self.cookie_store_opt.clone());
 
+        #[cfg(feature = "no_odst")]
+        app.add_plugins(MainMenuPlugin);
+
         app.add_plugins(networked_engine_plugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
@@ -43,7 +48,6 @@ impl Plugin for GameApp {
                 ..Default::default()
             })
             .add_plugins(InWorldPlugin)
-            .add_plugins(MainMenuPlugin)
 
             // states
             .insert_state(AppState::Loading)

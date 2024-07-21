@@ -25,7 +25,7 @@ http_common = { path = "../../../crates/http/http_common" }
 config = { path = "../../../config", features = ["client"] }
 
 launcher_app = { path = "../../../apps/launcher" }
-game_app = { path = "../../../apps/game" }
+game_app = { path = "../../../apps/game", features = ["no_odst"] }
 
 # others
 cfg-if = { version = "1.0" }

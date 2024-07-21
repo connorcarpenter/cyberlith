@@ -17,7 +17,7 @@ path = "src/main.rs"
 kernel = { path = "../../../crates/kernel" }
 logging = { path = "../../../crates/logging" }
 http_common = { path = "../../../crates/http/http_common" }
-config = { path = "../../../config", features = ["client", "local"] }
+config = { path = "../../../config", features = ["client", "local", "odst"] }
 
 game_app = { path = "../../../apps/game", features = [ "gl_renderer", "odst", "local" ] }
 

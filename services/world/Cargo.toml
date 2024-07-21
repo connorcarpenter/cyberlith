@@ -9,6 +9,7 @@ publish = false
 [features]
 local = [ "config/local", "world_server_naia_proto/local", "region_server_http_proto/local" ]
 prod = [ "config/prod", "world_server_naia_proto/prod", "region_server_http_proto/prod" ]
+odst = [ ]
 
 [dependencies]
 naia-bevy-server = { path = "../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }
@@ -33,3 +34,5 @@ bevy_ecs = { version = "0.13", default-features=false }
 
 # TODO: remove this once bevy_log is updates the underlying tracing-log requirement from 0.1.2 to 0.2.0
 regex = { version = "1.10.3", features = ["unicode-case"] }
+
+cfg-if = { version = "1.0" }

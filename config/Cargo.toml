@@ -19,6 +19,7 @@ asset = []
 auth = []
 redirector = []
 social = []
+odst = []
 
 [dependencies]
 logging = { path = "../crates/logging" }

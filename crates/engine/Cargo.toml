@@ -12,7 +12,7 @@ local = [ "config/local", "session_server_naia_proto/local", "world_server_naia_
 prod = [ "config/prod", "session_server_naia_proto/prod", "world_server_naia_proto/prod" ]
 gl_renderer = [ "render_gl" ]
 wgpu_renderer = [ ]
-odst = [ ]
+odst = [ "config/odst" ]
 
 [dependencies]
 # Internal Crates
