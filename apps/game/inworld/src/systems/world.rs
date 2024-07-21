@@ -16,7 +16,9 @@ use game_engine::{
     },
 };
 
-use crate::{states::AppState, inworld::systems::{walker_scene, walker_scene::{WalkAnimation, WalkerMarker}}};
+use game_app_common::AppState;
+
+use crate::systems::{walker_scene, walker_scene::{WalkAnimation, WalkerMarker}};
 
 pub fn world_connect_events(
     mut commands: Commands,

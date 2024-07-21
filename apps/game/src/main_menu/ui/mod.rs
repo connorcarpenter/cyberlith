@@ -1,17 +1,16 @@
 pub mod events;
 
-mod ui_catalog;
-pub use ui_catalog::UiCatalog;
-
 mod main_menu;
-
+mod user_list;
 mod host_match;
 mod join_match;
 mod message_list;
-mod plugin;
-mod user_list;
 
+mod plugin;
 pub use plugin::UiPlugin;
+
+mod ui_catalog;
+pub use ui_catalog::UiCatalog;
 
 use bevy_ecs::{event::{EventReader, EventWriter}, prelude::NextState, system::{Res, ResMut}};
 
@@ -20,11 +19,9 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::states::AppState;
-use crate::main_menu::resources::chat_message_manager::ChatMessageManager;
-use crate::main_menu::resources::lobby_manager::LobbyManager;
-use crate::main_menu::resources::user_manager::UserManager;
-use crate::main_menu::ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
+use game_app_common::AppState;
+
+use crate::main_menu::{ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}, resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {

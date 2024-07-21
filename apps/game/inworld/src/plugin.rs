@@ -1,11 +1,10 @@
 
-mod systems;
-mod resources;
-
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::{prelude::in_state, prelude::not, schedule::IntoSystemConfigs};
 
-use crate::states::AppState;
+use game_app_common::AppState;
+
+use crate::systems;
 
 pub struct InWorldPlugin;
 

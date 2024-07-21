@@ -11,7 +11,7 @@ use game_engine::{
     },
 };
 
-use crate::inworld::systems::walker_scene::WalkAnimation;
+use crate::systems::walker_scene::WalkAnimation;
 
 pub fn draw(
     asset_manager: Res<AssetManager>,

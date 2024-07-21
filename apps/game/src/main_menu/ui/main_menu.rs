@@ -15,7 +15,9 @@ use game_engine::{
     ui::UiManager,
 };
 
-use crate::{states::AppState, main_menu::{
+use game_app_common::AppState;
+
+use crate::{main_menu::{
     ui::{
         events::{
             CurrentLobbyButtonClickedEvent, DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, GoToSubUiEvent, HostMatchButtonClickedEvent,

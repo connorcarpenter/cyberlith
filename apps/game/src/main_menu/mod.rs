@@ -8,10 +8,12 @@ use bevy_ecs::{prelude::{in_state, not}, schedule::IntoSystemConfigs};
 
 use game_engine::render::Draw;
 
+use game_app_common::AppState;
+
 use resources::{user_manager::UserManager, selfhood_events::SelfhoodEvents, match_manager::MatchManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager, chat_message_events::ChatMessageEvents, asset_catalog::AssetCatalog};
 use systems::{session_component_events::SessionComponentEventsPlugin, asset_events, cube_scene, initial_spinner};
 
-use crate::{main_menu::{ui::UiPlugin, systems::resize}, states::AppState};
+use crate::{main_menu::{ui::UiPlugin, systems::resize}};
 
 pub struct MainMenuPlugin;
 

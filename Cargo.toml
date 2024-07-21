@@ -21,6 +21,8 @@ members = [
     "apps/launcher",
     # Game
     "apps/game",
+    "apps/game/inworld",
+    "apps/game/common",
 
     ### Services ###
     # Redirector Server

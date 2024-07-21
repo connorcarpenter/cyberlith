@@ -10,6 +10,8 @@ use game_engine::{
     ui::UiManager,
 };
 
+use game_app_common::AppState;
+
 use crate::{
     main_menu::{
         ui::{
@@ -18,7 +20,6 @@ use crate::{
         },
         resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager, asset_catalog::{AssetCatalog, on_asset_load}}
     },
-    states::AppState
 };
 
 pub fn session_load_asset_events(

@@ -7,15 +7,20 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "game_engine/local" ]
-prod = [ "game_engine/prod" ]
-gl_renderer = [ "game_engine/gl_renderer" ]
-wgpu_renderer = [ "game_engine/wgpu_renderer" ]
+local = [ "game_engine/local", "game_app_inworld/local", "game_app_common/local" ]
+prod = [ "game_engine/prod", "game_app_inworld/prod", "game_app_common/prod" ]
+gl_renderer = [ "game_engine/gl_renderer", "game_app_inworld/gl_renderer", "game_app_common/gl_renderer" ]
+wgpu_renderer = [ "game_engine/wgpu_renderer", "game_app_inworld/wgpu_renderer", "game_app_common/wgpu_renderer" ]
 
 [dependencies]
 # Internal
+
 # goal is to have ONLY game_engine here!!!
 game_engine = { path = "../../crates/engine", features = ["networked"] }
+
+# and these subapps... ?
+game_app_inworld = { path = "inworld" }
+game_app_common =  { path = "common" }
 
 # External
 bevy_app = { version = "0.13", default-features=false }

@@ -9,10 +9,12 @@ use game_engine::{
     render::{Draw, resources::WindowSettings},
 };
 
+use game_app_common::AppState;
+
+use game_app_inworld::InWorldPlugin;
+
 use crate::{
-    inworld::InWorldPlugin,
     main_menu::MainMenuPlugin,
-    states::AppState,
     systems::{
         draw, resize, resize::ViewportResizeEvent,
     },
