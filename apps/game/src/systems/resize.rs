@@ -1,17 +1,16 @@
-use bevy_ecs::{change_detection::ResMut, event::EventWriter, prelude::Query};
+use bevy_ecs::{change_detection::ResMut, event::{EventWriter, Event}, prelude::Query};
 
 use game_engine::render::{
     components::{Camera, Viewport},
     Window,
 };
 
-use crate::main_menu::ui::events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
+#[derive(Event)]
+pub struct ViewportResizeEvent;
 
 pub fn handle_viewport_resize(
     mut window: ResMut<Window>,
-    mut resync_user_ui_events: EventWriter<ResyncUserListUiEvent>,
-    mut resync_chat_events: EventWriter<ResyncMessageListUiEvent>,
-    mut resync_lobby_ui_events: EventWriter<ResyncLobbyListUiEvent>,
+    mut resize_events: EventWriter<ViewportResizeEvent>,
     mut cameras_q: Query<&mut Camera>,
 ) {
     // sync camera viewport to window
@@ -37,9 +36,7 @@ pub fn handle_viewport_resize(
 
             //info!("resize window detected. new viewport: (x: {:?}, y: {:?}, width: {:?}, height: {:?})", new_viewport.x, new_viewport.y, new_viewport.width, new_viewport.height);
 
-            resync_user_ui_events.send(ResyncUserListUiEvent);
-            resync_chat_events.send(ResyncMessageListUiEvent::new(true));
-            resync_lobby_ui_events.send(ResyncLobbyListUiEvent);
+            resize_events.send(ViewportResizeEvent);
         }
     }
 }

@@ -14,7 +14,7 @@ use crate::{
     main_menu::MainMenuPlugin,
     states::AppState,
     systems::{
-        draw, resize,
+        draw, resize, resize::ViewportResizeEvent,
     },
 };
 
@@ -50,6 +50,7 @@ impl Plugin for GameApp {
             .insert_state(AppState::Loading)
 
             // resize window listener
+            .add_event::<ViewportResizeEvent>()
             .add_systems(Update, resize::handle_viewport_resize)
 
             // general drawing

@@ -11,7 +11,7 @@ use game_engine::render::Draw;
 use resources::{user_manager::UserManager, selfhood_events::SelfhoodEvents, match_manager::MatchManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager, chat_message_events::ChatMessageEvents, asset_catalog::AssetCatalog};
 use systems::{session_component_events::SessionComponentEventsPlugin, asset_events, cube_scene, initial_spinner};
 
-use crate::{main_menu::ui::UiPlugin, states::AppState};
+use crate::{main_menu::{ui::UiPlugin, systems::resize}, states::AppState};
 
 pub struct MainMenuPlugin;
 
@@ -30,6 +30,7 @@ impl Plugin for MainMenuPlugin {
             // scene systems
             .add_systems(Startup, cube_scene::setup)
             .add_systems(Update, cube_scene::step.run_if(not(in_state(AppState::InGame))))
+            .add_systems(Update, resize::resync_on_resize)
             // Network Systems
             .add_systems(Update, asset_events::session_load_asset_events)
             .add_plugins(SessionComponentEventsPlugin)
