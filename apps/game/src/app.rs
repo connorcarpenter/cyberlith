@@ -9,7 +9,7 @@ use game_engine::{
     render::{Draw, resources::WindowSettings},
 };
 
-use game_app_common::{AppState, ViewportResizeEvent};
+use game_app_common::CommonPlugin;
 use game_app_inworld::InWorldPlugin;
 
 #[cfg(feature = "no_odst")]
@@ -47,13 +47,10 @@ impl Plugin for GameApp {
                 max_size: None,
                 ..Default::default()
             })
+            .add_plugins(CommonPlugin)
             .add_plugins(InWorldPlugin)
 
-            // states
-            .insert_state(AppState::Loading)
-
-            // resize window listener
-            .add_event::<ViewportResizeEvent>()
+            // handle resizes
             .add_systems(Update, resize::handle_viewport_resize)
 
             // general drawing
