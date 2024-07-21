@@ -12,6 +12,10 @@ pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
+
+        #[cfg(feature = "autodriver")]
+        app.add_plugins(crate::autodriver::AutodriverPlugin);
+
         app
             .init_resource::<UserManager>()
             .init_resource::<SelfhoodEvents>()

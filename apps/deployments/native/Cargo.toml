@@ -15,6 +15,7 @@ local = [ "launcher_app/local", "config/local" ]
 prod = [ "launcher_app/prod", "config/prod" ]
 gl_renderer = [ "launcher_app/gl_renderer" ]
 wgpu_renderer = [ "launcher_app/wgpu_renderer" ]
+autodriver = [ "launcher_app/autodriver", "game_app/autodriver" ]
 
 [dependencies]
 # should only be kernel & apps here

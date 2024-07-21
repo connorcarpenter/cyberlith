@@ -11,6 +11,7 @@ local = [ "game_engine/local", "game_app_inworld/local", "game_app_common/local"
 prod = [ "game_engine/prod", "game_app_inworld/prod", "game_app_common/prod", "game_app_main_menu/prod" ]
 gl_renderer = [ "game_engine/gl_renderer", "game_app_inworld/gl_renderer", "game_app_common/gl_renderer", "game_app_main_menu/gl_renderer" ]
 wgpu_renderer = [ "game_engine/wgpu_renderer", "game_app_inworld/wgpu_renderer", "game_app_common/wgpu_renderer", "game_app_main_menu/wgpu_renderer" ]
+autodriver = [ "game_app_main_menu/autodriver"]
 
 [dependencies]
 # Internal

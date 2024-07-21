@@ -34,6 +34,10 @@ impl KernelApp for LauncherApp {
 
 impl Plugin for LauncherApp {
     fn build(&self, app: &mut App) {
+
+        #[cfg(feature = "autodriver")]
+        app.add_plugins(crate::autodriver::AutodriverPlugin);
+
         let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
 
         app.add_plugins(engine_plugin)
