@@ -75,7 +75,7 @@ pub fn connect_events(
         cfg_if::cfg_if!(
             if #[cfg(feature = "odst")] {} else {
                 // load "default" assets
-                asset::user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
+                crate::asset::user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
             }
         );
     }
