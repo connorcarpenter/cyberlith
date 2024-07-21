@@ -1,5 +1,5 @@
 use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::{event::{EventReader, EventWriter}, system::{Res, ResMut, Resource}};
+use bevy_ecs::{event::{EventWriter}, system::{Res, ResMut, Resource}};
 
 use game_engine::{logging::{info, warn}, ui::UiManager};
 
@@ -20,8 +20,6 @@ impl Plugin for AutodriverPlugin {
 enum LoginState {
     AtStart,
     LoggedOut,
-    LoggingIn,
-    LoggedIn,
 }
 
 #[derive(Resource)]
@@ -48,7 +46,7 @@ impl Default for AutodriverState {
 }
 
 fn startup(
-    mut state: ResMut<AutodriverState>,
+    _state: Res<AutodriverState>,
 ) {
     info!("Launcher::Autodriver::startup()");
 }
@@ -112,9 +110,6 @@ fn update(
                     submit_btn_wrtr.send(SubmitButtonClickedEvent);
                 }
             }
-        }
-        _ => {
-            warn!("unexpected login state");
         }
     }
 }
