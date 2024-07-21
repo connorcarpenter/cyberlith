@@ -11,6 +11,7 @@ local = [ "game_engine/local", "game_app_common/local" ]
 prod = [ "game_engine/prod", "game_app_common/prod" ]
 gl_renderer = [ "game_engine/gl_renderer", "game_app_common/gl_renderer" ]
 wgpu_renderer = [ "game_engine/wgpu_renderer", "game_app_common/wgpu_renderer" ]
+odst = [ "game_engine/odst", "game_app_common/odst" ]
 
 [dependencies]
 # Internal

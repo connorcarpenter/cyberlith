@@ -15,6 +15,11 @@ node_modules
 /apps/deployments/native/data
 /apps/deployments/native/data/
 /apps/deployments/native/cookies
+/apps/deployments/odst/assets
+/apps/deployments/odst/assets/
+/apps/deployments/odst/data
+/apps/deployments/odst/data/
+/apps/deployments/odst/cookies
 /apps/deployments/web/launcher/assets
 /apps/deployments/web/game/assets
 /apps/deployments/web/level_editor/assets

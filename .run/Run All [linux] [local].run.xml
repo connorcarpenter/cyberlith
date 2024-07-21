@@ -8,7 +8,6 @@
     <toRun name="Run Session Server" type="CargoCommandRunConfiguration" />
     <toRun name="Run Social Server" type="CargoCommandRunConfiguration" />
     <toRun name="Run World Server" type="CargoCommandRunConfiguration" />
-    <toRun name="Standalone Native [RUN] [local]" type="CargoCommandRunConfiguration" />
     <method v="2" />
   </configuration>
 </component>

@@ -23,7 +23,6 @@ enum MenuState {
     LandingOther,
     InHostGame,
     InJoinGame,
-    InLobby,
 }
 
 #[derive(Resource)]
@@ -103,6 +102,5 @@ fn update(
         }
         MenuState::InHostGame => {}
         MenuState::InJoinGame => {}
-        MenuState::InLobby => {}
     }
 }

@@ -9,6 +9,8 @@ members = [
     ### Deployments ###
     # Standalone [Native]
     "apps/deployments/native",
+    # Standalone [Native] ODST-mode
+    "apps/deployments/odst",
     # Launcher [Web]
     "apps/deployments/web/launcher",
     # Game [Web]

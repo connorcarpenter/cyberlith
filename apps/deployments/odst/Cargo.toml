@@ -1,0 +1,25 @@
+[package]
+name = "odst_deploy"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../.."
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "odst"
+path = "src/main.rs"
+
+[features]
+
+[dependencies]
+# should only be kernel & apps here
+kernel = { path = "../../../crates/kernel" }
+logging = { path = "../../../crates/logging" }
+http_common = { path = "../../../crates/http/http_common" }
+config = { path = "../../../config", features = ["client", "local"] }
+
+game_app = { path = "../../../apps/game", features = [ "gl_renderer", "odst", "local" ] }
+
+# others
+cfg-if = { version = "1.0" }
