@@ -6,6 +6,12 @@ mod social;
 mod user;
 mod world;
 
+cfg_if::cfg_if!(
+    if #[cfg(feature = "odst")] {
+        mod odst;
+    }
+);
+
 //
 
 use std::time::Duration;

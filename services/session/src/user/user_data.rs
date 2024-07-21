@@ -3,8 +3,6 @@ use bevy_ecs::{entity::Entity, system::Commands};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
-use bevy_http_client::ResponseKey;
-use auth_server_http_proto::UserGetResponse;
 use session_server_naia_proto::components::{Selfhood, SelfhoodUser};
 use social_server_types::LobbyId;
 
@@ -20,12 +18,12 @@ pub(crate) struct UserData {
     // LATER this may be used to send meaningful data about a user back to the given world server instance..
     world_instance_secret: Option<String>,
 
-    user_info_response_key: Option<ResponseKey<UserGetResponse>>,
+    requesting_info: bool,
     make_online_after_info: Option<bool>,
 }
 
 impl UserData {
-    pub fn new(user_entity: Entity, user_info_response_key: ResponseKey<UserGetResponse>) -> Self {
+    pub fn new(user_entity: Entity) -> Self {
         Self {
             user_key: None,
             user_entity,
@@ -36,7 +34,7 @@ impl UserData {
 
             world_instance_secret: None, // tells us whether user is connected
 
-            user_info_response_key: Some(user_info_response_key),
+            requesting_info: true,
             make_online_after_info: None,
         }
     }
@@ -51,6 +49,10 @@ impl UserData {
 
     pub(crate) fn set_offline(&mut self) {
         self.make_online_after_info = Some(false);
+    }
+
+    pub(crate) fn requesting_info(&self) -> bool {
+        self.requesting_info
     }
 
     pub(crate) fn user_join_lobby(&mut self, lobby_id: &LobbyId, lobby_member_entity: &Entity) -> (UserKey, Entity) {
@@ -75,13 +77,8 @@ impl UserData {
         self.lobby_id.map(|(lobby_id, _)| lobby_id)
     }
 
-    pub fn user_info_response_key(&self) -> Option<ResponseKey<UserGetResponse>> {
-        self.user_info_response_key
-    }
-
     pub(crate) fn receive_info_response(&mut self) -> Option<bool> {
-        self.user_info_response_key = None;
-
+        self.requesting_info = false;
         let output = self.make_online_after_info;
         self.make_online_after_info = None;
         output

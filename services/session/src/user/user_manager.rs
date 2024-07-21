@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 use bevy_ecs::{
     change_detection::ResMut,
@@ -9,25 +9,20 @@ use bevy_ecs::{
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
-use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
-use config::{AUTH_SERVER_PORT, AUTH_SERVER_RECV_ADDR};
-use logging::{info, warn};
+use bevy_http_client::{HttpClient};
 
-use auth_server_http_proto::{UserGetRequest, UserGetResponse};
 use auth_server_types::UserId;
-
 use session_server_naia_proto::components::User;
-
 use social_server_types::LobbyId;
 
-use crate::user::user_data::UserData;
+use crate::user::{user_data::UserData, user_info_service::UserInfoService};
 
 #[derive(Resource)]
 pub struct UserManager {
     login_tokens: HashMap<String, UserId>,
     user_key_to_id: HashMap<UserKey, UserId>,
     user_data: HashMap<UserId, UserData>,
-    inflight_user_info_requests: HashSet<UserId>,
+    user_info_service: UserInfoService,
 }
 
 impl UserManager {
@@ -36,7 +31,7 @@ impl UserManager {
             login_tokens: HashMap::new(),
             user_key_to_id: HashMap::new(),
             user_data: HashMap::new(),
-            inflight_user_info_requests: HashSet::new(),
+            user_info_service: UserInfoService::new(),
         }
     }
 
@@ -46,7 +41,24 @@ impl UserManager {
         mut http_client: ResMut<HttpClient>,
         mut user_manager: ResMut<Self>,
     ) {
-        user_manager.process_in_flight_requests(&mut commands, &mut http_client);
+        if let Some(responses) = user_manager.user_info_service.process_in_flight_requests(&mut http_client) {
+            for (user_id, response) in responses {
+                let user_data = user_manager.user_data.get_mut(&user_id).unwrap();
+                let user_is_online = {
+                    if let Some(online) = user_data.receive_info_response() {
+                        online
+                    } else {
+                        false
+                    }
+                };
+
+                let user_entity = user_data.user_entity();
+                let user_name = response.name;
+                commands
+                    .entity(user_entity)
+                    .insert(User::new(&user_name, user_is_online));
+            }
+        }
     }
 
     // Client login
@@ -152,11 +164,10 @@ impl UserManager {
             .add_entity(&user_entity);
 
         // send user info req
-        let user_info_response_key = self.send_user_info_request(http_client, user_id);
-        self.inflight_user_info_requests.insert(*user_id);
+        self.user_info_service.send_user_info_request(http_client, user_id);
 
         // add user data
-        let user_data = UserData::new(user_entity, user_info_response_key);
+        let user_data = UserData::new(user_entity);
         self.user_data.insert(*user_id, user_data);
     }
 
@@ -215,7 +226,7 @@ impl UserManager {
         online: bool,
     ) {
         let user_data = self.user_data.get(user_id).unwrap();
-        if user_data.user_info_response_key().is_some() {
+        if user_data.requesting_info() {
             // user info req is in flight
             let user_data = self.user_data.get_mut(user_id).unwrap();
             if online {
@@ -229,75 +240,5 @@ impl UserManager {
             let mut user_info = users_q.get_mut(user_entity).unwrap();
             *user_info.online = online;
         }
-    }
-
-    pub fn process_in_flight_requests(
-        &mut self,
-        commands: &mut Commands,
-        http_client: &mut HttpClient,
-    ) {
-        if self.inflight_user_info_requests.is_empty() {
-            // no in-flight requests
-            return;
-        }
-
-        let mut received_responses = Vec::new();
-        for nameless_user_id in self.inflight_user_info_requests.iter() {
-            let nameless_user_id = *nameless_user_id;
-            let user_data = self.user_data.get_mut(&nameless_user_id).unwrap();
-            let response_key = user_data.user_info_response_key().unwrap();
-            if let Some(response_result) = http_client.recv(&response_key) {
-                let host = "session";
-                let remote = "auth";
-                bevy_http_client::log_util::recv_res(host, remote, UserGetResponse::name());
-
-                match response_result {
-                    Ok(response) => {
-                        info!("received user get response from auth server");
-                        received_responses.push((nameless_user_id, response));
-                    }
-                    Err(e) => {
-                        warn!(
-                            "error receiving user get response from social server: {:?}",
-                            e.to_string()
-                        );
-                    }
-                }
-            }
-        }
-
-        for (user_id, received_response) in received_responses {
-            self.inflight_user_info_requests.remove(&user_id);
-
-            let user_data = self.user_data.get_mut(&user_id).unwrap();
-            let user_is_online = {
-                if let Some(online) = user_data.receive_info_response() {
-                    online
-                } else {
-                    false
-                }
-            };
-
-            let user_entity = user_data.user_entity();
-            let user_name = received_response.name;
-            commands
-                .entity(user_entity)
-                .insert(User::new(&user_name, user_is_online));
-        }
-    }
-
-    pub fn send_user_info_request(
-        &mut self,
-        http_client: &mut HttpClient,
-        user_id: &UserId,
-    ) -> ResponseKey<UserGetResponse> {
-        let request = UserGetRequest::new(*user_id);
-
-        let host = "session";
-        let remote = "auth";
-        bevy_http_client::log_util::send_req(host, remote, UserGetRequest::name());
-        let response_key = http_client.send(AUTH_SERVER_RECV_ADDR, AUTH_SERVER_PORT, request);
-
-        response_key
     }
 }
