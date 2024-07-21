@@ -1,7 +1,5 @@
 use gl::HasContext;
 
-use render_api::base::{CpuTexture2D, CpuTextureData};
-
 use crate::core::{Context, TextureDataType};
 
 // COMMON TEXTURE FUNCTIONS
@@ -57,37 +55,5 @@ pub fn check_data_length<T: TextureDataType>(
             "invalid size of texture data (expected {} bytes but got {} bytes)",
             expected_bytes, actual_bytes
         )
-    }
-}
-
-pub fn ru8_data(t: &CpuTexture2D) -> &[u8] {
-    if let Some(CpuTextureData::RU8(data)) = &t.initial_data() {
-        data
-    } else {
-        panic!("all of the images used for cube map sides must have the same texture data type")
-    }
-}
-
-pub fn rgu8_data(t: &CpuTexture2D) -> &[[u8; 2]] {
-    if let Some(CpuTextureData::RgU8(data)) = &t.initial_data() {
-        data
-    } else {
-        panic!("all of the images used for cube map sides must have the same texture data type")
-    }
-}
-
-pub fn rgbu8_data(t: &CpuTexture2D) -> &[[u8; 3]] {
-    if let Some(CpuTextureData::RgbU8(data)) = &t.initial_data() {
-        data
-    } else {
-        panic!("all of the images used for cube map sides must have the same texture data type")
-    }
-}
-
-pub fn rgbau8_data(t: &CpuTexture2D) -> &[[u8; 4]] {
-    if let Some(CpuTextureData::RgbaU8(data)) = &t.initial_data() {
-        data
-    } else {
-        panic!("all of the images used for cube map sides must have the same texture data type")
     }
 }

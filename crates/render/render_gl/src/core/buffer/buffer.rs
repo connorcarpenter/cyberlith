@@ -23,6 +23,7 @@ impl Buffer {
         }
     }
 
+    // this is used actually
     pub fn new_with_data<T: BufferDataType>(data: &[T]) -> Self {
         let mut buffer = Self::new();
         if !data.is_empty() {

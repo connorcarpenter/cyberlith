@@ -7,7 +7,6 @@ use storage::Handle;
 
 use crate::{
     core::{GpuTexture2D, Program},
-    renderer::FragmentShader,
     GpuMaterialManager,
 };
 
@@ -78,11 +77,6 @@ impl GpuSkinManager {
     pub fn remove(&mut self, _handle: &Handle<CpuSkin>) -> Option<GpuSkin> {
         todo!();
         self.assets.remove(_handle)
-    }
-
-    pub fn fragment_shader(&self) -> FragmentShader {
-        let output = include_str!("shaders/physical_material.frag").to_string();
-        FragmentShader { source: output }
     }
 
     pub fn use_uniforms(&self, program: &Program) {

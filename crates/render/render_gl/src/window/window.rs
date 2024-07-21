@@ -319,11 +319,9 @@ impl Window {
                         incoming_events: rlc.events.drain(..).collect(),
                         outgoing_events: Vec::new(),
                         elapsed_time_ms: elapsed_time,
-                        accumulated_time_ms: rlc.accumulated_time,
                         logical_size: Viewport::new_at_origin(logical_width, logical_height),
                         physical_size: Viewport::new_at_origin(physical_width, physical_height),
                         device_pixel_ratio,
-                        first_frame: rlc.first_frame,
                     };
                     rlc.first_frame = false;
                     let frame_output = Window::inner_render_loop(&mut app, frame_input);
@@ -571,24 +569,6 @@ impl Window {
                 return Some(self);
             }
         }
-    }
-
-    ///
-    /// Return the current logical size of the window.
-    ///
-    pub fn size(&self) -> (u32, u32) {
-        self.window
-            .inner_size()
-            .to_logical::<f64>(self.window.scale_factor())
-            .into()
-    }
-
-    ///
-    /// Returns the current viewport of the window in physical pixels (the size of the screen returned from [FrameInput::screen]).
-    ///
-    pub fn viewport(&self) -> Viewport {
-        let (w, h): (u32, u32) = self.window.inner_size().into();
-        Viewport::new_at_origin(w, h)
     }
 }
 

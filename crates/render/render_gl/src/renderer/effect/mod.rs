@@ -3,4 +3,4 @@
 //!
 
 mod fxaa;
-pub use fxaa::*;
+pub use fxaa::FxaaEffect;

@@ -139,46 +139,6 @@ impl<'a> RenderTarget<'a> {
     }
 
     ///
-    /// Copies the content of the color and depth texture as limited by the [WriteMask]
-    /// to the part of this render target specified by the [Viewport].
-    ///
-    pub fn copy_from(
-        &self,
-        color_texture: GpuTexture2D,
-        depth_texture: GpuDepthTexture2D,
-        viewport: Viewport,
-        write_mask: WriteMask,
-    ) -> &Self {
-        self.write(|| {
-            let fragment_shader_source = format!(
-                "{}\n{}\n
-                in vec2 uvs;
-                layout (location = 0) out vec4 color;
-                void main()
-                {{
-                    color = sample_color(uvs);
-                    gl_FragDepth = sample_depth(uvs);
-                }}",
-                color_texture.fragment_shader_source(),
-                depth_texture.fragment_shader_source()
-            );
-            apply_effect(
-                &fragment_shader_source,
-                RenderStates {
-                    depth_test: DepthTest::Always,
-                    write_mask,
-                    ..Default::default()
-                },
-                viewport,
-                |program| {
-                    color_texture.use_uniforms(program);
-                    depth_texture.use_uniforms(program);
-                },
-            )
-        })
-    }
-
-    ///
     /// Copies the content of the color texture as limited by the [WriteMask]
     /// to the part of this render target specified by the [Viewport].
     ///
@@ -241,28 +201,6 @@ impl<'a> RenderTarget<'a> {
                 },
             )
         })
-    }
-
-    ///
-    /// Creates a [RenderTarget] with the given low-level [Framebuffer]. Should only be used if the [Framebuffer] is used for something else, ie. to be able
-    /// to combine this crate with functionality of another crate. Also see [Self::into_framebuffer].
-    ///
-    pub fn from_framebuffer(width: u32, height: u32, framebuffer: Framebuffer) -> Self {
-        Self {
-            id: Some(framebuffer),
-            color: None,
-            depth: None,
-            width,
-            height,
-        }
-    }
-
-    ///
-    /// Transforms this [RenderTarget] into a low-level [Framebuffer]. Should only be used if the [Framebuffer] is used for something else, ie. to be able
-    /// to combine this crate with functionality of another crate. Also see [Self::from_framebuffer].
-    ///
-    pub fn into_framebuffer(mut self) -> Option<Framebuffer> {
-        self.id.take()
     }
 
     pub(crate) fn new_color(color: ColorTarget<'a>) -> Self {

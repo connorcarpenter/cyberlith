@@ -17,7 +17,6 @@ pub struct Program {
     attributes: HashMap<String, u32>,
     textures: RwLock<HashMap<String, u32>>,
     uniforms: HashMap<String, gl::UniformLocation>,
-    uniform_blocks: RwLock<HashMap<String, (u32, u32)>>,
 }
 
 impl Program {
@@ -130,7 +129,6 @@ impl Program {
                 id,
                 attributes,
                 uniforms,
-                uniform_blocks: RwLock::new(HashMap::new()),
                 textures: RwLock::new(HashMap::new()),
             })
         }
@@ -226,30 +224,6 @@ impl Program {
     }
 
     ///
-    /// Use the given [UniformBuffer] in this shader program and associate it with the given named variable.
-    ///
-    pub fn use_uniform_block(&self, name: &str, buffer: &UniformBuffer) {
-        let context = Context::get();
-        if !self.uniform_blocks.read().unwrap().contains_key(name) {
-            let mut map = self.uniform_blocks.write().unwrap();
-            let location = unsafe {
-                context
-                    .get_uniform_block_index(self.id, name)
-                    .unwrap_or_else(|| panic!("the uniform block {} is sent to the shader but not defined or never used",
-                        name))
-            };
-            let index = map.len() as u32;
-            map.insert(name.to_owned(), (location, index));
-        };
-        let (location, index) = *self.uniform_blocks.read().unwrap().get(name).unwrap();
-        unsafe {
-            context.uniform_block_binding(self.id, location, index);
-            buffer.bind(index);
-            context.bind_buffer(gl::UNIFORM_BUFFER, None);
-        }
-    }
-
-    ///
     /// Uses the given [VertexBuffer] data in this shader program and associates it with the given named variable.
     /// Each value in the buffer is used when rendering one vertex using the [Program::draw_arrays] methods.
     /// Therefore the buffer must contain the same number of values as the number of vertices specified in those draw calls.
@@ -302,52 +276,6 @@ impl Program {
     }
 
     ///
-    /// Uses the given [InstanceBuffer] data in this shader program and associates it with the given named variable.
-    /// Each value in the buffer is used when rendering one instance using the [Program::draw_arrays_instanced] methods.
-    /// Therefore the buffer must contain the same number of values as the number of instances specified in those draw calls.
-    ///
-    /// # Panic
-    /// Will panic if the attribute is not defined in the shader code or not used.
-    /// In the latter case the variable is removed by the shader compiler.
-    ///
-    pub fn use_instance_attribute(&self, name: &str, buffer: &InstanceBuffer) {
-        let context = Context::get();
-        if buffer.count() > 0 {
-            buffer.bind();
-            let loc = self.location(name);
-            unsafe {
-                context.bind_vertex_array(Some(context.vao()));
-                context.enable_vertex_attrib_array(loc);
-                if buffer.data_type() == gl::UNSIGNED_SHORT
-                    || buffer.data_type() == gl::SHORT
-                    || buffer.data_type() == gl::UNSIGNED_INT
-                    || buffer.data_type() == gl::INT
-                {
-                    context.vertex_attrib_pointer_i32(
-                        loc,
-                        buffer.data_size() as i32,
-                        buffer.data_type(),
-                        0,
-                        0,
-                    );
-                } else {
-                    context.vertex_attrib_pointer_f32(
-                        loc,
-                        buffer.data_size() as i32,
-                        buffer.data_type(),
-                        false,
-                        0,
-                        0,
-                    );
-                }
-                context.vertex_attrib_divisor(loc, 1);
-                context.bind_buffer(gl::ARRAY_BUFFER, None);
-            }
-            self.unuse_program();
-        }
-    }
-
-    ///
     /// Draws `count` number of triangles with the given render states and viewport using this shader program.
     /// Requires that all attributes and uniforms have been defined using the use_attribute and use_uniform methods.
     /// Assumes that the data for the three vertices in a triangle is defined contiguous in each vertex buffer.
@@ -359,33 +287,6 @@ impl Program {
         self.use_program();
         unsafe {
             context.draw_arrays(gl::TRIANGLES, 0, count as i32);
-            for location in self.attributes.values() {
-                context.disable_vertex_attrib_array(*location);
-            }
-            context.bind_vertex_array(None);
-        }
-        self.unuse_program();
-
-        #[cfg(debug_assertions)]
-        context
-            .error_check()
-            .expect("Unexpected rendering error occured")
-    }
-
-    pub fn draw_arrays_instanced(
-        &self,
-        render_states: RenderStates,
-        viewport: Viewport,
-        count: u32,
-        instance_count: u32,
-    ) {
-        let context = Context::get();
-        context.set_viewport(viewport);
-        context.set_render_states(render_states);
-        self.use_program();
-        unsafe {
-            context.draw_arrays_instanced(gl::TRIANGLES, 0, count as i32, instance_count as i32);
-            context.bind_buffer(gl::ELEMENT_ARRAY_BUFFER, None);
             for location in self.attributes.values() {
                 context.disable_vertex_attrib_array(*location);
             }

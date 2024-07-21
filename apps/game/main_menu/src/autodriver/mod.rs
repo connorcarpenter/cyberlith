@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{system::Query, event::{EventWriter}, system::{Res, ResMut, Resource}};
 
-use game_engine::{session::components::User, logging::{info, warn}, ui::UiManager};
+use game_engine::{session::components::User, logging::{info}, ui::UiManager};
 
 use crate::{resources::user_manager::UserManager, ui::{UiCatalog, UiKey, events::{HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent}}};
 

@@ -4,7 +4,7 @@ use gl::DrawArraysIndirectCommand;
 use math::Mat4;
 use render_api::{
     base::CpuMesh,
-    components::{Camera, CameraProjection, Projection, Transform, Viewport},
+    components::{Camera, CameraProjection, Projection, Transform},
     resources::{MaterialOrSkinHandle, RenderPass},
 };
 use storage::Handle;
@@ -53,13 +53,6 @@ pub trait RenderTargetExt {
             );
         });
         self
-    }
-
-    ///
-    /// Returns the viewport that encloses the entire target.
-    ///
-    fn viewport(&self) -> Viewport {
-        Viewport::new_at_origin(self.width(), self.height())
     }
 }
 

@@ -1,15 +1,9 @@
-mod effect;
-mod error;
-mod geometry;
-mod light;
-mod material;
-mod render_target_ext;
-mod utils;
+pub(crate) mod effect;
 
-pub use effect::*;
-pub use error::*;
-pub use geometry::*;
+mod light;
+mod render_target_ext;
+mod fragment_shader;
+
 pub use light::*;
-pub use material::*;
+pub use fragment_shader::*;
 pub use render_target_ext::*;
-pub use utils::*;

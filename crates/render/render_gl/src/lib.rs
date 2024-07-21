@@ -1,6 +1,6 @@
-pub mod core;
-pub mod renderer;
-pub mod window;
+pub(crate) mod core;
+pub(crate) mod renderer;
+pub(crate) mod window;
 
 mod exit_system;
 mod gpu_material_manager;
@@ -12,7 +12,10 @@ mod render;
 mod runner;
 mod sync;
 
-pub use gpu_material_manager::*;
-pub use gpu_mesh_manager::*;
-pub use gpu_skin_manager::*;
+pub(crate) use gpu_material_manager::*;
+pub(crate) use gpu_mesh_manager::*;
+pub(crate) use gpu_skin_manager::*;
 pub use plugin::*;
+
+pub use core::apply_effect;
+pub use renderer::effect::FxaaEffect;
