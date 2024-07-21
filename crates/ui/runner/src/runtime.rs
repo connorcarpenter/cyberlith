@@ -318,6 +318,16 @@ impl UiRuntime {
         self.state.set_textbox_password_eye_visible(&node_id, val);
     }
 
+    pub fn get_node_visible(&self, id_str: &str) -> bool {
+        // get node_id from id_str
+        let Some(node_id) = self.get_node_id_by_id_str(id_str) else {
+            warn!("get_node_visible: node_id not found for id_str: {}", id_str);
+            return false;
+        };
+
+        self.state.get_node_visible(&node_id)
+    }
+
     pub fn set_node_visible(&mut self, id_str: &str, val: bool) {
         // get node_id from id_str
         let Some(node_id) = self.get_node_id_by_id_str(id_str) else {

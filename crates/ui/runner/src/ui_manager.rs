@@ -622,6 +622,15 @@ impl UiManager {
         }
     }
 
+    pub fn get_node_visible(&self, ui_handle: &UiHandle, id_str: &str) -> bool {
+        if let Some(ui_runtime) = self.ui_runtimes.get(ui_handle) {
+            return ui_runtime.get_node_visible(id_str);
+        } else {
+            warn!("ui data not loaded 5.5: {:?}", ui_handle.asset_id());
+            return false;
+        }
+    }
+
     pub fn set_node_visible(&mut self, ui_handle: &UiHandle, id_str: &str, val: bool) {
         if let Some(ui_runtime) = self.ui_runtimes.get_mut(ui_handle) {
             ui_runtime.set_node_visible(id_str, val);
