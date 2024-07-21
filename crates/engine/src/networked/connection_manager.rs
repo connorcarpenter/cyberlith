@@ -28,7 +28,7 @@ use world_server_naia_proto::messages::Auth as WorldAuth;
 
 use super::client_markers::{Session, World};
 use crate::{
-    world::{WorldConnectEvent, WorldDisconnectEvent}, session::{SessionDisconnectEvent, SessionRejectEvent, SessionConnectEvent},
+    world::{WorldConnectEvent, WorldRejectEvent, WorldDisconnectEvent}, session::{SessionDisconnectEvent, SessionRejectEvent, SessionConnectEvent},
     asset_cache::{AssetCache, AssetLoadedEvent},
     networked::asset_cache_checker::AssetCacheChecker,
 };
@@ -148,6 +148,18 @@ impl ConnectionManager {
             };
 
             connection_manager.connection_state = ConnectionState::ConnectedToSession;
+        }
+    }
+
+    // used as a system
+    pub fn handle_world_reject_events(
+        mut world_reject_event_reader: EventReader<WorldRejectEvent>,
+        mut _connection_manager: ResMut<Self>,
+    ) {
+        for _ in world_reject_event_reader.read() {
+            warn!("Client rejected from connecting to the world server");
+
+            todo!();
         }
     }
 

@@ -42,6 +42,7 @@ impl Plugin for WorldEventsPlugin {
         app
             .add_systems(Update, ConnectionManager::handle_world_connect_events)
             .add_systems(Update, ConnectionManager::handle_world_disconnect_events)
+            .add_systems(Update, ConnectionManager::handle_world_reject_events)
             .add_systems(Update, spawn_entity_events)
             .add_event::<WorldSpawnEntityEvent>()
             .add_systems(Update, despawn_entity_events)
