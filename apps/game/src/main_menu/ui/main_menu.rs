@@ -9,23 +9,25 @@ use bevy_ecs::{
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    logging::{info},
+    logging::info,
     render::components::RenderLayers,
+    session::{components::Lobby, SessionClient},
     ui::UiManager,
-    session::{SessionClient, components::Lobby},
 };
 
-use crate::{
-    resources::{user_manager::UserManager, lobby_manager::LobbyManager, match_manager::MatchManager},
-    states::AppState,
+use crate::{states::AppState, main_menu::{
     ui::{
         events::{
-            DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, HostMatchButtonClickedEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent,
-            JoinMatchButtonClickedEvent, ResyncMainMenuUiEvent, SettingsButtonClickedEvent, GoToSubUiEvent, CurrentLobbyButtonClickedEvent, LeaveLobbyButtonClickedEvent, StartMatchButtonClickedEvent
+            CurrentLobbyButtonClickedEvent, DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, GoToSubUiEvent, HostMatchButtonClickedEvent,
+            JoinMatchButtonClickedEvent, LeaveLobbyButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, StartMatchButtonClickedEvent
         },
         go_to_sub_ui, UiCatalog, UiKey,
     },
-};
+    resources::{user_manager::UserManager,
+                lobby_manager::LobbyManager,
+                match_manager::MatchManager,
+    },
+}};
 
 pub(crate) fn on_main_menu_ui_load(
     current_state: AppState,

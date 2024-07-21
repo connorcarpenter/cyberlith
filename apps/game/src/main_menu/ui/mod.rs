@@ -13,21 +13,18 @@ mod user_list;
 
 pub use plugin::UiPlugin;
 
-use bevy_ecs::{system::{Res, ResMut}, event::{EventReader, EventWriter}, prelude::NextState};
+use bevy_ecs::{event::{EventReader, EventWriter}, prelude::NextState, system::{Res, ResMut}};
 
 use game_engine::{
     asset::AssetId,
     ui::{UiHandle, UiManager},
 };
 
-use crate::{
-    resources::{
-        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
-        user_manager::UserManager,
-    },
-    states::AppState,
-    ui::events::{ResyncMainMenuUiEvent, GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
-};
+use crate::states::AppState;
+use crate::main_menu::resources::chat_message_manager::ChatMessageManager;
+use crate::main_menu::resources::lobby_manager::LobbyManager;
+use crate::main_menu::resources::user_manager::UserManager;
+use crate::main_menu::ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {

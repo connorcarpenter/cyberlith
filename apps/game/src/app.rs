@@ -1,27 +1,21 @@
 use std::sync::{Arc, RwLock};
 
-use bevy_app::{App, Plugin, Startup, Update};
-use bevy_ecs::{prelude::{in_state, not}, schedule::IntoSystemConfigs};
+use bevy_app::{App, Plugin, Update};
 
 use game_engine::{
     http::CookieStore,
     kernel::KernelApp,
-    render::{resources::WindowSettings, Draw},
     NetworkedEnginePlugin,
+    render::{Draw, resources::WindowSettings},
 };
 
 use crate::{
-    resources::{
-        chat_message_events::ChatMessageEvents, chat_message_manager::ChatMessageManager,
-        lobby_manager::LobbyManager, selfhood_events::SelfhoodEvents, user_manager::UserManager,
-        asset_catalog::AssetCatalog, match_manager::MatchManager,
-    },
+    inworld::InWorldPlugin,
+    main_menu::MainMenuPlugin,
     states::AppState,
     systems::{
-        asset_events, cube_scene, draw, initial_spinner, resize,
-        session_component_events::SessionComponentEventsPlugin, walker_scene, world,
+        draw, resize,
     },
-    ui::UiPlugin,
 };
 
 pub struct GameApp {
@@ -49,37 +43,16 @@ impl Plugin for GameApp {
                 max_size: None,
                 ..Default::default()
             })
-            .init_resource::<UserManager>()
-            .init_resource::<SelfhoodEvents>()
-            .init_resource::<ChatMessageManager>()
-            .init_resource::<ChatMessageEvents>()
-            .init_resource::<LobbyManager>()
-            .init_resource::<AssetCatalog>()
-            .init_resource::<MatchManager>()
+            .add_plugins(InWorldPlugin)
+            .add_plugins(MainMenuPlugin)
+
             // states
             .insert_state(AppState::Loading)
-            // scene systems
-            .add_systems(Startup, cube_scene::setup)
-            .add_systems(Update, cube_scene::step.run_if(not(in_state(AppState::InGame))))
-            .add_systems(Update, walker_scene::step.run_if(in_state(AppState::InGame)))
+
             // resize window listener
             .add_systems(Update, resize::handle_viewport_resize)
+
             // general drawing
-            .add_systems(Draw, draw::draw)
-            // drawing loading spinner
-            .add_systems(
-                Draw,
-                initial_spinner::draw.run_if(in_state(AppState::Loading)),
-            )
-            // Network Systems
-            .add_systems(Update, world::world_connect_events.run_if(not(in_state(AppState::InGame))))
-            .add_systems(Update, world::world_spawn_entity_events.run_if(in_state(AppState::InGame)))
-            .add_systems(Update, world::world_main_insert_position_events.run_if(in_state(AppState::InGame)))
-            .add_systems(Update, world::world_main_insert_asset_ref_events.run_if(in_state(AppState::InGame)))
-            .add_systems(Update, world::world_alt1_insert_asset_ref_events.run_if(in_state(AppState::InGame)))
-            .add_systems(Update, asset_events::session_load_asset_events)
-            .add_plugins(SessionComponentEventsPlugin)
-            // Ui
-            .add_plugins(UiPlugin);
+            .add_systems(Draw, draw::draw);
     }
 }

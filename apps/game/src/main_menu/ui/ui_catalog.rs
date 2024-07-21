@@ -4,7 +4,7 @@ use bevy_ecs::system::Resource;
 
 use game_engine::{asset::AssetId, ui::UiHandle};
 
-use crate::ui::UiKey;
+use crate::main_menu::ui::UiKey;
 
 #[derive(Resource)]
 pub struct UiCatalog {

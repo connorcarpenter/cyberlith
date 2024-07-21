@@ -11,15 +11,14 @@ use game_engine::{
 };
 
 use crate::{
-    resources::{
-        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
-        user_manager::UserManager, asset_catalog::{AssetCatalog, on_asset_load},
+    main_menu::{
+        ui::{
+            events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
+            on_ui_load, UiCatalog,
+        },
+        resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager, asset_catalog::{AssetCatalog, on_asset_load}}
     },
-    states::AppState,
-    ui::{
-        events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent},
-        on_ui_load, UiCatalog,
-    },
+    states::AppState
 };
 
 pub fn session_load_asset_events(

@@ -2,7 +2,7 @@ use bevy_ecs::event::Event;
 
 use game_engine::social::LobbyId;
 
-use crate::ui::UiKey;
+use crate::main_menu::ui::UiKey;
 
 #[derive(Event, Default)]
 pub struct HostMatchButtonClickedEvent;

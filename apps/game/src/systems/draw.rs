@@ -1,7 +1,6 @@
-use bevy_ecs::system::{Query, Res, ResMut};
+use bevy_ecs::system::{Query, ResMut};
 
 use game_engine::{
-    asset::{AssetHandle, AssetManager, AssetRender, ModelData},
     render::{
         base::{CpuMaterial, CpuMesh},
         components::{
@@ -13,10 +12,7 @@ use game_engine::{
     storage::Handle,
 };
 
-use crate::systems::walker_scene::WalkAnimation;
-
 pub fn draw(
-    asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     // Cameras
     cameras_q: Query<(&Camera, &Transform, &Projection, Option<&RenderLayer>)>,
@@ -24,13 +20,6 @@ pub fn draw(
     cpu_meshes_q: Query<(
         &Handle<CpuMesh>,
         &Handle<CpuMaterial>,
-        &Transform,
-        &Visibility,
-        Option<&RenderLayer>,
-    )>,
-    models_q: Query<(
-        &AssetHandle<ModelData>,
-        &WalkAnimation,
         &Transform,
         &Visibility,
         Option<&RenderLayer>,
@@ -69,20 +58,5 @@ pub fn draw(
             continue;
         }
         render_frame.draw_mesh(render_layer_opt, mesh_handle, mat_handle, transform);
-    }
-
-    // Aggregate Models
-    for (model_handle, walk_anim, transform, visibility, render_layer_opt) in models_q.iter() {
-        if !visibility.visible {
-            continue;
-        }
-        asset_manager.draw_animated_model(
-            &mut render_frame,
-            model_handle,
-            &walk_anim.anim_handle,
-            transform,
-            walk_anim.animation_index_ms,
-            render_layer_opt,
-        );
     }
 }

@@ -11,7 +11,7 @@ use game_engine::{
     },
 };
 
-use crate::{resources::lobby_manager::LobbyManager, ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey}};
+use crate::main_menu::{ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
 
 pub type UserId = u32;
 

@@ -9,17 +9,14 @@ use game_engine::{
     input::{InputEvent, Key},
     logging::info,
     session::{
-        channels, messages,
-        components::{Lobby, User},
+        channels, components::{Lobby, User},
+        messages,
         SessionClient,
     },
     ui::{UiHandle, UiManager},
 };
 
-use crate::{
-    resources::lobby_manager::LobbyManager,
-    ui::{go_to_sub_ui, events::{GoToSubUiEvent, ResyncLobbyListUiEvent, LobbyListItemClickedEvent}, UiCatalog, UiKey},
-};
+use crate::main_menu::{ui::{events::{GoToSubUiEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
 
 pub(crate) fn handle_join_match_input_events(
     ui_catalog: Res<UiCatalog>,

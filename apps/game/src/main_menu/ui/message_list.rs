@@ -15,10 +15,7 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::{
-    resources::{lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager},
-    ui::{events::ResyncMessageListUiEvent, UiCatalog, UiKey},
-};
+use crate::main_menu::{ui::{events::ResyncMessageListUiEvent, UiCatalog, UiKey}, resources::{lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
 
 pub(crate) fn handle_message_list_interaction_events(
     ui_catalog: Res<UiCatalog>,

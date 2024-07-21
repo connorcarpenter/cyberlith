@@ -19,7 +19,6 @@ use game_engine::{
         shapes,
     },
     storage::Storage,
-    logging::info,
 };
 
 #[derive(Component)]

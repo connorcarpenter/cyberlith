@@ -1,4 +1,4 @@
-use bevy_ecs::{prelude::NextState, entity::Entity, event::EventReader, system::{Query, ResMut, Commands}};
+use bevy_ecs::{entity::Entity, event::EventReader, prelude::NextState, system::{Commands, Query, ResMut}};
 
 use game_engine::{
     asset::{
@@ -7,16 +7,16 @@ use game_engine::{
     },
     logging::info,
     math::{Quat, Vec3},
-    render::{base::{CpuMaterial, CpuMesh}, components::{RenderLayers,RenderLayer, Transform, Visibility}},
+    render::{base::{CpuMaterial, CpuMesh}, components::{RenderLayer, RenderLayers, Transform, Visibility}},
+    storage::Storage,
+    ui::UiManager,
     world::{
         components::{Alt1, Main, Position}, WorldConnectEvent,
         WorldInsertAssetRefEvent, WorldInsertComponentEvent, WorldSpawnEntityEvent,
     },
-    storage::Storage,
-    ui::UiManager,
 };
 
-use crate::{systems::{walker_scene, walker_scene::{WalkAnimation, WalkerMarker}}, states::AppState};
+use crate::{states::AppState, inworld::systems::{walker_scene, walker_scene::{WalkAnimation, WalkerMarker}}};
 
 pub fn world_connect_events(
     mut commands: Commands,

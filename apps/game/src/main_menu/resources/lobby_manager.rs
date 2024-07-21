@@ -21,10 +21,10 @@ use game_engine::{
     },
 };
 
-use crate::{ui::{
+use crate::main_menu::{ui::{
     events::{
-        StartMatchButtonClickedEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
-        ResyncUserListUiEvent, SubmitButtonClickedEvent, GoToSubUiEvent, LobbyListItemClickedEvent, LeaveLobbyButtonClickedEvent,
+        GoToSubUiEvent, LeaveLobbyButtonClickedEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent,
+        ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, StartMatchButtonClickedEvent, SubmitButtonClickedEvent,
     },
     go_to_sub_ui, UiCatalog, UiKey,
 }, resources::match_manager::MatchManager};

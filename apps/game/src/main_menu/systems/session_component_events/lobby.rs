@@ -9,18 +9,15 @@ use bevy_ecs::{
 use game_engine::{
     logging::{info, warn},
     session::{
-        components::{Lobby, LobbyMember}, SessionUpdateComponentEvent,
-        SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,
+        components::{Lobby, LobbyMember}, SessionClient,
+        SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent,
     },
 };
 
-use crate::{
-    resources::{match_manager::MatchManager, lobby_manager::LobbyManager, user_manager::UserManager},
-    ui::events::{
-        ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
-        ResyncUserListUiEvent,
-    },
-};
+use crate::main_menu::{ui::events::{
+    ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+    ResyncUserListUiEvent,
+}, resources::{user_manager::UserManager, match_manager::MatchManager, lobby_manager::LobbyManager}};
 
 pub struct LobbyComponentEventsPlugin;
 
