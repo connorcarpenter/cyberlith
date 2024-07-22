@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use asset_id::{AssetId, AssetType, ETag};
+use logging::{info, warn};
 
 struct AssetData {
     asset_type: AssetType,
@@ -50,12 +51,15 @@ impl AssetStore {
         data: Vec<u8>,
     ) {
         if self.map.contains_key(&asset_id) {
-            panic!("asset is already in memory");
+            // this can sometimes happen when 2 assets are requested at the same time
+            warn!("attempted to insert asset w/ id {:?} which is already in memory", asset_id);
+        } else {
+            // info!("inserting asset w/ id: {:?}", asset_id);
+            self.map.insert(
+                asset_id,
+                AssetData::new(asset_type, etag, dependencies, data),
+            );
         }
-        self.map.insert(
-            asset_id,
-            AssetData::new(asset_type, etag, dependencies, data),
-        );
     }
 
     pub fn has_asset(&self, asset_id: &AssetId) -> bool {

@@ -65,11 +65,11 @@ impl UiRenderer {
         );
 
         let Some(text_icon_handle) = ui_manager.get_text_icon_handle() else {
-            warn!("no text icon handle");
+            // warn!("no text icon handle");
             return;
         };
         let Some(eye_icon_handle) = ui_manager.get_eye_icon_handle() else {
-            warn!("no eye icon handle");
+            // warn!("no eye icon handle");
             return;
         };
 

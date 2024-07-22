@@ -45,7 +45,7 @@ impl SceneData {
     pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {
         match dependency_typed_id {
             TypedAssetId::Skin(asset_id) => {
-                info!("finished scene dependency for skin: {:?}", asset_id,);
+                // info!("finished scene dependency for skin: {:?}", asset_id,);
                 let asset_handle = AssetHandle::<SkinData>::new(asset_id);
                 let component_handle = AssetComponentHandle::Skin(asset_handle);
                 finish_component_dependency(&mut self.component_files, component_handle);
@@ -99,7 +99,7 @@ impl SceneData {
     pub fn from_bytes(bytes: &[u8]) -> Self {
         let actions = asset_serde::bits::SceneAction::read(bytes).expect("unable to parse file");
 
-        info!("--- reading scene ---");
+        // info!("--- reading scene ---");
 
         let mut component_files = Vec::new();
         let mut net_transforms = Vec::new();
@@ -107,10 +107,10 @@ impl SceneData {
         for action in actions {
             match action {
                 asset_serde::bits::SceneAction::Component(asset_id, file_type) => {
-                    info!(
-                        "SkinOrSceneFile {} - type: {:?}, asset_id: {:?}. ",
-                        file_index, file_type, asset_id
-                    );
+                    // info!(
+                    //     "SkinOrSceneFile {} - type: {:?}, asset_id: {:?}. ",
+                    //     file_index, file_type, asset_id
+                    // );
 
                     let asset_dependency = match file_type {
                         ComponentFileType::Skin => {
@@ -135,12 +135,12 @@ impl SceneData {
                     scale_z,
                     rotation,
                 ) => {
-                    info!("NetTransform {} : file_index: {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
-                             net_transforms.len(),
-                             file_index,
-                             x, y, z,
-                             scale_x, scale_y, scale_z,
-                             rotation.x, rotation.y, rotation.z, rotation.w);
+                    // info!("NetTransform {} : file_index: {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
+                    //          net_transforms.len(),
+                    //          file_index,
+                    //          x, y, z,
+                    //          scale_x, scale_y, scale_z,
+                    //          rotation.x, rotation.y, rotation.z, rotation.w);
                     let transform =
                         Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32))
                             .with_scale(Vec3::new(scale_x, scale_y, scale_z))
@@ -152,7 +152,7 @@ impl SceneData {
             }
         }
 
-        info!("--- done reading scene ---");
+        // info!("--- done reading scene ---");
 
         Self {
             component_files,

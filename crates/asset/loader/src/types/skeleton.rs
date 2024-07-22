@@ -102,10 +102,10 @@ impl SkeletonData {
         for action in actions {
             match action {
                 asset_serde::bits::SkelAction::Vertex(x, y, z, parent_opt, name_opt) => {
-                    info!(
-                        "Vertex: ({}, {}, {}), parent: {:?}, name: {:?}",
-                        x, y, z, parent_opt, name_opt
-                    );
+                    // info!(
+                    //     "Vertex: ({}, {}, {}), parent: {:?}, name: {:?}",
+                    //     x, y, z, parent_opt, name_opt
+                    // );
                     let parent_opt = parent_opt
                         .map(|(parent_id, rotation)| (parent_id as usize, rotation.get_radians()));
                     vertices.push((

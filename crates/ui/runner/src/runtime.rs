@@ -198,7 +198,7 @@ impl UiRuntime {
     }
 
     pub fn delete_node_recurse(&mut self, node_id: &NodeId) {
-        info!("deleting node: {:?}", node_id);
+        // info!("deleting node: {:?}", node_id);
 
         // recurse
         {

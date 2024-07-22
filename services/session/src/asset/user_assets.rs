@@ -114,6 +114,7 @@ impl UserAssets {
                 UserAssetProcessingStateTransition::AssetServerResponse(asset_etag, data_opt) => {
                     // received response from asset server
                     if let Some((asset_type, dependencies, new_data)) = data_opt {
+                        // info!("inserting asset data for user: {:?}", self.user_key);
                         asset_store.insert_data(
                             asset_id,
                             asset_type,

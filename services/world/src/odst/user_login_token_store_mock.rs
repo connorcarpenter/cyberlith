@@ -28,9 +28,12 @@ impl UserLoginTokenStore {
     }
 
     pub fn spend_login_token(&mut self, token: &str) -> Option<UserData> {
-        if token.eq_ignore_ascii_case("odst") {
+        let tokens: Vec<String> = token.split(":").map(|s| s.to_string()).collect();
+        if tokens[0].eq_ignore_ascii_case("odst") {
 
-            let user_id = UserId::new(1);
+            let user_id_u64: u64 = tokens[1].parse().unwrap();
+            // info!("ODST mode spend_login_token user_id_u64: {}", user_id_u64);
+            let user_id = UserId::new(user_id_u64);
             let lobby_id = LobbyId::new(1);
             let session_addr = config::SESSION_SERVER_RECV_ADDR.to_string();
             let session_port = config::SESSION_SERVER_HTTP_PORT;

@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Standalone Native + Gateway + Content [local]" type="CompoundRunConfigurationType">
-    <toRun name="Content Server [run previous]" type="CargoCommandRunConfiguration" />
-    <toRun name="Run Gateway [local]" type="CargoCommandRunConfiguration" />
-    <method v="2" />
-  </configuration>
-</component>

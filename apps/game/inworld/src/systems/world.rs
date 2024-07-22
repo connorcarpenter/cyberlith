@@ -138,7 +138,8 @@ pub fn world_main_insert_asset_ref_events(
         }
 
         if AssetType::Model == asset_type {
-            info!("received model");
+            // info!("received model");
+
             // add clientside things
             let layer = RenderLayers::layer(0);
 

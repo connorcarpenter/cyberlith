@@ -183,10 +183,10 @@ impl UiState {
         let Some(ui_container) = node.widget_ui_container_mut() else {
             return;
         };
-        info!(
-            "set_ui_container_asset_id for node {:?} -> asset_id: {:?}",
-            node_id, asset_id
-        );
+        // info!(
+        //     "set_ui_container_asset_id for node {:?} -> asset_id: {:?}",
+        //     node_id, asset_id
+        // );
         ui_container.ui_handle_opt = Some(asset_id.clone());
     }
 

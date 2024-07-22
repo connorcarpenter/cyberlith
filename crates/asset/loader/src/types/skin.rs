@@ -139,7 +139,7 @@ impl SkinData {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Self {
-        info!("--- reading skin ---");
+        // info!("--- reading skin ---");
 
         let actions = asset_serde::bits::SkinAction::read(bytes).expect("unable to parse file");
 
@@ -150,19 +150,19 @@ impl SkinData {
         for action in actions {
             match action {
                 asset_serde::bits::SkinAction::PaletteFile(asset_id) => {
-                    info!("palette file: {:?}", asset_id);
+                    // info!("palette file: {:?}", asset_id);
                     palette_file_opt = Some(asset_id);
                 }
                 asset_serde::bits::SkinAction::MeshData(asset_id) => {
-                    info!("mesh file: {:?}", asset_id);
+                    // info!("mesh file: {:?}", asset_id);
                     mesh_file_opt = Some(asset_id);
                 }
                 asset_serde::bits::SkinAction::BackgroundColor(color_index) => {
-                    info!("background color: {}", color_index);
+                    // info!("background color: {}", color_index);
                     bck_color_index = Some(color_index);
                 }
                 asset_serde::bits::SkinAction::SkinColor(face_index, color_index) => {
-                    info!("face color: {} -> {}", face_index, color_index);
+                    // info!("face color: {} -> {}", face_index, color_index);
                     face_color_ids.push((face_index, color_index));
                 }
             }
@@ -172,7 +172,7 @@ impl SkinData {
         //     info!("face {} -> color {}", face_id, color_id);
         // }
 
-        info!("--- done reading skin ---");
+        // info!("--- done reading skin ---");
 
         Self {
             mesh_file: AssetDependency::AssetId(mesh_file_opt.unwrap()),

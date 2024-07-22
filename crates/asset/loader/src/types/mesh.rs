@@ -39,7 +39,7 @@ impl MeshData {
 
         let actions = asset_serde::bits::MeshAction::read(bytes).expect("unable to parse file");
 
-        info!("--- reading mesh file ---",);
+        // info!("--- reading mesh file ---",);
 
         let mut vertices = Vec::new();
         let mut positions = Vec::new();
@@ -69,7 +69,7 @@ impl MeshData {
                     positions.push(vertex_b);
                     positions.push(vertex_c);
 
-                    info!("face_id: {}", face_id);
+                    // info!("face_id: {}", face_id);
 
                     face_indices.push(face_id);
                     face_indices.push(face_id);
@@ -78,7 +78,7 @@ impl MeshData {
             }
         }
 
-        info!("--- done reading mesh file ---");
+        // info!("--- done reading mesh file ---");
 
         let mut cpu_mesh = CpuMesh::from_vertices(positions);
         cpu_mesh.add_face_indices(face_indices);

@@ -589,6 +589,10 @@ impl LobbyManager {
         }
     }
 
+    pub(crate) fn has_lobby(&self, lobby_id: &LobbyId) -> bool {
+        self.lobbies.contains_key(lobby_id)
+    }
+
     pub(crate) fn create_lobby(
         &mut self,
         commands: &mut Commands,

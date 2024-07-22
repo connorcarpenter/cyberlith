@@ -159,14 +159,14 @@ impl ModelData {
         for action in actions {
             match action {
                 asset_serde::bits::ModelAction::SkelFile(asset_id) => {
-                    info!("SkelFile: {:?}", asset_id);
+                    // info!("SkelFile: {:?}", asset_id);
                     skel_file_opt = Some(asset_id);
                 }
                 asset_serde::bits::ModelAction::Component(asset_id, file_type) => {
-                    info!(
-                        "ComponentFile {} : {:?}. Type: {:?}",
-                        file_index, asset_id, file_type
-                    );
+                    // info!(
+                    //     "ComponentFile {} : {:?}. Type: {:?}",
+                    //     file_index, asset_id, file_type
+                    // );
 
                     let asset_dependency = match file_type {
                         ComponentFileType::Skin => {
@@ -192,12 +192,12 @@ impl ModelData {
                     scale_z,
                     rotation,
                 ) => {
-                    info!("NetTransform {} : {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
-                             file_index,
-                             name,
-                             x, y, z,
-                             scale_x, scale_y, scale_z,
-                             rotation.x, rotation.y, rotation.z, rotation.w);
+                    // info!("NetTransform {} : {}, position ({} {} {}), scale: ({} {} {}), rotation: ({}, {}, {}, {})",
+                    //          file_index,
+                    //          name,
+                    //          x, y, z,
+                    //          scale_x, scale_y, scale_z,
+                    //          rotation.x, rotation.y, rotation.z, rotation.w);
                     let transform =
                         Transform::from_translation(Vec3::new(x as f32, y as f32, z as f32))
                             .with_scale(Vec3::new(scale_x, scale_y, scale_z))

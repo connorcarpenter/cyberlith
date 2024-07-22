@@ -191,7 +191,7 @@ impl AnimationData {
         for action in actions {
             match action {
                 asset_serde::bits::AnimAction::SkelFile(asset_id) => {
-                    info!("SkelFile: {}", asset_id.as_string());
+                    // info!("SkelFile: {}", asset_id.as_string());
                     skeleton_asset_id = Some(asset_id);
                 }
                 asset_serde::bits::AnimAction::ShapeIndex(name) => {
@@ -199,20 +199,20 @@ impl AnimationData {
                     name_map.insert(name_map.len() as u16, name);
                 }
                 asset_serde::bits::AnimAction::Frame(rotation_map, transition_time) => {
-                    info!(
-                        "Frame {}: {:?}ms",
-                        frames.len(),
-                        transition_time.get_duration_ms()
-                    );
+                    // info!(
+                    //     "Frame {}: {:?}ms",
+                    //     frames.len(),
+                    //     transition_time.get_duration_ms()
+                    // );
                     let transition_time = transition_time.get_duration_ms() as f32;
                     let mut frame = Frame::new(transition_time);
                     total_animation_time_ms += transition_time;
                     for (name_index, rotation) in rotation_map {
                         let name = name_map.get(&name_index).unwrap().clone();
-                        info!(
-                            "name: {} . rotation: ({:?}, {:?}, {:?}, {:?})",
-                            &name, rotation.x, rotation.y, rotation.z, rotation.w
-                        );
+                        // info!(
+                        //     "name: {} . rotation: ({:?}, {:?}, {:?}, {:?})",
+                        //     &name, rotation.x, rotation.y, rotation.z, rotation.w
+                        // );
                         frame.add_rotation(
                             name,
                             Quat::from_xyzw(rotation.x, rotation.y, rotation.z, rotation.w),

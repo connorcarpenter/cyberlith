@@ -44,7 +44,9 @@ pub(crate) fn handle_world_connection(
         .room_mut(&lobby_room_key)
         .add_entity(&user_entity);
 
-    let token = WorldConnectToken::new("odst");
+    let user_id: u64 = user_id.into();
+    let token = format!("odst:{}", user_id);
+    let token = WorldConnectToken::new(&token);
     naia_server.send_message::<PrimaryChannel, WorldConnectToken>(&user_key, &token);
 }
 
@@ -68,6 +70,10 @@ fn setup_lobby(
 
     let main_menu_room_key = social_manager.global_room_key().unwrap();
     let match_name = "odst";
+
+    if social_manager.lobby_manager.has_lobby(lobby_id) {
+        panic!("Lobby already exists");
+    }
 
     social_manager.lobby_manager.create_lobby(
         commands,

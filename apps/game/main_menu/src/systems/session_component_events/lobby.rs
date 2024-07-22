@@ -45,8 +45,8 @@ fn recv_inserted_lobby_component(
         let lobby = lobby_q.get(event.entity).unwrap();
         let lobby_id = *lobby.id;
 
-        let lobby_name = &*lobby.name;
-        info!("incoming lobby: [ {:?} | {:?} ]", event.entity, lobby_name);
+        // let lobby_name = &*lobby.name;
+        // info!("incoming lobby: [ {:?} | {:?} ]", event.entity, lobby_name);
 
         lobby_manager.recv_lobby(lobby_id, event.entity, &mut resync_lobby_ui_events);
     }

@@ -147,7 +147,7 @@ impl ProcessedAssetStore {
             AssetType::Skin => {
                 let handle = AssetHandle::<SkinData>::new(*asset_id);
                 if !self.skins.has(&handle) {
-                    info!("loading skin {:?}", handle.asset_id());
+                    // info!("loading skin {:?}", handle.asset_id());
                     let bytes = asset_data_store.get(asset_id).unwrap();
                     let skin_data = SkinData::from_bytes(bytes);
                     self.skins.insert(handle, skin_data);
