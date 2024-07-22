@@ -5,13 +5,7 @@ use naia_bevy_server::ReceiveEvents;
 
 use super::{asset_manager, asset_manager::AssetManager};
 
-pub struct AssetPlugin {}
-
-impl AssetPlugin {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+pub struct AssetPlugin;
 
 impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {

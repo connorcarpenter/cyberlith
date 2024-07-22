@@ -47,15 +47,15 @@ fn main() {
     app
         // Plugins
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
-        .add_plugins(HttpPlugin::new())
         .add_plugins(RegionPlugin::new(
             registration_resend_rate,
             region_server_disconnect_timeout,
         ))
-        .add_plugins(SocialPlugin::new())
-        .add_plugins(WorldPlugin::new())
-        .add_plugins(AssetPlugin::new())
-        .add_plugins(UserPlugin::new())
+        .add_plugins(HttpPlugin)
+        .add_plugins(SocialPlugin)
+        .add_plugins(WorldPlugin)
+        .add_plugins(AssetPlugin)
+        .add_plugins(UserPlugin)
         // Resources
         .insert_resource(SessionInstance::new(&instance_secret))
         // Run App

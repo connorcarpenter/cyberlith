@@ -20,13 +20,11 @@ use naia_bevy_server::{
     Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig as NaiaServerConfig,
 };
 
-use bevy_http_client::HttpClientPlugin;
-use bevy_http_server::{executor, HttpServerPlugin};
+use bevy_http_server::executor;
 use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
-use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
-use crate::{systems::{http_server, user_events}, resources::{lobby_manager::LobbyManager, asset_manager, asset_manager::AssetManager, user_manager::UserManager}, region::RegionPlugin};
+use crate::{http::HttpPlugin, region::RegionPlugin, resources::{asset_manager, asset_manager::AssetManager, lobby_manager::LobbyManager, user_manager::UserManager}, systems::user_events};
 
 fn main() {
     logging::initialize();
@@ -48,16 +46,14 @@ fn main() {
             NaiaServerConfig::default(),
             naia_protocol(),
         ))
-        .add_plugins(HttpServerPlugin::new(http_protocol()))
-        .add_plugins(HttpClientPlugin)
         .add_plugins(RegionPlugin)
+        .add_plugins(HttpPlugin)
         // Resource
         .init_resource::<AssetManager>()
         .init_resource::<UserManager>()
         .init_resource::<LobbyManager>()
         // Startup System
         .add_systems(Startup, (
-            http_server::init,
             user_events::init,
             user_events::tick_events_startup,
         ))
@@ -73,13 +69,7 @@ fn main() {
             )
                 .in_set(ReceiveEvents),
         )
-        .add_systems(
-            Update,
-            (
-                http_server::recv_world_connect_request,
-                asset_manager::update,
-            )
-        );
+        .add_systems(Update, asset_manager::update);
 
     // Run App
     app.run();

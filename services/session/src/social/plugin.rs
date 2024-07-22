@@ -6,13 +6,7 @@ use naia_bevy_server::ReceiveEvents;
 use super::social_manager::SocialManager;
 use crate::social::http_endpoints;
 
-pub struct SocialPlugin {}
-
-impl SocialPlugin {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+pub struct SocialPlugin;
 
 impl Plugin for SocialPlugin {
     fn build(&self, app: &mut App) {

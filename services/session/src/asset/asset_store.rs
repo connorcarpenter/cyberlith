@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use asset_id::{AssetId, AssetType, ETag};
-use logging::{info, warn};
+use logging::warn;
 
 struct AssetData {
     asset_type: AssetType,

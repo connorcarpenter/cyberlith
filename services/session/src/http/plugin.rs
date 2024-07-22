@@ -7,13 +7,7 @@ use session_server_http_proto::protocol as http_protocol;
 
 use crate::http::server_startup;
 
-pub struct HttpPlugin {}
-
-impl HttpPlugin {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+pub struct HttpPlugin;
 
 impl Plugin for HttpPlugin {
     fn build(&self, app: &mut App) {

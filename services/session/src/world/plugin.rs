@@ -8,12 +8,6 @@ use super::{http_endpoints, world_manager::WorldManager};
 
 pub struct WorldPlugin;
 
-impl WorldPlugin {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WorldManager>()

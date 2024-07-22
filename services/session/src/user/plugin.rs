@@ -9,13 +9,7 @@ use session_server_naia_proto::protocol as naia_protocol;
 
 use super::{systems, user_manager::UserManager};
 
-pub struct UserPlugin {}
-
-impl UserPlugin {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
+pub struct UserPlugin;
 
 impl Plugin for UserPlugin {
     fn build(&self, app: &mut App) {
