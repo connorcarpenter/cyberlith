@@ -5,7 +5,7 @@ use naia_bevy_server::Server;
 
 use social_server_types::LobbyId;
 
-use crate::resources::lobby_manager::LobbyManager;
+use crate::social::LobbyManager;
 
 pub(crate) fn startup(
     mut naia_server: Server,
