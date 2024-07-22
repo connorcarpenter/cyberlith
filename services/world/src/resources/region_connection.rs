@@ -15,7 +15,7 @@ use logging::{info, warn};
 use region_server_http_proto::{WorldRegisterInstanceRequest, WorldRegisterInstanceResponse};
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::{user_manager::UserManager, global::Global};
+use crate::resources::{global::Global, user_manager::UserManager};
 
 pub enum ConnectionState {
     Disconnected,

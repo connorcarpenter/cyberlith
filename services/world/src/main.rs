@@ -1,10 +1,5 @@
-mod asset_manager;
-mod global;
-mod http_server;
-mod naia;
-mod region_connection;
-mod user_connection;
-mod user_manager;
+mod resources;
+mod systems;
 
 use std::time::Duration;
 
@@ -21,7 +16,8 @@ use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
-use crate::{user_manager::UserManager, asset_manager::AssetManager};
+use resources::{asset_manager::AssetManager, asset_manager, region_connection, user_manager::UserManager};
+use systems::{http_server, naia, user_connection};
 
 fn main() {
     logging::initialize();

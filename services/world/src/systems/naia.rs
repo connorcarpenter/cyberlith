@@ -9,9 +9,9 @@ use bevy_ecs::{
 };
 
 use naia_bevy_server::{
+    CommandsExt,
     events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, TickEvent},
-    transport::webrtc,
-    CommandsExt, Server, UserKey,
+    Server, transport::webrtc, UserKey,
 };
 
 use bevy_http_client::HttpClient;
@@ -25,10 +25,7 @@ use world_server_naia_proto::{
     messages::Auth,
 };
 
-use crate::{
-    asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager},
-    global::Global, user_manager::UserManager,
-};
+use crate::resources::{global::Global, asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}, user_manager::UserManager};
 
 pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");

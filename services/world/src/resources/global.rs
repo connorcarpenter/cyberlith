@@ -6,7 +6,7 @@ use naia_bevy_server::{RoomKey};
 
 use social_server_types::LobbyId;
 
-use crate::region_connection::RegionServerState;
+use crate::resources::region_connection::RegionServerState;
 
 #[derive(Resource)]
 pub struct Global {

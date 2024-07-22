@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use bevy_ecs::{
     entity::Entity,
     prelude::Resource,
-    system::{Commands, ResMut, EntityCommands},
+    system::{Commands, EntityCommands, ResMut},
 };
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
@@ -15,7 +15,7 @@ use bevy_http_client::{HttpClient, ResponseKey};
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 use world_server_naia_proto::components::{AssetEntry, AssetRef};
 
-use crate::{global::Global, user_manager::UserManager};
+use crate::resources::{global::Global, user_manager::UserManager};
 
 // AssetCatalog
 #[derive(Clone, Copy, Eq, PartialEq)]
