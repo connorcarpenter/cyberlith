@@ -9,6 +9,8 @@ cfg_if::cfg_if!(
 
 use std::time::Duration;
 
+use cfg_if::cfg_if;
+
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
 
@@ -32,7 +34,15 @@ fn main() {
     executor::setup(WORLD_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
     // Build App
-    App::default()
+    let mut app = App::default();
+
+    cfg_if! {
+        if #[cfg(feature = "odst")] {
+            app.add_plugins(odst::OdstPlugin);
+        }
+    }
+
+    app
         // Plugins
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
         .add_plugins(NaiaServerPlugin::new(
@@ -66,7 +76,8 @@ fn main() {
                 asset_manager::update,
             )
                 .in_set(ReceiveEvents),
-        )
-        // Run App
-        .run();
+        );
+
+    // Run App
+    app.run();
 }
