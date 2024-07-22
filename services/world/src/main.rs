@@ -3,6 +3,7 @@ mod region;
 mod http;
 mod asset;
 mod user;
+mod world_instance;
 
 cfg_if::cfg_if!(
     if #[cfg(feature = "odst")] {
@@ -24,7 +25,7 @@ use bevy_http_server::executor;
 use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 use world_server_naia_proto::protocol as naia_protocol;
 
-use crate::{user::UserPlugin, asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, resources::lobby_manager::LobbyManager};
+use crate::{asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, resources::lobby_manager::LobbyManager, user::UserPlugin};
 
 fn main() {
     logging::initialize();

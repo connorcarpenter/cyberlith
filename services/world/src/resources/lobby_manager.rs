@@ -6,7 +6,6 @@ use naia_bevy_server::{RoomKey};
 
 use social_server_types::LobbyId;
 
-
 #[derive(Resource)]
 pub struct LobbyManager {
     lobby_room_keys: HashMap<LobbyId, RoomKey>,
