@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::SocketAddr, time::Duration};
+use std::{collections::HashMap, net::SocketAddr};
 
 use bevy_ecs::{
     change_detection::{Mut, ResMut},
@@ -25,7 +25,7 @@ use world_server_naia_proto::{
     messages::Auth,
 };
 
-use crate::resources::{lobby_manager::LobbyManager, region_manager::RegionManager, world_instance::WorldInstance, asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}, user_manager::UserManager};
+use crate::resources::{asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}, lobby_manager::LobbyManager, user_manager::UserManager, world_instance::WorldInstance};
 
 pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");
@@ -54,13 +54,6 @@ pub fn init(mut commands: Commands, mut server: Server) {
     let instance_secret = "odst".to_string();
 
     commands.insert_resource(WorldInstance::new(&instance_secret));
-
-    let registration_resend_rate = Duration::from_secs(5);
-    let region_server_disconnect_timeout = Duration::from_secs(61);
-    commands.insert_resource(RegionManager::new(
-        registration_resend_rate,
-        region_server_disconnect_timeout,
-    ));
 }
 
 pub fn auth_events(

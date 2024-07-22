@@ -1,7 +1,6 @@
 pub mod asset_manager;
 pub mod world_instance;
 pub mod user_manager;
-pub mod region_manager;
 pub mod lobby_manager;
 
 cfg_if::cfg_if!(

@@ -1,5 +1,7 @@
 mod resources;
 mod systems;
+mod region;
+mod http;
 
 cfg_if::cfg_if!(
     if #[cfg(feature = "odst")] {
@@ -24,10 +26,7 @@ use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
-use resources::{asset_manager::AssetManager, asset_manager, region_manager, user_manager::UserManager};
-use systems::{http_server, user_events};
-
-use crate::resources::lobby_manager::LobbyManager;
+use crate::{systems::{http_server, user_events}, resources::{lobby_manager::LobbyManager, asset_manager, asset_manager::AssetManager, user_manager::UserManager}, region::RegionPlugin};
 
 fn main() {
     logging::initialize();
@@ -51,6 +50,7 @@ fn main() {
         ))
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
+        .add_plugins(RegionPlugin)
         // Resource
         .init_resource::<AssetManager>()
         .init_resource::<UserManager>()
@@ -76,13 +76,7 @@ fn main() {
         .add_systems(
             Update,
             (
-                region_manager::recv_heartbeat_request,
-                region_manager::recv_register_instance_response,
-                region_manager::send_register_instance_request,
-                region_manager::process_region_server_disconnect,
-
                 http_server::recv_world_connect_request,
-
                 asset_manager::update,
             )
         );
