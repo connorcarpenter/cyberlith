@@ -15,7 +15,7 @@ use logging::{info, warn};
 use region_server_http_proto::{WorldRegisterInstanceRequest, WorldRegisterInstanceResponse};
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::global::Global;
+use crate::{user_manager::UserManager, global::Global};
 
 pub enum ConnectionState {
     Disconnected,
@@ -181,11 +181,15 @@ pub fn recv_heartbeat_request(mut global: ResMut<Global>, mut server: ResMut<Htt
     }
 }
 
-pub fn process_region_server_disconnect(mut global: ResMut<Global>) {
+pub fn process_region_server_disconnect(
+    mut global: ResMut<Global>,
+    mut user_manager: ResMut<UserManager>,
+) {
     if global.region_server.connected() {
         if global.region_server.time_to_disconnect() {
             info!("disconnecting from region server");
             global.disconnect_region_server();
+            user_manager.disconnect_region_server();
         }
     }
 }

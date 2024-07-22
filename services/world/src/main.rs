@@ -4,6 +4,7 @@ mod http_server;
 mod naia;
 mod region_connection;
 mod user_connection;
+mod user_manager;
 
 use std::time::Duration;
 
@@ -20,7 +21,7 @@ use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
-use crate::asset_manager::AssetManager;
+use crate::{user_manager::UserManager, asset_manager::AssetManager};
 
 fn main() {
     logging::initialize();
@@ -38,6 +39,7 @@ fn main() {
         .add_plugins(HttpClientPlugin)
         // Resource
         .insert_resource(AssetManager::new())
+        .init_resource::<UserManager>()
         // Startup System
         .add_systems(Startup, naia::init)
         .add_systems(Startup, http_server::init)

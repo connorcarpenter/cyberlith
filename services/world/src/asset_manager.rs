@@ -1,22 +1,21 @@
 use std::collections::HashMap;
 
-use bevy_ecs::system::ResMut;
 use bevy_ecs::{
     entity::Entity,
     prelude::Resource,
-    system::{Commands, EntityCommands},
+    system::{Commands, ResMut, EntityCommands},
 };
-use logging::info;
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
+use logging::info;
 use asset_id::AssetId;
 use bevy_http_client::{HttpClient, ResponseKey};
 
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 use world_server_naia_proto::components::{AssetEntry, AssetRef};
 
-use crate::global::Global;
+use crate::{global::Global, user_manager::UserManager};
 
 // AssetCatalog
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -170,6 +169,7 @@ impl AssetManager {
         &mut self,
         server: &mut Server,
         global: &Global,
+        user_manager: &UserManager,
         http_client: &mut HttpClient,
         ref_actions: Vec<(UserKey, AssetId, bool)>,
     ) {
@@ -213,14 +213,14 @@ impl AssetManager {
                     user_key, asset_id
                 );
                 room.add_entity(&asset_entry_entity);
-                self.notify_session_server_asset(global, http_client, &user_key, asset_id, true);
+                self.notify_session_server_asset(global, user_manager, http_client, &user_key, asset_id, true);
             } else {
                 info!(
                     "removing asset entry for user: {:?}, asset: {:?}",
                     user_key, asset_id
                 );
                 room.remove_entity(&asset_entry_entity);
-                self.notify_session_server_asset(global, http_client, &user_key, asset_id, false);
+                self.notify_session_server_asset(global, user_manager, http_client, &user_key, asset_id, false);
             }
         }
     }
@@ -228,18 +228,19 @@ impl AssetManager {
     fn notify_session_server_asset(
         &mut self,
         global: &Global,
+        user_manager: &UserManager,
         http_client: &mut HttpClient,
         user_key: &UserKey,
         asset_id: AssetId,
         added: bool,
     ) {
         let instance_secret = global.instance_secret();
-        let user_id = global.get_user_id(user_key).unwrap();
+        let user_id = user_manager.get_user_id(user_key).unwrap();
 
         let request = UserAssetIdRequest::new(instance_secret, user_id, asset_id, added);
 
         let (session_server_addr, session_server_port) =
-            global.get_user_session_server(user_key).unwrap();
+            user_manager.get_user_session_server(user_key).unwrap();
         let key = http_client.send(&session_server_addr, session_server_port, request);
 
         self.set_user_asset_response_key(key);

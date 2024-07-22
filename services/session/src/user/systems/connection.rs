@@ -73,7 +73,10 @@ pub fn connect_events(
         asset_manager.register_user(user_key);
 
         cfg_if::cfg_if!(
-            if #[cfg(feature = "odst")] {} else {
+            if #[cfg(feature = "odst")] {
+                // setup world connection
+                crate::odst::handle_world_connection(&mut server, user_key);
+            } else {
                 // load "default" assets
                 crate::asset::user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
             }

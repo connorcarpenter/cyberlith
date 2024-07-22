@@ -8,10 +8,11 @@ use bevy_http_server::HttpServer;
 use config::REGION_SERVER_SECRET;
 use world_server_http_proto::{WorldConnectResponse, WorldConnectRequest};
 
-use crate::global::Global;
+use crate::{global::Global, user_manager::UserManager};
 
 pub fn recv_world_connect_request(
     mut global: ResMut<Global>,
+    mut user_manager: ResMut<UserManager>,
     mut http_server: ResMut<HttpServer>,
     mut naia_server: Server,
 ) {
@@ -28,7 +29,7 @@ pub fn recv_world_connect_request(
             request.login_tokens()
         );
 
-        global.add_login_token(
+        user_manager.recv_login_token(
             &request.lobby_id(),
             request.login_tokens(),
         );

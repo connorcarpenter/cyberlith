@@ -14,7 +14,6 @@ use naia_bevy_client::{
 };
 
 use asset_loader::{AssetManager, AssetMetadataStore};
-use config::TargetEnv;
 use filesystem::FileSystemManager;
 use kernel::http::HttpClient;
 use logging::{info, warn};
@@ -179,22 +178,7 @@ impl ConnectionManager {
             for token in events.read::<PrimaryChannel, WorldConnectToken>() {
                 info!("received World Connect Token from Session Server!");
 
-                world_client.auth(WorldAuth::new(&token.login_token));
-                if let Some(cookies) = http_client.cookie_header_value() {
-                    let mut headers = Vec::new();
-                    headers.push(("Cookie".to_string(), cookies));
-                    world_client.auth_headers(headers);
-                }
-                let world_server_public_webrtc_url = TargetEnv::gateway_url();
-                info!(
-                    "connecting to world server: {}",
-                    &world_server_public_webrtc_url
-                );
-                let socket = WebrtcSocket::new(
-                    &world_server_public_webrtc_url,
-                    world_client.socket_config(),
-                );
-                world_client.connect(socket);
+                Self::send_world_connect(&mut world_client, &http_client, &token);
             }
             for asset_message in events.read::<AssetRequestsChannel, LoadAssetWithData>() {
                 info!(
@@ -297,12 +281,25 @@ impl ConnectionManager {
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
                 session_client.connect(socket);
             }
+
+            fn send_world_connect(
+                world_client: &mut WorldClient,
+                _http_client: &HttpClient,
+                token: &WorldConnectToken
+            ) {
+                let url = format!("{}://{}:{}", config::PUBLIC_PROTOCOL, config::PUBLIC_IP_ADDR, config::WORLD_SERVER_SIGNAL_PORT);
+
+                info!("connecting to world server: {}", &url);
+                world_client.auth(WorldAuth::new(&token.login_token));
+                let socket = WebrtcSocket::new(&url, world_client.socket_config());
+                world_client.connect(socket);
+            }
         } else {
             fn send_session_connect(
                 http_client: &HttpClient,
                 session_client: &mut SessionClient
             ) {
-                let url = TargetEnv::gateway_url();
+                let url = config::TargetEnv::gateway_url();
 
                 info!("connecting to session server: {}", url);
                 let socket = WebrtcSocket::new(&url, session_client.socket_config());
@@ -312,6 +309,31 @@ impl ConnectionManager {
                     session_client.auth_headers(headers);
                 }
                 session_client.connect(socket);
+            }
+
+            fn send_world_connect(
+                world_client: &mut WorldClient,
+                http_client: &HttpClient,
+                token: &WorldConnectToken
+            ) {
+                let world_server_public_webrtc_url = config::TargetEnv::gateway_url();
+                info!(
+                    "connecting to world server: {}",
+                    &world_server_public_webrtc_url
+                );
+
+                world_client.auth(WorldAuth::new(&token.login_token));
+                if let Some(cookies) = http_client.cookie_header_value() {
+                    let mut headers = Vec::new();
+                    headers.push(("Cookie".to_string(), cookies));
+                    world_client.auth_headers(headers);
+                }
+
+                let socket = WebrtcSocket::new(
+                    &world_server_public_webrtc_url,
+                    world_client.socket_config(),
+                );
+                world_client.connect(socket);
             }
         }
     }

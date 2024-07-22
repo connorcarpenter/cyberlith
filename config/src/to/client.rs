@@ -7,5 +7,6 @@ pub use from::PUBLIC_PROTOCOL;
 cfg_if! {
     if #[cfg(feature = "odst")] {
         pub use from::SESSION_SERVER_SIGNAL_PORT;
+        pub use from::WORLD_SERVER_SIGNAL_PORT;
     }
 }

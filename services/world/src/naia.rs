@@ -27,7 +27,7 @@ use world_server_naia_proto::{
 
 use crate::{
     asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager},
-    global::Global,
+    global::Global, user_manager::UserManager,
 };
 
 pub fn init(mut commands: Commands, mut server: Server) {
@@ -61,19 +61,19 @@ pub fn init(mut commands: Commands, mut server: Server) {
 }
 
 pub fn auth_events(
-    mut global: ResMut<Global>,
+    mut user_manager: ResMut<UserManager>,
     mut server: Server,
     mut event_reader: EventReader<AuthEvents>,
 ) {
     for events in event_reader.read() {
         for (user_key, auth) in events.read::<Auth>() {
-            if let Some(user_data) = global.take_login_token(&auth.login_token) {
+            if let Some(user_data) = user_manager.spend_login_token(&auth.login_token) {
                 info!(
                     "Accepted connection. User Id: {:?}, Token: {}",
                     user_data.user_id, auth.login_token
                 );
 
-                global.add_user(&user_key, user_data);
+                user_manager.add_user(&user_key, user_data);
 
                 // Accept incoming connection
                 server.accept_connection(&user_key);
@@ -91,6 +91,7 @@ pub fn connect_events(
     mut commands: Commands,
     mut server: Server,
     global: Res<Global>,
+    user_manager: Res<UserManager>,
     mut asset_manager: ResMut<AssetManager>,
     mut event_reader: EventReader<ConnectEvent>,
 ) {
@@ -100,7 +101,7 @@ pub fn connect_events(
         info!("Server connected to: {}", address);
 
         // add user to main room
-        let lobby_id = global.get_user_lobby_id(user_key).unwrap();
+        let lobby_id = user_manager.get_user_lobby_id(user_key).unwrap();
         let lobby_room_key = global.lobby_room_key(&lobby_id).unwrap();
         server.room_mut(&lobby_room_key).add_user(&user_key);
 
@@ -300,14 +301,16 @@ pub fn tick_events(world: &mut World) {
         let mut system_state: SystemState<(
             Server,
             Res<Global>,
+            Res<UserManager>,
             ResMut<AssetManager>,
             ResMut<HttpClient>,
         )> = SystemState::new(world);
-        let (mut server, global, mut asset_manager, mut http_client) = system_state.get_mut(world);
+        let (mut server, global, user_manager, mut asset_manager, mut http_client) = system_state.get_mut(world);
 
         asset_manager.handle_scope_actions(
             &mut server,
             &global,
+            &user_manager,
             &mut http_client,
             asset_id_entity_actions,
         );
