@@ -241,6 +241,10 @@ impl AssetManager {
 
         let (session_server_addr, session_server_port) =
             user_manager.get_user_session_server(user_key).unwrap();
+        info!(
+            "sending user asset request to session server: {:?}, {:?}, {:?}",
+            session_server_addr, session_server_port, instance_secret
+        );
         let key = http_client.send(&session_server_addr, session_server_port, request);
 
         self.set_user_asset_response_key(key);

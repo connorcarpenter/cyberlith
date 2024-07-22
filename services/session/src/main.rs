@@ -17,9 +17,10 @@ cfg_if::cfg_if!(
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin};
+
 use bevy_http_server::executor;
+
 use config::{SESSION_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY};
-//
 
 use crate::{
     asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, session_instance::SessionInstance,
@@ -35,7 +36,15 @@ fn main() {
     let region_server_disconnect_timeout = Duration::from_secs(61);
 
     // Build App
-    App::default()
+    let mut app = App::default();
+
+    cfg_if::cfg_if!(
+        if #[cfg(feature = "odst")] {
+            app.add_plugins(odst::OdstPlugin);
+        }
+    );
+
+    app
         // Plugins
         .add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_millis(5)))
         .add_plugins(HttpPlugin::new())

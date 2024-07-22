@@ -16,7 +16,7 @@ impl WorldPlugin {
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WorldManager::new())
+        app.init_resource::<WorldManager>()
             .add_systems(
                 Update,
                 http_endpoints::recv_added_asset_id_request.in_set(ReceiveEvents),

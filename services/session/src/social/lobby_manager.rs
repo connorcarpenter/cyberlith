@@ -589,7 +589,7 @@ impl LobbyManager {
         }
     }
 
-    fn create_lobby(
+    pub(crate) fn create_lobby(
         &mut self,
         commands: &mut Commands,
         naia_server: &mut Server,

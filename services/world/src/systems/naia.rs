@@ -47,7 +47,12 @@ pub fn init(mut commands: Commands, mut server: Server) {
     server.listen(socket);
 
     // set up global
+    #[cfg(not(feature = "odst"))]
     let instance_secret = random::generate_random_string(16);
+
+    #[cfg(feature = "odst")]
+    let instance_secret = "odst".to_string();
+
     commands.insert_resource(WorldInstance::new(&instance_secret));
 
     let registration_resend_rate = Duration::from_secs(5);

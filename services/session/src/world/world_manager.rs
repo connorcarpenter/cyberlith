@@ -11,12 +11,15 @@ pub struct WorldManager {
     world_instances: HashMap<String, WorldInstanceData>,
 }
 
-impl WorldManager {
-    pub fn new() -> Self {
+impl Default for WorldManager {
+    fn default() -> Self {
         Self {
             world_instances: HashMap::new(),
         }
     }
+}
+
+impl WorldManager {
 
     // World Keys
 

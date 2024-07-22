@@ -15,6 +15,7 @@ use crate::{
     session_instance::SessionInstance,
     social::SocialManager,
     user::UserManager,
+    world::WorldManager,
 };
 
 pub fn auth_events(
@@ -46,7 +47,8 @@ pub fn connect_events(
     mut server: Server,
     mut http_client: ResMut<HttpClient>,
     mut user_manager: ResMut<UserManager>,
-    social_manager: Res<SocialManager>,
+    mut social_manager: ResMut<SocialManager>,
+    mut world_manager: ResMut<WorldManager>,
     mut asset_manager: ResMut<AssetManager>,
 
     mut event_reader: EventReader<ConnectEvent>,
@@ -75,7 +77,15 @@ pub fn connect_events(
         cfg_if::cfg_if!(
             if #[cfg(feature = "odst")] {
                 // setup world connection
-                crate::odst::handle_world_connection(&mut server, user_key);
+                crate::odst::handle_world_connection(
+                    &mut commands,
+                    &mut server,
+                    &mut http_client,
+                    &mut world_manager,
+                    &mut user_manager,
+                    &mut social_manager,
+                    user_key
+                );
             } else {
                 // load "default" assets
                 crate::asset::user_load_default_assets(&mut server, &mut http_client, &mut asset_manager, user_key);
