@@ -10,7 +10,7 @@ use bevy_http_server::HttpServer;
 use config::{REGION_SERVER_SECRET, SELF_BINDING_ADDR, WORLD_SERVER_HTTP_PORT};
 use world_server_http_proto::{WorldConnectRequest, WorldConnectResponse};
 
-use crate::resources::{user_manager::UserManager, lobby_manager::LobbyManager};
+use crate::{user::UserManager, resources::lobby_manager::LobbyManager};
 
 pub fn init(mut server: ResMut<HttpServer>) {
     info!("World HTTP Server starting up");

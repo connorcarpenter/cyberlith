@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
 
-use crate::resources::user_manager::UserData;
+use crate::user::UserData;
 
 pub(crate) struct UserLoginTokenStore {
     login_tokens: HashMap<String, UserData>,

@@ -5,7 +5,7 @@ use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, WORLD_SERVER_GLOBAL_SE
 use logging::info;
 use region_server_http_proto::WorldRegisterInstanceRequest;
 
-use crate::{region::RegionManager, resources::{world_instance::WorldInstance, user_manager::UserManager}};
+use crate::{user::UserManager, region::RegionManager, resources::world_instance::WorldInstance};
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,

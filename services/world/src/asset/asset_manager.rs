@@ -15,7 +15,7 @@ use bevy_http_client::{HttpClient, ResponseKey};
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
 use world_server_naia_proto::components::{AssetEntry, AssetRef};
 
-use crate::resources::{world_instance::WorldInstance, user_manager::UserManager};
+use crate::{resources::world_instance::WorldInstance, user::UserManager};
 
 // AssetCatalog
 #[derive(Clone, Copy, Eq, PartialEq)]

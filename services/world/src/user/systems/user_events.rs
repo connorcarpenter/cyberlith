@@ -25,7 +25,7 @@ use world_server_naia_proto::{
     messages::Auth,
 };
 
-use crate::resources::{asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}, lobby_manager::LobbyManager, user_manager::UserManager, world_instance::WorldInstance};
+use crate::{user::UserManager, resources::{lobby_manager::LobbyManager, world_instance::WorldInstance}, asset::{AssetCatalog, AssetCommandsExt, AssetManager}};
 
 pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");
