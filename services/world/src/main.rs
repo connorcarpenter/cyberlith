@@ -25,7 +25,7 @@ use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
 use resources::{asset_manager::AssetManager, asset_manager, region_manager, user_manager::UserManager};
-use systems::{http_server, naia, user_connection};
+use systems::{http_server, user_events};
 
 use crate::resources::lobby_manager::LobbyManager;
 
@@ -52,30 +52,39 @@ fn main() {
         .add_plugins(HttpServerPlugin::new(http_protocol()))
         .add_plugins(HttpClientPlugin)
         // Resource
-        .insert_resource(AssetManager::new())
+        .init_resource::<AssetManager>()
         .init_resource::<UserManager>()
         .init_resource::<LobbyManager>()
         // Startup System
-        .add_systems(Startup, naia::init)
-        .add_systems(Startup, naia::tick_events_startup)
-        .add_systems(Startup, http_server::init)
+        .add_systems(Startup, (
+            http_server::init,
+            user_events::init,
+            user_events::tick_events_startup,
+        ))
         // Receive Server Events
         .add_systems(
             Update,
             (
-                naia::auth_events,
-                naia::connect_events,
-                naia::disconnect_events,
-                naia::error_events,
-                naia::tick_events,
-                user_connection::recv_world_connect_request,
+                user_events::auth_events,
+                user_events::connect_events,
+                user_events::disconnect_events,
+                user_events::error_events,
+                user_events::tick_events,
+            )
+                .in_set(ReceiveEvents),
+        )
+        .add_systems(
+            Update,
+            (
                 region_manager::recv_heartbeat_request,
                 region_manager::recv_register_instance_response,
                 region_manager::send_register_instance_request,
                 region_manager::process_region_server_disconnect,
+
+                http_server::recv_world_connect_request,
+
                 asset_manager::update,
             )
-                .in_set(ReceiveEvents),
         );
 
     // Run App

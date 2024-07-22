@@ -90,14 +90,17 @@ pub struct AssetManager {
     asset_response_keys: Vec<ResponseKey<UserAssetIdResponse>>,
 }
 
-impl AssetManager {
-    pub fn new() -> Self {
+impl Default for AssetManager {
+    fn default() -> Self {
         Self {
             user_key_to_data_map: HashMap::new(),
             asset_id_to_data_map: HashMap::new(),
             asset_response_keys: Vec::new(),
         }
     }
+}
+
+impl AssetManager {
 
     pub fn register_user(&mut self, server: &mut Server, user_key: &UserKey) {
         let room_key = server.make_room().key();
