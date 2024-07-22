@@ -9,7 +9,7 @@ publish = false
 [features]
 local = [ "config/local", "session_server_naia_proto/local" ]
 prod = [ "config/prod", "session_server_naia_proto/prod" ]
-odst = [ ]
+odst = [ "config/odst" ]
 
 [dependencies]
 naia-bevy-server = { path = "../../../naia/adapters/bevy/server", features = [ "transport_webrtc" ] }

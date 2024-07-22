@@ -17,3 +17,10 @@ pub use from::WORLD_SERVER_WEBRTC_PORT;
 
 pub use from::TOTAL_CPU_PRIORITY;
 pub use from::WORLD_SERVER_CPU_PRIORITY;
+
+cfg_if! {
+    if #[cfg(feature = "odst")] {
+        pub use from::SESSION_SERVER_HTTP_PORT;
+        pub use from::SESSION_SERVER_RECV_ADDR;
+    }
+}

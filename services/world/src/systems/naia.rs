@@ -25,7 +25,7 @@ use world_server_naia_proto::{
     messages::Auth,
 };
 
-use crate::resources::{global::Global, asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}, user_manager::UserManager};
+use crate::resources::{lobby_manager::LobbyManager, region_manager::RegionManager, world_instance::WorldInstance, asset_manager::{AssetCatalog, AssetCommandsExt, AssetManager}, user_manager::UserManager};
 
 pub fn init(mut commands: Commands, mut server: Server) {
     info!("World Naia Server starting up");
@@ -48,10 +48,11 @@ pub fn init(mut commands: Commands, mut server: Server) {
 
     // set up global
     let instance_secret = random::generate_random_string(16);
+    commands.insert_resource(WorldInstance::new(&instance_secret));
+
     let registration_resend_rate = Duration::from_secs(5);
     let region_server_disconnect_timeout = Duration::from_secs(61);
-    commands.insert_resource(Global::new(
-        &instance_secret,
+    commands.insert_resource(RegionManager::new(
         registration_resend_rate,
         region_server_disconnect_timeout,
     ));
@@ -87,7 +88,7 @@ pub fn auth_events(
 pub fn connect_events(
     mut commands: Commands,
     mut server: Server,
-    global: Res<Global>,
+    lobby_manager: Res<LobbyManager>,
     user_manager: Res<UserManager>,
     mut asset_manager: ResMut<AssetManager>,
     mut event_reader: EventReader<ConnectEvent>,
@@ -99,7 +100,7 @@ pub fn connect_events(
 
         // add user to main room
         let lobby_id = user_manager.get_user_lobby_id(user_key).unwrap();
-        let lobby_room_key = global.lobby_room_key(&lobby_id).unwrap();
+        let lobby_room_key = lobby_manager.lobby_room_key(&lobby_id).unwrap();
         server.room_mut(&lobby_room_key).add_user(&user_key);
 
         // give user an entity
@@ -297,16 +298,22 @@ pub fn tick_events(world: &mut World) {
     {
         let mut system_state: SystemState<(
             Server,
-            Res<Global>,
+            Res<WorldInstance>,
             Res<UserManager>,
             ResMut<AssetManager>,
             ResMut<HttpClient>,
         )> = SystemState::new(world);
-        let (mut server, global, user_manager, mut asset_manager, mut http_client) = system_state.get_mut(world);
+        let (
+            mut server,
+            world_instance,
+            user_manager,
+            mut asset_manager,
+            mut http_client
+        ) = system_state.get_mut(world);
 
         asset_manager.handle_scope_actions(
             &mut server,
-            &global,
+            &world_instance,
             &user_manager,
             &mut http_client,
             asset_id_entity_actions,

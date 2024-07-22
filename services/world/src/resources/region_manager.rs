@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use bevy_ecs::change_detection::ResMut;
+use bevy_ecs::{system::{Res, Resource}, change_detection::ResMut};
 
 use bevy_http_client::{
     ApiRequest, ApiResponse, HttpClient, ResponseError, ResponseKey as ClientResponseKey,
@@ -15,14 +15,15 @@ use logging::{info, warn};
 use region_server_http_proto::{WorldRegisterInstanceRequest, WorldRegisterInstanceResponse};
 use world_server_http_proto::{HeartbeatRequest, HeartbeatResponse};
 
-use crate::resources::{global::Global, user_manager::UserManager};
+use crate::resources::{world_instance::WorldInstance, user_manager::UserManager};
 
 pub enum ConnectionState {
     Disconnected,
     Connected,
 }
 
-pub struct RegionServerState {
+#[derive(Resource)]
+pub struct RegionManager {
     region_server_connection_state: ConnectionState,
     region_server_last_sent: Instant,
     region_server_last_heard: Instant,
@@ -31,7 +32,7 @@ pub struct RegionServerState {
     region_server_disconnect_timeout: Duration,
 }
 
-impl RegionServerState {
+impl RegionManager {
     pub fn new(
         registration_resend_rate: Duration,
         region_server_disconnect_timeout: Duration,
@@ -97,43 +98,44 @@ impl RegionServerState {
         self.heard_from_region_server();
     }
 
-    pub fn set_disconnected(&mut self) {
+    pub fn disconnect_region_server(&mut self) {
         self.region_server_connection_state = ConnectionState::Disconnected;
     }
 }
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,
-    mut global: ResMut<Global>,
+    world_instance: Res<WorldInstance>,
+    mut region_manager: ResMut<RegionManager>,
 ) {
-    if global.region_server.connected() {
+    if region_manager.connected() {
         return;
     }
-    if global.region_server.waiting_for_registration_response() {
+    if region_manager.waiting_for_registration_response() {
         return;
     }
-    if !global.region_server.time_to_resend_registration() {
+    if !region_manager.time_to_resend_registration() {
         return;
     }
 
     //info!("Sending request to register instance with region server ..");
     let request = WorldRegisterInstanceRequest::new(
         WORLD_SERVER_GLOBAL_SECRET,
-        global.instance_secret(),
+        world_instance.instance_secret(),
         WORLD_SERVER_RECV_ADDR,
         WORLD_SERVER_HTTP_PORT,
     );
     let key = http_client.send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request);
 
-    global.region_server.set_register_instance_response_key(key);
-    global.region_server.sent_to_region_server();
+    region_manager.set_register_instance_response_key(key);
+    region_manager.sent_to_region_server();
 }
 
 pub fn recv_register_instance_response(
     mut http_client: ResMut<HttpClient>,
-    mut global: ResMut<Global>,
+    mut region_manager: ResMut<RegionManager>,
 ) {
-    if let Some(response_key) = global.region_server.register_instance_response_key() {
+    if let Some(response_key) = region_manager.register_instance_response_key() {
         if let Some(result) = http_client.recv(response_key) {
             let host = "world";
             let remote = "region";
@@ -146,18 +148,21 @@ pub fn recv_register_instance_response(
             match result {
                 Ok(_response) => {
                     // info!("received from regionserver: instance registered!");
-                    global.region_server.set_connected();
+                    region_manager.set_connected();
                 }
                 Err(error) => {
                     warn!("error: {}", error.to_string());
                 }
             }
-            global.region_server.clear_register_instance_response_key();
+            region_manager.clear_register_instance_response_key();
         }
     }
 }
 
-pub fn recv_heartbeat_request(mut global: ResMut<Global>, mut server: ResMut<HttpServer>) {
+pub fn recv_heartbeat_request(
+    mut region_manager: ResMut<RegionManager>,
+    mut server: ResMut<HttpServer>,
+) {
     while let Some((_addr, request, response_key)) = server.receive::<HeartbeatRequest>() {
         if request.region_secret() != REGION_SERVER_SECRET {
             warn!("invalid request secret");
@@ -172,7 +177,7 @@ pub fn recv_heartbeat_request(mut global: ResMut<Global>, mut server: ResMut<Htt
         // info!("Heartbeat request received from region server");
 
         // setting last heard
-        global.region_server.heard_from_region_server();
+        region_manager.heard_from_region_server();
 
         // responding
         // info!("Sending heartbeat response to region server ..");
@@ -182,13 +187,13 @@ pub fn recv_heartbeat_request(mut global: ResMut<Global>, mut server: ResMut<Htt
 }
 
 pub fn process_region_server_disconnect(
-    mut global: ResMut<Global>,
     mut user_manager: ResMut<UserManager>,
+    mut region_manager: ResMut<RegionManager>,
 ) {
-    if global.region_server.connected() {
-        if global.region_server.time_to_disconnect() {
+    if region_manager.connected() {
+        if region_manager.time_to_disconnect() {
             info!("disconnecting from region server");
-            global.disconnect_region_server();
+            region_manager.disconnect_region_server();
             user_manager.disconnect_region_server();
         }
     }

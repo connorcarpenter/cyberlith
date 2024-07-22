@@ -1,6 +1,12 @@
 mod resources;
 mod systems;
 
+cfg_if::cfg_if!(
+    if #[cfg(feature = "odst")] {
+        mod odst;
+    }
+);
+
 use std::time::Duration;
 
 use bevy_app::{App, ScheduleRunnerPlugin, Startup, Update};
@@ -16,8 +22,10 @@ use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 use world_server_http_proto::protocol as http_protocol;
 use world_server_naia_proto::protocol as naia_protocol;
 
-use resources::{asset_manager::AssetManager, asset_manager, region_connection, user_manager::UserManager};
+use resources::{asset_manager::AssetManager, asset_manager, region_manager, user_manager::UserManager};
 use systems::{http_server, naia, user_connection};
+
+use crate::resources::lobby_manager::LobbyManager;
 
 fn main() {
     logging::initialize();
@@ -36,10 +44,11 @@ fn main() {
         // Resource
         .insert_resource(AssetManager::new())
         .init_resource::<UserManager>()
+        .init_resource::<LobbyManager>()
         // Startup System
         .add_systems(Startup, naia::init)
-        .add_systems(Startup, http_server::init)
         .add_systems(Startup, naia::tick_events_startup)
+        .add_systems(Startup, http_server::init)
         // Receive Server Events
         .add_systems(
             Update,
@@ -50,10 +59,10 @@ fn main() {
                 naia::error_events,
                 naia::tick_events,
                 user_connection::recv_world_connect_request,
-                region_connection::recv_heartbeat_request,
-                region_connection::recv_register_instance_response,
-                region_connection::send_register_instance_request,
-                region_connection::process_region_server_disconnect,
+                region_manager::recv_heartbeat_request,
+                region_manager::recv_register_instance_response,
+                region_manager::send_register_instance_request,
+                region_manager::process_region_server_disconnect,
                 asset_manager::update,
             )
                 .in_set(ReceiveEvents),

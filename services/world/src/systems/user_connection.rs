@@ -8,10 +8,10 @@ use bevy_http_server::HttpServer;
 use config::REGION_SERVER_SECRET;
 use world_server_http_proto::{WorldConnectRequest, WorldConnectResponse};
 
-use crate::resources::{global::Global, user_manager::UserManager};
+use crate::resources::{lobby_manager::LobbyManager, user_manager::UserManager};
 
 pub fn recv_world_connect_request(
-    mut global: ResMut<Global>,
+    mut lobby_manager: ResMut<LobbyManager>,
     mut user_manager: ResMut<UserManager>,
     mut http_server: ResMut<HttpServer>,
     mut naia_server: Server,
@@ -34,7 +34,7 @@ pub fn recv_world_connect_request(
             request.login_tokens(),
         );
         let lobby_room_key = naia_server.make_room().key();
-        global.insert_lobby_room_key(request.lobby_id(), lobby_room_key);
+        lobby_manager.insert_lobby_room_key(request.lobby_id(), lobby_room_key);
 
         info!("Sending login response to region server ..");
 
