@@ -24,18 +24,18 @@ impl Plugin for UserPlugin {
             .init_resource::<UserManager>()
             // Startup Systems
             .add_systems(Startup, (
-                systems::user_events::init,
-                systems::user_events::tick_events_startup,
+                systems::startup::server,
+                systems::tick::tick_events_startup,
             ))
             // Receive Server Events
             .add_systems(
                 Update,
                 (
-                    systems::user_events::auth_events,
-                    systems::user_events::connect_events,
-                    systems::user_events::disconnect_events,
-                    systems::user_events::error_events,
-                    systems::user_events::tick_events,
+                    systems::connection::auth_events,
+                    systems::connection::connect_events,
+                    systems::connection::disconnect_events,
+                    systems::error::error_events,
+                    systems::tick::tick_events,
                 )
                     .in_set(ReceiveEvents),
             );

@@ -1,152 +1,25 @@
-use std::{collections::HashMap, net::SocketAddr};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     change_detection::{Mut, ResMut},
     entity::Entity,
     event::EventReader,
     prelude::{Query, Resource, World},
-    system::{Commands, Res, SystemState},
+    system::{Res, SystemState},
 };
 
 use naia_bevy_server::{
-    CommandsExt,
-    events::{AuthEvents, ConnectEvent, DisconnectEvent, ErrorEvent, TickEvent},
-    Server, transport::webrtc, UserKey,
+    events::TickEvent,
+    Server, UserKey,
 };
 
 use bevy_http_client::HttpClient;
-use config::{
-    PUBLIC_IP_ADDR, PUBLIC_PROTOCOL, SELF_BINDING_ADDR, WORLD_SERVER_SIGNAL_PORT,
-    WORLD_SERVER_WEBRTC_PORT,
-};
-use logging::{info, warn};
+use logging::info;
 use world_server_naia_proto::{
     components::{Alt1, AssetEntry, AssetRef, Main},
-    messages::Auth,
 };
 
-use crate::{world_instance::WorldInstance, asset::{AssetCatalog, AssetCommandsExt, AssetManager}, social::LobbyManager, user::UserManager};
-
-pub fn init(mut commands: Commands, mut server: Server) {
-    info!("World Naia Server starting up");
-
-    // set up server
-    let server_addresses = webrtc::ServerAddrs::new(
-        // IP Address to listen on for WebRTC signaling
-        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), WORLD_SERVER_SIGNAL_PORT),
-        // IP Address to listen on for UDP WebRTC data channels
-        SocketAddr::new(SELF_BINDING_ADDR.parse().unwrap(), WORLD_SERVER_WEBRTC_PORT),
-        // The public WebRTC IP address to advertise
-        format!(
-            "{}://{}:{}",
-            PUBLIC_PROTOCOL, PUBLIC_IP_ADDR, WORLD_SERVER_WEBRTC_PORT
-        )
-        .as_str(),
-    );
-    let socket = webrtc::Socket::new(&server_addresses, server.socket_config());
-    server.listen(socket);
-
-    // set up global
-    #[cfg(not(feature = "odst"))]
-    let instance_secret = random::generate_random_string(16);
-
-    #[cfg(feature = "odst")]
-    let instance_secret = "odst".to_string();
-
-    commands.insert_resource(WorldInstance::new(&instance_secret));
-}
-
-pub fn auth_events(
-    mut user_manager: ResMut<UserManager>,
-    mut server: Server,
-    mut event_reader: EventReader<AuthEvents>,
-) {
-    for events in event_reader.read() {
-        for (user_key, auth) in events.read::<Auth>() {
-            if let Some(user_data) = user_manager.spend_login_token(&auth.login_token) {
-                info!(
-                    "Accepted connection. User Id: {:?}, Token: {}",
-                    user_data.user_id, auth.login_token
-                );
-
-                user_manager.add_user(&user_key, user_data);
-
-                // Accept incoming connection
-                server.accept_connection(&user_key);
-            } else {
-                warn!("Rejected connection. Token: {}", auth.login_token);
-
-                // Reject incoming connection
-                server.reject_connection(&user_key);
-            }
-        }
-    }
-}
-
-pub fn connect_events(
-    mut commands: Commands,
-    mut server: Server,
-    lobby_manager: Res<LobbyManager>,
-    user_manager: Res<UserManager>,
-    mut asset_manager: ResMut<AssetManager>,
-    mut event_reader: EventReader<ConnectEvent>,
-) {
-    for ConnectEvent(user_key) in event_reader.read() {
-        let address = server.user(user_key).address();
-
-        info!("Server connected to: {}", address);
-
-        // add user to main room
-        let lobby_id = user_manager.get_user_lobby_id(user_key).unwrap();
-        let lobby_room_key = lobby_manager.lobby_room_key(&lobby_id).unwrap();
-        server.room_mut(&lobby_room_key).add_user(&user_key);
-
-        // give user an entity
-        let entity = commands
-            // Spawn new Entity
-            .spawn_empty()
-            // MUST call this to begin replication
-            .enable_replication(&mut server)
-            // insert asset ref
-            .insert_asset::<Main>(
-                &mut asset_manager,
-                &mut server,
-                AssetCatalog::HumanModel.into(),
-            )
-            .insert_asset::<Alt1>(
-                &mut asset_manager,
-                &mut server,
-                AssetCatalog::HumanWalk.into(),
-            )
-            // return Entity id
-            .id();
-
-        // add entity to main room
-        server.room_mut(&lobby_room_key).add_entity(&entity);
-
-        // TODO: need to clean up this entity on disconnect
-
-        // register user
-        asset_manager.register_user(&mut server, user_key);
-    }
-}
-
-pub fn disconnect_events(
-    mut asset_manager: ResMut<AssetManager>,
-    mut event_reader: EventReader<DisconnectEvent>,
-) {
-    for DisconnectEvent(user_key, user) in event_reader.read() {
-        info!("Server disconnected from: {:?}", user.address());
-
-        asset_manager.deregister_user(user_key);
-    }
-}
-
-pub fn error_events(mut event_reader: EventReader<ErrorEvent>) {
-    for ErrorEvent(error) in event_reader.read() {
-        info!("Server Error: {:?}", error);
-    }
-}
+use crate::{world_instance::WorldInstance, asset::AssetManager, user::UserManager};
 
 #[derive(Resource)]
 struct CachedTickEventsState {

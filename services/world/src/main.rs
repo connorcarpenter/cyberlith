@@ -20,11 +20,18 @@ use bevy_app::{App, ScheduleRunnerPlugin};
 use bevy_http_server::executor;
 use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 
-use crate::{social::SocialPlugin, asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, user::UserPlugin};
+use crate::{world_instance::WorldInstance, social::SocialPlugin, asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, user::UserPlugin};
 
 fn main() {
     logging::initialize();
     executor::setup(WORLD_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
+
+    // set up global
+    #[cfg(not(feature = "odst"))]
+    let instance_secret = random::generate_random_string(16);
+
+    #[cfg(feature = "odst")]
+    let instance_secret = "odst".to_string();
 
     // Build App
     let mut app = App::default();
@@ -43,5 +50,8 @@ fn main() {
         .add_plugins(AssetPlugin)
         .add_plugins(UserPlugin)
         .add_plugins(SocialPlugin)
+        // Resources
+        .insert_resource(WorldInstance::new(&instance_secret))
+        // Run!
         .run();
 }
