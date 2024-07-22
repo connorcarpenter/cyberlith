@@ -1,3 +1,4 @@
-pub mod walker_scene;
-pub mod draw;
-pub mod world;
+pub mod scene_setup;
+pub mod render;
+pub mod world_events;
+pub mod assets;

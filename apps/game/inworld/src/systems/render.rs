@@ -13,7 +13,7 @@ use game_engine::{
 
 use crate::components::WalkAnimation;
 
-pub fn draw(
+pub fn draw_models(
     asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     models_q: Query<(

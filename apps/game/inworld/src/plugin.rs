@@ -14,18 +14,18 @@ impl Plugin for InWorldPlugin {
             .add_systems(
                 Update,
                 (
-                    systems::world::world_connect_events,
+                    systems::world_events::connect_events,
                 )
                     .run_if(not(in_state(AppState::InGame)))
             )
             .add_systems(
                 Update,
                 (
-                    systems::draw::draw,
-                    systems::world::world_spawn_entity_events,
-                    systems::world::world_main_insert_position_events,
-                    systems::world::world_main_insert_asset_ref_events,
-                    systems::world::world_alt1_insert_asset_ref_events,
+                    systems::render::draw_models,
+                    systems::world_events::spawn_entity_events,
+                    systems::world_events::insert_position_events,
+                    systems::assets::main_insert_asset_ref_events,
+                    systems::assets::alt1_insert_asset_ref_events,
                 )
                     .run_if(in_state(AppState::InGame))
             );

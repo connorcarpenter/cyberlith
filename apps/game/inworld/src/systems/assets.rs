@@ -1,4 +1,4 @@
-use bevy_ecs::{entity::Entity, event::EventReader, prelude::NextState, system::{Commands, Query, ResMut}};
+use bevy_ecs::{event::EventReader, system::Commands};
 
 use game_engine::{
     asset::{
@@ -7,77 +7,16 @@ use game_engine::{
     },
     logging::info,
     math::{Quat, Vec3},
-    render::{base::{CpuMaterial, CpuMesh}, components::{RenderLayer, RenderLayers, Transform, Visibility}},
-    storage::Storage,
-    ui::UiManager,
+    render::{components::{RenderLayers, Transform, Visibility}},
     world::{
-        components::{Alt1, Main, Position}, WorldConnectEvent,
-        WorldInsertAssetRefEvent, WorldInsertComponentEvent, WorldSpawnEntityEvent,
+        components::{Alt1, Main},
+        WorldInsertAssetRefEvent,
     },
 };
 
-use game_app_common::AppState;
+use crate::components::{WalkAnimation, WalkerMarker};
 
-use crate::{systems::walker_scene, components::{WalkAnimation, WalkerMarker}};
-
-pub fn world_connect_events(
-    mut commands: Commands,
-    mut next_state: ResMut<NextState<AppState>>,
-    mut meshes: ResMut<Storage<CpuMesh>>,
-    mut materials: ResMut<Storage<CpuMaterial>>,
-    mut ui_manager: ResMut<UiManager>,
-    render_layer_q: Query<(Entity, &RenderLayer)>,
-
-    mut event_reader: EventReader<WorldConnectEvent>,
-) {
-    for _ in event_reader.read() {
-        info!("received Connect to World Server!");
-
-        // despawning all entities with RenderLayer(0)
-        let render_layer_0 = RenderLayers::layer(0);
-        for (entity, layer) in render_layer_q.iter() {
-            if *layer == render_layer_0 {
-                commands.entity(entity).despawn();
-            }
-        }
-
-        // setup walker scene
-        walker_scene::scene_setup(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-        );
-
-        // disable ui
-        ui_manager.disable_ui();
-
-        // set to appropriate AppState
-        next_state.set(AppState::InGame);
-        return;
-    }
-}
-
-pub fn world_spawn_entity_events(mut event_reader: EventReader<WorldSpawnEntityEvent>) {
-    for event in event_reader.read() {
-        info!(
-            "received Spawn Entity from World Server! (entity: {:?})",
-            event.entity
-        );
-    }
-}
-
-pub fn world_main_insert_position_events(
-    mut event_reader: EventReader<WorldInsertComponentEvent<Position>>,
-) {
-    for event in event_reader.read() {
-        info!(
-            "received Inserted Component: `Position` from World Server! (entity: {:?})",
-            event.entity
-        );
-    }
-}
-
-pub fn world_main_insert_asset_ref_events(
+pub fn main_insert_asset_ref_events(
     mut commands: Commands,
     mut event_reader: EventReader<WorldInsertAssetRefEvent<Main>>,
 ) {
@@ -158,7 +97,7 @@ pub fn world_main_insert_asset_ref_events(
     }
 }
 
-pub fn world_alt1_insert_asset_ref_events(
+pub fn alt1_insert_asset_ref_events(
     mut commands: Commands,
     mut event_reader: EventReader<WorldInsertAssetRefEvent<Alt1>>,
 ) {
