@@ -99,7 +99,7 @@ pub fn scene_setup(
     let mut camera_x_scale: f32 = 1.0;
     let mut camera_z_scale: f32 = 1.0;
 
-    const SCREEN_HEIGHT: f32 = 1000.0;
+    const SCREEN_HEIGHT: f32 = 960.0;
     const TOTAL_SCALE: f32 = (ROOM_DEPTH * 2.0 * (TOTAL_TILE_NUM as f32)) / SCREEN_HEIGHT;
     camera_x_scale *= TOTAL_SCALE;
     camera_y_scale *= TOTAL_SCALE;

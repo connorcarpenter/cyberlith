@@ -204,7 +204,11 @@ pub fn tick_events(world: &mut World) {
     let mut scope_actions: HashMap<(UserKey, Entity), bool> = HashMap::new();
 
     for (_room_key, user_key, entity, in_scope) in scope_checks {
-        // TODO: assess scope logic here
+
+        // TODO: assess scope logic here ..
+        // right now, everything not in scope is added to user
+        // however this will change later
+
         if !in_scope {
             info!(
                 "Entity out of scope: {:?}, should be added to user.",
