@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use asset_id::AssetId;
 use asset_loader::{TypedAssetId, UiDependencies, UiTextMeasurer};
-use logging::{info, warn};
+use logging::warn;
+// use logging::info;
 use math::Vec3;
 use render_api::{
     base::CpuMaterial,

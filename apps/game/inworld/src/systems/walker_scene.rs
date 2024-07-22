@@ -1,13 +1,8 @@
 
-use bevy_ecs::{
-    component::Component,
-    query::With,
-    system::{Commands, Local, Query, Res},
-};
+use bevy_ecs::system::Commands;
 
 use game_engine::{
-    asset::{AnimationData, AssetHandle, AssetManager},
-    math::{Quat, Vec3},
+    math::Vec3,
     render::{
         base::{Color, CpuMaterial, CpuMesh},
         components::{
@@ -15,33 +10,13 @@ use game_engine::{
             OrthographicProjection, Projection, RenderLayers, RenderObjectBundle, RenderTarget,
             Transform,
         },
-        resources::Time,
         shapes,
     },
     storage::Storage,
 };
 
-#[derive(Component)]
-pub struct WalkerMarker;
-
 const ROOM_WIDTH: f32 = 50.0;
 const ROOM_DEPTH: f32 = 50.0;
-// const ROOM_HEIGHT: f32 = 200.0;
-
-#[derive(Component)]
-pub struct WalkAnimation {
-    pub(crate) anim_handle: AssetHandle<AnimationData>,
-    pub(crate) animation_index_ms: f32,
-}
-
-impl WalkAnimation {
-    pub fn new(anim_handle: AssetHandle<AnimationData>) -> Self {
-        Self {
-            anim_handle,
-            animation_index_ms: 0.0,
-        }
-    }
-}
 
 pub fn scene_setup(
     commands: &mut Commands,
@@ -50,9 +25,8 @@ pub fn scene_setup(
 ) {
     let layer = RenderLayers::layer(0);
 
-    // plane
-
     // spawn grid of floor tiles
+
     const TILE_NUM: i32 = 5;
     const NEG_TILE_NUM: i32 = -TILE_NUM;
     const TOTAL_TILE_NUM: i32 = TILE_NUM * 2 + 1;
@@ -128,60 +102,4 @@ pub fn scene_setup(
             //                }),
         })
         .insert(layer);
-}
-
-pub fn step(
-    time: Res<Time>,
-    asset_manager: Res<AssetManager>,
-    mut object_q: Query<(&mut Transform, &mut WalkAnimation), With<WalkerMarker>>,
-    mut rotation: Local<f32>,
-    mut rotation_stepped: Local<f32>,
-    mut animation_index_ms: Local<f32>,
-) {
-    let elapsed_time = time.get_elapsed_ms();
-
-    if *rotation == 0.0 {
-        *rotation = 0.01;
-    } else {
-        *rotation += 0.03 * elapsed_time;
-        if *rotation > 359.0 {
-            *rotation = 0.01;
-        }
-
-        // step angles at 45 degree increments
-        *rotation_stepped = (*rotation / 45.0).round() * 45.0;
-        if *rotation_stepped == 360.0 {
-            *rotation_stepped = 0.0;
-        }
-
-    }
-
-    for (mut transform, mut anim) in object_q.iter_mut() {
-        // rotate
-        // transform.translation.x = 0.0; // f32::to_radians(*rotation).cos() * 250.0;
-        // transform.translation.y = 0.0; // f32::to_radians(*rotation).sin() * 250.0;
-        // transform.translation.z = 0.0;
-
-        // transform.rotate_x(0.001 * elapsed_time);
-        // transform.rotate_y(0.002 * elapsed_time);
-        transform.rotation = Quat::from_rotation_z(f32::to_radians(*rotation_stepped));
-
-        // animate
-        *animation_index_ms += 0.4 * elapsed_time;
-
-        let animation_duration_ms = asset_manager.get_animation_duration_ms(&anim.anim_handle) as f32;
-        while *animation_index_ms >= animation_duration_ms {
-            *animation_index_ms -= animation_duration_ms;
-        }
-
-        let avg_frame_ms = 40.0;
-
-        // round to the nearest image index
-        anim.animation_index_ms = (*animation_index_ms / avg_frame_ms).round() * avg_frame_ms;
-        if anim.animation_index_ms >= animation_duration_ms {
-            anim.animation_index_ms = 0.0;
-        }
-
-        // info!("anim.image_index: {:?} / subimage_count: {:?}", anim.animation_index_ms, animation_duration_ms);
-    }
 }

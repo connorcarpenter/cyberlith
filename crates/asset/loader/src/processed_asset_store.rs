@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use logging::{info, warn};
-
+use logging::warn;
 use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;

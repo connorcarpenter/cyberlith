@@ -1,6 +1,6 @@
 
 use asset_id::AssetId;
-use logging::{info, warn};
+use logging::warn;
 use render_api::{
     base::{Color, CpuMaterial},
     components::Viewport,

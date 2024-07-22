@@ -18,7 +18,7 @@ use game_engine::{
 
 use game_app_common::AppState;
 
-use crate::systems::{walker_scene, walker_scene::{WalkAnimation, WalkerMarker}};
+use crate::{systems::walker_scene, components::{WalkAnimation, WalkerMarker}};
 
 pub fn world_connect_events(
     mut commands: Commands,
@@ -147,7 +147,7 @@ pub fn world_main_insert_asset_ref_events(
                 .entity(entity)
                 .insert(
                     Transform::from_translation(Vec3::splat(0.0))
-                        .with_rotation(Quat::from_rotation_z(f32::to_radians(0.0))),
+                        .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
                 )
                 .insert(Visibility::default())
                 .insert(WalkerMarker)

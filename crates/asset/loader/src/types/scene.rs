@@ -1,4 +1,3 @@
-use logging::info;
 
 use asset_serde::bits::ComponentFileType;
 use math::{Quat, Vec3};
@@ -103,7 +102,8 @@ impl SceneData {
 
         let mut component_files = Vec::new();
         let mut net_transforms = Vec::new();
-        let mut file_index = 0;
+        // let mut file_index = 0;
+
         for action in actions {
             match action {
                 asset_serde::bits::SceneAction::Component(asset_id, file_type) => {
@@ -123,7 +123,7 @@ impl SceneData {
 
                     component_files.push(asset_dependency);
 
-                    file_index += 1;
+                    // file_index += 1;
                 }
                 asset_serde::bits::SceneAction::NetTransform(
                     file_index,

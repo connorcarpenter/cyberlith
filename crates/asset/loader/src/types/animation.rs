@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use logging::info;
-
 use math::Quat;
 use render_api::components::Transform;
 
