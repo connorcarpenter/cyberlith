@@ -13,8 +13,6 @@ cfg_if::cfg_if!(
 
 use std::time::Duration;
 
-use cfg_if::cfg_if;
-
 use bevy_app::{App, ScheduleRunnerPlugin};
 
 use bevy_http_server::executor;
@@ -26,21 +24,19 @@ fn main() {
     logging::initialize();
     executor::setup(WORLD_SERVER_CPU_PRIORITY, TOTAL_CPU_PRIORITY);
 
-    // set up global
+    // Build App
+    let mut app = App::default();
+
+    #[cfg(feature = "odst")]
+    app.add_plugins(odst::OdstPlugin);
+
+    // WorldInstance
     #[cfg(not(feature = "odst"))]
     let instance_secret = random::generate_random_string(16);
 
     #[cfg(feature = "odst")]
     let instance_secret = "odst".to_string();
-
-    // Build App
-    let mut app = App::default();
-
-    cfg_if! {
-        if #[cfg(feature = "odst")] {
-            app.add_plugins(odst::OdstPlugin);
-        }
-    }
+    app.insert_resource(WorldInstance::new(&instance_secret));
 
     app
         // Plugins
@@ -50,8 +46,6 @@ fn main() {
         .add_plugins(AssetPlugin)
         .add_plugins(UserPlugin)
         .add_plugins(SocialPlugin)
-        // Resources
-        .insert_resource(WorldInstance::new(&instance_secret))
         // Run!
         .run();
 }
