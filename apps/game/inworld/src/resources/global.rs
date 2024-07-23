@@ -21,6 +21,8 @@ impl OwnedEntity {
 #[derive(Resource)]
 pub struct Global {
     pub owned_entity: Option<OwnedEntity>,
+    pub owned_prediction_has_model: bool,
+    pub owned_prediction_has_animation: bool,
     pub queued_command: Option<KeyCommand>,
     pub command_history: CommandHistory<KeyCommand>,
 }
@@ -28,6 +30,8 @@ pub struct Global {
 impl Default for Global {
     fn default() -> Self {
         Self {
+            owned_prediction_has_model: false,
+            owned_prediction_has_animation: false,
             owned_entity: None,
             queued_command: None,
             command_history: CommandHistory::default(),

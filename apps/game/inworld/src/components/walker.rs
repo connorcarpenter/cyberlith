@@ -2,10 +2,7 @@ use bevy_ecs::component::Component;
 
 use game_engine::asset::{AnimationData, AssetHandle};
 
-#[derive(Component)]
-pub struct WalkerMarker;
-
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct WalkAnimation {
     pub(crate) anim_handle: AssetHandle<AnimationData>,
     pub(crate) animation_index_ms: f32,

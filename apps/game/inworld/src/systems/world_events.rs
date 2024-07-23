@@ -1,11 +1,13 @@
-use bevy_ecs::{entity::Entity, event::EventReader, prelude::NextState, system::{Commands, Query, ResMut}};
+use bevy_ecs::{entity::Entity, event::EventReader, prelude::{NextState, Added}, system::{Commands, Query, ResMut}};
 
 use game_engine::{
-    logging::info,
-    render::{base::{CpuMaterial, CpuMesh}, components::{Transform, RenderLayer, RenderLayers}},
+    math::{Quat, Vec3},
+    logging::{info, warn},
+    render::{base::{CpuMaterial, CpuMesh}, components::{Transform, Visibility, RenderLayer, RenderLayers}},
     storage::Storage,
     ui::UiManager,
-    naia::{sequence_greater_than, CommandsExt, Tick, Replicate},
+    naia::{sequence_greater_than, Tick, Replicate},
+    asset::{AssetHandle, ModelData},
     world::{
         WorldClient,
         behavior as shared_behavior,
@@ -18,7 +20,7 @@ use game_engine::{
 
 use game_app_common::AppState;
 
-use crate::{systems::scene_setup, resources::{Global, OwnedEntity}, components::{Interp, Predicted}};
+use crate::{systems::scene_setup, resources::{Global, OwnedEntity}, components::{Interp, Confirmed, WalkAnimation, Predicted}};
 
 pub fn connect_events(
     mut commands: Commands,
@@ -80,6 +82,8 @@ pub fn message_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<WorldMessageEvents>,
     position_q: Query<&Position>,
+    model_q: Query<&AssetHandle<ModelData>>,
+    walk_animation_q: Query<&WalkAnimation>,
 ) {
     for events in event_reader.read() {
         for message in events.read::<EntityAssignmentChannel, EntityAssignment>() {
@@ -87,20 +91,74 @@ pub fn message_events(
 
             let entity = message.entity.get(&client).unwrap();
             if assign {
-                info!("gave ownership of entity");
+                info!("gave ownership of entity: {:?}", entity);
 
                 // Here we create a local copy of the Player entity, to use for client-side prediction
                 if let Ok(position) = position_q.get(entity) {
-                    let prediction_entity = commands.entity(entity).local_duplicate(); // copies all Replicate components as well
+
+                    let mut owned_has_animation: bool = false;
+                    let walk_animation_opt = {
+                        if let Ok(walk_animation) = walk_animation_q.get(entity) {
+                            let walk_animation: WalkAnimation = walk_animation.clone();
+                            owned_has_animation = true;
+                            Some(walk_animation)
+                        } else {
+                            warn!("entity {:?} does not have WalkAnimation component yet!", entity);
+                            None
+                        }
+                    };
+
+                    let mut owned_has_model: bool = false;
+                    let model_opt = {
+                        if let Ok(model) = model_q.get(entity) {
+                            let model: AssetHandle<ModelData> = model.clone();
+                            owned_has_model = true;
+                            Some(model)
+                        } else {
+                            warn!("entity {:?} does not have AssetHandle<ModelData> component yet!", entity);
+                            None
+                        }
+                    };
+
+                    let prediction_entity = commands
+                        .spawn_empty()
+                        .id();
+                    let mut prediction_position = Position::new(*position.x, *position.y);
+                    prediction_position.localize();
                     commands
                         .entity(prediction_entity)
+                        .insert(prediction_position)
+                        .insert(RenderLayers::layer(0))
+                        .insert(Visibility::default())
                         .insert(Transform::default())
                         // insert interpolation component
                         .insert(Interp::new(*position.x, *position.y))
                         // mark as predicted
                         .insert(Predicted);
 
+                    if let Some(walk_animation) = walk_animation_opt {
+                        commands
+                            .entity(prediction_entity)
+                            .insert(walk_animation);
+                    }
+                    if let Some(model) = model_opt {
+                        commands
+                            .entity(prediction_entity)
+                            .insert(model);
+                    }
+
+                    info!(
+                        "from confirmed entity: {:?}, created prediction entity: {:?}, has model: {:?}, has animation: {:?}",
+                        entity,
+                        prediction_entity,
+                        owned_has_model,
+                        owned_has_animation
+                    );
                     global.owned_entity = Some(OwnedEntity::new(entity, prediction_entity));
+                    global.owned_prediction_has_model = owned_has_model;
+                    global.owned_prediction_has_animation = owned_has_animation;
+                } else {
+                    warn!("entity {:?} does not have Position component yet!", entity);
                 }
             } else {
                 let mut disowned: bool = false;
@@ -113,6 +171,60 @@ pub fn message_events(
                 if disowned {
                     info!("removed ownership of entity");
                     global.owned_entity = None;
+                }
+            }
+        }
+    }
+}
+
+pub fn late_model_handle_add(
+    mut commands: Commands,
+    mut global: ResMut<Global>,
+    model_added_q: Query<(Entity, &AssetHandle<ModelData>), Added<AssetHandle<ModelData>>>
+) {
+    for (entity, asset_handle) in model_added_q.iter() {
+        info!("AssetHandle<ModelData> component was added to entity {:?}", entity);
+        if let Some(owned_entity) = &global.owned_entity {
+            if entity == owned_entity.confirmed {
+
+                info!("AssetHandle<ModelData> component was added to confirmed entity {:?}", entity);
+
+                if !global.owned_prediction_has_model {
+
+                    let predicted_entity = owned_entity.predicted;
+
+                    global.owned_prediction_has_model = true;
+
+                    info!("now adding AssetHandle<ModelData> component to predicted entity {:?}", predicted_entity);
+
+                    commands.entity(predicted_entity).insert(asset_handle.clone());
+                }
+            }
+        }
+    }
+}
+
+pub fn late_animation_handle_add(
+    mut commands: Commands,
+    mut global: ResMut<Global>,
+    animation_added_q: Query<(Entity, &WalkAnimation), Added<WalkAnimation>>
+) {
+    for (entity, walk_animation) in animation_added_q.iter() {
+        info!("WalkAnimation component was added to entity {:?}", entity);
+        if let Some(owned_entity) = &global.owned_entity {
+            if entity == owned_entity.confirmed {
+
+                info!("WalkAnimation component was added to confirmed entity {:?}", entity);
+
+                if !global.owned_prediction_has_animation {
+
+                    let predicted_entity = owned_entity.predicted;
+
+                    global.owned_prediction_has_animation = true;
+
+                    info!("now adding WalkAnimation component to predicted entity {:?}", predicted_entity);
+
+                    commands.entity(predicted_entity).insert(walk_animation.clone());
                 }
             }
         }
@@ -148,15 +260,28 @@ pub fn insert_position_events(
 ) {
     for event in event_reader.read() {
         let entity = event.entity;
+
         info!(
             "received Inserted Component: `Position` from World Server! (entity: {:?})",
             entity
         );
         if let Ok(position) = position_q.get(entity) {
-            // initialize interpolation
+
+            let layer = RenderLayers::layer(0);
+
             commands
                 .entity(entity)
-                .insert(Interp::new(*position.x, *position.y));
+                .insert(layer)
+                .insert(Visibility::default())
+                .insert(
+                    Transform::from_translation(Vec3::splat(0.0))
+                        .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
+                )
+                // initialize interpolation
+                .insert(Interp::new(*position.x, *position.y))
+                .insert(Confirmed);
+        } else {
+            warn!("entity does not have Position component");
         }
     }
 }

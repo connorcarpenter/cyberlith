@@ -6,15 +6,13 @@ use game_engine::{
         SceneData, SkeletonData, SkinData,
     },
     logging::info,
-    math::{Quat, Vec3},
-    render::{components::{RenderLayers, Transform, Visibility}},
     world::{
         components::{Alt1, Main},
         WorldInsertAssetRefEvent,
     },
 };
 
-use crate::components::{WalkAnimation, WalkerMarker};
+use crate::components::WalkAnimation;
 
 pub fn main_insert_asset_ref_events(
     mut commands: Commands,
@@ -77,20 +75,8 @@ pub fn main_insert_asset_ref_events(
         }
 
         if AssetType::Model == asset_type {
-            // info!("received model");
-
-            // add clientside things
-            let layer = RenderLayers::layer(0);
-
-            commands
-                .entity(entity)
-                .insert(
-                    Transform::from_translation(Vec3::splat(0.0))
-                        .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
-                )
-                .insert(Visibility::default())
-                .insert(WalkerMarker)
-                .insert(layer);
+            // added AssetHandle component above
+            info!("entity {:?} : received Model asset", entity);
         } else {
             panic!("unexpected asset type");
         }
@@ -112,6 +98,7 @@ pub fn alt1_insert_asset_ref_events(
         );
 
         if AssetType::Animation == asset_type {
+            info!("adding WalkAnimation to entity: {:?}", entity);
             let walk_anim = WalkAnimation::new(AssetHandle::<AnimationData>::new(asset_id));
             commands.entity(entity).insert(walk_anim);
         } else {
