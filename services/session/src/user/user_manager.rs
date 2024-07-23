@@ -25,8 +25,8 @@ pub struct UserManager {
     user_info_service: UserInfoService,
 }
 
-impl UserManager {
-    pub fn new() -> Self {
+impl Default for UserManager {
+    fn default() -> Self {
         Self {
             login_token_store: UserLoginTokenStore::new(),
             user_key_to_id: HashMap::new(),
@@ -34,6 +34,9 @@ impl UserManager {
             user_info_service: UserInfoService::new(),
         }
     }
+}
+
+impl UserManager {
 
     // used as a system
     pub fn update(

@@ -17,7 +17,7 @@ impl Plugin for UserPlugin {
             NaiaServerConfig::default(),
             naia_protocol(),
         ))
-        .insert_resource(UserManager::new())
+        .init_resource::<UserManager>()
         .add_systems(Startup, systems::startup::server)
         .add_systems(
             Update,

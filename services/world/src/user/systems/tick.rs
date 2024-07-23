@@ -16,7 +16,10 @@ use naia_bevy_server::{
 use bevy_http_client::HttpClient;
 use logging::info;
 use world_server_naia_proto::{
-    components::{Alt1, AssetEntry, AssetRef, Main},
+    components::{Position, Alt1, AssetEntry, AssetRef, Main},
+    channels::PlayerCommandChannel,
+    messages::KeyCommand,
+    behavior as shared_behavior,
 };
 
 use crate::{world_instance::WorldInstance, asset::AssetManager, user::UserManager};
@@ -32,21 +35,44 @@ pub fn tick_events_startup(world: &mut World) {
 }
 
 pub fn tick_events(world: &mut World) {
-    let mut has_ticked = false;
 
+    let mut tick_events = Vec::new();
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedTickEventsState>| {
             let mut events_reader = events_reader_state.event_state.get_mut(world);
 
-            for _tick_event in events_reader.read() {
-                has_ticked = true;
+            for TickEvent(server_tick) in events_reader.read() {
+                tick_events.push(*server_tick);
             }
         },
     );
 
-    if !has_ticked {
+    if tick_events.is_empty() {
         return;
     }
+
+    {
+        let mut system_state: SystemState<(Server, Query<&mut Position>)> = SystemState::new(world);
+        let (mut server, mut position_q) = system_state.get_mut(world);
+
+        for server_tick in tick_events.iter() {
+            // All game logic should happen here, on a tick event
+
+            let mut messages = server.receive_tick_buffer_messages(server_tick);
+            for (_user_key, key_command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
+                let Some(entity) = &key_command.entity.get(&server) else {
+                    continue;
+                };
+                let Ok(mut position) = position_q.get_mut(*entity) else {
+                    continue;
+                };
+                shared_behavior::process_command(&key_command, &mut position);
+            }
+        }
+    }
+
+    // Asset scope checks
+    // TODO: this does not belong here... see notes
 
     // get all scope checks from server
     let mut scope_checks = Vec::new();
