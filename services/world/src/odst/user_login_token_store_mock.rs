@@ -2,7 +2,7 @@
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
 
-use crate::user::UserData;
+use crate::user::user_data::UserData;
 
 pub(crate) struct UserLoginTokenStore {
 
@@ -38,7 +38,7 @@ impl UserLoginTokenStore {
             let session_addr = config::SESSION_SERVER_RECV_ADDR.to_string();
             let session_port = config::SESSION_SERVER_HTTP_PORT;
 
-            Some(UserData::new(user_id, lobby_id, &session_addr, session_port))
+            Some(UserData::new(&session_addr, session_port, user_id, lobby_id))
         } else {
             None
         }

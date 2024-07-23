@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
 
-use crate::user::UserData;
+use crate::user::user_data::UserData;
 
 pub(crate) struct UserLoginTokenStore {
     login_tokens: HashMap<String, UserData>,
@@ -29,7 +29,7 @@ impl UserLoginTokenStore {
             for (user_id, token) in tokens {
                 self.login_tokens.insert(
                     token.to_string(),
-                    UserData::new(*user_id, *lobby_id, session_server_addr, *session_server_port),
+                    UserData::new(session_server_addr, *session_server_port, *user_id, *lobby_id),
                 );
             }
         }

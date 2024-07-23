@@ -43,7 +43,7 @@ pub fn process_region_server_disconnect(
         if region_manager.time_to_disconnect() {
             info!("disconnecting from region server");
             region_manager.disconnect_region_server();
-            user_manager.disconnect_region_server();
+            user_manager.reset();
         }
     }
 }
