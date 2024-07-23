@@ -6,8 +6,12 @@ mod networked_plugin;
 mod session_events;
 mod world_events;
 
+pub mod naia {
+    pub use naia_bevy_client::{CommandHistory, ReceiveEvents, sequence_greater_than, CommandsExt, Tick, Replicate};
+}
+
 pub mod world {
-    use naia_bevy_client::{events::{RejectEvent, DisconnectEvent, SpawnEntityEvent, ConnectEvent, DespawnEntityEvent, ErrorEvent}, Client};
+    use naia_bevy_client::{events::{ClientTickEvent, MessageEvents, RequestEvents, RejectEvent, DisconnectEvent, SpawnEntityEvent, ConnectEvent, DespawnEntityEvent, ErrorEvent}, Client};
 
     use super::client_markers::World;
 
@@ -18,18 +22,21 @@ pub mod world {
     pub type WorldSpawnEntityEvent = SpawnEntityEvent<World>;
     pub type WorldDespawnEntityEvent = DespawnEntityEvent<World>;
     pub type WorldErrorEvent = ErrorEvent<World>;
+    pub type WorldMessageEvents = MessageEvents<World>;
+    pub type WorldRequestEvents = RequestEvents<World>;
+    pub type WorldClientTickEvent = ClientTickEvent<World>;
 
     pub use super::world_events::{
         InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent,
         WorldRemoveComponentEvent, WorldUpdateComponentEvent,
     };
 
-    pub use world_server_naia_proto::{channels, components, messages};
+    pub use world_server_naia_proto::{channels, components, messages, behavior};
 }
 
 pub mod session {
 
-    use naia_bevy_client::{events::{RejectEvent, ConnectEvent, DisconnectEvent, SpawnEntityEvent, DespawnEntityEvent, ErrorEvent}, Client};
+    use naia_bevy_client::{events::{MessageEvents, RequestEvents, RejectEvent, ConnectEvent, DisconnectEvent, SpawnEntityEvent, DespawnEntityEvent, ErrorEvent}, Client};
 
     use super::client_markers::Session;
 
@@ -40,6 +47,8 @@ pub mod session {
     pub type SessionSpawnEntityEvent = SpawnEntityEvent<Session>;
     pub type SessionDespawnEntityEvent = DespawnEntityEvent<Session>;
     pub type SessionErrorEvent = ErrorEvent<Session>;
+    pub type SessionMessageEvents = MessageEvents<Session>;
+    pub type SessionRequestEvents = RequestEvents<Session>;
 
     pub use super::session_events::{
         SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent,

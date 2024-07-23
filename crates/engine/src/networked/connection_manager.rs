@@ -8,7 +8,6 @@ use bevy_ecs::{
 };
 
 use naia_bevy_client::{
-    events::{MessageEvents, RequestEvents},
     transport::webrtc::Socket as WebrtcSocket,
     Client, Timer,
 };
@@ -27,7 +26,7 @@ use world_server_naia_proto::messages::Auth as WorldAuth;
 
 use super::client_markers::{Session, World};
 use crate::{
-    world::{WorldConnectEvent, WorldRejectEvent, WorldDisconnectEvent}, session::{SessionDisconnectEvent, SessionRejectEvent, SessionConnectEvent},
+    world::{WorldConnectEvent, WorldDisconnectEvent}, session::{SessionMessageEvents, SessionRequestEvents, SessionDisconnectEvent, SessionRejectEvent, SessionConnectEvent},
     asset_cache::{AssetCache, AssetLoadedEvent},
     networked::asset_cache_checker::AssetCacheChecker,
 };
@@ -151,18 +150,6 @@ impl ConnectionManager {
     }
 
     // used as a system
-    pub fn handle_world_reject_events(
-        mut world_reject_event_reader: EventReader<WorldRejectEvent>,
-        mut _connection_manager: ResMut<Self>,
-    ) {
-        for _ in world_reject_event_reader.read() {
-            warn!("Client rejected from connecting to the world server");
-
-            todo!();
-        }
-    }
-
-    // used as a system
     pub fn handle_session_message_events(
         mut world_client: WorldClient,
         http_client: Res<HttpClient>,
@@ -171,7 +158,7 @@ impl ConnectionManager {
         mut ui_manager: ResMut<UiManager>,
         mut file_system_manager: ResMut<FileSystemManager>,
         mut metadata_store: ResMut<AssetMetadataStore>,
-        mut event_reader: EventReader<MessageEvents<Session>>,
+        mut event_reader: EventReader<SessionMessageEvents>,
         mut asset_loaded_event_writer: EventWriter<AssetLoadedEvent>,
     ) {
         for events in event_reader.read() {
@@ -213,7 +200,7 @@ impl ConnectionManager {
         mut asset_cache_checker: ResMut<AssetCacheChecker>,
         mut file_system_manager: ResMut<FileSystemManager>,
         mut metadata_store: ResMut<AssetMetadataStore>,
-        mut event_reader: EventReader<RequestEvents<Session>>,
+        mut event_reader: EventReader<SessionRequestEvents>,
     ) {
         for events in event_reader.read() {
             for (response_send_key, request) in
