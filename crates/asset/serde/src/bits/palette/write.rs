@@ -8,7 +8,7 @@ impl PaletteAction {
 
         for action in actions {
             match action {
-                PaletteAction::Color(r, g, b) => {
+                Self::Color(r, g, b) => {
                     PaletteActionType::Color.ser(&mut bit_writer);
                     r.ser(&mut bit_writer);
                     g.ser(&mut bit_writer);

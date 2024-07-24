@@ -42,7 +42,7 @@ impl Transition {
 
 // Actions
 pub enum AnimAction {
-    // path, file_name
+    // asset id
     SkelFile(AssetId),
     // shape name -> shape_index
     ShapeIndex(String),

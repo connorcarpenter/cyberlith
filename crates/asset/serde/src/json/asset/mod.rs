@@ -15,11 +15,9 @@ cfg_if! {
 
 use asset_id::AssetId;
 use serde::{Deserialize, Serialize};
+use spec_serde::json::{AnimatedModelJson, MovementConfigJson, UnitJson};
 
-use crate::json::{
-    animation::AnimationJson, icon::IconJson, mesh::MeshJson, model::ModelJson,
-    palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiConfigJson,
-};
+use crate::json::{animation::AnimationJson, icon::IconJson, mesh::MeshJson, model::ModelJson, palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiConfigJson};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Asset {
@@ -77,20 +75,26 @@ pub enum AssetData {
     Scene(SceneJson),
     Model(ModelJson),
     Ui(UiConfigJson),
+    AnimatedModel(AnimatedModelJson),
+    MovementConfig(MovementConfigJson),
+    Unit(UnitJson),
 }
 
 impl AssetData {
     pub fn type_name(&self) -> String {
         match self {
-            AssetData::Palette(_) => "palette",
-            AssetData::Skeleton(_) => "skeleton",
-            AssetData::Mesh(_) => "mesh",
-            AssetData::Animation(_) => "animation",
-            AssetData::Icon(_) => "icon",
-            AssetData::Skin(_) => "skin",
-            AssetData::Scene(_) => "scene",
-            AssetData::Model(_) => "model",
-            AssetData::Ui(_) => "ui",
+            Self::Palette(_) => "palette",
+            Self::Skeleton(_) => "skeleton",
+            Self::Mesh(_) => "mesh",
+            Self::Animation(_) => "animation",
+            Self::Icon(_) => "icon",
+            Self::Skin(_) => "skin",
+            Self::Scene(_) => "scene",
+            Self::Model(_) => "model",
+            Self::Ui(_) => "ui",
+            Self::AnimatedModel(_) => "animated_model",
+            Self::MovementConfig(_) => "movement_config",
+            Self::Unit(_) => "unit",
         }
         .to_string()
     }

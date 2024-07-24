@@ -5,10 +5,10 @@ edition = "2021"
 workspace = "../../.."
 
 [features]
-read_bits = [ "naia-serde", "ui_serde/read_bits" ]
-write_bits = [ "naia-serde", "ui_serde/write_bits" ]
-read_json = [ "serde", "serde_json", "ui_serde/read_json" ]
-write_json = [ "serde", "serde_json", "ui_serde/write_json" ]
+read_bits = [ "naia-serde", "ui_serde/read_bits", "spec_serde/read_bits" ]
+write_bits = [ "naia-serde", "ui_serde/write_bits", "spec_serde/write_bits" ]
+read_json = [ "serde", "serde_json", "ui_serde/read_json", "spec_serde/read_json" ]
+write_json = [ "serde", "serde_json", "ui_serde/write_json", "spec_serde/write_json" ]
 
 [dependencies]
 cfg-if = { version = "1.0" }
@@ -18,6 +18,7 @@ asset_id = { path = "../id" }
 crypto = { path = "../../crypto" }
 logging = { path = "../../../crates/logging" }
 ui_serde = { path = "../../ui/serde" }
+spec_serde = { path = "../../spec/serde" }
 
 # for BITS
 naia-serde = { path = "../../../../naia/shared/serde", optional = true }

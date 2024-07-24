@@ -8,7 +8,7 @@ impl SkelAction {
 
         for action in actions {
             match action {
-                SkelAction::Vertex(x, y, z, parent_id_opt, vertex_name_opt) => {
+                Self::Vertex(x, y, z, parent_id_opt, vertex_name_opt) => {
                     // continue bit
                     true.ser(&mut bit_writer);
 

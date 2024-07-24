@@ -7,6 +7,9 @@ mod scene;
 mod skeleton;
 mod skin;
 mod ui;
+mod animated_model;
+mod movement_config;
+mod unit;
 
 pub use animation::*;
 pub use icon::*;
@@ -17,3 +20,6 @@ pub use scene::*;
 pub use skeleton::*;
 pub use skin::*;
 pub use ui::*;
+pub use animated_model::*;
+pub use movement_config::*;
+pub use unit::*;

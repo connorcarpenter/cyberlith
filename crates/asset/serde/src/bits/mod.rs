@@ -1,5 +1,15 @@
+pub use ui_serde::bits::*;
+pub use spec_serde::bits::*;
+
+//
+
 mod common;
 pub use common::{ComponentFileType, SerdeQuat, SerdeRotation};
+
+mod metadata;
+pub use metadata::AssetMetadataSerde;
+
+//
 
 mod animation;
 pub use animation::{AnimAction, Transition};
@@ -24,8 +34,3 @@ pub use skeleton::SkelAction;
 
 mod skin;
 pub use skin::SkinAction;
-
-mod metadata;
-pub use metadata::AssetMetadataSerde;
-
-pub use ui_serde::bits::*;

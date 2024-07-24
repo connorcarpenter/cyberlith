@@ -2,8 +2,7 @@ use bevy_ecs::{event::EventReader, system::Commands};
 
 use game_engine::{
     asset::{
-        AnimationData, AssetHandle, AssetType, IconData, MeshData, ModelData, PaletteData,
-        SceneData, SkeletonData, SkinData,
+        AnimationData, AssetHandle, AssetType, UnitData,
     },
     logging::info,
     world::{
@@ -29,52 +28,20 @@ pub fn main_insert_asset_ref_events(
         );
 
         match asset_type {
-            AssetType::Skeleton => {
+            AssetType::Unit => {
                 commands
                     .entity(entity)
-                    .insert(AssetHandle::<SkeletonData>::new(asset_id));
-            }
-            AssetType::Mesh => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<MeshData>::new(asset_id));
-            }
-            AssetType::Palette => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<PaletteData>::new(asset_id));
-            }
-            AssetType::Animation => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<AnimationData>::new(asset_id));
-            }
-            AssetType::Icon => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<IconData>::new(asset_id));
-            }
-            AssetType::Skin => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<SkinData>::new(asset_id));
-            }
-            AssetType::Model => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<ModelData>::new(asset_id));
-            }
-            AssetType::Scene => {
-                commands
-                    .entity(entity)
-                    .insert(AssetHandle::<SceneData>::new(asset_id));
+                    .insert(AssetHandle::<UnitData>::new(asset_id));
             }
             AssetType::Ui => {
                 panic!("should not be inserting Ui this way");
             }
+            _ => {
+                panic!("unexpected asset type for asset ref");
+            }
         }
 
-        if AssetType::Model == asset_type {
+        if AssetType::Unit == asset_type {
             // added AssetHandle component above
             info!("entity {:?} : received Model asset", entity);
         } else {

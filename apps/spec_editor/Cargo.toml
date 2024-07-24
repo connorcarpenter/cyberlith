@@ -14,7 +14,7 @@ path = "src/main.rs"
 # Internal
 asset_serde = { path = "../../crates/asset/serde", features = [ "write_bits", "read_bits", "write_json", "read_json" ] }
 asset_id = { path = "../../crates/asset/id" }
-ui_builder = { path = "../../crates/ui/builder" }
+spec = { path = "../../crates/spec" }
 render_api = { path = "../../crates/render/render_api" }
 logging = { path = "../../crates/logging" }
 

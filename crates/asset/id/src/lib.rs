@@ -16,6 +16,9 @@ pub enum AssetType {
     Model,
     Scene,
     Ui,
+    AnimatedModel,
+    MovementConfig,
+    Unit,
 }
 
 impl AssetType {
@@ -30,6 +33,9 @@ impl AssetType {
             "model" => Some(Self::Model),
             "scene" => Some(Self::Scene),
             "ui" => Some(Self::Ui),
+            "animated_model" => Some(Self::AnimatedModel),
+            "movement_config" => Some(Self::MovementConfig),
+            "unit" => Some(Self::Unit),
             _ => None,
         }
     }

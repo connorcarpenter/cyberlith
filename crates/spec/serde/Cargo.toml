@@ -1,0 +1,26 @@
+[package]
+name = "spec_serde"
+version = "0.1.0"
+edition = "2021"
+workspace = "../../.."
+
+[features]
+read_bits = [ "naia-serde" ]
+write_bits = [ "naia-serde" ]
+read_json = [ "serde", "serde_json" ]
+write_json = [ "serde", "serde_json" ]
+
+[dependencies]
+spec = { path = "../../spec" }
+asset_id = { path = "../../../crates/asset/id" }
+logging = { path = "../../../crates/logging" }
+
+# for BITS
+naia-serde = { path = "../../../../naia/shared/serde", optional = true }
+
+# for JSON
+serde = { version = "1.0.189", features = ["derive"], optional = true }
+serde_json = { version = "1.0.107", optional = true }
+
+# External
+cfg-if = { version = "1.0" }

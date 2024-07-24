@@ -8,15 +8,15 @@ impl AnimAction {
 
         for action in actions {
             match action {
-                AnimAction::SkelFile(asset_id) => {
+                Self::SkelFile(asset_id) => {
                     AnimActionType::SkelFile.ser(&mut bit_writer);
                     asset_id.as_u32().ser(&mut bit_writer);
                 }
-                AnimAction::ShapeIndex(name) => {
+                Self::ShapeIndex(name) => {
                     AnimActionType::ShapeIndex.ser(&mut bit_writer);
                     name.ser(&mut bit_writer);
                 }
-                AnimAction::Frame(poses, transition) => {
+                Self::Frame(poses, transition) => {
                     AnimActionType::Frame.ser(&mut bit_writer);
                     transition.ser(&mut bit_writer);
                     for (shape_index, pose_quat) in poses {

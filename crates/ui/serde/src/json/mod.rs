@@ -3,21 +3,12 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(feature = "read_json")] {
         mod read;
-
-        pub fn read_ui_json(data: Vec<u8>) -> UiConfig {
-            let ui_json: UiConfigJson = serde_json::from_slice(data.as_slice()).unwrap();
-            ui_json.into()
-        }
     } else {}
 }
 
 cfg_if! {
     if #[cfg(feature = "write_json")] {
         mod write;
-
-        pub fn write_ui_json(ui_config: UiConfig) -> UiConfigJson {
-            UiConfigJson::from(&ui_config)
-        }
     } else {}
 }
 
@@ -25,7 +16,7 @@ use asset_id::AssetId;
 ///
 use serde::{Deserialize, Serialize};
 
-use ui_builder_config::{UiConfig, WidgetKind};
+use ui_builder_config::WidgetKind;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UiConfigJson {

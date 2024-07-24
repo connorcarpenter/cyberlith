@@ -24,7 +24,7 @@ pub mod asset {
     pub use asset_loader::{
         embedded_asset_event, AnimationData, AssetHandle, AssetManager, AssetMetadataSerde,
         EmbeddedAssetEvent, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData,
-        SkinData,
+        SkinData, UnitData,
     };
     pub use asset_render::AssetRender;
 }

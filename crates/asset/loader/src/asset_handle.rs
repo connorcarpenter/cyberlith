@@ -4,10 +4,7 @@ use bevy_ecs::component::Component;
 
 use asset_id::{AssetId, AssetType};
 
-use crate::{
-    AnimationData, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData,
-    UiDependencies,
-};
+use crate::{AnimatedModelData, AnimationData, IconData, MeshData, ModelData, MovementConfigData, PaletteData, SceneData, SkeletonData, SkinData, UiDependencies, UnitData};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub enum TypedAssetId {
@@ -20,6 +17,9 @@ pub enum TypedAssetId {
     Model(AssetId),
     Scene(AssetId),
     Ui(AssetId),
+    AnimatedModel(AssetId),
+    MovementConfig(AssetId),
+    Unit(AssetId),
 }
 
 impl TypedAssetId {
@@ -34,6 +34,9 @@ impl TypedAssetId {
             AssetType::Model => Self::Model(asset_id),
             AssetType::Scene => Self::Scene(asset_id),
             AssetType::Ui => Self::Ui(asset_id),
+            AssetType::AnimatedModel => Self::AnimatedModel(asset_id),
+            AssetType::MovementConfig => Self::MovementConfig(asset_id),
+            AssetType::Unit => Self::Unit(asset_id),
         }
     }
 
@@ -48,6 +51,9 @@ impl TypedAssetId {
             Self::Model(id) => *id,
             Self::Scene(id) => *id,
             Self::Ui(id) => *id,
+            Self::AnimatedModel(id) => *id,
+            Self::MovementConfig(id) => *id,
+            Self::Unit(id) => *id,
         }
     }
 
@@ -62,6 +68,9 @@ impl TypedAssetId {
             Self::Model(_) => AssetType::Model,
             Self::Scene(_) => AssetType::Scene,
             Self::Ui(_) => AssetType::Ui,
+            Self::AnimatedModel(_) => AssetType::AnimatedModel,
+            Self::MovementConfig(_) => AssetType::MovementConfig,
+            Self::Unit(_) => AssetType::Unit,
         }
     }
 }
@@ -192,6 +201,33 @@ impl From<TypedAssetId> for AssetHandle<UiDependencies> {
     }
 }
 
+impl From<TypedAssetId> for AssetHandle<AnimatedModelData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::AnimatedModel(asset_id) = typed_asset_id else {
+            panic!("expected animated model id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<MovementConfigData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::MovementConfig(asset_id) = typed_asset_id else {
+            panic!("expected movement config id");
+        };
+        Self::new(asset_id)
+    }
+}
+
+impl From<TypedAssetId> for AssetHandle<UnitData> {
+    fn from(typed_asset_id: TypedAssetId) -> Self {
+        let TypedAssetId::Unit(asset_id) = typed_asset_id else {
+            panic!("expected unit id");
+        };
+        Self::new(asset_id)
+    }
+}
+
 // AssetHandle -> TypedAssetId
 
 impl From<AssetHandle<SkeletonData>> for TypedAssetId {
@@ -245,5 +281,23 @@ impl From<AssetHandle<IconData>> for TypedAssetId {
 impl From<AssetHandle<UiDependencies>> for TypedAssetId {
     fn from(handle: AssetHandle<UiDependencies>) -> Self {
         Self::new(handle.asset_id, AssetType::Ui)
+    }
+}
+
+impl From<AssetHandle<AnimatedModelData>> for TypedAssetId {
+    fn from(handle: AssetHandle<AnimatedModelData>) -> Self {
+        Self::new(handle.asset_id, AssetType::AnimatedModel)
+    }
+}
+
+impl From<AssetHandle<MovementConfigData>> for TypedAssetId {
+    fn from(handle: AssetHandle<MovementConfigData>) -> Self {
+        Self::new(handle.asset_id, AssetType::MovementConfig)
+    }
+}
+
+impl From<AssetHandle<UnitData>> for TypedAssetId {
+    fn from(handle: AssetHandle<UnitData>) -> Self {
+        Self::new(handle.asset_id, AssetType::Unit)
     }
 }

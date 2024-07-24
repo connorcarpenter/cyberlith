@@ -5,10 +5,7 @@ use asset_id::{AssetId, AssetType};
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
 
-use crate::{
-    asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData,
-    PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId,
-};
+use crate::{asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId, AnimatedModelData, MovementConfigData, UnitData};
 
 pub struct ProcessedAssetStore {
     pub meshes: AssetStorage<MeshData>,
@@ -19,6 +16,9 @@ pub struct ProcessedAssetStore {
     pub skins: AssetStorage<SkinData>,
     pub models: AssetStorage<ModelData>,
     pub scenes: AssetStorage<SceneData>,
+    pub animated_models: AssetStorage<AnimatedModelData>,
+    pub movement_configs: AssetStorage<MovementConfigData>,
+    pub units: AssetStorage<UnitData>,
 
     // mesh file name, skin handle
     queued_meshes: Vec<AssetHandle<MeshData>>,
@@ -43,6 +43,9 @@ impl Default for ProcessedAssetStore {
             skins: AssetStorage::default(),
             models: AssetStorage::default(),
             scenes: AssetStorage::default(),
+            animated_models: AssetStorage::default(),
+            movement_configs: AssetStorage::default(),
+            units: AssetStorage::default(),
 
             queued_meshes: Vec::new(),
             queued_palettes: Vec::new(),
@@ -177,6 +180,37 @@ impl ProcessedAssetStore {
             AssetType::Ui => {
                 panic!("should be handled by uimanager")
             }
+            AssetType::AnimatedModel => {
+                let handle = AssetHandle::<AnimatedModelData>::new(*asset_id);
+                if !self.animated_models.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let bytes: &[u8] = bytes;
+                    let animated_model_data = AnimatedModelData::from(bytes);
+                    self.animated_models.insert(handle, animated_model_data);
+                    let animated_model_data = self.animated_models.get(&handle).unwrap();
+                    animated_model_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
+            AssetType::MovementConfig => {
+                let handle = AssetHandle::<MovementConfigData>::new(*asset_id);
+                if !self.movement_configs.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let bytes: &[u8] = bytes;
+                    let movement_config_data = MovementConfigData::from(bytes);
+                    self.movement_configs.insert(handle, movement_config_data);
+                }
+            }
+            AssetType::Unit => {
+                let handle = AssetHandle::<UnitData>::new(*asset_id);
+                if !self.units.has(&handle) {
+                    let bytes = asset_data_store.get(asset_id).unwrap();
+                    let bytes: &[u8] = bytes;
+                    let unit_data = UnitData::from(bytes);
+                    self.units.insert(handle, unit_data);
+                    let unit_data = self.units.get(&handle).unwrap();
+                    unit_data.load_dependencies(handle, &mut dependencies);
+                }
+            }
         };
 
         if !dependencies.is_empty() {
@@ -195,7 +229,7 @@ impl ProcessedAssetStore {
         dependency_typed_id: TypedAssetId,
     ) {
         match principal_typed_id {
-            TypedAssetId::Mesh(_) | TypedAssetId::Skeleton(_) | TypedAssetId::Palette(_) => {
+            TypedAssetId::Mesh(_) | TypedAssetId::Skeleton(_) | TypedAssetId::Palette(_) | TypedAssetId::MovementConfig(_) => {
                 panic!("unexpected dependency for this type of asset")
             }
             TypedAssetId::Ui(_) => {
@@ -277,6 +311,16 @@ impl ProcessedAssetStore {
             TypedAssetId::Scene(principal_id) => {
                 let prinicipal_handle = AssetHandle::<SceneData>::new(principal_id);
                 let principal_data = self.scenes.get_mut(&prinicipal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
+            }
+            TypedAssetId::AnimatedModel(principal_id) => {
+                let prinicipal_handle = AssetHandle::<AnimatedModelData>::new(principal_id);
+                let principal_data = self.animated_models.get_mut(&prinicipal_handle).unwrap();
+                principal_data.finish_dependency(dependency_typed_id);
+            }
+            TypedAssetId::Unit(principal_id) => {
+                let prinicipal_handle = AssetHandle::<UnitData>::new(principal_id);
+                let principal_data = self.units.get_mut(&prinicipal_handle).unwrap();
                 principal_data.finish_dependency(dependency_typed_id);
             }
         }
