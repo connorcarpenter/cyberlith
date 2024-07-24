@@ -1,5 +1,5 @@
 [package]
-name = "ui_editor"
+name = "spec_editor"
 version = "0.1.0"
 authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
 workspace = "../.."
@@ -7,22 +7,18 @@ edition = "2021"
 publish = false
 
 [[bin]]
-name = "ui_editor"
+name = "spec_editor"
 path = "src/main.rs"
 
 [dependencies]
 # Internal
-game_engine = { path = "../../crates/engine", features = [ "gl_renderer", "local" ] }
 asset_serde = { path = "../../crates/asset/serde", features = [ "write_bits", "read_bits", "write_json", "read_json" ] }
-random = { path = "../../crates/random" }
+asset_id = { path = "../../crates/asset/id" }
 ui_builder = { path = "../../crates/ui/builder" }
-ui_runner_config = { path = "../../crates/ui/runner/config" }
+render_api = { path = "../../crates/render/render_api" }
 logging = { path = "../../crates/logging" }
 
 # External
-bevy_app = { version = "0.13", default-features=false }
-bevy_ecs = { version = "0.13", default-features=false }
-
 cfg-if = { version = "1.0" }
 
 serde_json = { version = "1.0.107" }

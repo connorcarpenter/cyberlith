@@ -70,6 +70,8 @@ members = [
     "apps/editor/server",
     # Ui Editor
     "apps/ui_editor",
+    # Gameplay Config Editor
+    "apps/spec_editor",
 
     ### Crates ###
     # Engine

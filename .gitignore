@@ -34,9 +34,8 @@ node_modules
 
 /apps/ui_editor/assets
 /apps/ui_editor/output
-
-/apps/physics_tester/assets
-/apps/physics_tester/output
+/apps/spec_editor/assets
+/apps/spec_editor/output
 
 /apps/editor/client/target
 /apps/editor/server/users
