@@ -20,15 +20,13 @@ use crate::{world_instance::WorldInstance, user::UserManager};
 // AssetCatalog
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum AssetCatalog {
-    HumanModel,
-    HumanWalk,
+    AvatarUnit,
 }
 
 impl Into<AssetId> for AssetCatalog {
     fn into(self) -> AssetId {
         match self {
-            AssetCatalog::HumanModel => AssetId::from_str("dx8pye").unwrap(),
-            AssetCatalog::HumanWalk => AssetId::from_str("1x87se").unwrap(),
+            AssetCatalog::AvatarUnit => AssetId::from_str("h1g2dt").unwrap(),
         }
     }
 }

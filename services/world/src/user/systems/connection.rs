@@ -9,7 +9,7 @@ use naia_bevy_server::{CommandsExt, events::{AuthEvents, ConnectEvent, Disconnec
 
 use logging::{info, warn};
 use world_server_naia_proto::{
-    components::{Alt1, Main, Position},
+    components::{Main, Position},
     messages::{Auth, EntityAssignment},
     channels::EntityAssignmentChannel,
 };
@@ -74,12 +74,7 @@ pub fn connect_events(
             .insert_asset::<Main>(
                 &mut asset_manager,
                 &mut server,
-                AssetCatalog::HumanModel.into(),
-            )
-            .insert_asset::<Alt1>(
-                &mut asset_manager,
-                &mut server,
-                AssetCatalog::HumanWalk.into(),
+                AssetCatalog::AvatarUnit.into(),
             )
             // insert position component
             .insert(Position::new(
