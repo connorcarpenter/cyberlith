@@ -365,6 +365,9 @@ fn write_all_new_files(repo: &Repository, unprocessed_files: &Vec<UnprocessedFil
             AssetData::Animation(data) => convert_to_bits::animation(data),
             AssetData::Icon(data) => convert_to_bits::icon(data),
             AssetData::Ui(data) => convert_to_bits::ui(data),
+            AssetData::AnimatedModel(data) => convert_to_bits::animated_model(data),
+            AssetData::MovementConfig(data) => convert_to_bits::movement_config(data),
+            AssetData::Unit(data) => convert_to_bits::unit(data),
         };
 
         // write new data file
@@ -414,6 +417,9 @@ fn get_dependencies(data: &AssetData) -> Vec<AssetId> {
         AssetData::Animation(data) => data.dependencies(),
         AssetData::Icon(data) => data.dependencies(),
         AssetData::Ui(data) => data.dependencies(),
+        AssetData::AnimatedModel(data) => data.dependencies(),
+        AssetData::MovementConfig(data) => data.dependencies(),
+        AssetData::Unit(data) => data.dependencies(),
     }
 }
 

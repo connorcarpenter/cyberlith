@@ -17,6 +17,7 @@ random = { path = "../../crates/random" }
 asset_id = {path = "../../crates/asset/id" }
 logging = { path = "../../crates/logging" }
 git = { path = "../../crates/git" }
+spec = { path = "../../crates/spec" }
 
 openssh = { version = "0.10" }
 async-compat = { version = "0.2" }

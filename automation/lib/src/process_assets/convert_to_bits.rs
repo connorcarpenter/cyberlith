@@ -1,15 +1,16 @@
 use std::collections::HashMap;
 
 use asset_serde::{
-    bits::{
+    bits::{ AnimatedModelBits, MovementConfigBits, UnitBits,
         AnimAction, ComponentFileType, IconAction, IconFrameAction, MeshAction, ModelAction,
         PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction, Transition,
     },
     json::{
         AnimationJson, FileComponentType, IconJson, MeshJson, ModelJson, PaletteJson, SceneJson,
-        SkeletonJson, SkinJson, UiConfigJson,
+        SkeletonJson, SkinJson, UiConfigJson, AnimatedModelJson, MovementConfigJson, UnitJson,
     },
 };
+use spec::{AnimatedModel, MovementConfig, Unit};
 
 pub(crate) fn palette(data: PaletteJson) -> Vec<u8> {
     let mut actions = Vec::new();
@@ -207,4 +208,25 @@ pub(crate) fn ui(data: UiConfigJson) -> Vec<u8> {
     let ui_bytes = asset_serde::bits::write_ui_bits(&ui);
 
     ui_bytes
+}
+
+pub(crate) fn animated_model(data: AnimatedModelJson) -> Vec<u8> {
+    let base: AnimatedModel = data.into();
+    let bits: AnimatedModelBits = (&base).into();
+    let bytes: Vec<u8> = bits.into();
+    bytes
+}
+
+pub(crate) fn movement_config(data: MovementConfigJson) -> Vec<u8> {
+    let base: MovementConfig = data.into();
+    let bits: MovementConfigBits = (&base).into();
+    let bytes = bits.into();
+    bytes
+}
+
+pub(crate) fn unit(data: UnitJson) -> Vec<u8> {
+    let base: Unit = data.into();
+    let bits: UnitBits = (&base).into();
+    let bytes = bits.into();
+    bytes
 }
