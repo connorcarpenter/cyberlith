@@ -1,11 +1,13 @@
-// use asset_id::AssetId;
-//
-// impl UnitJson {
-//     pub fn write(&self, asset_id: &AssetId) -> Box<[u8]> {
-//         let new_meta = AssetMeta::new(asset_id, Self::CURRENT_SCHEMA_VERSION);
-//         let asset = Asset::new(new_meta, AssetData::Unit(self.clone()));
-//         serde_json::to_vec_pretty(&asset)
-//             .unwrap()
-//             .into_boxed_slice()
-//     }
-// }
+
+use spec::Unit;
+
+use crate::json::UnitJson;
+
+impl From<&Unit> for UnitJson {
+    fn from(value: &Unit) -> Self {
+        let mut me = Self::new();
+        me.set_animated_model_asset_id(&value.get_animated_model_asset_id());
+        me.set_movement_config_asset_id(&value.get_movement_config_asset_id());
+        me
+    }
+}

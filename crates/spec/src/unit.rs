@@ -6,7 +6,10 @@ pub struct Unit {
 }
 
 impl Unit {
-    pub fn new(animated_model_asset_id: AssetId, movement_config_asset_id: AssetId) -> Self {
+    pub fn new(
+        animated_model_asset_id: AssetId,
+        movement_config_asset_id: AssetId,
+    ) -> Self {
         Self {
             animated_model_asset_id,
             movement_config_asset_id,

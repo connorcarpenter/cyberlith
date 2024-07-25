@@ -1,12 +1,15 @@
 
 mod catalog;
+mod writers;
+
 mod animated_models;
 mod movement_configs;
-mod writers;
+mod units;
 
 use writers::{
     movement_config::write_to_file as write_movement_config,
     animated_model::write_to_file as write_animated_model,
+    unit::write_to_file as write_unit,
 };
 
 fn main() {
@@ -18,5 +21,10 @@ fn main() {
     // avatar.movement_config
     write_movement_config(
         movement_configs::avatar::define()
+    );
+
+    // avatar.unit
+    write_unit(
+        units::avatar::define()
     );
 }

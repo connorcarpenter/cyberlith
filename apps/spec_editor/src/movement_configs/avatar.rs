@@ -5,7 +5,7 @@ use spec::MovementConfig;
 pub fn define() -> (String, AssetId, ETag, MovementConfig) {
     // config
     let self_name = "avatar";
-    let self_asset_id_str = AssetId::gen_random().as_string(); // keep this around to generate new AssetIds if needed!
+    let self_asset_id_str = "wyte5b"; // AssetId::gen_random().as_string(); // keep this around to generate new AssetIds if needed!
     let self_etag = ETag::gen_random();
 
     // asset ids ..
