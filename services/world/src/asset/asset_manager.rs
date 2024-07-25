@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use bevy_ecs::{
+    world::World,
     entity::Entity,
-    prelude::Resource,
-    system::{Commands, EntityCommands, ResMut},
+    prelude::{Resource, Query},
+    system::{Res, SystemState, Commands, EntityCommands, ResMut},
 };
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
@@ -13,7 +14,7 @@ use asset_id::AssetId;
 use bevy_http_client::{HttpClient, ResponseKey};
 
 use session_server_http_proto::{UserAssetIdRequest, UserAssetIdResponse};
-use world_server_naia_proto::components::{AssetEntry, AssetRef};
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
 use crate::{world_instance::WorldInstance, user::UserManager};
 
@@ -166,7 +167,97 @@ impl AssetManager {
         }
     }
 
-    pub fn handle_scope_actions(
+    pub(crate) fn handle_asset_ref_scope_events(
+        world: &mut World,
+        scope_actions: HashMap<(UserKey, Entity), bool>
+    ) {
+        // 4. determine if any entities that have gone into or out of scope have AssetRef components
+        let mut asset_id_entity_actions = Vec::new();
+
+        {
+            let mut system_state: SystemState<(
+                Server,
+                Query<&AssetEntry>,
+                Query<&AssetRef<Main>>,
+                Query<&AssetRef<Alt1>>,
+            )> = SystemState::new(world);
+            let (server, asset_entry_q, asset_ref_main_q, asset_ref_alt1_q) =
+                system_state.get_mut(world);
+
+            for ((user_key, entity), include) in scope_actions.iter() {
+                // determine if entity has any AssetRef components
+                info!("Checking entity for AssetRefs: {:?}", entity);
+
+                // AssetRef<Main>
+                if let Ok(asset_ref) = asset_ref_main_q.get(*entity) {
+                    let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
+                    let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
+
+                    info!(
+                    "entity {:?} has AssetRef<Main>(asset_id: {:?})",
+                    entity, asset_id
+                );
+
+                    asset_id_entity_actions.push((*user_key, asset_id, *include));
+                }
+                // AssetRef<Alt1>
+                if let Ok(asset_ref) = asset_ref_alt1_q.get(*entity) {
+                    let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
+                    let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
+
+                    info!(
+                    "entity {:?} has AssetRef<Alt1>(asset_id: {:?})",
+                    entity, asset_id
+                );
+
+                    asset_id_entity_actions.push((*user_key, asset_id, *include));
+                }
+                // this is unecessary, just for logging
+                if let Ok(asset_entry) = asset_entry_q.get(*entity) {
+                    let asset_id = *asset_entry.asset_id;
+
+                    info!(
+                    "entity {:?} has AssetEntry(asset_id: {:?})",
+                    entity, asset_id
+                );
+                }
+
+                // TODO: put other AssetRef<Marker> components here .. also could clean this up somehow??
+            }
+        }
+
+        if asset_id_entity_actions.is_empty() {
+            return;
+        }
+
+        // update asset id entities in asset manager
+        {
+            let mut system_state: SystemState<(
+                Server,
+                Res<WorldInstance>,
+                Res<UserManager>,
+                ResMut<AssetManager>,
+                ResMut<HttpClient>,
+            )> = SystemState::new(world);
+            let (
+                mut server,
+                world_instance,
+                user_manager,
+                mut asset_manager,
+                mut http_client
+            ) = system_state.get_mut(world);
+
+            asset_manager.handle_scope_actions(
+                &mut server,
+                &world_instance,
+                &user_manager,
+                &mut http_client,
+                asset_id_entity_actions,
+            );
+        };
+    }
+
+    fn handle_scope_actions(
         &mut self,
         server: &mut Server,
         world_instance: &WorldInstance,
@@ -192,7 +283,7 @@ impl AssetManager {
                     asset_actions.push((user_key, asset_id, true));
                 }
             } else {
-                info!("removing asset ref for user");
+                info!("removing asset ref for user: {:?}, asset: {:?}", user_key, asset_id);
                 if user_data.remove_asset_ref(asset_id) {
                     // user removed last asset ref for asset
                     asset_actions.push((user_key, asset_id, false));
