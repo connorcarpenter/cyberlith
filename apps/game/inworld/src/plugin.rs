@@ -28,15 +28,17 @@ impl Plugin for InWorldPlugin {
                 Update,
                 (
                     systems::world_events::disconnect_events,
+
+                    systems::world_events::message_events,
+
                     systems::world_events::spawn_entity_events,
                     systems::world_events::despawn_entity_events,
                     systems::world_events::insert_position_events,
                     systems::world_events::update_position_events,
                     systems::world_events::remove_position_events,
-                    systems::world_events::message_events,
-                    systems::world_events::late_unit_handle_add,
 
-                    systems::assets::main_insert_asset_ref_events,
+                    systems::world_events::main_unit_handle_add,
+                    systems::world_events::late_unit_handle_add,
 
                     systems::render::draw_units,
                 )

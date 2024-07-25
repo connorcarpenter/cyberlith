@@ -12,13 +12,6 @@ pub(crate) enum AssetDependency<T> {
 
 impl<T> AssetDependency<T> {
 
-    pub(crate) fn get_asset_id(&self) -> AssetId {
-        match self {
-            AssetDependency::AssetId(asset_id) => *asset_id,
-            _ => panic!("expected asset id"),
-        }
-    }
-
     pub(crate) fn load_handle(&mut self, handle: Handle<T>) {
         if let AssetDependency::Handle(_) = self {
             panic!("cannot load handle twice!");
