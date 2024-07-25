@@ -4,7 +4,7 @@ use bevy_ecs::{
     world::World,
     entity::Entity,
     prelude::{Resource, Query},
-    system::{Res, SystemState, Commands, EntityCommands, ResMut},
+    system::{Res, SystemState, Commands, ResMut},
 };
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
@@ -114,7 +114,7 @@ impl AssetManager {
         // TODO: do we need to remove user from room?
     }
 
-    fn create_asset_ref<M: Send + Sync + 'static>(
+    pub(crate) fn create_asset_ref<M: Send + Sync + 'static>(
         &mut self,
         commands: &mut Commands,
         server: &mut Server,
@@ -351,25 +351,7 @@ pub fn update(mut asset_manager: ResMut<AssetManager>, mut http_client: ResMut<H
     asset_manager.update(&mut http_client);
 }
 
-// AssetCommandsExt
-pub trait AssetCommandsExt {
-    fn insert_asset<M: Send + Sync + 'static>(
-        &mut self,
-        asset_manager: &mut AssetManager,
-        server: &mut Server,
-        asset_id: AssetId,
-    ) -> &mut Self;
+pub fn handle_asset_ref_events(mut asset_manager: ResMut<AssetManager>) {
+    todo!()
 }
 
-impl AssetCommandsExt for EntityCommands<'_> {
-    fn insert_asset<M: Send + Sync + 'static>(
-        &mut self,
-        asset_manager: &mut AssetManager,
-        server: &mut Server,
-        asset_id: AssetId,
-    ) -> &mut Self {
-        let new_ref = asset_manager.create_asset_ref::<M>(&mut self.commands(), server, asset_id);
-        self.insert(new_ref);
-        self
-    }
-}

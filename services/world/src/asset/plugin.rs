@@ -8,6 +8,7 @@ impl Plugin for AssetPlugin {
     fn build(&self, app: &mut App) {
         app
             .init_resource::<AssetManager>()
-            .add_systems(Update, asset_manager::update);
+            .add_systems(Update, asset_manager::update)
+            .add_systems(Update, asset_manager::handle_asset_ref_events);
     }
 }
