@@ -31,7 +31,7 @@ pub mod world {
         WorldRemoveComponentEvent, WorldUpdateComponentEvent,
     };
 
-    pub use world_server_naia_proto::{channels, components, messages, behavior};
+    pub use world_server_naia_proto::{channels, components, messages, behavior, constants};
 }
 
 pub mod session {

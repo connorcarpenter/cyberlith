@@ -9,9 +9,9 @@ use naia_bevy_server::{CommandsExt, events::{AuthEvents, ConnectEvent, Disconnec
 
 use logging::{info, warn};
 use world_server_naia_proto::{
-    components::{Main, Position},
+    components::{Main, NextTilePosition, Position, PrevTilePosition, TileMovement},
     messages::{Auth, EntityAssignment},
-    channels::EntityAssignmentChannel,
+    channels::EntityAssignmentChannel, constants::MOVEMENT_SPEED
 };
 
 use crate::{asset::{AssetCatalog, AssetCommandsExt, AssetManager}, social::LobbyManager, user::UserManager};
@@ -64,6 +64,9 @@ pub fn connect_events(
         let lobby_room_key = lobby_manager.lobby_room_key(&lobby_id).unwrap();
         server.room_mut(&lobby_room_key).add_user(&user_key);
 
+        let tile_position_x = Random::gen_range_i32(-5, 5) as i16;
+        let tile_position_y = Random::gen_range_i32(-5, 5) as i16;
+
         // give user an entity
         let user_entity = commands
             // spawn new entity
@@ -76,11 +79,17 @@ pub fn connect_events(
                 &mut server,
                 AssetCatalog::AvatarUnit.into(),
             )
-            // insert position component
-            .insert(Position::new(
-                16 * ((Random::gen_range_u32(0, 40) as i16) - 20),
-                16 * ((Random::gen_range_u32(0, 30) as i16) - 15),
+            // insert position components
+            .insert(NextTilePosition::new(
+                tile_position_x,
+                tile_position_y,
             ))
+            .insert(PrevTilePosition::new(
+                tile_position_x,
+                tile_position_y,
+            ))
+            .insert(TileMovement::new(MOVEMENT_SPEED))
+            .insert(Position::new(0.0, 0.0))
             // return Entity id
             .id();
 

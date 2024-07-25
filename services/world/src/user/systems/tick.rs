@@ -15,7 +15,7 @@ use naia_bevy_server::{
 
 use logging::info;
 use world_server_naia_proto::{
-    components::Position,
+    components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
     channels::PlayerCommandChannel,
     messages::KeyCommand,
     behavior as shared_behavior,
@@ -51,21 +51,46 @@ pub fn tick_events(world: &mut World) {
     }
 
     {
-        let mut system_state: SystemState<(Server, Query<&mut Position>)> = SystemState::new(world);
+        let mut system_state: SystemState<(Server, Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position)>)> = SystemState::new(world);
         let (mut server, mut position_q) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
+
             // All game logic should happen here, on a tick event
 
+            // process movement
+            for (
+                mut prev_tile_position,
+                next_tile_position,
+                mut tile_movement,
+                mut position,
+            ) in position_q.iter_mut()
+            {
+                shared_behavior::process_movement(
+                    &mut prev_tile_position,
+                    &next_tile_position,
+                    &mut tile_movement,
+                    &mut position,
+                );
+            }
+
             let mut messages = server.receive_tick_buffer_messages(server_tick);
-            for (_user_key, key_command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
-                let Some(entity) = &key_command.entity.get(&server) else {
+            for (_user_key, command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
+                let Some(entity) = &command.entity.get(&server) else {
                     continue;
                 };
-                let Ok(mut position) = position_q.get_mut(*entity) else {
+                let Ok((prev_tile_position,
+                       mut next_tile_position,
+                       mut tile_movement,
+                       _position)) = position_q.get_mut(*entity) else {
                     continue;
                 };
-                shared_behavior::process_command(&key_command, &mut position);
+                shared_behavior::process_command(
+                    &command,
+                    &prev_tile_position,
+                    &mut next_tile_position,
+                    &mut tile_movement,
+                );
             }
         }
     }

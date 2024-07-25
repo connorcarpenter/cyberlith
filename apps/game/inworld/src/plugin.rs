@@ -35,9 +35,9 @@ impl Plugin for InWorldPlugin {
 
                     systems::world_events::spawn_entity_events,
                     systems::world_events::despawn_entity_events,
-                    systems::world_events::insert_position_events,
-                    systems::world_events::update_position_events,
-                    systems::world_events::remove_position_events,
+                    systems::world_events::insert_next_tile_position_events,
+                    systems::world_events::update_next_tile_position_events,
+                    systems::world_events::remove_next_tile_position_events,
 
                     systems::world_events::insert_asset_ref_events,
                     PredictionEvents::process,

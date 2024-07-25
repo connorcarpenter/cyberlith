@@ -1,15 +1,15 @@
 use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
 
-use game_engine::{time::Instant, world::{WorldInsertComponentEvent, components::Position, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
+use game_engine::{time::Instant, world::{constants::MOVEMENT_SPEED, WorldInsertComponentEvent, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
                   render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::info};
 
 use crate::{systems::world_events::PredictionEvents, resources::Global, components::{Confirmed, AnimationState, Interp}};
 
-pub fn insert_position_events(
+pub fn insert_next_tile_position_events(
     mut commands: Commands,
-    position_q: Query<&Position>,
+    position_q: Query<&NextTilePosition>,
     mut prediction_events: ResMut<PredictionEvents>,
-    mut event_reader: EventReader<WorldInsertComponentEvent<Position>>,
+    mut event_reader: EventReader<WorldInsertComponentEvent<NextTilePosition>>,
 ) {
     for event in event_reader.read() {
         let now = Instant::now();
@@ -34,6 +34,9 @@ pub fn insert_position_events(
                 Transform::from_translation(Vec3::splat(0.0))
                     .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
             )
+            .insert(PrevTilePosition::new(*position.x, *position.y))
+            .insert(TileMovement::new(MOVEMENT_SPEED))
+            .insert(Position::new(0.0, 0.0))
             .insert(AnimationState::new())
             // initialize interpolation
             .insert(Interp::new(*position.x, *position.y))
@@ -41,10 +44,10 @@ pub fn insert_position_events(
     }
 }
 
-pub fn update_position_events(
+pub fn update_next_tile_position_events(
     mut global: ResMut<Global>,
-    mut event_reader: EventReader<WorldUpdateComponentEvent<Position>>,
-    mut position_query: Query<&mut Position>,
+    mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
+    mut position_q: Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -72,10 +75,23 @@ pub fn update_position_events(
         }
 
         if let Some(server_tick) = latest_tick {
-            if let Ok([server_position, mut client_position]) =
-                position_query.get_many_mut([server_entity, client_entity])
-            {
+            if let Ok(
+                [(
+                    server_prev_tile_position,
+                    server_next_tile_position,
+                    server_tile_movement,
+                    server_position
+                ), (
+                    mut client_prev_tile_position,
+                    mut client_next_tile_position,
+                    mut client_tile_movement,
+                    mut client_position,
+                )]) = position_q.get_many_mut([server_entity, client_entity]) {
+
                 // Set to authoritative state
+                client_prev_tile_position.mirror(&*server_prev_tile_position);
+                client_next_tile_position.mirror(&*server_next_tile_position);
+                client_tile_movement.mirror(&*server_tile_movement);
                 client_position.mirror(&*server_position);
 
                 // Replay all stored commands
@@ -86,15 +102,16 @@ pub fn update_position_events(
 
                 let replay_commands = global.command_history.replays(&modified_server_tick);
                 for (_command_tick, command) in replay_commands {
-                    shared_behavior::process_command(&command, &mut client_position);
+                    shared_behavior::process_movement(&mut client_prev_tile_position, &client_next_tile_position, &mut client_tile_movement, &mut client_position);
+                    shared_behavior::process_command(&command, &client_prev_tile_position, &mut client_next_tile_position, &mut client_tile_movement);
                 }
             }
         }
     }
 }
 
-pub fn remove_position_events(
-    mut event_reader: EventReader<WorldRemoveComponentEvent<Position>>
+pub fn remove_next_tile_position_events(
+    mut event_reader: EventReader<WorldRemoveComponentEvent<NextTilePosition>>
 ) {
     for _event in event_reader.read() {
         info!("removed Position component from entity");

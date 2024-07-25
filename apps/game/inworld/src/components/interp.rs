@@ -28,14 +28,14 @@ impl Interp {
         }
     }
 
-    pub(crate) fn next_position(&mut self, next_x: i16, next_y: i16) {
+    pub(crate) fn next_position(&mut self, next_x: f32, next_y: f32) {
         self.interp = 0.0;
         self.last_x = self.next_x;
         self.last_y = self.next_y;
         self.interp_x = self.next_x;
         self.interp_y = self.next_y;
-        self.next_x = next_x as f32;
-        self.next_y = next_y as f32;
+        self.next_x = next_x;
+        self.next_y = next_y;
     }
 
     pub(crate) fn interpolate(&mut self, interpolation: f32) {

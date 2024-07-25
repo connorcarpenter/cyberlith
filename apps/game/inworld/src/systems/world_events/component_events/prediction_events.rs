@@ -4,7 +4,7 @@ use bevy_ecs::{system::{Commands, ResMut}, entity::Entity, prelude::{Resource, Q
 
 use game_engine::{
     logging::info,
-    world::components::Position,
+    world::{components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, constants::MOVEMENT_SPEED},
     asset::{AssetHandle, UnitData},
     naia::Replicate,
     render::components::{RenderLayers, Transform, Visibility},
@@ -12,6 +12,7 @@ use game_engine::{
 };
 
 use crate::{resources::{Global, OwnedEntity}, components::{AnimationState, Interp, Predicted}};
+
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -43,7 +44,7 @@ impl PredictionEvents {
         mut commands: Commands,
         mut global: ResMut<Global>,
         mut prediction_events: ResMut<PredictionEvents>,
-        position_q: Query<&Position>,
+        position_q: Query<&NextTilePosition>,
     ) {
         prediction_events.prune();
 
@@ -57,11 +58,14 @@ impl PredictionEvents {
             let prediction_entity = commands
                 .spawn_empty()
                 .id();
-            let mut prediction_position = Position::new(*position.x, *position.y);
+            let mut prediction_position = NextTilePosition::new(*position.x, *position.y);
             prediction_position.localize();
             commands
                 .entity(prediction_entity)
                 .insert(prediction_position)
+                .insert(PrevTilePosition::new(*position.x, *position.y))
+                .insert(TileMovement::new(MOVEMENT_SPEED))
+                .insert(Position::new(0.0, 0.0))
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
                 .insert(Transform::default())
