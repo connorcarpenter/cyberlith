@@ -1,20 +1,22 @@
-mod avatar;
+
 mod catalog;
-mod animated_model;
+mod animated_models;
+mod movement_configs;
+mod writers;
 
-use asset_id::{AssetId, ETag};
-use spec::AnimatedModel;
-
-use crate::animated_model::write_to_file;
+use writers::{
+    movement_config::write_to_file as write_movement_config,
+    animated_model::write_to_file as write_animated_model,
+};
 
 fn main() {
-    load_spec(avatar::define()); // avatar animated model
-}
+    // avatar.animated_model
+    write_animated_model(
+        animated_models::avatar::define()
+    );
 
-pub(crate) fn load_spec(
-    spec_define: (String, AssetId, ETag, AnimatedModel),
-) {
-    let (spec_name, spec_asset_id, spec_etag, spec) = spec_define;
-
-    write_to_file(&spec_name, &spec_asset_id, &spec_etag, spec);
+    // avatar.movement_config
+    write_movement_config(
+        movement_configs::avatar::define()
+    );
 }

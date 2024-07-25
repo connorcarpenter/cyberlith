@@ -1,13 +1,14 @@
-// use asset_id::AssetId;
-//
-// use crate::json::{Asset, AssetData, AssetMeta, MovementConfigJson};
-//
-// impl MovementConfigJson {
-//     pub fn write(&self, asset_id: &AssetId) -> Box<[u8]> {
-//         let new_meta = AssetMeta::new(asset_id, Self::CURRENT_SCHEMA_VERSION);
-//         let asset = Asset::new(new_meta, AssetData::MovementConfig(self.clone()));
-//         serde_json::to_vec_pretty(&asset)
-//             .unwrap()
-//             .into_boxed_slice()
-//     }
-// }
+
+use spec::MovementConfig;
+
+use crate::json::MovementConfigJson;
+
+impl From<&MovementConfig> for MovementConfigJson {
+    fn from(value: &MovementConfig) -> Self {
+        let mut me = Self::new();
+
+        me.set_max_velocity(value.max_velocity());
+
+        me
+    }
+}

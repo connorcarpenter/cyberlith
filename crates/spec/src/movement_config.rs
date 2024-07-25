@@ -8,4 +8,8 @@ impl MovementConfig {
             max_velocity,
         }
     }
+
+    pub fn max_velocity(&self) -> f32 {
+        self.max_velocity
+    }
 }

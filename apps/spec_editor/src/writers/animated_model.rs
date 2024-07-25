@@ -2,7 +2,10 @@ use asset_id::{AssetId, AssetType, ETag};
 use asset_serde::{json::{AnimatedModelJson, Asset, AssetData, AssetMeta}, bits::{AnimatedModelBits, AssetMetadataSerde}};
 use spec::AnimatedModel;
 
-pub(crate) fn write_to_file(name: &str, spec_asset_id: &AssetId, spec_etag: &ETag, spec: AnimatedModel) -> AnimatedModel {
+pub(crate) fn write_to_file(definition: (String, AssetId, ETag, AnimatedModel)) -> AnimatedModel {
+
+    let (name, spec_asset_id, spec_etag, spec) = definition;
+
     let spec_asset_id_str = spec_asset_id.to_string();
 
     // spec -> JSON bytes
@@ -40,7 +43,7 @@ pub(crate) fn write_to_file(name: &str, spec_asset_id: &AssetId, spec_etag: &ETa
 
     // write metadata to file
     {
-        let metadata = AssetMetadataSerde::new(*spec_etag, AssetType::AnimatedModel);
+        let metadata = AssetMetadataSerde::new(spec_etag, AssetType::AnimatedModel);
         let metadata_bytes = metadata.to_bytes();
         std::fs::write(format!("output/{}.meta", spec_asset_id_str), &metadata_bytes).unwrap();
     }

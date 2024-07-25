@@ -1,14 +1,10 @@
-// use crate::{
-//     error::AssetIoError,
-//     json::{Asset, AssetData, AssetMeta, MovementConfigJson},
-// };
-//
-// impl MovementConfigJson {
-//     pub fn read(bytes: &[u8]) -> Result<(AssetMeta, Self), AssetIoError> {
-//         let (meta, data) = Asset::read(bytes)?.deconstruct();
-//         let AssetData::MovementConfig(data) = data else {
-//             return Err(AssetIoError::Message("Invalid Asset Type".to_string()));
-//         };
-//         return Ok((meta, data));
-//     }
-// }
+
+use spec::MovementConfig;
+
+use crate::json::MovementConfigJson;
+
+impl Into<MovementConfig> for MovementConfigJson {
+    fn into(self) -> MovementConfig {
+        MovementConfig::new(self.max_velocity)
+    }
+}

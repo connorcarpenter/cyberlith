@@ -1,6 +1,14 @@
 use naia_serde::{FileBitWriter, SerdeInternal as Serde};
 
+use spec::MovementConfig;
+
 use crate::bits::{movement_config::VelocitySerdeInt, MovementConfigBits};
+
+impl From<&MovementConfig> for MovementConfigBits {
+    fn from(value: &MovementConfig) -> Self {
+        Self::new(value.max_velocity())
+    }
+}
 
 impl Into<Vec<u8>> for MovementConfigBits {
     fn into(self) -> Vec<u8> {
