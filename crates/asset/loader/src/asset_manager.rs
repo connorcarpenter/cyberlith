@@ -9,7 +9,7 @@ use render_api::{
 };
 use storage::Storage;
 
-use crate::{processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData};
+use crate::{processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, UnitData, AnimatedModelData, MovementConfigData};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -61,6 +61,8 @@ impl AssetManager {
         &mut self.store
     }
 
+    // Icon
+
     pub fn get_icon_frame_count(&self, handle: &AssetHandle<IconData>) -> usize {
         let data = self.store.icons.get(handle).unwrap();
         data.get_subimage_count()
@@ -90,6 +92,8 @@ impl AssetManager {
         self.store.get_icon_frame_height(handle, index)
     }
 
+    // Animation
+
     pub fn get_animation_duration_ms(&self, handle: &AssetHandle<AnimationData>) -> f32 {
         let data = self.store.animations.get(handle).unwrap();
         data.get_duration_ms()
@@ -98,5 +102,18 @@ impl AssetManager {
     pub fn get_animation_frame_count(&self, handle: &AssetHandle<AnimationData>) -> usize {
         let data = self.store.animations.get(handle).unwrap();
         data.get_frame_count()
+    }
+
+    // Unit
+
+    pub fn get_unit_animated_model_handle(&self, handle: &AssetHandle<UnitData>) -> Option<&AssetHandle<AnimatedModelData>> {
+        let unit = self.store.units.get(handle)?;
+        unit.get_animated_model_file_handle()
+    }
+
+    pub fn get_unit_movement_config(&self, handle: &AssetHandle<UnitData>) -> Option<&MovementConfigData> {
+        let unit = self.store.units.get(handle)?;
+        let movement_config_handle = unit.get_movement_config_file_handle()?;
+        self.store.movement_configs.get(movement_config_handle)
     }
 }

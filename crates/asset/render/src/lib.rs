@@ -1,9 +1,6 @@
 use logging::warn;
 
-use asset_loader::{
-    AnimationData, AssetComponentHandle, AssetHandle, AssetManager, IconData, MeshData, ModelData,
-    ProcessedAssetStore, SceneData, SkinData, UiTextMeasurer,
-};
+use asset_loader::{AnimatedModelData, AssetComponentHandle, AssetHandle, AssetManager, IconData, MeshData, ModelData, ProcessedAssetStore, SceneData, SkinData, UiTextMeasurer};
 use render_api::{
     base::CpuMaterial,
     components::{RenderLayer, Transform},
@@ -71,8 +68,8 @@ pub trait AssetRender {
     fn draw_animated_model(
         &self,
         render_frame: &mut RenderFrame,
-        model_handle: &AssetHandle<ModelData>,
-        animation_handle: &AssetHandle<AnimationData>,
+        animated_model_handle: &AssetHandle<AnimatedModelData>,
+        animation_name: &str,
         parent_transform: &Transform,
         frame_time_ms: f32,
         render_layer_opt: Option<&RenderLayer>,
@@ -207,8 +204,8 @@ impl AssetRender for AssetManager {
     fn draw_animated_model(
         &self,
         render_frame: &mut RenderFrame,
-        model_handle: &AssetHandle<ModelData>,
-        animation_handle: &AssetHandle<AnimationData>,
+        animated_model_handle: &AssetHandle<AnimatedModelData>,
+        animation_name: &str,
         parent_transform: &Transform,
         frame_time_ms: f32,
         render_layer_opt: Option<&RenderLayer>,
@@ -217,8 +214,8 @@ impl AssetRender for AssetManager {
             render_frame,
             render_layer_opt,
             self.get_store(),
-            model_handle,
-            animation_handle,
+            animated_model_handle,
+            animation_name,
             parent_transform,
             frame_time_ms,
         );
@@ -470,11 +467,24 @@ impl AssetRenderer {
         render_frame: &mut RenderFrame,
         render_layer_opt: Option<&RenderLayer>,
         asset_store: &ProcessedAssetStore,
-        model_handle: &AssetHandle<ModelData>,
-        animation_handle: &AssetHandle<AnimationData>,
+        animated_model_handle: &AssetHandle<AnimatedModelData>,
+        animation_name: &str,
         parent_transform: &Transform,
         frame_time_ms: f32,
     ) {
+        let Some(animated_model_data) = asset_store.animated_models.get(animated_model_handle) else {
+            warn!(
+                "animated model data not loaded 1: {:?}",
+                animated_model_handle.asset_id()
+            );
+            return;
+        };
+        let Some(model_handle) = animated_model_data.get_model_file_handle() else {
+            return;
+        };
+        let Some(animation_handle) = animated_model_data.get_animation_handle(animation_name) else {
+            return;
+        };
         let Some(model_data) = asset_store.models.get(model_handle) else {
             warn!("model data not loaded 1: {:?}", model_handle.asset_id());
             return;

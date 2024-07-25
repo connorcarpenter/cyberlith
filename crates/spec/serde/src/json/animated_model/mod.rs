@@ -41,6 +41,10 @@ impl AnimatedModelJson {
 
         output.push(self.get_model_asset_id());
 
+        for (_, asset_id) in self.animations.iter() {
+            output.push(AssetId::from_str(asset_id).unwrap());
+        }
+
         output
     }
 

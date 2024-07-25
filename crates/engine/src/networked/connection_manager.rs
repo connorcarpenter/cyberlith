@@ -169,8 +169,8 @@ impl ConnectionManager {
             }
             for asset_message in events.read::<AssetRequestsChannel, LoadAssetWithData>() {
                 info!(
-                    "received Asset Data Message from Session Server! (id: {:?}, etag: {:?})",
-                    asset_message.asset_id, asset_message.asset_etag
+                    "received Asset Data Message from Session Server! (id: {:?}, etag: {:?}, type: {:?})",
+                    asset_message.asset_id, asset_message.asset_etag, asset_message.asset_type,
                 );
 
                 let LoadAssetWithData {

@@ -3,7 +3,7 @@ use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection:
 use game_engine::{world::{WorldInsertComponentEvent, components::Position, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
                   render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::{info, warn}};
 
-use crate::{resources::Global, components::{Confirmed, Interp}};
+use crate::{resources::Global, components::{Confirmed, AnimationState, Interp}};
 
 pub fn insert_position_events(
     mut commands: Commands,
@@ -29,6 +29,7 @@ pub fn insert_position_events(
                     Transform::from_translation(Vec3::splat(0.0))
                         .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
                 )
+                .insert(AnimationState::new())
                 // initialize interpolation
                 .insert(Interp::new(*position.x, *position.y))
                 .insert(Confirmed);

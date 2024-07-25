@@ -34,13 +34,11 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::update_position_events,
                     systems::world_events::remove_position_events,
                     systems::world_events::message_events,
-                    systems::world_events::late_animation_handle_add,
-                    systems::world_events::late_model_handle_add,
+                    systems::world_events::late_unit_handle_add,
 
                     systems::assets::main_insert_asset_ref_events,
-                    systems::assets::alt1_insert_asset_ref_events,
 
-                    systems::render::draw_models,
+                    systems::render::draw_units,
                 )
                     .run_if(in_state(AppState::InGame))
                     .in_set(ReceiveEvents)
