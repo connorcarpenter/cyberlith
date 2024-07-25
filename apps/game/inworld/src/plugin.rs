@@ -2,10 +2,11 @@
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::{prelude::in_state, prelude::not, schedule::{IntoSystemConfigs, IntoSystemSetConfigs}};
 
-use game_app_common::AppState;
 use game_engine::naia::ReceiveEvents;
 
-use crate::{systems, resources::Global};
+use game_app_common::AppState;
+
+use crate::{systems, systems::world_events::PredictionEvents, resources::Global};
 
 pub struct InWorldPlugin;
 
@@ -14,6 +15,7 @@ impl Plugin for InWorldPlugin {
         app
             // resources
             .init_resource::<Global>()
+            .init_resource::<PredictionEvents>()
             // systems
             .add_systems(
                 Update,
@@ -37,8 +39,8 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::update_position_events,
                     systems::world_events::remove_position_events,
 
-                    systems::world_events::main_unit_handle_add,
-                    systems::world_events::late_unit_handle_add,
+                    systems::world_events::insert_asset_ref_events,
+                    PredictionEvents::process,
 
                     systems::render::draw_units,
                 )

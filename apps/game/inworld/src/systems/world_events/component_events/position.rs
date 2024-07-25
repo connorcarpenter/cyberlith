@@ -1,13 +1,14 @@
 use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
 
 use game_engine::{world::{WorldInsertComponentEvent, components::Position, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
-                  render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::{info, warn}};
+                  render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::info};
 
-use crate::{resources::Global, components::{Confirmed, AnimationState, Interp}};
+use crate::{systems::world_events::PredictionEvents, resources::Global, components::{Confirmed, AnimationState, Interp}};
 
 pub fn insert_position_events(
     mut commands: Commands,
     position_q: Query<&Position>,
+    mut prediction_events: ResMut<PredictionEvents>,
     mut event_reader: EventReader<WorldInsertComponentEvent<Position>>,
 ) {
     for event in event_reader.read() {
@@ -17,7 +18,10 @@ pub fn insert_position_events(
             "received Inserted Component: `Position` from World Server! (entity: {:?})",
             entity
         );
+
         if let Ok(position) = position_q.get(entity) {
+
+            prediction_events.read_insert_position_event(&entity);
 
             let layer = RenderLayers::layer(0);
 
@@ -34,7 +38,7 @@ pub fn insert_position_events(
                 .insert(Interp::new(*position.x, *position.y))
                 .insert(Confirmed);
         } else {
-            warn!("entity does not have Position component");
+            panic!("entity does not have Position component");
         }
     }
 }
