@@ -3,6 +3,7 @@ use bevy_ecs::{prelude::Commands, event::EventReader, change_detection::ResMut};
 use game_engine::{
     world::{messages::EntityAssignment, WorldClient, WorldMessageEvents, channels::EntityAssignmentChannel},
     logging::info,
+    time::Instant,
 };
 
 use crate::{systems::world_events::PredictionEvents, resources::Global};
@@ -16,13 +17,14 @@ pub fn message_events(
 ) {
     for events in message_events.read() {
         for message in events.read::<EntityAssignmentChannel, EntityAssignment>() {
+            let now = Instant::now();
             let assign = message.assign;
 
             let entity = message.entity.get(&client).unwrap();
             if assign {
                 info!("gave ownership of entity: {:?}", entity);
 
-                prediction_events.read_entity_assignment_event(&entity);
+                prediction_events.read_entity_assignment_event(&now, &entity);
             } else {
                 let mut disowned: bool = false;
                 if let Some(owned_entity) = &global.owned_entity {

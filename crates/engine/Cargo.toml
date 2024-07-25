@@ -34,6 +34,7 @@ random = { path = "../random" }
 kernel = { path = "../kernel" }
 logging = { path = "../logging" }
 social_server_types = { path = "../../services/social/types" }
+instant = { path = "../instant" }
 
 # Networked Dependencies
 session_server_naia_proto = { path = "../../services/session/naia_proto", optional = true }

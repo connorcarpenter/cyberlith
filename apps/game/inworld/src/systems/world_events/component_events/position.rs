@@ -1,6 +1,6 @@
 use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
 
-use game_engine::{world::{WorldInsertComponentEvent, components::Position, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
+use game_engine::{time::Instant, world::{WorldInsertComponentEvent, components::Position, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
                   render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::info};
 
 use crate::{systems::world_events::PredictionEvents, resources::Global, components::{Confirmed, AnimationState, Interp}};
@@ -12,6 +12,7 @@ pub fn insert_position_events(
     mut event_reader: EventReader<WorldInsertComponentEvent<Position>>,
 ) {
     for event in event_reader.read() {
+        let now = Instant::now();
         let entity = event.entity;
 
         info!(
@@ -19,27 +20,24 @@ pub fn insert_position_events(
             entity
         );
 
-        if let Ok(position) = position_q.get(entity) {
+        let position = position_q.get(entity).unwrap();
 
-            prediction_events.read_insert_position_event(&entity);
+        prediction_events.read_insert_position_event(&now, &entity);
 
-            let layer = RenderLayers::layer(0);
+        let layer = RenderLayers::layer(0);
 
-            commands
-                .entity(entity)
-                .insert(layer)
-                .insert(Visibility::default())
-                .insert(
-                    Transform::from_translation(Vec3::splat(0.0))
-                        .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
-                )
-                .insert(AnimationState::new())
-                // initialize interpolation
-                .insert(Interp::new(*position.x, *position.y))
-                .insert(Confirmed);
-        } else {
-            panic!("entity does not have Position component");
-        }
+        commands
+            .entity(entity)
+            .insert(layer)
+            .insert(Visibility::default())
+            .insert(
+                Transform::from_translation(Vec3::splat(0.0))
+                    .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
+            )
+            .insert(AnimationState::new())
+            // initialize interpolation
+            .insert(Interp::new(*position.x, *position.y))
+            .insert(Confirmed);
     }
 }
 

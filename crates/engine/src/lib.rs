@@ -28,6 +28,9 @@ pub mod asset {
     };
     pub use asset_render::AssetRender;
 }
+pub mod time {
+    pub use instant::Instant;
+}
 pub mod input {
     pub use input::*;
 }

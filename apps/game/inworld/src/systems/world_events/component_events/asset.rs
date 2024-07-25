@@ -1,6 +1,6 @@
 use bevy_ecs::{event::EventReader, prelude::Commands, change_detection::ResMut};
 
-use game_engine::{logging::info, asset::{AssetType, AssetHandle, UnitData}, world::{components::Main, WorldInsertAssetRefEvent}};
+use game_engine::{time::Instant, logging::info, asset::{AssetType, AssetHandle, UnitData}, world::{components::Main, WorldInsertAssetRefEvent}};
 
 use crate::{systems::world_events::PredictionEvents};
 
@@ -24,11 +24,14 @@ pub fn insert_asset_ref_events(
 
                 info!("entity {:?} : received Unit asset", entity);
 
-                prediction_events.read_insert_unit_asset_ref_event(&entity);
+                let now = Instant::now();
+                let unit_data_handle = AssetHandle::<UnitData>::new(asset_id);
+
+                prediction_events.read_insert_unit_asset_ref_event(&now, &entity, &unit_data_handle);
 
                 commands
                     .entity(entity)
-                    .insert(AssetHandle::<UnitData>::new(asset_id));
+                    .insert(unit_data_handle);
             }
             AssetType::Ui => {
                 panic!("should not be inserting Ui this way");
