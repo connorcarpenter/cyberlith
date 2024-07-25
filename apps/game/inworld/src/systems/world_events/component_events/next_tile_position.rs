@@ -1,9 +1,9 @@
 use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
 
-use game_engine::{time::Instant, world::{constants::MOVEMENT_SPEED, WorldInsertComponentEvent, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
+use game_engine::{time::Instant, world::{constants::{MOVEMENT_SPEED, TILE_SIZE}, WorldInsertComponentEvent, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
                   render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::info};
 
-use crate::{systems::world_events::PredictionEvents, resources::Global, components::{Confirmed, AnimationState, Interp}};
+use crate::{systems::world_events::PredictionEvents, resources::Global, components::{BufferedNextTilePosition, Confirmed, AnimationState, Interp}};
 
 pub fn insert_next_tile_position_events(
     mut commands: Commands,
@@ -16,7 +16,7 @@ pub fn insert_next_tile_position_events(
         let entity = event.entity;
 
         info!(
-            "received Inserted Component: `Position` from World Server! (entity: {:?})",
+            "received Inserted Component: `NextTilePosition` from World Server! (entity: {:?})",
             entity
         );
 
@@ -35,6 +35,7 @@ pub fn insert_next_tile_position_events(
                     .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
             )
             .insert(PrevTilePosition::new(*position.x, *position.y))
+            .insert(BufferedNextTilePosition::new(*position.x, *position.y))
             .insert(TileMovement::new(MOVEMENT_SPEED))
             .insert(Position::new(0.0, 0.0))
             .insert(AnimationState::new())
@@ -47,21 +48,58 @@ pub fn insert_next_tile_position_events(
 pub fn update_next_tile_position_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
-    mut position_q: Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position)>,
+    mut position_q: Query<(&mut PrevTilePosition, &mut BufferedNextTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
     // So we roll the Prediction back to the authoritative Server state
     // and then execute all Player Commands since that tick, using the CommandHistory helper struct
+
+    let mut events = Vec::new();
+    for event in event_reader.read() {
+        let server_tick = event.tick;
+        let updated_entity = event.entity;
+
+        let Ok(
+            (
+                mut prev_tile_position,
+                mut buffered_tile_position,
+                next_tile_position,
+                mut tile_movement,
+                _,
+            )
+        ) = position_q.get_mut(updated_entity) else {
+            panic!("failed to get updated components for entity: {:?}", updated_entity);
+        };
+
+        let last_next_tile_position = buffered_tile_position.clone();
+        buffered_tile_position.x = *next_tile_position.x;
+        buffered_tile_position.y = *next_tile_position.y;
+
+        prev_tile_position.x = last_next_tile_position.x;
+        prev_tile_position.y = last_next_tile_position.y;
+
+        tile_movement.distance = 0.0;
+        let x_axis_changed = *next_tile_position.x != prev_tile_position.x;
+        let y_axis_changed = *next_tile_position.y != prev_tile_position.y;
+        if !x_axis_changed && !y_axis_changed {
+            panic!("is this possible?");
+        }
+        tile_movement.distance_max = if x_axis_changed && y_axis_changed {
+            std::f32::consts::SQRT_2 * TILE_SIZE
+        } else {
+            TILE_SIZE
+        };
+
+        events.push((server_tick, updated_entity));
+    }
+
     if let Some(owned_entity) = &global.owned_entity {
         let mut latest_tick: Option<Tick> = None;
         let server_entity = owned_entity.confirmed;
         let client_entity = owned_entity.predicted;
 
-        for event in event_reader.read() {
-            let server_tick = event.tick;
-            let updated_entity = event.entity;
-
+        for (server_tick, updated_entity) in events {
             // If entity is owned
             if updated_entity == server_entity {
                 if let Some(last_tick) = &mut latest_tick {
@@ -78,11 +116,13 @@ pub fn update_next_tile_position_events(
             if let Ok(
                 [(
                     server_prev_tile_position,
+                    _,
                     server_next_tile_position,
                     server_tile_movement,
                     server_position
                 ), (
                     mut client_prev_tile_position,
+                    _,
                     mut client_next_tile_position,
                     mut client_tile_movement,
                     mut client_position,
