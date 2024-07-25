@@ -1,9 +1,11 @@
-use std::collections::HashMap;
+
+use std::{any::TypeId, collections::HashMap};
 
 use bevy_ecs::{
     world::World,
     entity::Entity,
-    prelude::{Resource, Query},
+    query::Added,
+    prelude::{Resource,RemovedComponents, Query},
     system::{Res, SystemState, Commands, ResMut},
 };
 
@@ -86,6 +88,7 @@ impl UserAssetData {
 pub struct AssetManager {
     user_key_to_data_map: HashMap<UserKey, UserAssetData>,
     asset_id_to_data_map: HashMap<AssetId, AssetData>,
+    type_to_asset_ref_entity_map: HashMap<TypeId, HashMap<Entity, AssetId>>,
     asset_response_keys: Vec<ResponseKey<UserAssetIdResponse>>,
 }
 
@@ -94,6 +97,7 @@ impl Default for AssetManager {
         Self {
             user_key_to_data_map: HashMap::new(),
             asset_id_to_data_map: HashMap::new(),
+            type_to_asset_ref_entity_map: HashMap::new(),
             asset_response_keys: Vec::new(),
         }
     }
@@ -174,57 +178,8 @@ impl AssetManager {
         // 4. determine if any entities that have gone into or out of scope have AssetRef components
         let mut asset_id_entity_actions = Vec::new();
 
-        {
-            let mut system_state: SystemState<(
-                Server,
-                Query<&AssetEntry>,
-                Query<&AssetRef<Main>>,
-                Query<&AssetRef<Alt1>>,
-            )> = SystemState::new(world);
-            let (server, asset_entry_q, asset_ref_main_q, asset_ref_alt1_q) =
-                system_state.get_mut(world);
-
-            for ((user_key, entity), include) in scope_actions.iter() {
-                // determine if entity has any AssetRef components
-                info!("Checking entity for AssetRefs: {:?}", entity);
-
-                // AssetRef<Main>
-                if let Ok(asset_ref) = asset_ref_main_q.get(*entity) {
-                    let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
-                    let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
-
-                    info!(
-                    "entity {:?} has AssetRef<Main>(asset_id: {:?})",
-                    entity, asset_id
-                );
-
-                    asset_id_entity_actions.push((*user_key, asset_id, *include));
-                }
-                // AssetRef<Alt1>
-                if let Ok(asset_ref) = asset_ref_alt1_q.get(*entity) {
-                    let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
-                    let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
-
-                    info!(
-                    "entity {:?} has AssetRef<Alt1>(asset_id: {:?})",
-                    entity, asset_id
-                );
-
-                    asset_id_entity_actions.push((*user_key, asset_id, *include));
-                }
-                // this is unecessary, just for logging
-                if let Ok(asset_entry) = asset_entry_q.get(*entity) {
-                    let asset_id = *asset_entry.asset_id;
-
-                    info!(
-                    "entity {:?} has AssetEntry(asset_id: {:?})",
-                    entity, asset_id
-                );
-                }
-
-                // TODO: put other AssetRef<Marker> components here .. also could clean this up somehow??
-            }
-        }
+        Self::get_asset_id_entity_actions::<Main>(world, &scope_actions, &mut asset_id_entity_actions);
+        Self::get_asset_id_entity_actions::<Alt1>(world, &scope_actions, &mut asset_id_entity_actions);
 
         if asset_id_entity_actions.is_empty() {
             return;
@@ -255,6 +210,50 @@ impl AssetManager {
                 asset_id_entity_actions,
             );
         };
+    }
+
+    fn get_asset_id_entity_actions<T: Send + Sync + 'static>(
+        world: &mut World,
+        scope_actions: &HashMap<(UserKey, Entity), bool>,
+        asset_id_entity_actions: &mut Vec<(UserKey, AssetId, bool)>
+    ) {
+        let marker_type_id = TypeId::of::<T>();
+
+        let mut system_state: SystemState<(
+            Server,
+            ResMut<AssetManager>,
+            Query<&AssetEntry>,
+            Query<&AssetRef<T>>,
+        )> = SystemState::new(world);
+        let (
+            server,
+            mut asset_manager,
+            asset_entry_q,
+            asset_ref_q,
+        ) = system_state.get_mut(world);
+
+        for ((user_key, entity), include) in scope_actions.iter() {
+            // determine if entity has any AssetRef components
+            info!("Checking entity for AssetRefs: {:?}", entity);
+
+            // AssetRef<Main>
+            if let Ok(asset_ref) = asset_ref_q.get(*entity) {
+                let asset_id_entity = asset_ref.asset_id_entity.get(&server).unwrap();
+                let asset_id = *asset_entry_q.get(asset_id_entity).unwrap().asset_id;
+
+                info!(
+                    "entity {:?} has AssetRef(asset_id: {:?})",
+                    entity, asset_id
+                );
+
+                if *include {
+                    asset_manager.insert_asset_ref_entity(&marker_type_id, entity, &asset_id);
+                } else {
+                    asset_manager.remove_asset_ref_entity(&marker_type_id, entity);
+                }
+                asset_id_entity_actions.push((*user_key, asset_id, *include));
+            }
+        }
     }
 
     fn handle_scope_actions(
@@ -345,13 +344,113 @@ impl AssetManager {
     fn set_user_asset_response_key(&mut self, response_key: ResponseKey<UserAssetIdResponse>) {
         self.asset_response_keys.push(response_key);
     }
+
+    fn insert_asset_ref_entity(&mut self, marker_type_id: &TypeId, entity: &Entity, asset_id: &AssetId) {
+        if !self.type_to_asset_ref_entity_map.contains_key(marker_type_id) {
+            self.type_to_asset_ref_entity_map.insert(*marker_type_id, HashMap::new());
+        }
+        let asset_ref_entity_map = self.type_to_asset_ref_entity_map.get_mut(marker_type_id).unwrap();
+        asset_ref_entity_map.insert(*entity, *asset_id);
+    }
+
+    fn remove_asset_ref_entity(&mut self, marker_type_id: &TypeId, entity: &Entity) -> Option<AssetId> {
+        let asset_ref_entity_map = self.type_to_asset_ref_entity_map.get_mut(marker_type_id)?;
+        let result = asset_ref_entity_map.remove(entity);
+        if asset_ref_entity_map.is_empty() {
+            self.type_to_asset_ref_entity_map.remove(marker_type_id);
+        }
+        result
+    }
 }
 
-pub fn update(mut asset_manager: ResMut<AssetManager>, mut http_client: ResMut<HttpClient>) {
+// Systems
+
+pub fn update(
+    mut asset_manager: ResMut<AssetManager>,
+    mut http_client: ResMut<HttpClient>
+) {
     asset_manager.update(&mut http_client);
 }
 
-pub fn handle_asset_ref_events(mut asset_manager: ResMut<AssetManager>) {
-    todo!()
+pub fn handle_asset_ref_added_events<T: Send + Sync + 'static>(
+    mut server: Server,
+    mut asset_manager: ResMut<AssetManager>,
+    world_instance: Res<WorldInstance>,
+    user_manager: Res<UserManager>,
+    mut http_client: ResMut<HttpClient>,
+    asset_entry_q: Query<&AssetEntry>,
+    asset_ref_main_q: Query<(Entity, &AssetRef<T>), Added<AssetRef<T>>>,
+) {
+    let mut entities = Vec::new();
+    for (entity, _) in asset_ref_main_q.iter() {
+        entities.push(entity);
+    }
+
+    if entities.is_empty() {
+        return;
+    }
+
+    let marker_type_id = TypeId::of::<T>();
+    let mut asset_ref_actions = Vec::new();
+    let user_keys = server.user_keys();
+
+    for entity in entities {
+        for user_key in user_keys.iter() {
+            if server.user_scope(&user_key).has(&entity) {
+                let (_, asset_ref) = asset_ref_main_q.get(entity).unwrap();
+                let asset_entry_entity = asset_ref.asset_id_entity.get(&server).unwrap();
+                let asset_entry = asset_entry_q.get(asset_entry_entity).unwrap();
+                let asset_id = *asset_entry.asset_id;
+                asset_manager.insert_asset_ref_entity(&marker_type_id, &entity, &asset_id);
+                asset_ref_actions.push((*user_key, asset_id, true));
+            }
+        }
+    }
+
+    asset_manager.handle_scope_actions(
+        &mut server,
+        &world_instance,
+        &user_manager,
+        &mut http_client,
+        asset_ref_actions,
+    );
 }
 
+pub fn handle_asset_ref_removed_events<T: Send + Sync + 'static>(
+    mut server: Server,
+    mut asset_manager: ResMut<AssetManager>,
+    world_instance: Res<WorldInstance>,
+    user_manager: Res<UserManager>,
+    mut http_client: ResMut<HttpClient>,
+    mut removals: RemovedComponents<AssetRef<T>>,
+) {
+    let mut entities = Vec::new();
+    for entity in removals.read() {
+        entities.push(entity);
+    }
+
+    if entities.is_empty() {
+        return;
+    }
+
+    let mut asset_ref_actions = Vec::new();
+    let type_id = TypeId::of::<T>();
+    let user_keys = server.user_keys();
+
+    for entity in entities {
+        for user_key in user_keys.iter() {
+            if server.user_scope(&user_key).has(&entity) {
+                let asset_id = asset_manager.remove_asset_ref_entity(&type_id, &entity).unwrap();
+                asset_ref_actions.push((*user_key, asset_id, false));
+            }
+        }
+    }
+
+    asset_manager.handle_scope_actions(
+        &mut server,
+        &world_instance,
+        &user_manager,
+        &mut http_client,
+        asset_ref_actions,
+    );
+}
