@@ -4,7 +4,7 @@ use bevy_ecs::{system::{Commands, ResMut}, entity::Entity, prelude::{Resource, Q
 
 use game_engine::{
     logging::info,
-    world::{components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, constants::MOVEMENT_SPEED},
+    world::{WorldClient, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, constants::{MOVEMENT_SPEED, TILE_SIZE}},
     asset::{AssetHandle, UnitData},
     naia::Replicate,
     render::components::{RenderLayers, Transform, Visibility},
@@ -12,7 +12,6 @@ use game_engine::{
 };
 
 use crate::{resources::{Global, OwnedEntity}, components::{AnimationState, Interp, Predicted}};
-
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -41,6 +40,7 @@ impl PredictionEvents {
 
     // used as a system
     pub fn process(
+        client: WorldClient,
         mut commands: Commands,
         mut global: ResMut<Global>,
         mut prediction_events: ResMut<PredictionEvents>,
@@ -52,27 +52,37 @@ impl PredictionEvents {
         for (future_prediction_entity, unit_data_handle) in future_prediction_entities {
             info!("future prediction entity is ready for processing: {:?}", future_prediction_entity);
 
+            let client_tick = client.client_tick().unwrap();
+
             // Here we create a local copy of the Player entity, to use for client-side prediction
-            let position = position_q.get(future_prediction_entity).unwrap();
+            let next_tile_position = position_q.get(future_prediction_entity).unwrap();
 
             let prediction_entity = commands
                 .spawn_empty()
                 .id();
-            let mut prediction_position = NextTilePosition::new(*position.x, *position.y);
-            prediction_position.localize();
+
+            let mut predicted_next_tile_position = NextTilePosition::new(*next_tile_position.x, *next_tile_position.y);
+            predicted_next_tile_position.localize();
+            let position = Position::new(true, client_tick, *next_tile_position.x as f32 * TILE_SIZE, *next_tile_position.y as f32 * TILE_SIZE);
+            let interp = Interp::new(&position);
+
             commands
                 .entity(prediction_entity)
-                .insert(prediction_position)
-                .insert(PrevTilePosition::new(*position.x, *position.y))
-                .insert(TileMovement::new(MOVEMENT_SPEED))
-                .insert(Position::new(0.0, 0.0))
+
+                // Position stuff
+                .insert(predicted_next_tile_position)
+                .insert(PrevTilePosition::new(*next_tile_position.x, *next_tile_position.y))
+                .insert(TileMovement::new(true, client_tick, MOVEMENT_SPEED))
+                .insert(position)
+                .insert(interp)
+
+                // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
                 .insert(Transform::default())
                 .insert(AnimationState::new())
                 .insert(unit_data_handle.clone())
-                // insert interpolation component
-                .insert(Interp::new(*position.x, *position.y))
+
                 // mark as predicted
                 .insert(Predicted);
 

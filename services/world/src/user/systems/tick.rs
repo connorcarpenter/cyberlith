@@ -72,6 +72,7 @@ pub fn tick_events(world: &mut World) {
                     *next_tile_position.y,
                     &mut tile_movement,
                     &mut position,
+                    *server_tick,
                 );
             }
 

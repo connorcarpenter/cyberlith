@@ -1,30 +1,48 @@
 use bevy_ecs::prelude::Component;
 
-use game_engine::world::components::Position;
+use game_engine::{naia::Tick, world::components::Position};
 
 #[derive(Component)]
 pub struct Interp {
+    predicted: bool,
+    last_tick: Tick,
     last_x: f32,
     last_y: f32,
+    next_tick: Tick,
     next_x: f32,
     next_y: f32,
 }
 
 impl Interp {
-    pub fn new(x: i16, y: i16) -> Self {
-        let x = x as f32;
-        let y = y as f32;
+    pub fn new(position: &Position) -> Self {
+        let predicted = position.predicted();
+        let tick = position.tick();
+        let x = position.x();
+        let y = position.y();
         Self {
+            predicted,
+
+            last_tick: tick,
             last_x: x,
             last_y: y,
+
+            next_tick: tick,
             next_x: x,
             next_y: y,
         }
     }
 
     pub(crate) fn next_position(&mut self, position: &Position) {
+
+        if position.predicted() != self.predicted {
+            panic!("Interp.predicted != Position.predicted");
+        }
+
+        self.last_tick = self.next_tick;
         self.last_x = self.next_x;
         self.last_y = self.next_y;
+
+        self.next_tick = position.tick();
         self.next_x = position.x();
         self.next_y = position.y();
     }

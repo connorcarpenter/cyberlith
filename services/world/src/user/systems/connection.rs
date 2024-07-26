@@ -11,7 +11,7 @@ use logging::{info, warn};
 use world_server_naia_proto::{
     components::{Main, NextTilePosition, Position, PrevTilePosition, TileMovement},
     messages::{Auth, EntityAssignment},
-    channels::EntityAssignmentChannel, constants::MOVEMENT_SPEED
+    channels::EntityAssignmentChannel, constants::{MOVEMENT_SPEED, TILE_SIZE},
 };
 
 use crate::{asset::{AssetCatalog, AssetCommandsExt, AssetManager}, social::LobbyManager, user::UserManager};
@@ -54,6 +54,8 @@ pub fn connect_events(
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
+        let tick = server.current_tick();
+
         info!("Server connected to: {}", address);
 
         // register user assets
@@ -88,8 +90,8 @@ pub fn connect_events(
                 tile_position_x,
                 tile_position_y,
             ))
-            .insert(TileMovement::new(MOVEMENT_SPEED))
-            .insert(Position::new(0.0, 0.0))
+            .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
+            .insert(Position::new(false, tick, tile_position_x as f32 * TILE_SIZE, tile_position_y as f32 * TILE_SIZE))
             // return Entity id
             .id();
 

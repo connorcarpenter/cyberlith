@@ -37,6 +37,7 @@ pub fn client_tick_events(
             *next_tile_position.y,
             &mut tile_movement,
             &mut position,
+            client_tick,
         );
         interp.next_position(&position);
 
@@ -79,8 +80,8 @@ pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
     mut position_q: Query<(&mut PrevTilePosition, &BufferedNextTilePosition, &mut TileMovement, &mut Position, &mut Interp), With<Confirmed>>,
 ) {
-    for _event in tick_reader.read() {
-        //let server_tick = event.tick;
+    for event in tick_reader.read() {
+        let server_tick = event.tick;
 
         // process movement
         for (
@@ -96,6 +97,7 @@ pub fn server_tick_events(
                 buffered_next_tile_position.y,
                 &mut tile_movement,
                 &mut position,
+                server_tick,
             );
             interp.next_position(&position);
         }

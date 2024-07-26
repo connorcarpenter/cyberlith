@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::Component;
 
-use naia_bevy_shared::{Property, Replicate};
+use naia_bevy_shared::{Property, Replicate, Tick};
 
 // This is networked
 
@@ -37,6 +37,8 @@ impl PrevTilePosition {
 
 #[derive(Component)]
 pub struct TileMovement {
+    predicted: bool,
+    tick: Tick,
     distance: f32,
     distance_max: f32,
     speed: f32,
@@ -44,14 +46,20 @@ pub struct TileMovement {
 }
 
 impl TileMovement {
-    pub fn new(speed: f32) -> Self {
+    pub fn new(predicted: bool, tick: Tick, speed: f32) -> Self {
         Self {
+            predicted,
+            tick,
             distance: 0.0,
             distance_max: 1.0,
             speed,
             done: false,
         }
     }
+
+    // pub fn tick(&self) -> Tick {
+    //     self.tick
+    // }
 
     pub fn speed(&self) -> f32 {
         self.speed
@@ -71,7 +79,8 @@ impl TileMovement {
         self.done = false;
     }
 
-    pub fn tick(&mut self) {
+    pub fn process_tick(&mut self, tick: Tick) {
+        self.tick = tick;
         if self.done {
             return;
         }
@@ -94,6 +103,7 @@ impl TileMovement {
     }
 
     pub fn mirror(&mut self, other: &Self) {
+        self.tick = other.tick;
         self.distance = other.distance;
         self.distance_max = other.distance_max;
         self.speed = other.speed;
@@ -103,13 +113,19 @@ impl TileMovement {
 
 #[derive(Component, Debug)]
 pub struct Position {
+    predicted: bool,
+    tick: Tick,
     x: f32,
     y: f32,
 }
 
 impl Position {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
+    pub fn new(predicted: bool, tick: Tick, x: f32, y: f32) -> Self {
+        Self { predicted, tick, x, y }
+    }
+
+    pub fn predicted(&self) -> bool {
+        self.predicted
     }
 
     pub fn x(&self) -> f32 {
@@ -120,12 +136,18 @@ impl Position {
         self.y
     }
 
-    pub fn set(&mut self, x: f32, y: f32) {
+    pub fn tick(&self) -> Tick {
+        self.tick
+    }
+
+    pub fn set(&mut self, tick: Tick, x: f32, y: f32) {
+        self.tick = tick;
         self.x = x;
         self.y = y;
     }
 
     pub fn mirror(&mut self, other: &Self) {
+        self.tick = other.tick;
         self.x = other.x;
         self.y = other.y;
     }
