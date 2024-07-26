@@ -33,7 +33,6 @@ pub fn process_command(
         } else {
             1.0
         };
-        tile_movement.distance = 0.0;
-        tile_movement.distance_max = distance * TILE_SIZE;
+        tile_movement.next(distance * TILE_SIZE);
     }
 }

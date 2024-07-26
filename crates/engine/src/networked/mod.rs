@@ -11,7 +11,7 @@ pub mod naia {
 }
 
 pub mod world {
-    use naia_bevy_client::{events::{ClientTickEvent, MessageEvents, RequestEvents, RejectEvent, DisconnectEvent, SpawnEntityEvent, ConnectEvent, DespawnEntityEvent, ErrorEvent}, Client};
+    use naia_bevy_client::{events::{ClientTickEvent, ServerTickEvent, MessageEvents, RequestEvents, RejectEvent, DisconnectEvent, SpawnEntityEvent, ConnectEvent, DespawnEntityEvent, ErrorEvent}, Client};
 
     use super::client_markers::World;
 
@@ -25,6 +25,7 @@ pub mod world {
     pub type WorldMessageEvents = MessageEvents<World>;
     pub type WorldRequestEvents = RequestEvents<World>;
     pub type WorldClientTickEvent = ClientTickEvent<World>;
+    pub type WorldServerTickEvent = ServerTickEvent<World>;
 
     pub use super::world_events::{
         InsertAssetRefEvent as WorldInsertAssetRefEvent, WorldInsertComponentEvent,

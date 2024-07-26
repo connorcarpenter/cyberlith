@@ -48,7 +48,13 @@ pub fn insert_next_tile_position_events(
 pub fn update_next_tile_position_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
-    mut position_q: Query<(&mut PrevTilePosition, &mut BufferedNextTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position)>,
+    mut position_q: Query<(
+        &mut PrevTilePosition,
+        Option<&mut BufferedNextTilePosition>,
+        &mut NextTilePosition,
+        &mut TileMovement,
+        &mut Position
+    )>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -71,6 +77,7 @@ pub fn update_next_tile_position_events(
         ) = position_q.get_mut(updated_entity) else {
             panic!("failed to get updated components for entity: {:?}", updated_entity);
         };
+        let buffered_tile_position = buffered_tile_position.as_mut().unwrap();
 
         let last_next_tile_position = buffered_tile_position.clone();
         buffered_tile_position.x = *next_tile_position.x;
@@ -79,74 +86,82 @@ pub fn update_next_tile_position_events(
         prev_tile_position.x = last_next_tile_position.x;
         prev_tile_position.y = last_next_tile_position.y;
 
-        tile_movement.distance = 0.0;
         let x_axis_changed = *next_tile_position.x != prev_tile_position.x;
         let y_axis_changed = *next_tile_position.y != prev_tile_position.y;
         if !x_axis_changed && !y_axis_changed {
             panic!("is this possible?");
         }
-        tile_movement.distance_max = if x_axis_changed && y_axis_changed {
-            std::f32::consts::SQRT_2 * TILE_SIZE
+        let distance = if x_axis_changed && y_axis_changed {
+            std::f32::consts::SQRT_2
         } else {
-            TILE_SIZE
+            1.0
         };
+        tile_movement.next(distance * TILE_SIZE);
 
         events.push((server_tick, updated_entity));
     }
 
-    if let Some(owned_entity) = &global.owned_entity {
-        let mut latest_tick: Option<Tick> = None;
-        let server_entity = owned_entity.confirmed;
-        let client_entity = owned_entity.predicted;
+    if events.is_empty() {
+        return;
+    }
 
-        for (server_tick, updated_entity) in events {
-            // If entity is owned
-            if updated_entity == server_entity {
-                if let Some(last_tick) = &mut latest_tick {
-                    if sequence_greater_than(server_tick, *last_tick) {
-                        *last_tick = server_tick;
-                    }
-                } else {
-                    latest_tick = Some(server_tick);
+    let Some(owned_entity) = &global.owned_entity else {
+        return;
+    };
+    let mut latest_tick: Option<Tick> = None;
+    let server_entity = owned_entity.confirmed;
+    let client_entity = owned_entity.predicted;
+
+    for (server_tick, updated_entity) in events {
+        // If entity is owned
+        if updated_entity == server_entity {
+            if let Some(last_tick) = &mut latest_tick {
+                if sequence_greater_than(server_tick, *last_tick) {
+                    *last_tick = server_tick;
                 }
+            } else {
+                latest_tick = Some(server_tick);
             }
         }
+    }
 
-        if let Some(server_tick) = latest_tick {
-            if let Ok(
-                [(
-                    server_prev_tile_position,
-                    _,
-                    server_next_tile_position,
-                    server_tile_movement,
-                    server_position
-                ), (
-                    mut client_prev_tile_position,
-                    _,
-                    mut client_next_tile_position,
-                    mut client_tile_movement,
-                    mut client_position,
-                )]) = position_q.get_many_mut([server_entity, client_entity]) {
+    let Some(server_tick) = latest_tick else {
+        return;
+    };
 
-                // Set to authoritative state
-                client_prev_tile_position.mirror(&*server_prev_tile_position);
-                client_next_tile_position.mirror(&*server_next_tile_position);
-                client_tile_movement.mirror(&*server_tile_movement);
-                client_position.mirror(&*server_position);
+    let Ok(
+        [(
+            server_prev_tile_position,
+            _,
+            server_next_tile_position,
+            server_tile_movement,
+            server_position
+        ), (
+            mut client_prev_tile_position,
+            _,
+            mut client_next_tile_position,
+            mut client_tile_movement,
+            mut client_position,
+        )]) = position_q.get_many_mut([server_entity, client_entity]) else {
+        panic!("failed to get components for entities: {:?}, {:?}", server_entity, client_entity);
+    };
 
-                // Replay all stored commands
+    // Set to authoritative state
+    client_prev_tile_position.mirror(&*server_prev_tile_position);
+    client_next_tile_position.mirror(&*server_next_tile_position);
+    client_tile_movement.mirror(&*server_tile_movement);
+    client_position.mirror(&*server_position);
 
-                // TODO: why is it necessary to subtract 1 Tick here?
-                // it's not like this in the Macroquad demo
-                let modified_server_tick = server_tick.wrapping_sub(1);
+    // Replay all stored commands
 
-                let replay_commands = global.command_history.replays(&modified_server_tick);
-                for (_command_tick, command) in replay_commands {
-                    shared_behavior::process_movement(&mut client_prev_tile_position, &client_next_tile_position, &mut client_tile_movement, &mut client_position);
-                    shared_behavior::process_command(&command, &client_prev_tile_position, &mut client_next_tile_position, &mut client_tile_movement);
-                }
-            }
-        }
+    // TODO: why is it necessary to subtract 1 Tick here?
+    // it's not like this in the Macroquad demo
+    let modified_server_tick = server_tick.wrapping_sub(1);
+
+    let replay_commands = global.command_history.replays(&modified_server_tick);
+    for (_command_tick, command) in replay_commands {
+        shared_behavior::process_movement(&mut client_prev_tile_position, &client_next_tile_position, &mut client_tile_movement, &mut client_position);
+        shared_behavior::process_command(&command, &client_prev_tile_position, &mut client_next_tile_position, &mut client_tile_movement);
     }
 }
 
@@ -154,6 +169,6 @@ pub fn remove_next_tile_position_events(
     mut event_reader: EventReader<WorldRemoveComponentEvent<NextTilePosition>>
 ) {
     for _event in event_reader.read() {
-        info!("removed Position component from entity");
+        info!("removed NextTilePosition component from entity");
     }
 }

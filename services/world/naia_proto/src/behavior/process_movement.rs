@@ -10,6 +10,10 @@ pub fn process_movement(
         return;
     }
 
+    if tile_movement.complete() {
+        return;
+    }
+
     tile_movement.tick();
     if tile_movement.complete() {
         prev_tile_position.x = *next_tile_position.x;

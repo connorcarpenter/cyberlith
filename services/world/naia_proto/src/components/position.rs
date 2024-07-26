@@ -37,9 +37,9 @@ impl PrevTilePosition {
 
 #[derive(Component)]
 pub struct TileMovement {
-    pub distance: f32,
-    pub distance_max: f32,
-    pub speed: f32,
+    distance: f32,
+    distance_max: f32,
+    speed: f32,
 }
 
 impl TileMovement {
@@ -49,6 +49,15 @@ impl TileMovement {
             distance_max: 1.0,
             speed,
         }
+    }
+
+    pub fn speed(&self) -> f32 {
+        self.speed
+    }
+
+    pub fn next(&mut self, new_distance: f32) {
+        self.distance = 0.0;
+        self.distance_max = new_distance;
     }
 
     pub fn tick(&mut self) {

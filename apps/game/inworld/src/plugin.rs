@@ -41,8 +41,6 @@ impl Plugin for InWorldPlugin {
 
                     systems::world_events::insert_asset_ref_events,
                     PredictionEvents::process,
-
-                    systems::render::draw_units,
                 )
                     .run_if(in_state(AppState::InGame))
                     .in_set(ReceiveEvents)
@@ -52,7 +50,8 @@ impl Plugin for InWorldPlugin {
             .add_systems(
                 Update,
                 (
-                    systems::world_events::tick_events,
+                    systems::world_events::client_tick_events,
+                    systems::world_events::server_tick_events,
                 )
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::Tick)
@@ -68,6 +67,17 @@ impl Plugin for InWorldPlugin {
                 )
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::MainLoop),
-            );
+            )
+            // Render
+            .configure_sets(Update, systems::Render.after(systems::MainLoop))
+            .add_systems(
+                Update,
+                (
+                    systems::render::draw_units,
+                )
+                    .run_if(in_state(AppState::InGame))
+                    .in_set(systems::Render),
+            )
+        ;
     }
 }
