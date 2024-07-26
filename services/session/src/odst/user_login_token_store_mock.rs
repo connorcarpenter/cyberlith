@@ -21,7 +21,6 @@ impl UserLoginTokenStore {
 
     pub fn spend_login_token(&mut self, token: &str) -> Option<UserId> {
         if token.eq_ignore_ascii_case("odst") {
-
             let user_id = self.next_user_id;
             let user_id_u64: u64 = user_id.into();
             self.next_user_id = UserId::new(user_id_u64 + 1);

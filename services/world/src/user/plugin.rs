@@ -2,13 +2,13 @@ use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::schedule::IntoSystemConfigs;
 
 use naia_bevy_server::{
-    ReceiveEvents, Plugin as NaiaServerPlugin, ServerConfig as NaiaServerConfig,
+    Plugin as NaiaServerPlugin, ReceiveEvents, ServerConfig as NaiaServerConfig,
 };
 
 use world_server_naia_proto::protocol as naia_protocol;
 
-use crate::user::UserManager;
 use super::systems;
+use crate::user::UserManager;
 
 pub struct UserPlugin;
 
@@ -23,10 +23,10 @@ impl Plugin for UserPlugin {
             // Resources
             .init_resource::<UserManager>()
             // Startup Systems
-            .add_systems(Startup, (
-                systems::startup::server,
-                systems::tick::tick_events_startup,
-            ))
+            .add_systems(
+                Startup,
+                (systems::startup::server, systems::tick::tick_events_startup),
+            )
             // Receive Server Events
             .add_systems(
                 Update,

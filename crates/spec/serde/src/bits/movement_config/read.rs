@@ -2,7 +2,7 @@ use naia_serde::{BitReader, SerdeErr, SerdeInternal as Serde};
 
 use spec::MovementConfig;
 
-use crate::bits::{MovementConfigBits, movement_config::VelocitySerdeInt};
+use crate::bits::{movement_config::VelocitySerdeInt, MovementConfigBits};
 
 /////
 

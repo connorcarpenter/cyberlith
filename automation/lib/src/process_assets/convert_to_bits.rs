@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use asset_serde::{
-    bits::{ AnimatedModelBits, MovementConfigBits, UnitBits,
-        AnimAction, ComponentFileType, IconAction, IconFrameAction, MeshAction, ModelAction,
-        PaletteAction, SceneAction, SerdeQuat, SerdeRotation, SkelAction, SkinAction, Transition,
+    bits::{
+        AnimAction, AnimatedModelBits, ComponentFileType, IconAction, IconFrameAction, MeshAction,
+        ModelAction, MovementConfigBits, PaletteAction, SceneAction, SerdeQuat, SerdeRotation,
+        SkelAction, SkinAction, Transition, UnitBits,
     },
     json::{
-        AnimationJson, FileComponentType, IconJson, MeshJson, ModelJson, PaletteJson, SceneJson,
-        SkeletonJson, SkinJson, UiConfigJson, AnimatedModelJson, MovementConfigJson, UnitJson,
+        AnimatedModelJson, AnimationJson, FileComponentType, IconJson, MeshJson, ModelJson,
+        MovementConfigJson, PaletteJson, SceneJson, SkeletonJson, SkinJson, UiConfigJson, UnitJson,
     },
 };
 use spec::{AnimatedModel, MovementConfig, Unit};

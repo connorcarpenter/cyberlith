@@ -11,7 +11,10 @@ use game_engine::{
     },
 };
 
-use crate::{ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{
+    resources::lobby_manager::LobbyManager,
+    ui::{events::ResyncUserListUiEvent, UiCatalog, UiKey},
+};
 
 pub type UserId = u32;
 
@@ -117,9 +120,9 @@ impl UserManager {
 
         let item_ui_handle = self.item_ui.as_ref().unwrap();
 
-        let lobby_entity_opt = lobby_manager.get_current_lobby().map(|lid| {
-            lobby_manager.get_lobby_entity(&lid).unwrap()
-        });
+        let lobby_entity_opt = lobby_manager
+            .get_current_lobby()
+            .map(|lid| lobby_manager.get_lobby_entity(&lid).unwrap());
 
         self.list_ui_ext.sync_with_collection(
             ui_manager,
@@ -127,7 +130,6 @@ impl UserManager {
             self.users.iter(),
             self.users.len(),
             |item_ctx, user_id, _| {
-
                 let user_entity = self.users.get(&user_id).unwrap();
                 let user_entity = *user_entity;
 

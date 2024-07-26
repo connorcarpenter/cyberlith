@@ -1,4 +1,3 @@
-
 use asset_id::AssetId;
 use logging::warn;
 use render_api::{
@@ -151,7 +150,9 @@ impl UiState {
     }
 
     pub fn get_node_visible(&self, node_id: &NodeId) -> bool {
-        self.visibility_store.get_node_visibility(node_id).unwrap_or(false)
+        self.visibility_store
+            .get_node_visibility(node_id)
+            .unwrap_or(false)
     }
 
     pub fn set_node_visible(&mut self, node_id: &NodeId, val: bool) {

@@ -1,4 +1,3 @@
-
 use asset_serde::bits::MovementConfigBits;
 
 pub struct MovementConfigData {
@@ -26,7 +25,6 @@ impl From<&[u8]> for MovementConfigData {
 }
 
 impl MovementConfigData {
-
     pub fn get_max_velocity(&self) -> f32 {
         self.max_velocity
     }

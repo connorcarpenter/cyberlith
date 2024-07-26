@@ -1,5 +1,5 @@
-pub use ui_serde::bits::*;
 pub use spec_serde::bits::*;
+pub use ui_serde::bits::*;
 
 //
 

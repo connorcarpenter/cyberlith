@@ -1,10 +1,10 @@
 pub mod events;
 
-mod main_menu;
-mod user_list;
 mod host_match;
 mod join_match;
+mod main_menu;
 mod message_list;
+mod user_list;
 
 mod plugin;
 pub use plugin::UiPlugin;
@@ -12,7 +12,11 @@ pub use plugin::UiPlugin;
 mod ui_catalog;
 pub use ui_catalog::UiCatalog;
 
-use bevy_ecs::{event::{EventReader, EventWriter}, prelude::NextState, system::{Res, ResMut}};
+use bevy_ecs::{
+    event::{EventReader, EventWriter},
+    prelude::NextState,
+    system::{Res, ResMut},
+};
 
 use game_engine::{
     asset::AssetId,
@@ -21,7 +25,16 @@ use game_engine::{
 
 use game_app_common::AppState;
 
-use crate::{ui::events::{GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}, resources::{user_manager::UserManager, lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
+use crate::{
+    resources::{
+        chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager,
+        user_manager::UserManager,
+    },
+    ui::events::{
+        GoToSubUiEvent, ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+        ResyncUserListUiEvent,
+    },
+};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum UiKey {
@@ -72,13 +85,26 @@ pub(crate) fn on_ui_load(
     let ui_key = ui_catalog.get_ui_key(&ui_handle);
 
     match ui_key {
-        UiKey::MainMenu => main_menu::on_main_menu_ui_load(state, next_state, ui_catalog, ui_manager, user_manager, sub_ui_event_writer),
-        UiKey::UserListItem => user_manager.on_load_user_list_item_ui(ui_catalog, resync_user_list_ui_events),
+        UiKey::MainMenu => main_menu::on_main_menu_ui_load(
+            state,
+            next_state,
+            ui_catalog,
+            ui_manager,
+            user_manager,
+            sub_ui_event_writer,
+        ),
+        UiKey::UserListItem => {
+            user_manager.on_load_user_list_item_ui(ui_catalog, resync_user_list_ui_events)
+        }
 
         UiKey::HostMatch => host_match::on_load_host_match_ui(ui_catalog, ui_manager),
 
-        UiKey::JoinMatch => lobby_manager.on_load_lobby_list_ui(ui_catalog, ui_manager, resync_lobby_list_ui_events),
-        UiKey::JoinMatchLobbyItem => lobby_manager.on_load_lobby_item_ui(ui_catalog, resync_lobby_list_ui_events),
+        UiKey::JoinMatch => {
+            lobby_manager.on_load_lobby_list_ui(ui_catalog, ui_manager, resync_lobby_list_ui_events)
+        }
+        UiKey::JoinMatchLobbyItem => {
+            lobby_manager.on_load_lobby_item_ui(ui_catalog, resync_lobby_list_ui_events)
+        }
 
         UiKey::MessageList => chat_message_manager.on_load_container_ui(
             ui_catalog,
@@ -90,7 +116,9 @@ pub(crate) fn on_ui_load(
             .on_load_day_divider_item_ui(ui_catalog, resync_message_list_ui_events),
         UiKey::MessageListUsernameAndMessage => chat_message_manager
             .on_load_username_and_message_item_ui(ui_catalog, resync_message_list_ui_events),
-        UiKey::MessageListMessage => chat_message_manager.on_load_message_item_ui(ui_catalog, resync_message_list_ui_events),
+        UiKey::MessageListMessage => {
+            chat_message_manager.on_load_message_item_ui(ui_catalog, resync_message_list_ui_events)
+        }
 
         _ => {
             unimplemented!("ui not implemented");
@@ -154,7 +182,9 @@ pub(crate) fn process_go_to_sub_ui_events(
         UiKey::MainMenu => panic!("invalid sub-ui"),
         UiKey::HostMatch => host_match::on_enter_state(&mut ui_manager, &sub_ui_handle),
         UiKey::JoinMatch => join_match::on_enter_state(&mut resync_lobby_list_ui_event_writer),
-        UiKey::MessageList => message_list::on_enter_state(&mut resync_message_list_ui_event_writer),
+        UiKey::MessageList => {
+            message_list::on_enter_state(&mut resync_message_list_ui_event_writer)
+        }
         _ => {
             unimplemented!("ui not implemented");
         }

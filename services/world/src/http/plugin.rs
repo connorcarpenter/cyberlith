@@ -17,7 +17,6 @@ impl Plugin for HttpPlugin {
             .add_plugins(HttpClientPlugin)
             // Systems
             .add_systems(Startup, systems::init)
-            .add_systems(Update, systems::recv_world_connect_request)
-        ;
+            .add_systems(Update, systems::recv_world_connect_request);
     }
 }

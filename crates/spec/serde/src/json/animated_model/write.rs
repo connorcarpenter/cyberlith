@@ -1,4 +1,3 @@
-
 use spec::AnimatedModel;
 
 use crate::json::AnimatedModelJson;

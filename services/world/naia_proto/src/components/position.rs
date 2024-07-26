@@ -68,7 +68,7 @@ pub struct TileMovement {
     distance: f32,
     distance_max: f32,
     speed: f32,
-    done: bool
+    done: bool,
 }
 
 impl TileMovement {
@@ -147,11 +147,15 @@ pub struct Position {
 
 impl Position {
     pub fn new(predicted: bool, tick: Tick, next_tile_position: &NextTilePosition) -> Self {
-
         let x = next_tile_position.x() as f32 * TILE_SIZE;
         let y = next_tile_position.y() as f32 * TILE_SIZE;
 
-        Self { predicted, tick, x, y }
+        Self {
+            predicted,
+            tick,
+            x,
+            y,
+        }
     }
 
     pub fn predicted(&self) -> bool {

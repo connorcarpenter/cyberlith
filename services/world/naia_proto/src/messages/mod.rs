@@ -1,4 +1,3 @@
-
 mod auth;
 mod entity_assignment;
 mod key_command;

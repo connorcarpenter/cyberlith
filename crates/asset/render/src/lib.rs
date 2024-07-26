@@ -1,6 +1,9 @@
 use logging::warn;
 
-use asset_loader::{AnimatedModelData, AssetComponentHandle, AssetHandle, AssetManager, IconData, MeshData, ModelData, ProcessedAssetStore, SceneData, SkinData, UiTextMeasurer};
+use asset_loader::{
+    AnimatedModelData, AssetComponentHandle, AssetHandle, AssetManager, IconData, MeshData,
+    ModelData, ProcessedAssetStore, SceneData, SkinData, UiTextMeasurer,
+};
 use render_api::{
     base::CpuMaterial,
     components::{RenderLayer, Transform},
@@ -472,7 +475,8 @@ impl AssetRenderer {
         parent_transform: &Transform,
         frame_time_ms: f32,
     ) {
-        let Some(animated_model_data) = asset_store.animated_models.get(animated_model_handle) else {
+        let Some(animated_model_data) = asset_store.animated_models.get(animated_model_handle)
+        else {
             warn!(
                 "animated model data not loaded 1: {:?}",
                 animated_model_handle.asset_id()
@@ -482,7 +486,8 @@ impl AssetRenderer {
         let Some(model_handle) = animated_model_data.get_model_file_handle() else {
             return;
         };
-        let Some(animation_handle) = animated_model_data.get_animation_handle(animation_name) else {
+        let Some(animation_handle) = animated_model_data.get_animation_handle(animation_name)
+        else {
             return;
         };
         let Some(model_data) = asset_store.models.get(model_handle) else {

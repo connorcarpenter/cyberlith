@@ -125,7 +125,7 @@ impl SocialManager {
         social_server_url: &Option<(String, u16)>,
         session_instance: &SessionInstance,
         global_room_key: &RoomKey,
-        users_q: &mut Query<&mut User>
+        users_q: &mut Query<&mut User>,
     ) {
         self.chat_message_manager.update(
             commands,

@@ -2,7 +2,7 @@ use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_app_common::ViewportResizeEvent;
 
-use crate::{ui::events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent}};
+use crate::ui::events::{ResyncLobbyListUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent};
 
 pub fn resync_on_resize(
     mut resize_events: EventReader<ViewportResizeEvent>,

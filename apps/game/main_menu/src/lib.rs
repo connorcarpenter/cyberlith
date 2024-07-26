@@ -1,9 +1,9 @@
 mod plugin;
 pub use plugin::MainMenuPlugin;
 
-pub mod ui;
 mod resources;
 mod systems;
+pub mod ui;
 
 cfg_if::cfg_if! {
     if #[cfg(not(feature = "no_odst"))] {

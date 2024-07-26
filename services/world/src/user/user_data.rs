@@ -1,5 +1,5 @@
-use bevy_ecs::entity::Entity;
 use auth_server_types::UserId;
+use bevy_ecs::entity::Entity;
 use social_server_types::LobbyId;
 
 pub struct UserData {
@@ -15,7 +15,7 @@ impl UserData {
         session_server_addr: &str,
         session_server_port: u16,
         user_id: UserId,
-        lobby_id: LobbyId
+        lobby_id: LobbyId,
     ) -> Self {
         Self {
             session_server_addr: session_server_addr.to_string(),

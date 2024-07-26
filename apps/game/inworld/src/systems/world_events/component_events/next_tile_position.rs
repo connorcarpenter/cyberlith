@@ -1,11 +1,32 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
-use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
+use bevy_ecs::{
+    change_detection::ResMut,
+    event::EventReader,
+    prelude::{Commands, Query},
+};
 
-use game_engine::{logging::warn, time::Instant, world::{WorldClient, constants::{MOVEMENT_SPEED, TILE_SIZE}, WorldInsertComponentEvent, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
-                  render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Tick}, math::{Quat, Vec3}, logging::info};
+use game_engine::{
+    logging::info,
+    logging::warn,
+    math::{Quat, Vec3},
+    naia::{sequence_greater_than, Tick},
+    render::components::{RenderLayers, Transform, Visibility},
+    time::Instant,
+    world::{
+        behavior as shared_behavior,
+        components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+        constants::{MOVEMENT_SPEED, TILE_SIZE},
+        WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+        WorldUpdateComponentEvent,
+    },
+};
 
-use crate::{systems::world_events::PredictionEvents, resources::Global, components::{BufferedNextTilePosition, Confirmed, AnimationState, Interp}};
+use crate::{
+    components::{AnimationState, BufferedNextTilePosition, Confirmed, Interp},
+    resources::Global,
+    systems::world_events::PredictionEvents,
+};
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -35,14 +56,12 @@ pub fn insert_next_tile_position_events(
 
         commands
             .entity(entity)
-
             // Insert Position stuff
             .insert(PrevTilePosition::new(&next_tile_position))
             .insert(BufferedNextTilePosition::new(&next_tile_position))
             .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
             .insert(position)
             .insert(interp)
-
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(layer)
@@ -51,7 +70,6 @@ pub fn insert_next_tile_position_events(
                 Transform::from_translation(Vec3::splat(0.0))
                     .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
             )
-
             // mark as Confirmed
             .insert(Confirmed);
     }
@@ -92,23 +110,24 @@ pub fn update_next_tile_position_events(
     }
 
     for (updated_entity, update_tick) in updated_entities {
-        let Ok(
-            (
-                mut prev_tile_position,
-                mut buffered_tile_position,
-                next_tile_position,
-                mut tile_movement,
-                mut position,
-                mut interp,
-            )
-        ) = position_q.get_mut(updated_entity) else {
-            panic!("failed to get updated components for entity: {:?}", updated_entity);
+        let Ok((
+            mut prev_tile_position,
+            mut buffered_tile_position,
+            next_tile_position,
+            mut tile_movement,
+            mut position,
+            mut interp,
+        )) = position_q.get_mut(updated_entity)
+        else {
+            panic!(
+                "failed to get updated components for entity: {:?}",
+                updated_entity
+            );
         };
         let buffered_tile_position = buffered_tile_position.as_mut().unwrap();
         let next_tile_changed = !buffered_tile_position.equals(&next_tile_position);
 
         if next_tile_changed {
-
             buffered_tile_position.incoming(&mut prev_tile_position, &next_tile_position);
 
             let x_axis_changed = next_tile_position.x() != prev_tile_position.x;
@@ -123,7 +142,11 @@ pub fn update_next_tile_position_events(
             };
             tile_movement.next(distance * TILE_SIZE);
 
-            position.set(update_tick, prev_tile_position.x as f32 * TILE_SIZE, prev_tile_position.y as f32 * TILE_SIZE);
+            position.set(
+                update_tick,
+                prev_tile_position.x as f32 * TILE_SIZE,
+                prev_tile_position.y as f32 * TILE_SIZE,
+            );
 
             interp.next_position(&position, Some("update_next_tile_position"));
         } else {
@@ -170,8 +193,13 @@ pub fn update_next_tile_position_events(
             mut client_tile_movement,
             mut client_position,
             mut client_interp,
-        )]) = position_q.get_many_mut([server_entity, client_entity]) else {
-        panic!("failed to get components for entities: {:?}, {:?}", server_entity, client_entity);
+        )],
+    ) = position_q.get_many_mut([server_entity, client_entity])
+    else {
+        panic!(
+            "failed to get components for entities: {:?}, {:?}",
+            server_entity, client_entity
+        );
     };
 
     let server_next_tile_position = server_buf_next_tile_position.as_ref().unwrap();
@@ -193,7 +221,6 @@ pub fn update_next_tile_position_events(
 
     let mut current_tick = server_tick;
     for (command_tick, command) in replay_commands {
-
         while sequence_greater_than(command_tick, current_tick) {
             current_tick = current_tick.wrapping_add(1);
 
@@ -211,13 +238,13 @@ pub fn update_next_tile_position_events(
             &command,
             &client_prev_tile_position,
             &mut client_next_tile_position,
-            &mut client_tile_movement
+            &mut client_tile_movement,
         );
     }
 }
 
 pub fn remove_next_tile_position_events(
-    mut event_reader: EventReader<WorldRemoveComponentEvent<NextTilePosition>>
+    mut event_reader: EventReader<WorldRemoveComponentEvent<NextTilePosition>>,
 ) {
     for _event in event_reader.read() {
         info!("removed NextTilePosition component from entity");

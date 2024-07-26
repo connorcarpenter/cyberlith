@@ -1,4 +1,3 @@
-
 use render_api::base::CpuMaterial;
 use storage::Handle;
 use ui_runner_config::Button;
@@ -49,8 +48,11 @@ impl ButtonStyleState {
             || self.disabled_color_handle.is_none()
     }
 
-    pub fn current_color_handle(&self, button_state: &ButtonState, mut node_active_state: NodeActiveState) -> Option<Handle<CpuMaterial>> {
-
+    pub fn current_color_handle(
+        &self,
+        button_state: &ButtonState,
+        mut node_active_state: NodeActiveState,
+    ) -> Option<Handle<CpuMaterial>> {
         if !button_state.enabled {
             node_active_state = NodeActiveState::Disabled;
         }

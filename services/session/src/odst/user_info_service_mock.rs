@@ -28,7 +28,8 @@ impl UserInfoService {
         for nameless_user_id in self.inflight_user_info_requests.iter() {
             let nameless_user_id = *nameless_user_id;
 
-            let response = UserGetResponse::new("connor".to_string(), "".to_string(), UserRole::Free);
+            let response =
+                UserGetResponse::new("connor".to_string(), "".to_string(), UserRole::Free);
 
             received_responses.push((nameless_user_id, response));
         }
@@ -43,11 +44,7 @@ impl UserInfoService {
         Some(output)
     }
 
-    pub fn send_user_info_request(
-        &mut self,
-        _http_client: &mut HttpClient,
-        user_id: &UserId,
-    ) {
+    pub fn send_user_info_request(&mut self, _http_client: &mut HttpClient, user_id: &UserId) {
         self.inflight_user_info_requests.insert(*user_id);
     }
 }

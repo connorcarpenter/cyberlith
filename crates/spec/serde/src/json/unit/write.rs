@@ -1,4 +1,3 @@
-
 use spec::Unit;
 
 use crate::json::UnitJson;

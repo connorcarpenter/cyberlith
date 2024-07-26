@@ -1,12 +1,15 @@
-
 use bevy_app::{App, Plugin, Update};
-use bevy_ecs::{prelude::in_state, prelude::not, schedule::{IntoSystemConfigs, IntoSystemSetConfigs}};
+use bevy_ecs::{
+    prelude::in_state,
+    prelude::not,
+    schedule::{IntoSystemConfigs, IntoSystemSetConfigs},
+};
 
 use game_engine::naia::ReceiveEvents;
 
 use game_app_common::AppState;
 
-use crate::{systems, systems::world_events::PredictionEvents, resources::Global};
+use crate::{resources::Global, systems, systems::world_events::PredictionEvents};
 
 pub struct InWorldPlugin;
 
@@ -24,26 +27,23 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::reject_events,
                 )
                     .run_if(not(in_state(AppState::InGame)))
-                    .in_set(ReceiveEvents)
+                    .in_set(ReceiveEvents),
             )
             .add_systems(
                 Update,
                 (
                     systems::world_events::disconnect_events,
-
                     systems::world_events::message_events,
-
                     systems::world_events::spawn_entity_events,
                     systems::world_events::despawn_entity_events,
                     systems::world_events::insert_next_tile_position_events,
                     systems::world_events::update_next_tile_position_events,
                     systems::world_events::remove_next_tile_position_events,
-
                     systems::world_events::insert_asset_ref_events,
                     PredictionEvents::process,
                 )
                     .run_if(in_state(AppState::InGame))
-                    .in_set(ReceiveEvents)
+                    .in_set(ReceiveEvents),
             )
             // Tick Event
             .configure_sets(Update, systems::Tick.after(ReceiveEvents))
@@ -54,15 +54,13 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::server_tick_events,
                 )
                     .run_if(in_state(AppState::InGame))
-                    .in_set(systems::Tick)
+                    .in_set(systems::Tick),
             )
             // Realtime Gameplay Loop
             .configure_sets(Update, systems::MainLoop.after(systems::Tick))
             .add_systems(
                 Update,
-                (
-                    systems::input::key_input,
-                )
+                (systems::input::key_input,)
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::MainLoop),
             )
@@ -70,12 +68,9 @@ impl Plugin for InWorldPlugin {
             .configure_sets(Update, systems::Render.after(systems::MainLoop))
             .add_systems(
                 Update,
-                (
-                    systems::render::draw_units,
-                )
+                (systems::render::draw_units,)
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::Render),
-            )
-        ;
+            );
     }
 }

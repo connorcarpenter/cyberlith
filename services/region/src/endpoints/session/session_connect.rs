@@ -45,7 +45,11 @@ async fn async_impl(
         let request_method = UserConnectedRequest::method();
         let request_path = UserConnectedRequest::path();
 
-        let request = UserConnectedRequest::new(REGION_SERVER_SECRET, user_id, session_server.instance_secret());
+        let request = UserConnectedRequest::new(
+            REGION_SERVER_SECRET,
+            user_id,
+            session_server.instance_secret(),
+        );
 
         let host = "region";
         let remote = "social";

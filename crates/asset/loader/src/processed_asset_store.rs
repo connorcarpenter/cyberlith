@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 
-use logging::warn;
 use asset_id::{AssetId, AssetType};
+use logging::warn;
 use render_api::base::{CpuMaterial, CpuMesh, CpuSkin};
 use storage::Storage;
 
-use crate::{asset_storage::AssetStorage, AnimationData, AssetHandle, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId, AnimatedModelData, MovementConfigData, UnitData};
+use crate::{
+    asset_storage::AssetStorage, AnimatedModelData, AnimationData, AssetHandle, IconData, MeshData,
+    ModelData, MovementConfigData, PaletteData, SceneData, SkeletonData, SkinData, TypedAssetId,
+    UnitData,
+};
 
 pub struct ProcessedAssetStore {
     pub meshes: AssetStorage<MeshData>,
@@ -229,7 +233,10 @@ impl ProcessedAssetStore {
         dependency_typed_id: TypedAssetId,
     ) {
         match principal_typed_id {
-            TypedAssetId::Mesh(_) | TypedAssetId::Skeleton(_) | TypedAssetId::Palette(_) | TypedAssetId::MovementConfig(_) => {
+            TypedAssetId::Mesh(_)
+            | TypedAssetId::Skeleton(_)
+            | TypedAssetId::Palette(_)
+            | TypedAssetId::MovementConfig(_) => {
                 panic!("unexpected dependency for this type of asset")
             }
             TypedAssetId::Ui(_) => {

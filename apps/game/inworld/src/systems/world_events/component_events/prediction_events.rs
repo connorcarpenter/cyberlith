@@ -1,18 +1,29 @@
-use std::{time::Duration, collections::HashMap};
+use std::{collections::HashMap, time::Duration};
 
-use bevy_ecs::{system::{Commands, ResMut}, entity::Entity, prelude::{Resource, Query}};
+use bevy_ecs::{
+    entity::Entity,
+    prelude::{Query, Resource},
+    system::{Commands, ResMut},
+};
 
 use game_engine::{
-    logging::info,
-    world::{WorldClient, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, constants::{MOVEMENT_SPEED}},
     asset::{AssetHandle, UnitData},
+    logging::info,
+    math::Quat,
     naia::Replicate,
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
-    math::Quat,
+    world::{
+        components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+        constants::MOVEMENT_SPEED,
+        WorldClient,
+    },
 };
 
-use crate::{resources::{Global, OwnedEntity}, components::{AnimationState, Interp, Predicted}};
+use crate::{
+    components::{AnimationState, Interp, Predicted},
+    resources::{Global, OwnedEntity},
+};
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -36,7 +47,6 @@ impl Default for PredictionEvents {
 }
 
 impl PredictionEvents {
-
     // TODO: prune records regularily!
 
     // used as a system
@@ -51,18 +61,20 @@ impl PredictionEvents {
 
         let future_prediction_entities = prediction_events.recv_events();
         for (future_prediction_entity, unit_data_handle) in future_prediction_entities {
-            info!("future prediction entity is ready for processing: {:?}", future_prediction_entity);
+            info!(
+                "future prediction entity is ready for processing: {:?}",
+                future_prediction_entity
+            );
 
             let client_tick = client.client_tick().unwrap();
 
             // Here we create a local copy of the Player entity, to use for client-side prediction
             let next_tile_position = position_q.get(future_prediction_entity).unwrap();
 
-            let prediction_entity = commands
-                .spawn_empty()
-                .id();
+            let prediction_entity = commands.spawn_empty().id();
 
-            let mut predicted_next_tile_position = NextTilePosition::new(next_tile_position.x(), next_tile_position.y());
+            let mut predicted_next_tile_position =
+                NextTilePosition::new(next_tile_position.x(), next_tile_position.y());
             predicted_next_tile_position.localize();
             let position = Position::new(true, client_tick, &predicted_next_tile_position);
             let interp = Interp::new(&position);
@@ -70,30 +82,32 @@ impl PredictionEvents {
 
             commands
                 .entity(prediction_entity)
-
                 // Position stuff
                 .insert(predicted_next_tile_position)
                 .insert(prev_tile_position)
                 .insert(TileMovement::new(true, client_tick, MOVEMENT_SPEED))
                 .insert(position)
                 .insert(interp)
-
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
-                .insert(Transform::default().with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))))
+                .insert(
+                    Transform::default()
+                        .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
+                )
                 .insert(AnimationState::new())
                 .insert(unit_data_handle.clone())
-
                 // mark as predicted
                 .insert(Predicted);
 
             info!(
                 "from confirmed entity: {:?}, created prediction entity: {:?}",
+                future_prediction_entity, prediction_entity,
+            );
+            global.owned_entity = Some(OwnedEntity::new(
                 future_prediction_entity,
                 prediction_entity,
-            );
-            global.owned_entity = Some(OwnedEntity::new(future_prediction_entity, prediction_entity));
+            ));
         }
     }
 
@@ -127,11 +141,7 @@ impl PredictionEvents {
         results
     }
 
-    pub fn read_insert_position_event(
-        &mut self,
-        now: &Instant,
-        entity: &Entity,
-    ) {
+    pub fn read_insert_position_event(&mut self, now: &Instant, entity: &Entity) {
         info!(
             "received Inserted Position from World Server!  [ {:?} ]",
             entity,
@@ -160,11 +170,7 @@ impl PredictionEvents {
         record.recv_unit_asset_ref(now, asset_handle);
     }
 
-    pub fn read_entity_assignment_event(
-        &mut self,
-        now: &Instant,
-        entity: &Entity,
-    ) {
+    pub fn read_entity_assignment_event(&mut self, now: &Instant, entity: &Entity) {
         info!(
             "received Entity Assignment message from World Server!  [ {:?} ]",
             entity,
@@ -210,6 +216,8 @@ impl PredictionRecord {
     }
 
     pub fn is_done(&self) -> bool {
-        self.has_position.is_some() && self.has_unit_asset_ref.is_some() && self.has_entity_assigment.is_some()
+        self.has_position.is_some()
+            && self.has_unit_asset_ref.is_some()
+            && self.has_entity_assigment.is_some()
     }
 }

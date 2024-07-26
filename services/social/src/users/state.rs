@@ -44,7 +44,8 @@ impl UsersState {
     }
 
     pub fn connect_user(&mut self, user_id: &UserId, session_server_id: &SessionServerId) {
-        self.users.insert(*user_id, UserData::new(session_server_id));
+        self.users
+            .insert(*user_id, UserData::new(session_server_id));
 
         self.outgoing_patches.push(UserPatch::Add(*user_id));
     }

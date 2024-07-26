@@ -1,4 +1,4 @@
-use bevy_ecs::{change_detection::ResMut, event::{EventWriter}, prelude::Query};
+use bevy_ecs::{change_detection::ResMut, event::EventWriter, prelude::Query};
 
 use game_engine::render::{
     components::{Camera, Viewport},

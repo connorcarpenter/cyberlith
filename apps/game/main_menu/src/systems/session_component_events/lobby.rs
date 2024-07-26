@@ -9,15 +9,21 @@ use bevy_ecs::{
 use game_engine::{
     logging::{info, warn},
     session::{
-        components::{Lobby, LobbyMember}, SessionClient,
-        SessionInsertComponentEvent, SessionRemoveComponentEvent, SessionUpdateComponentEvent,
+        components::{Lobby, LobbyMember},
+        SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,
+        SessionUpdateComponentEvent,
     },
 };
 
-use crate::{ui::events::{
-    ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
-    ResyncUserListUiEvent,
-}, resources::{user_manager::UserManager, match_manager::MatchManager, lobby_manager::LobbyManager}};
+use crate::{
+    resources::{
+        lobby_manager::LobbyManager, match_manager::MatchManager, user_manager::UserManager,
+    },
+    ui::events::{
+        ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+        ResyncUserListUiEvent,
+    },
+};
 
 pub struct LobbyComponentEventsPlugin;
 
@@ -63,9 +69,7 @@ fn recv_updated_lobby_component(
     let mut resync = false;
 
     for event in update_lobby_component_event_reader.read() {
-
         resync = true;
-
 
         let Some(current_lobby_id) = lobby_manager.get_current_lobby() else {
             continue;

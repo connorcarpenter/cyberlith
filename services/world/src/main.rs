@@ -1,7 +1,7 @@
-mod social;
-mod region;
-mod http;
 mod asset;
+mod http;
+mod region;
+mod social;
 mod user;
 mod world_instance;
 
@@ -18,7 +18,10 @@ use bevy_app::{App, ScheduleRunnerPlugin};
 use bevy_http_server::executor;
 use config::{TOTAL_CPU_PRIORITY, WORLD_SERVER_CPU_PRIORITY};
 
-use crate::{world_instance::WorldInstance, social::SocialPlugin, asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, user::UserPlugin};
+use crate::{
+    asset::AssetPlugin, http::HttpPlugin, region::RegionPlugin, social::SocialPlugin,
+    user::UserPlugin, world_instance::WorldInstance,
+};
 
 fn main() {
     logging::initialize();

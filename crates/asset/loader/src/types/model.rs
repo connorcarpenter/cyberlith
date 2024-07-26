@@ -1,4 +1,3 @@
-
 use asset_serde::bits::ComponentFileType;
 use math::{Quat, Vec3};
 use render_api::components::Transform;

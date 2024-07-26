@@ -1,4 +1,4 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 use bevy_ecs::{
     change_detection::ResMut,
@@ -9,13 +9,16 @@ use bevy_ecs::{
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
-use bevy_http_client::{HttpClient};
+use bevy_http_client::HttpClient;
 
 use auth_server_types::UserId;
 use session_server_naia_proto::components::User;
 use social_server_types::LobbyId;
 
-use crate::user::{user_data::UserData, user_info_service::UserInfoService, user_login_token_store::UserLoginTokenStore};
+use crate::user::{
+    user_data::UserData, user_info_service::UserInfoService,
+    user_login_token_store::UserLoginTokenStore,
+};
 
 #[derive(Resource)]
 pub struct UserManager {
@@ -37,14 +40,16 @@ impl Default for UserManager {
 }
 
 impl UserManager {
-
     // used as a system
     pub fn update(
         mut commands: Commands,
         mut http_client: ResMut<HttpClient>,
         mut user_manager: ResMut<Self>,
     ) {
-        if let Some(responses) = user_manager.user_info_service.process_in_flight_requests(&mut http_client) {
+        if let Some(responses) = user_manager
+            .user_info_service
+            .process_in_flight_requests(&mut http_client)
+        {
             for (user_id, response) in responses {
                 let user_data = user_manager.user_data.get_mut(&user_id).unwrap();
                 let user_is_online = {
@@ -167,7 +172,8 @@ impl UserManager {
             .add_entity(&user_entity);
 
         // send user info req
-        self.user_info_service.send_user_info_request(http_client, user_id);
+        self.user_info_service
+            .send_user_info_request(http_client, user_id);
 
         // add user data
         let user_data = UserData::new(user_entity);
@@ -180,7 +186,7 @@ impl UserManager {
         naia_server: &mut Server,
         http_client: &mut HttpClient,
         main_menu_room_key: &RoomKey,
-        owner_user_id: &UserId
+        owner_user_id: &UserId,
     ) -> Entity {
         if let Some(user_entity) = self.get_user_entity(owner_user_id) {
             user_entity
@@ -198,7 +204,12 @@ impl UserManager {
         }
     }
 
-    pub(crate) fn user_join_lobby(&mut self, user_id: &UserId, lobby_id: &LobbyId, lobby_member_entity: &Entity) -> (UserKey, Entity) {
+    pub(crate) fn user_join_lobby(
+        &mut self,
+        user_id: &UserId,
+        lobby_id: &LobbyId,
+        lobby_member_entity: &Entity,
+    ) -> (UserKey, Entity) {
         let user_data = self.user_data.get_mut(user_id).unwrap();
         user_data.user_join_lobby(lobby_id, lobby_member_entity)
     }

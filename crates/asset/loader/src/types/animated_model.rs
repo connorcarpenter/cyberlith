@@ -1,9 +1,11 @@
-use std::collections::HashMap;
 use asset_id::AssetId;
 use asset_serde::bits::AnimatedModelBits;
+use std::collections::HashMap;
 // use logging::info;
 
-use crate::{AnimationData, asset_dependency::AssetDependency, AssetHandle, ModelData, TypedAssetId};
+use crate::{
+    asset_dependency::AssetDependency, AnimationData, AssetHandle, ModelData, TypedAssetId,
+};
 
 pub struct AnimatedModelData {
     model_file: AssetDependency<ModelData>,

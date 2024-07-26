@@ -1,4 +1,3 @@
-
 use cfg_if::cfg_if;
 use serde::{Deserialize, Serialize};
 
@@ -27,9 +26,7 @@ impl MovementConfigJson {
     pub const CURRENT_SCHEMA_VERSION: u32 = 0;
 
     pub fn new() -> Self {
-        Self {
-            max_velocity: 0.0
-        }
+        Self { max_velocity: 0.0 }
     }
 
     pub fn dependencies(&self) -> Vec<AssetId> {

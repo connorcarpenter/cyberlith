@@ -2,7 +2,12 @@ use http_client::ResponseError;
 use http_server::{async_dup::Arc, executor::smol::lock::RwLock, ApiServer, Server};
 use logging::warn;
 
-use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse, MatchLobbySendMessageRequest, MatchLobbySendMessageResponse, MatchLobbyStartRequest, MatchLobbyStartResponse};
+use social_server_http_proto::{
+    MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest,
+    MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse,
+    MatchLobbySendMessageRequest, MatchLobbySendMessageResponse, MatchLobbyStartRequest,
+    MatchLobbyStartResponse,
+};
 
 use crate::state::State;
 
@@ -39,7 +44,9 @@ async fn async_recv_match_lobby_create_request_impl(
     );
 
     // owner joins the lobby
-    state.users.user_joins_lobby(&request.creator_user_id(), &new_match_lobby_id);
+    state
+        .users
+        .user_joins_lobby(&request.creator_user_id(), &new_match_lobby_id);
 
     // responding
     return Ok(MatchLobbyCreateResponse::new(new_match_lobby_id));
@@ -70,16 +77,13 @@ async fn async_recv_match_lobby_join_request_impl(
         return Err(ResponseError::Unauthenticated);
     };
 
-    state.users.user_joins_lobby(
-        &request.user_id(),
-        &request.lobby_id()
-    );
+    state
+        .users
+        .user_joins_lobby(&request.user_id(), &request.lobby_id());
 
-    state.match_lobbies.join(
-        &session_server_id,
-        &request.lobby_id(),
-        &request.user_id(),
-    );
+    state
+        .match_lobbies
+        .join(&session_server_id, &request.lobby_id(), &request.user_id());
 
     // responding
     return Ok(MatchLobbyJoinResponse);
@@ -147,13 +151,15 @@ async fn async_recv_match_lobby_start_request_impl(
 
     let Some(lobby_id) = state.users.get_user_lobby_id(&request.user_id()) else {
         warn!("user is not in a lobby");
-        return Err(ResponseError::InternalServerError("user is not in a lobby".to_string()));
+        return Err(ResponseError::InternalServerError(
+            "user is not in a lobby".to_string(),
+        ));
     };
 
-    if let Err(err) =
-    state
+    if let Err(err) = state
         .match_lobbies
-        .start(&session_server_id, &lobby_id, &request.user_id()) {
+        .start(&session_server_id, &lobby_id, &request.user_id())
+    {
         warn!("failed to start lobby: {}", err);
         return Err(ResponseError::InternalServerError(err));
     }
@@ -189,9 +195,12 @@ async fn async_recv_match_lobby_send_message_request_impl(
 
     let lobby_id = state.users.get_user_lobby_id(&request.user_id()).unwrap();
 
-    let (msg_id, timestamp) = state
-        .match_lobbies
-        .send_message(&session_server_id, &lobby_id, &request.user_id(), request.message());
+    let (msg_id, timestamp) = state.match_lobbies.send_message(
+        &session_server_id,
+        &lobby_id,
+        &request.user_id(),
+        request.message(),
+    );
 
     // responding
     return Ok(MatchLobbySendMessageResponse::new(msg_id, timestamp));

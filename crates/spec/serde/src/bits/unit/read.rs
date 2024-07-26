@@ -17,7 +17,7 @@ impl Into<Unit> for UnitBits {
     fn into(self) -> Unit {
         Unit::new(
             self.get_animated_model_asset_id(),
-            self.get_movement_config_asset_id()
+            self.get_movement_config_asset_id(),
         )
     }
 }

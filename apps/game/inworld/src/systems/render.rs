@@ -1,15 +1,12 @@
 use bevy_ecs::system::{Query, Res, ResMut};
 
 use game_engine::{
-    world::WorldClient,
     asset::{AssetHandle, AssetManager, AssetRender, UnitData},
     render::{
-        components::{
-            RenderLayer, Transform,
-            Visibility,
-        },
+        components::{RenderLayer, Transform, Visibility},
         resources::RenderFrame,
     },
+    world::WorldClient,
 };
 
 use crate::components::{AnimationState, Confirmed, Interp, Predicted};
@@ -38,12 +35,14 @@ pub fn draw_units(
         predicted_opt,
         mut transform,
         visibility,
-        render_layer_opt
-    ) in unit_q.iter_mut() {
+        render_layer_opt,
+    ) in unit_q.iter_mut()
+    {
         if !visibility.visible {
             continue;
         }
-        let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle) else {
+        let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle)
+        else {
             continue;
         };
 

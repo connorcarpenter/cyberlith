@@ -60,11 +60,7 @@ impl UserInfoService {
         Some(output)
     }
 
-    pub fn send_user_info_request(
-        &mut self,
-        http_client: &mut HttpClient,
-        user_id: &UserId,
-    ) {
+    pub fn send_user_info_request(&mut self, http_client: &mut HttpClient, user_id: &UserId) {
         let request = UserGetRequest::new(*user_id);
 
         let host = "session";
@@ -72,6 +68,7 @@ impl UserInfoService {
         bevy_http_client::log_util::send_req(host, remote, UserGetRequest::name());
         let response_key = http_client.send(AUTH_SERVER_RECV_ADDR, AUTH_SERVER_PORT, request);
 
-        self.inflight_user_info_requests.insert(*user_id, response_key);
+        self.inflight_user_info_requests
+            .insert(*user_id, response_key);
     }
 }

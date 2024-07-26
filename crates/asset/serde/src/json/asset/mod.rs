@@ -17,7 +17,10 @@ use asset_id::AssetId;
 use serde::{Deserialize, Serialize};
 use spec_serde::json::{AnimatedModelJson, MovementConfigJson, UnitJson};
 
-use crate::json::{animation::AnimationJson, icon::IconJson, mesh::MeshJson, model::ModelJson, palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiConfigJson};
+use crate::json::{
+    animation::AnimationJson, icon::IconJson, mesh::MeshJson, model::ModelJson,
+    palette::PaletteJson, scene::SceneJson, skeleton::SkeletonJson, skin::SkinJson, UiConfigJson,
+};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Asset {

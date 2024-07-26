@@ -4,10 +4,10 @@ use naia_bevy_server::{Server, UserKey};
 
 use auth_server_types::UserId;
 use bevy_http_client::HttpClient;
-use session_server_naia_proto::{messages::WorldConnectToken, channels::PrimaryChannel};
+use session_server_naia_proto::{channels::PrimaryChannel, messages::WorldConnectToken};
 use social_server_types::LobbyId;
 
-use crate::{world::WorldManager, social::SocialManager, user::UserManager};
+use crate::{social::SocialManager, user::UserManager, world::WorldManager};
 
 pub(crate) fn handle_world_connection(
     commands: &mut Commands,
@@ -25,21 +25,25 @@ pub(crate) fn handle_world_connection(
 
     let user_id = user_manager.user_key_to_id(user_key).unwrap();
 
-    setup_lobby(commands, naia_server, http_client, user_manager, social_manager, &lobby_id, &user_id);
-
-    world_manager.world_set_user_connected(
+    setup_lobby(
+        commands,
+        naia_server,
+        http_client,
+        user_manager,
+        social_manager,
+        &lobby_id,
         &user_id,
-        user_key,
-        world_instance_secret,
     );
+
+    world_manager.world_set_user_connected(&user_id, user_key, world_instance_secret);
     // store world instance secret with user key
-    user_manager.user_set_world_connected(
-        user_key,
-        world_instance_secret,
-    );
+    user_manager.user_set_world_connected(user_key, world_instance_secret);
 
     let user_entity = user_manager.get_user_entity(&user_id).unwrap();
-    let lobby_room_key = social_manager.lobby_manager.get_lobby_room_key(&lobby_id).unwrap();
+    let lobby_room_key = social_manager
+        .lobby_manager
+        .get_lobby_room_key(&lobby_id)
+        .unwrap();
     naia_server
         .room_mut(&lobby_room_key)
         .add_entity(&user_entity);

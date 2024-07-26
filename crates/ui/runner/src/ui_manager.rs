@@ -425,8 +425,14 @@ impl UiManager {
         }
     }
 
-    pub fn insert_ui_node_event_handler(&mut self, asset_id: AssetId, node_id: NodeId, event_handler: UiNodeEventHandler) {
-        self.ui_node_event_handlers.insert((asset_id, node_id), event_handler);
+    pub fn insert_ui_node_event_handler(
+        &mut self,
+        asset_id: AssetId,
+        node_id: NodeId,
+        event_handler: UiNodeEventHandler,
+    ) {
+        self.ui_node_event_handlers
+            .insert((asset_id, node_id), event_handler);
     }
 
     pub fn queue_recalculate_layout(&mut self) {

@@ -1,8 +1,22 @@
-use bevy_ecs::{event::EventReader, entity::Entity, change_detection::ResMut, prelude::{Commands, NextState, Query}};
+use bevy_ecs::{
+    change_detection::ResMut,
+    entity::Entity,
+    event::EventReader,
+    prelude::{Commands, NextState, Query},
+};
 
 use game_app_common::AppState;
 
-use game_engine::{world::WorldConnectEvent, ui::UiManager, storage::Storage, render::{base::{CpuMaterial, CpuMesh}, components::{RenderLayer, RenderLayers}}, logging::info};
+use game_engine::{
+    logging::info,
+    render::{
+        base::{CpuMaterial, CpuMesh},
+        components::{RenderLayer, RenderLayers},
+    },
+    storage::Storage,
+    ui::UiManager,
+    world::WorldConnectEvent,
+};
 
 use crate::systems::scene_setup;
 
@@ -29,11 +43,7 @@ pub fn connect_events(
         }
 
         // setup walker scene
-        scene_setup::scene_setup(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-        );
+        scene_setup::scene_setup(&mut commands, &mut meshes, &mut materials);
 
         // disable ui
         ui_manager.disable_ui();

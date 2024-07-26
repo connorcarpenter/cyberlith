@@ -1,4 +1,4 @@
-use bevy_ecs::{system::Resource, event::EventWriter};
+use bevy_ecs::{event::EventWriter, system::Resource};
 
 use crate::ui::events::ResyncMainMenuUiEvent;
 

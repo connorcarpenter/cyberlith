@@ -22,5 +22,10 @@ pub fn define() -> (String, AssetId, ETag, AnimatedModel) {
     animated_model.add_animation("idle", idle_animation_asset_id);
     animated_model.add_animation("walk", walk_animation_asset_id);
 
-    (self_name.to_string(), animated_model_asset_id, self_etag, animated_model)
+    (
+        self_name.to_string(),
+        animated_model_asset_id,
+        self_etag,
+        animated_model,
+    )
 }

@@ -625,18 +625,14 @@ fn ui_update_hover(
     mouse_y: f32,
 ) {
     let ui_state = ui_manager.ui_state(ui_asset_id);
-    let Some(visible) = ui_state
-        .visibility_store
-        .get_node_visibility(node_id)
-    else {
+    let Some(visible) = ui_state.visibility_store.get_node_visibility(node_id) else {
         warn!("no node for id: {:?}", node_id);
         return;
     };
     if !visible {
         return;
     }
-    let Some((width, height, child_offset_x, child_offset_y, _)) =
-        ui_state.cache.bounds(node_id)
+    let Some((width, height, child_offset_x, child_offset_y, _)) = ui_state.cache.bounds(node_id)
     else {
         // warn!("no bounds for id 2: {:?}", node_id);
         return;

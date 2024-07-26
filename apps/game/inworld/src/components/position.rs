@@ -29,7 +29,6 @@ impl BufferedNextTilePosition {
     }
 
     pub fn incoming(&mut self, ptp: &mut PrevTilePosition, ntp: &NextTilePosition) {
-
         ptp.x = self.x;
         ptp.y = self.y;
 

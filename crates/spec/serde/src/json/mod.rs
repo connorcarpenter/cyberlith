@@ -1,4 +1,3 @@
-
 mod animated_model;
 pub use animated_model::AnimatedModelJson;
 

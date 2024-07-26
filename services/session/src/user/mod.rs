@@ -4,8 +4,8 @@ pub use user_manager::*;
 mod plugin;
 pub use plugin::*;
 
-mod user_data;
 mod systems;
+mod user_data;
 
 cfg_if::cfg_if!(
     if #[cfg(feature = "odst")] {

@@ -10,16 +10,21 @@ pub struct SocialWorldConnectRequest {
     social_secret: String,
     world_instance_secret: String,
     lobby_id: LobbyId,
-    login_tokens: Vec<(UserId, String)>
+    login_tokens: Vec<(UserId, String)>,
 }
 
 impl SocialWorldConnectRequest {
-    pub fn new(social_secret: &str, world_instance_secret: &str, lobby_id: LobbyId, login_tokens: Vec<(UserId, String)>) -> Self {
+    pub fn new(
+        social_secret: &str,
+        world_instance_secret: &str,
+        lobby_id: LobbyId,
+        login_tokens: Vec<(UserId, String)>,
+    ) -> Self {
         Self {
             social_secret: social_secret.to_string(),
             world_instance_secret: world_instance_secret.to_string(),
             lobby_id,
-            login_tokens
+            login_tokens,
         }
     }
 

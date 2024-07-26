@@ -52,7 +52,10 @@ impl AssetStore {
     ) {
         if self.map.contains_key(&asset_id) {
             // this can sometimes happen when 2 assets are requested at the same time
-            warn!("attempted to insert asset w/ id {:?} which is already in memory", asset_id);
+            warn!(
+                "attempted to insert asset w/ id {:?} which is already in memory",
+                asset_id
+            );
         } else {
             // info!("inserting asset w/ id: {:?}", asset_id);
             self.map.insert(

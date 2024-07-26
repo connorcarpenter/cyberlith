@@ -9,14 +9,20 @@ use game_engine::{
     input::{InputEvent, Key},
     logging::info,
     session::{
-        channels, components::{Lobby, User},
-        messages,
-        SessionClient,
+        channels,
+        components::{Lobby, User},
+        messages, SessionClient,
     },
     ui::{UiHandle, UiManager},
 };
 
-use crate::{ui::{events::{GoToSubUiEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{
+    resources::lobby_manager::LobbyManager,
+    ui::{
+        events::{GoToSubUiEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent},
+        go_to_sub_ui, UiCatalog, UiKey,
+    },
+};
 
 pub(crate) fn handle_join_match_input_events(
     ui_catalog: Res<UiCatalog>,
@@ -137,8 +143,8 @@ fn handle_join_match_click_events_impl(
     let mut should_resync = false;
 
     for event in click_events.read() {
-
-        if !should_resync { // prevent multiple clicks
+        if !should_resync {
+            // prevent multiple clicks
 
             let lobby_id = event.lobby_id();
             info!("Joining lobby: {:?}", lobby_id.to_u16());

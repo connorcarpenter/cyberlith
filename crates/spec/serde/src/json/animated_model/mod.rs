@@ -61,6 +61,7 @@ impl AnimatedModelJson {
     }
 
     pub fn add_animation(&mut self, name: &str, asset_id: &AssetId) {
-        self.animations.insert(name.to_string(), asset_id.as_string());
+        self.animations
+            .insert(name.to_string(), asset_id.as_string());
     }
 }

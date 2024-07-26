@@ -1,5 +1,9 @@
-use std::{time::Duration, collections::HashMap};
+use std::{collections::HashMap, time::Duration};
 
+use config::{
+    REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT,
+    SOCIAL_SERVER_RECV_ADDR,
+};
 use http_client::HttpClient;
 use http_server::{
     async_dup::Arc,
@@ -7,15 +11,11 @@ use http_server::{
     ApiRequest, ApiResponse, Server,
 };
 use logging::{info, warn};
-use config::{
-    REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, SOCIAL_SERVER_GLOBAL_SECRET, SOCIAL_SERVER_PORT,
-    SOCIAL_SERVER_RECV_ADDR,
-};
 
 use region_server_http_proto::{SocialRegisterInstanceRequest, SocialRegisterInstanceResponse};
 use session_server_http_proto::SocialWorldConnectRequest;
 
-use crate::{state::State, region::send_world_connect_request};
+use crate::{region::send_world_connect_request, state::State};
 
 pub fn start_processes(state: Arc<RwLock<State>>) {
     let state_clone = state.clone();
@@ -87,20 +87,16 @@ async fn process_region_server_disconnect(state: Arc<RwLock<State>>) {
 }
 
 async fn handle_world_connect(state: Arc<RwLock<State>>) {
-
     let state = &mut state.write().await;
 
     let starting_lobby_ids = state.match_lobbies.take_starting_lobbies();
     for starting_lobby_id in starting_lobby_ids {
-
         let lobby_user_ids = state.match_lobbies.get_lobby_users(&starting_lobby_id);
 
         // give notice to world server via region server, get tokens
         let mut req_data = HashMap::new();
         for user_id in lobby_user_ids {
-            let session_server_id = state
-                .users
-                .get_user_session_server_id(&user_id);
+            let session_server_id = state.users.get_user_session_server_id(&user_id);
             if !req_data.contains_key(&session_server_id) {
                 req_data.insert(session_server_id, Vec::new());
             }
@@ -121,22 +117,28 @@ async fn handle_world_connect(state: Arc<RwLock<State>>) {
             &mut state.region_server,
             starting_lobby_id,
             req_data_2,
-        ).await {
+        )
+        .await
+        {
             Ok((world_server_instance_secret, login_tokens)) => {
                 (world_server_instance_secret, login_tokens)
             }
             Err(err) => {
-                warn!("failed to send world connect request: {:?}", err.to_string());
+                warn!(
+                    "failed to send world connect request: {:?}",
+                    err.to_string()
+                );
                 return;
             }
         };
 
         let mut session_servers = HashMap::new();
         for (user_id, login_token) in login_tokens {
-            let session_server_id = state
-                .users
-                .get_user_session_server_id(&user_id);
-            if !state.session_servers.session_server_has_user_connected(&session_server_id, &user_id) {
+            let session_server_id = state.users.get_user_session_server_id(&user_id);
+            if !state
+                .session_servers
+                .session_server_has_user_connected(&session_server_id, &user_id)
+            {
                 warn!("session server does not have user! should not be possible.");
                 continue;
             }
@@ -149,7 +151,6 @@ async fn handle_world_connect(state: Arc<RwLock<State>>) {
 
         // send world connect deets to all session servers
         for (session_server_id, outgoing_message) in session_servers {
-
             let (recv_addr, recv_port) = state
                 .session_servers
                 .get_recv_addr(session_server_id)
@@ -159,15 +160,12 @@ async fn handle_world_connect(state: Arc<RwLock<State>>) {
                 SOCIAL_SERVER_GLOBAL_SECRET,
                 &world_server_instance_secret,
                 starting_lobby_id,
-                outgoing_message
+                outgoing_message,
             );
             let response = HttpClient::send(recv_addr, recv_port, request).await;
             match response {
                 Ok(_) => {
-                    info!(
-                        "from {:?}:{} - world connect sent",
-                        recv_addr, recv_port
-                    );
+                    info!("from {:?}:{} - world connect sent", recv_addr, recv_port);
                 }
                 Err(e) => {
                     warn!(

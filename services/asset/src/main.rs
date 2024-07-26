@@ -64,7 +64,6 @@ pub fn main() {
     let state_clone = state.clone();
     Server::spawn(async move {
         loop {
-
             // send registration
             region_connection::send_register_instance_request(state_clone.clone()).await;
 

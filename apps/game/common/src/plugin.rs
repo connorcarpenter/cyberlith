@@ -9,7 +9,6 @@ impl Plugin for CommonPlugin {
         app
             // states
             .insert_state(AppState::Loading)
-
             // resize window event
             .add_event::<ViewportResizeEvent>();
     }

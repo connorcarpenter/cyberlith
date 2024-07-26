@@ -8,8 +8,8 @@ mod styles;
 
 // Re-export
 pub use ui_builder_config::{
-    BaseNodeStyle, EmailValidation, PasswordValidation, StyleId, Text, Textbox, UiContainer,
-    UiNode, UsernameValidation, ValidationType, Widget, WidgetKind, Button,
+    BaseNodeStyle, Button, EmailValidation, PasswordValidation, StyleId, Text, Textbox,
+    UiContainer, UiNode, UsernameValidation, ValidationType, Widget, WidgetKind,
 };
 pub use ui_layout::{Alignment, LayoutCache, NodeId, NodeStore, TextMeasurer, UiVisibilityStore};
 pub use ui_serde::SerdeErr;

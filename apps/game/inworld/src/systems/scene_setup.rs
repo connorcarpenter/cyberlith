@@ -1,4 +1,3 @@
-
 use bevy_ecs::system::Commands;
 
 use game_engine::{
@@ -13,7 +12,7 @@ use game_engine::{
         shapes,
     },
     storage::Storage,
-    world::constants::{TILE_SIZE, TILE_COUNT},
+    world::constants::{TILE_COUNT, TILE_SIZE},
 };
 
 const TILE_SCALE: f32 = (TILE_SIZE * 0.5) - 5.0;
@@ -32,7 +31,6 @@ pub fn scene_setup(
 
     for tx in NEG_TILE_NUM..=TILE_COUNT {
         for ty in NEG_TILE_NUM..=TILE_COUNT {
-
             let x = tx as f32 * TILE_SIZE;
             let y = ty as f32 * TILE_SIZE;
 

@@ -1,4 +1,3 @@
-
 use cfg_if::cfg_if;
 
 cfg_if! {
@@ -9,7 +8,7 @@ cfg_if! {
 
 use game_app::GameApp;
 use kernel::Kernel;
-use logging::{info};
+use logging::info;
 
 fn main() {
     let mut kernel = Kernel::new();

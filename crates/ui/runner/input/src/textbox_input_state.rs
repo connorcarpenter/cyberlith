@@ -302,11 +302,7 @@ impl TextboxInputState {
                         .ui_state_mut(ui_asset_id)
                         .textbox_mut(&textbox_id)
                         .unwrap()
-                        .text_replace_range(
-                            start,
-                            end,
-                            &replace_text,
-                        );
+                        .text_replace_range(start, end, &replace_text);
                     ui_manager.ui_input_state_mut().carat_index = start + 1;
                     ui_manager.ui_input_state_mut().select_index = None;
                 } else {
@@ -511,13 +507,13 @@ impl TextboxInputState {
             (false, true) => {
                 if ui_manager.ui_input_state().carat_index < text_len {
                     let new_carat_index = ui_manager
-                            .ui_state(ui_asset_id)
-                            .textbox_ref(&textbox_id)
-                            .unwrap()
-                            .text_unicode_word_indices()
-                    .map(|(i, word)| i + word.len())
-                    .find(|&i| i > ui_manager.ui_input_state().carat_index)
-                    .unwrap_or(text_len);
+                        .ui_state(ui_asset_id)
+                        .textbox_ref(&textbox_id)
+                        .unwrap()
+                        .text_unicode_word_indices()
+                        .map(|(i, word)| i + word.len())
+                        .find(|&i| i > ui_manager.ui_input_state().carat_index)
+                        .unwrap_or(text_len);
                     ui_manager.ui_input_state_mut().carat_index = new_carat_index;
                 }
                 ui_manager.ui_input_state_mut().select_index = None;

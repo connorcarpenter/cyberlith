@@ -1,5 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
+use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use http_client::HttpClient;
 use http_server::{
     async_dup::Arc,
@@ -7,8 +8,10 @@ use http_server::{
     Server,
 };
 use logging::{info, warn};
-use session_server_http_proto::{SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest, SocialPatchUsersRequest, SocialUserPatch};
-use config::SOCIAL_SERVER_GLOBAL_SECRET;
+use session_server_http_proto::{
+    SocialLobbyPatch, SocialPatchGlobalChatMessagesRequest, SocialPatchMatchLobbiesRequest,
+    SocialPatchUsersRequest, SocialUserPatch,
+};
 
 use crate::{
     match_lobbies::LobbyPatch, session_servers::SessionServerId, state::State, users::UserPatch,
@@ -147,17 +150,18 @@ async fn handle_match_lobby_patches(state: &mut State) {
                             creator_user_id.clone(),
                         )
                     }
-                    LobbyPatch::Join(lobby_id, user_id) => SocialLobbyPatch::Join(
-                        lobby_id.clone(),
-                        user_id.clone(),
-                    ),
+                    LobbyPatch::Join(lobby_id, user_id) => {
+                        SocialLobbyPatch::Join(lobby_id.clone(), user_id.clone())
+                    }
                     LobbyPatch::Leave(user_id) => SocialLobbyPatch::Leave(user_id.clone()),
-                    LobbyPatch::Message(message_id, timestamp, user_id, message) => SocialLobbyPatch::Message(
-                        message_id.clone(),
-                        timestamp.clone(),
-                        user_id.clone(),
-                        message.clone(),
-                    ),
+                    LobbyPatch::Message(message_id, timestamp, user_id, message) => {
+                        SocialLobbyPatch::Message(
+                            message_id.clone(),
+                            timestamp.clone(),
+                            user_id.clone(),
+                            message.clone(),
+                        )
+                    }
                     LobbyPatch::Start(lobby_id) => SocialLobbyPatch::Start(lobby_id.clone()),
                 })
                 .collect();

@@ -39,8 +39,7 @@ pub struct WorldEventsPlugin;
 
 impl Plugin for WorldEventsPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, ConnectionManager::handle_world_connect_events)
+        app.add_systems(Update, ConnectionManager::handle_world_connect_events)
             .add_systems(Update, ConnectionManager::handle_world_disconnect_events)
             .add_systems(Update, spawn_entity_events)
             .add_event::<WorldSpawnEntityEvent>()

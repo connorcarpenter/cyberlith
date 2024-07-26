@@ -1,9 +1,8 @@
-
 use naia_serde::SerdeInternal as Serde;
 
+use auth_server_types::UserId;
 use http_common::{ApiRequest, ApiResponse, Method};
 use social_server_types::LobbyId;
-use auth_server_types::UserId;
 
 // this is sent by the social server
 
@@ -17,7 +16,11 @@ pub struct WorldConnectRequest {
 }
 
 impl WorldConnectRequest {
-    pub fn new(social_server_global_secret: &str, lobby_id: LobbyId, user_ids: Vec<(String, Vec<UserId>)>) -> Self {
+    pub fn new(
+        social_server_global_secret: &str,
+        lobby_id: LobbyId,
+        user_ids: Vec<(String, Vec<UserId>)>,
+    ) -> Self {
         Self {
             social_server_global_secret: social_server_global_secret.to_string(),
             lobby_id,
@@ -34,10 +37,7 @@ pub struct WorldConnectResponse {
 }
 
 impl WorldConnectResponse {
-    pub fn new(
-        world_server_instance_secret: &str,
-        login_tokens: Vec<(UserId, String)>,
-    ) -> Self {
+    pub fn new(world_server_instance_secret: &str, login_tokens: Vec<(UserId, String)>) -> Self {
         Self {
             world_server_instance_secret: world_server_instance_secret.to_string(),
             login_tokens,

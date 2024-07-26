@@ -30,14 +30,12 @@ impl MatchLobbyStartRequest {
 // Response
 #[derive(Serde, PartialEq, Clone)]
 pub struct MatchLobbyStartResponse {
-    lobby_id: LobbyId
+    lobby_id: LobbyId,
 }
 
 impl MatchLobbyStartResponse {
     pub fn new(lobby_id: LobbyId) -> Self {
-        Self {
-            lobby_id
-        }
+        Self { lobby_id }
     }
 
     pub fn lobby_id(&self) -> LobbyId {

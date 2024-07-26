@@ -8,17 +8,14 @@ use bevy_ecs::{
     system::SystemState,
 };
 
-use naia_bevy_server::{
-    events::TickEvent,
-    Server, UserKey,
-};
+use naia_bevy_server::{events::TickEvent, Server, UserKey};
 
 use logging::info;
 use world_server_naia_proto::{
-    components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
-    channels::PlayerCommandChannel,
-    messages::KeyCommand,
     behavior as shared_behavior,
+    channels::PlayerCommandChannel,
+    components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+    messages::KeyCommand,
 };
 
 use crate::asset::AssetManager;
@@ -34,7 +31,6 @@ pub fn tick_events_startup(world: &mut World) {
 }
 
 pub fn tick_events(world: &mut World) {
-
     let mut tick_events = Vec::new();
     world.resource_scope(
         |world, mut events_reader_state: Mut<CachedTickEventsState>| {
@@ -51,20 +47,23 @@ pub fn tick_events(world: &mut World) {
     }
 
     {
-        let mut system_state: SystemState<(Server, Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position)>)> = SystemState::new(world);
+        let mut system_state: SystemState<(
+            Server,
+            Query<(
+                &mut PrevTilePosition,
+                &mut NextTilePosition,
+                &mut TileMovement,
+                &mut Position,
+            )>,
+        )> = SystemState::new(world);
         let (mut server, mut position_q) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
-
             // All game logic should happen here, on a tick event
 
             // process movement
-            for (
-                mut prev_tile_position,
-                next_tile_position,
-                mut tile_movement,
-                mut position,
-            ) in position_q.iter_mut()
+            for (mut prev_tile_position, next_tile_position, mut tile_movement, mut position) in
+                position_q.iter_mut()
             {
                 shared_behavior::process_movement(
                     &mut prev_tile_position,
@@ -81,10 +80,9 @@ pub fn tick_events(world: &mut World) {
                 let Some(entity) = &command.entity.get(&server) else {
                     continue;
                 };
-                let Ok((prev_tile_position,
-                       mut next_tile_position,
-                       mut tile_movement,
-                       _position)) = position_q.get_mut(*entity) else {
+                let Ok((prev_tile_position, mut next_tile_position, mut tile_movement, _position)) =
+                    position_q.get_mut(*entity)
+                else {
                     continue;
                 };
                 shared_behavior::process_command(
@@ -128,7 +126,6 @@ fn handle_scope_checks(world: &mut World) {
     let mut scope_actions: HashMap<(UserKey, Entity), bool> = HashMap::new();
 
     for (_room_key, user_key, entity, in_scope) in scope_checks {
-
         // TODO: assess scope logic here ..
         // right now, everything not in scope is added to user
         // however this will change later

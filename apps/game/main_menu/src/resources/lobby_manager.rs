@@ -21,13 +21,17 @@ use game_engine::{
     },
 };
 
-use crate::{ui::{
-    events::{
-        GoToSubUiEvent, LeaveLobbyButtonClickedEvent, LobbyListItemClickedEvent, ResyncLobbyListUiEvent,
-        ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, StartMatchButtonClickedEvent, SubmitButtonClickedEvent,
+use crate::{
+    resources::match_manager::MatchManager,
+    ui::{
+        events::{
+            GoToSubUiEvent, LeaveLobbyButtonClickedEvent, LobbyListItemClickedEvent,
+            ResyncLobbyListUiEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+            ResyncUserListUiEvent, StartMatchButtonClickedEvent, SubmitButtonClickedEvent,
+        },
+        go_to_sub_ui, UiCatalog, UiKey,
     },
-    go_to_sub_ui, UiCatalog, UiKey,
-}, resources::match_manager::MatchManager};
+};
 
 #[derive(Resource)]
 pub struct LobbyManager {
@@ -40,7 +44,7 @@ pub struct LobbyManager {
     user_lobby_membership_map: HashMap<Entity, LobbyId>,
 
     // lobby_member_entity -> user_entity
-    lobby_member_to_user_map: HashMap<Entity, Entity>
+    lobby_member_to_user_map: HashMap<Entity, Entity>,
 }
 
 impl Default for LobbyManager {
@@ -98,21 +102,32 @@ impl LobbyManager {
         self.lobby_entities.get(lobby_id).copied()
     }
 
-    pub(crate) fn put_user_in_lobby(&mut self, user_entity: Entity, lobby_id: LobbyId, lobby_member_entity: Entity) {
+    pub(crate) fn put_user_in_lobby(
+        &mut self,
+        user_entity: Entity,
+        lobby_id: LobbyId,
+        lobby_member_entity: Entity,
+    ) {
         if self.user_lobby_membership_map.contains_key(&user_entity) {
             panic!("user is already in a lobby!");
         }
         self.user_lobby_membership_map.insert(user_entity, lobby_id);
 
-        if self.lobby_member_to_user_map.contains_key(&lobby_member_entity) {
+        if self
+            .lobby_member_to_user_map
+            .contains_key(&lobby_member_entity)
+        {
             panic!("lobby member is already registered!");
         }
-        self.lobby_member_to_user_map.insert(lobby_member_entity, user_entity);
+        self.lobby_member_to_user_map
+            .insert(lobby_member_entity, user_entity);
     }
 
     // returns (lobby_id, user_entity)
-    pub(crate) fn remove_user_from_lobby(&mut self, lobby_member_entity: &Entity) -> (LobbyId, Entity) {
-
+    pub(crate) fn remove_user_from_lobby(
+        &mut self,
+        lobby_member_entity: &Entity,
+    ) -> (LobbyId, Entity) {
         let Some(user_entity) = self.lobby_member_to_user_map.remove(lobby_member_entity) else {
             panic!("lobby member is not registered!");
         };
@@ -129,7 +144,7 @@ impl LobbyManager {
                     return false;
                 };
                 user_lobby_entity == lobby_entity
-            },
+            }
             None => false,
         }
     }
@@ -194,7 +209,8 @@ impl LobbyManager {
             info!("start match button clicked!");
 
             // send request to session server
-            session_client.send_message::<channels::ClientActionsChannel, _>(&messages::MatchLobbyGameStart);
+            session_client
+                .send_message::<channels::ClientActionsChannel, _>(&messages::MatchLobbyGameStart);
 
             match_manager.start_match(resync_main_menu_ui_events);
 
@@ -224,10 +240,15 @@ impl LobbyManager {
             info!("leave lobby button clicked!");
 
             // send request to session server
-            session_client.send_message::<channels::ClientActionsChannel, _>(&messages::MatchLobbyLeave);
+            session_client
+                .send_message::<channels::ClientActionsChannel, _>(&messages::MatchLobbyLeave);
 
             // set current_lobby prematurely to de-dupe requests
-            self.leave_current_lobby(resync_main_menu_ui_events, resync_chat_message_ui_events, resync_user_ui_events);
+            self.leave_current_lobby(
+                resync_main_menu_ui_events,
+                resync_chat_message_ui_events,
+                resync_user_ui_events,
+            );
 
             // def rumble
             *should_rumble = true;
@@ -321,7 +342,6 @@ impl LobbyManager {
             self.lobby_entities.iter(),
             self.lobby_entities.len(),
             |item_ctx, lobby_id, _| {
-
                 // info!("LobbyManager sync_with_collection() lobby_id: {:?}", lobby_id);
 
                 let lobby_entity = *(self.lobby_entities.get(&lobby_id).unwrap());
@@ -355,6 +375,7 @@ impl LobbyManager {
 
         item_ctx.set_text_by_id("match_name", lobby_name);
         item_ctx.set_text_by_id("username", owner_name);
-        item_ctx.register_ui_event::<LobbyListItemClickedEvent>("lobby_button"); // uses container_ui_handle
+        item_ctx.register_ui_event::<LobbyListItemClickedEvent>("lobby_button");
+        // uses container_ui_handle
     }
 }

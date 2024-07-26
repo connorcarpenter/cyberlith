@@ -22,7 +22,13 @@ use game_engine::{
     },
 };
 
-use crate::{ui::{events::{GoToSubUiEvent, ResyncMessageListUiEvent}, go_to_sub_ui, UiCatalog, UiKey}, resources::lobby_manager::LobbyManager};
+use crate::{
+    resources::lobby_manager::LobbyManager,
+    ui::{
+        events::{GoToSubUiEvent, ResyncMessageListUiEvent},
+        go_to_sub_ui, UiCatalog, UiKey,
+    },
+};
 
 #[derive(Resource)]
 pub struct ChatMessageManager {
@@ -145,7 +151,12 @@ impl ChatMessageManager {
                             // later, add multi-line newline
                         } else {
                             // send message
-                            Self::send_message(ui_manager, lobby_manager, &ui_handle, session_client)
+                            Self::send_message(
+                                ui_manager,
+                                lobby_manager,
+                                &ui_handle,
+                                session_client,
+                            )
                         }
                     };
                 }

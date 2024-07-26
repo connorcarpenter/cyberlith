@@ -1,11 +1,14 @@
 use bevy_ecs::change_detection::{Res, ResMut};
 
 use bevy_http_client::HttpClient;
-use config::{REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, WORLD_SERVER_GLOBAL_SECRET, WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR};
+use config::{
+    REGION_SERVER_PORT, REGION_SERVER_RECV_ADDR, WORLD_SERVER_GLOBAL_SECRET,
+    WORLD_SERVER_HTTP_PORT, WORLD_SERVER_RECV_ADDR,
+};
 use logging::info;
 use region_server_http_proto::WorldRegisterInstanceRequest;
 
-use crate::{world_instance::WorldInstance, region::RegionManager, user::UserManager};
+use crate::{region::RegionManager, user::UserManager, world_instance::WorldInstance};
 
 pub fn send_register_instance_request(
     mut http_client: ResMut<HttpClient>,

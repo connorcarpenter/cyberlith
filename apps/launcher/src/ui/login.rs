@@ -1,10 +1,10 @@
 use bevy_ecs::event::{EventReader, EventWriter};
 
 use game_engine::{
-    kernel::AppExitAction,
     asset::{embedded_asset_event, AssetId, EmbeddedAssetEvent},
     config::{GATEWAY_PORT, PUBLIC_IP_ADDR},
     http::HttpClient,
+    kernel::AppExitAction,
     logging::{info, warn},
     ui::{UiHandle, UiManager},
 };
@@ -16,7 +16,7 @@ use crate::{
         ForgotPasswordButtonClickedEvent, ForgotUsernameButtonClickedEvent, Global,
         RegisterButtonClickedEvent, SubmitButtonClickedEvent, TextboxClickedEvent,
     },
-    ui::{go_to_ui, UiKey, clear_spinners_if_needed, redirect_to_game_app},
+    ui::{clear_spinners_if_needed, go_to_ui, redirect_to_game_app, UiKey},
 };
 
 pub(crate) fn setup(

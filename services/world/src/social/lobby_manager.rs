@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::system::Resource;
 
-use naia_bevy_server::{RoomKey};
+use naia_bevy_server::RoomKey;
 
 use social_server_types::LobbyId;
 
@@ -20,7 +20,6 @@ impl Default for LobbyManager {
 }
 
 impl LobbyManager {
-
     pub fn lobby_room_key(&self, lobby_id: &LobbyId) -> Option<RoomKey> {
         self.lobby_room_keys.get(lobby_id).cloned()
     }

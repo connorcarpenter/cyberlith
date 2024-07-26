@@ -3,7 +3,7 @@ use bevy_ecs::change_detection::ResMut;
 use bevy_http_client::{log_util, ApiRequest, ApiResponse, HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 use config::REGION_SERVER_SECRET;
-use logging::{warn};
+use logging::warn;
 
 use region_server_http_proto::SessionRegisterInstanceResponse;
 use session_server_http_proto::{

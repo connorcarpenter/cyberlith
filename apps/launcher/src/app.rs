@@ -34,7 +34,6 @@ impl KernelApp for LauncherApp {
 
 impl Plugin for LauncherApp {
     fn build(&self, app: &mut App) {
-
         let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
 
         app.add_plugins(engine_plugin)

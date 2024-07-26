@@ -5,12 +5,12 @@ use bevy_ecs::change_detection::ResMut;
 use naia_bevy_server::Server;
 
 use bevy_http_client::ResponseError;
-use logging::{info, warn};
 use bevy_http_server::HttpServer;
 use config::{REGION_SERVER_SECRET, SELF_BINDING_ADDR, WORLD_SERVER_HTTP_PORT};
+use logging::{info, warn};
 use world_server_http_proto::{WorldConnectRequest, WorldConnectResponse};
 
-use crate::{user::UserManager, social::LobbyManager};
+use crate::{social::LobbyManager, user::UserManager};
 
 pub fn init(mut server: ResMut<HttpServer>) {
     info!("World HTTP Server starting up");
@@ -38,10 +38,7 @@ pub fn recv_world_connect_request(
             request.login_tokens()
         );
 
-        user_manager.recv_login_token(
-            &request.lobby_id(),
-            request.login_tokens(),
-        );
+        user_manager.recv_login_token(&request.lobby_id(), request.login_tokens());
         let lobby_room_key = naia_server.make_room().key();
         lobby_manager.insert_lobby_room_key(request.lobby_id(), lobby_room_key);
 

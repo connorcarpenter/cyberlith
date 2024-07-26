@@ -1,4 +1,3 @@
-
 use spec::MovementConfig;
 
 use crate::json::MovementConfigJson;

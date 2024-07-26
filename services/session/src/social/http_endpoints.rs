@@ -1,17 +1,29 @@
-use bevy_ecs::{change_detection::ResMut, prelude::Query, system::{Commands, Res}};
+use bevy_ecs::{
+    change_detection::ResMut,
+    prelude::Query,
+    system::{Commands, Res},
+};
 
-use naia_bevy_server::{Server};
+use naia_bevy_server::Server;
 
 use auth_server_types::UserId;
 use bevy_http_client::{HttpClient, ResponseError};
 use bevy_http_server::HttpServer;
 use config::SOCIAL_SERVER_GLOBAL_SECRET;
 use logging::{info, warn};
-use session_server_http_proto::{SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse, SocialPatchMatchLobbiesRequest, SocialPatchMatchLobbiesResponse, SocialPatchUsersRequest, SocialPatchUsersResponse, SocialWorldConnectRequest, SocialWorldConnectResponse};
-use session_server_naia_proto::{messages::WorldConnectToken, components::{Lobby, User}, channels::PrimaryChannel};
+use session_server_http_proto::{
+    SocialPatchGlobalChatMessagesRequest, SocialPatchGlobalChatMessagesResponse,
+    SocialPatchMatchLobbiesRequest, SocialPatchMatchLobbiesResponse, SocialPatchUsersRequest,
+    SocialPatchUsersResponse, SocialWorldConnectRequest, SocialWorldConnectResponse,
+};
+use session_server_naia_proto::{
+    channels::PrimaryChannel,
+    components::{Lobby, User},
+    messages::WorldConnectToken,
+};
 use social_server_types::LobbyId;
 
-use crate::{world::WorldManager, social::SocialManager, user::UserManager};
+use crate::{social::SocialManager, user::UserManager, world::WorldManager};
 
 pub fn recv_patch_users_request(
     mut commands: Commands,
@@ -149,7 +161,7 @@ pub fn recv_world_connect(
             &social_manager,
             &world_instance_secret,
             &lobby_id,
-            login_tokens
+            login_tokens,
         );
 
         // responding
@@ -164,11 +176,17 @@ fn process_world_connect(
     social_manager: &SocialManager,
     world_instance_secret: &str,
     lobby_id: &LobbyId,
-    login_tokens: Vec<(UserId, String)>
+    login_tokens: Vec<(UserId, String)>,
 ) {
     let global_room_key = social_manager.global_room_key().unwrap();
-    let lobby_room_key = social_manager.lobby_manager.get_lobby_room_key(&lobby_id).unwrap();
-    let lobby_entity = social_manager.lobby_manager.get_lobby_entity(&lobby_id).unwrap();
+    let lobby_room_key = social_manager
+        .lobby_manager
+        .get_lobby_room_key(&lobby_id)
+        .unwrap();
+    let lobby_entity = social_manager
+        .lobby_manager
+        .get_lobby_entity(&lobby_id)
+        .unwrap();
 
     // move lobby entity from global room to lobby room
     naia_server
@@ -183,15 +201,8 @@ fn process_world_connect(
         let user_key = user_manager.user_id_to_key(&user_id).unwrap();
 
         // store world instance secret with user key
-        user_manager.user_set_world_connected(
-            &user_key,
-            &world_instance_secret,
-        );
-        world_manager.world_set_user_connected(
-            &user_id,
-            &user_key,
-            &world_instance_secret,
-        );
+        user_manager.user_set_world_connected(&user_key, &world_instance_secret);
+        world_manager.world_set_user_connected(&user_id, &user_key, &world_instance_secret);
 
         let user_entity = user_manager.get_user_entity(&user_id).unwrap();
 

@@ -1,4 +1,8 @@
-use crate::{constants::TILE_SIZE, components::{TileMovement, NextTilePosition, PrevTilePosition}, messages::KeyCommand};
+use crate::{
+    components::{NextTilePosition, PrevTilePosition, TileMovement},
+    constants::TILE_SIZE,
+    messages::KeyCommand,
+};
 
 pub fn process_command(
     key_command: &KeyCommand,
@@ -6,7 +10,9 @@ pub fn process_command(
     next_tile_position: &mut NextTilePosition,
     tile_movement: &mut TileMovement,
 ) {
-    if prev_tile_position.x != next_tile_position.x() || prev_tile_position.y != next_tile_position.y() {
+    if prev_tile_position.x != next_tile_position.x()
+        || prev_tile_position.y != next_tile_position.y()
+    {
         return;
     }
 
@@ -27,7 +33,6 @@ pub fn process_command(
     let y_axis_changed = next_tile_position.y() != prev_tile_position.y;
 
     if x_axis_changed || y_axis_changed {
-
         let distance = if x_axis_changed && y_axis_changed {
             std::f32::consts::SQRT_2
         } else {

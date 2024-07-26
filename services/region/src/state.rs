@@ -65,8 +65,10 @@ impl State {
             self.deregister_session_instance(&old_instance_secret).await;
         }
 
-        self.session_instances.insert(instance_secret.to_string(), session_instance);
-        self.session_url_to_instance_map.insert(key, instance_secret.to_string());
+        self.session_instances
+            .insert(instance_secret.to_string(), session_instance);
+        self.session_url_to_instance_map
+            .insert(key, instance_secret.to_string());
     }
 
     pub async fn register_world_instance(
@@ -129,11 +131,9 @@ impl State {
     }
 
     pub async fn deregister_session_instance(&mut self, old_instance_secret: &str) {
-
         self.session_instances.remove(old_instance_secret);
 
         if let Some(social_instance) = self.social_instance.as_mut() {
-
             if social_instance.has_connected_session_server(old_instance_secret) {
                 // tell social server to disconnect old session server instance
                 send_disconnect_session_server_message_to_social_instance(

@@ -1,6 +1,10 @@
 use bevy_ecs::prelude::Component;
 
-use game_engine::{logging::{info, warn}, naia::{Tick, sequence_greater_than, wrapping_diff}, world::components::Position};
+use game_engine::{
+    logging::{info, warn},
+    naia::{sequence_greater_than, wrapping_diff, Tick},
+    world::components::Position,
+};
 
 #[derive(Component)]
 pub struct Interp {
@@ -33,7 +37,6 @@ impl Interp {
     }
 
     pub(crate) fn next_position(&mut self, position: &Position, debug_opt: Option<&str>) {
-
         if position.predicted() != self.predicted {
             panic!("Interp.predicted != Position.predicted");
         }

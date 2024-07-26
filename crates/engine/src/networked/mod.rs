@@ -7,11 +7,20 @@ mod session_events;
 mod world_events;
 
 pub mod naia {
-    pub use naia_bevy_client::{CommandHistory, ReceiveEvents, sequence_greater_than, wrapping_diff, CommandsExt, Tick, Replicate};
+    pub use naia_bevy_client::{
+        sequence_greater_than, wrapping_diff, CommandHistory, CommandsExt, ReceiveEvents,
+        Replicate, Tick,
+    };
 }
 
 pub mod world {
-    use naia_bevy_client::{events::{ClientTickEvent, ServerTickEvent, MessageEvents, RequestEvents, RejectEvent, DisconnectEvent, SpawnEntityEvent, ConnectEvent, DespawnEntityEvent, ErrorEvent}, Client};
+    use naia_bevy_client::{
+        events::{
+            ClientTickEvent, ConnectEvent, DespawnEntityEvent, DisconnectEvent, ErrorEvent,
+            MessageEvents, RejectEvent, RequestEvents, ServerTickEvent, SpawnEntityEvent,
+        },
+        Client,
+    };
 
     use super::client_markers::World;
 
@@ -32,12 +41,18 @@ pub mod world {
         WorldRemoveComponentEvent, WorldUpdateComponentEvent,
     };
 
-    pub use world_server_naia_proto::{channels, components, messages, behavior, constants};
+    pub use world_server_naia_proto::{behavior, channels, components, constants, messages};
 }
 
 pub mod session {
 
-    use naia_bevy_client::{events::{MessageEvents, RequestEvents, RejectEvent, ConnectEvent, DisconnectEvent, SpawnEntityEvent, DespawnEntityEvent, ErrorEvent}, Client};
+    use naia_bevy_client::{
+        events::{
+            ConnectEvent, DespawnEntityEvent, DisconnectEvent, ErrorEvent, MessageEvents,
+            RejectEvent, RequestEvents, SpawnEntityEvent,
+        },
+        Client,
+    };
 
     use super::client_markers::Session;
 

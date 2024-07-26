@@ -11,11 +11,8 @@ use logging::{info, warn};
 use session_server_naia_proto::messages::Auth;
 
 use crate::{
-    asset::{asset_manager::AssetManager},
-    session_instance::SessionInstance,
-    social::SocialManager,
-    user::UserManager,
-    world::WorldManager,
+    asset::asset_manager::AssetManager, session_instance::SessionInstance, social::SocialManager,
+    user::UserManager, world::WorldManager,
 };
 
 pub fn auth_events(

@@ -9,7 +9,10 @@ use logging::info;
 
 use region_server_http_proto::SessionRegisterInstanceRequest;
 
-use crate::{asset::asset_manager::AssetManager, social::SocialManager, region::RegionManager, session_instance::SessionInstance};
+use crate::{
+    asset::asset_manager::AssetManager, region::RegionManager, session_instance::SessionInstance,
+    social::SocialManager,
+};
 
 pub fn send_register_instance_request(
     session_instance: Res<SessionInstance>,

@@ -4,14 +4,19 @@ use bevy_ecs::{entity::Entity, system::Commands};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
+use auth_server_types::UserId;
 use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
 use logging::warn;
-use auth_server_types::UserId;
 use session_server_naia_proto::components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal};
-use social_server_http_proto::{GlobalChatSendMessageRequest, GlobalChatSendMessageResponse, MatchLobbySendMessageRequest, MatchLobbySendMessageResponse};
+use social_server_http_proto::{
+    GlobalChatSendMessageRequest, GlobalChatSendMessageResponse, MatchLobbySendMessageRequest,
+    MatchLobbySendMessageResponse,
+};
 use social_server_types::{LobbyId, MessageId, Timestamp};
 
-use crate::{social::lobby_manager::LobbyManager, session_instance::SessionInstance, user::UserManager};
+use crate::{
+    session_instance::SessionInstance, social::lobby_manager::LobbyManager, user::UserManager,
+};
 
 enum ChatMessageReqQueued {
     GlobalChatSendMessage(UserKey, String),
@@ -238,7 +243,10 @@ impl ChatMessageManager {
             warn!("received global chat message but no social server is available!");
 
             self.queued_requests
-                .push(ChatMessageReqQueued::GlobalChatSendMessage(*sending_user_key, message.to_string()));
+                .push(ChatMessageReqQueued::GlobalChatSendMessage(
+                    *sending_user_key,
+                    message.to_string(),
+                ));
 
             return;
         };
@@ -255,11 +263,12 @@ impl ChatMessageManager {
         bevy_http_client::log_util::send_req(host, remote, GlobalChatSendMessageRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(ChatMessageReqInFlight::GlobalChatSendMessage(
-            sending_user_id,
-            message.to_string(),
-            response_key,
-        ));
+        self.in_flight_requests
+            .push(ChatMessageReqInFlight::GlobalChatSendMessage(
+                sending_user_id,
+                message.to_string(),
+                response_key,
+            ));
 
         return;
     }
@@ -282,7 +291,10 @@ impl ChatMessageManager {
             warn!("received global chat message but no social server is available!");
 
             self.queued_requests
-                .push(ChatMessageReqQueued::LobbyChatSendMessage(*sending_user_key, message.to_string()));
+                .push(ChatMessageReqQueued::LobbyChatSendMessage(
+                    *sending_user_key,
+                    message.to_string(),
+                ));
 
             return;
         };
@@ -299,11 +311,12 @@ impl ChatMessageManager {
         bevy_http_client::log_util::send_req(host, remote, MatchLobbySendMessageRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(ChatMessageReqInFlight::LobbyChatSendMessage(
-            sending_user_id,
-            message.to_string(),
-            response_key,
-        ));
+        self.in_flight_requests
+            .push(ChatMessageReqInFlight::LobbyChatSendMessage(
+                sending_user_id,
+                message.to_string(),
+                response_key,
+            ));
 
         return;
     }
@@ -340,7 +353,13 @@ impl ChatMessageManager {
             commands.entity(entity_to_delete).despawn();
         }
 
-        let user_entity = user_manager.get_or_init_user_entity(commands, naia_server, http_client, main_menu_room_key, sending_user_id);
+        let user_entity = user_manager.get_or_init_user_entity(
+            commands,
+            naia_server,
+            http_client,
+            main_menu_room_key,
+            sending_user_id,
+        );
 
         global_chat_message
             .owner_user_entity
@@ -369,8 +388,7 @@ impl ChatMessageManager {
         let lobby_entity = lobby_manager.get_lobby_entity(&lobby_id).unwrap();
 
         // spawn message entity
-        let lobby_chat_message_entity =
-            commands.spawn_empty().enable_replication(naia_server).id();
+        let lobby_chat_message_entity = commands.spawn_empty().enable_replication(naia_server).id();
 
         // add to lobby room
         naia_server
@@ -379,9 +397,11 @@ impl ChatMessageManager {
 
         // add to local log
         if !self.lobby_chat_message_entities.contains_key(&lobby_id) {
-            self.lobby_chat_message_entities.insert(lobby_id, VecDeque::new());
+            self.lobby_chat_message_entities
+                .insert(lobby_id, VecDeque::new());
         }
-        let lobby_chat_message_entities = self.lobby_chat_message_entities.get_mut(&lobby_id).unwrap();
+        let lobby_chat_message_entities =
+            self.lobby_chat_message_entities.get_mut(&lobby_id).unwrap();
         lobby_chat_message_entities.push_back(lobby_chat_message_entity);
 
         // remove oldest messages if we have too many
@@ -390,7 +410,13 @@ impl ChatMessageManager {
             commands.entity(entity_to_delete).despawn();
         }
 
-        let user_entity = user_manager.get_or_init_user_entity(commands, naia_server, http_client, main_menu_room_key, sending_user_id);
+        let user_entity = user_manager.get_or_init_user_entity(
+            commands,
+            naia_server,
+            http_client,
+            main_menu_room_key,
+            sending_user_id,
+        );
 
         let mut lobby_chat_message = ChatMessage::new(*message_id, *timestamp, message);
         lobby_chat_message
@@ -398,7 +424,9 @@ impl ChatMessageManager {
             .set(naia_server, &user_entity);
 
         let mut lobby_chat_message_local = ChatMessageLocal::new();
-        lobby_chat_message_local.lobby_entity.set(naia_server, &lobby_entity);
+        lobby_chat_message_local
+            .lobby_entity
+            .set(naia_server, &lobby_entity);
 
         commands
             .entity(lobby_chat_message_entity)

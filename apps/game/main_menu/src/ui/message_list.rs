@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     change_detection::{Res, ResMut},
     event::{EventReader, EventWriter},
@@ -15,7 +14,10 @@ use game_engine::{
     ui::{UiHandle, UiManager},
 };
 
-use crate::{ui::{events::ResyncMessageListUiEvent, UiCatalog, UiKey}, resources::{lobby_manager::LobbyManager, chat_message_manager::ChatMessageManager}};
+use crate::{
+    resources::{chat_message_manager::ChatMessageManager, lobby_manager::LobbyManager},
+    ui::{events::ResyncMessageListUiEvent, UiCatalog, UiKey},
+};
 
 pub(crate) fn handle_message_list_interaction_events(
     ui_catalog: Res<UiCatalog>,
@@ -70,7 +72,9 @@ pub(crate) fn handle_resync_message_list_ui_events(
     );
 }
 
-pub fn on_enter_state(resync_message_list_ui_event_writer: &mut EventWriter<ResyncMessageListUiEvent>,) {
+pub fn on_enter_state(
+    resync_message_list_ui_event_writer: &mut EventWriter<ResyncMessageListUiEvent>,
+) {
     resync_message_list_ui_event_writer.send(ResyncMessageListUiEvent::new(true));
 }
 

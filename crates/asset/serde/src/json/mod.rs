@@ -1,6 +1,5 @@
-
-pub use ui_serde::json::*;
 pub use spec_serde::json::*;
+pub use ui_serde::json::*;
 
 mod asset;
 pub use asset::{Asset, AssetData, AssetMeta};

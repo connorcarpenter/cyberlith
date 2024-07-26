@@ -20,7 +20,6 @@ impl Default for WorldManager {
 }
 
 impl WorldManager {
-
     // World Keys
 
     pub fn world_instance_exists(&self, world_instance_secret: &str) -> bool {

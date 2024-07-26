@@ -13,7 +13,10 @@ use game_engine::{
     },
 };
 
-use crate::{ui::events::ResyncMessageListUiEvent, resources::{chat_message_manager::ChatMessageManager, chat_message_events::ChatMessageEvents}};
+use crate::{
+    resources::{chat_message_events::ChatMessageEvents, chat_message_manager::ChatMessageManager},
+    ui::events::ResyncMessageListUiEvent,
+};
 
 pub struct ChatMessageComponentEventsPlugin;
 
@@ -64,9 +67,9 @@ fn recv_inserted_chat_message_components(
 
         if lobby_id_opt.is_none() {
             info!(
-            "received Inserted Global ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",
-            timestamp, message_entity, message
-        );
+                "received Inserted Global ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",
+                timestamp, message_entity, message
+            );
         } else {
             info!(
             "received Inserted Lobby({:?}) ChatMessage from Session Server!  [ {:?} | {:?} | {:?} ]",

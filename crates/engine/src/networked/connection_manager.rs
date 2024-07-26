@@ -7,10 +7,7 @@ use bevy_ecs::{
     system::Resource,
 };
 
-use naia_bevy_client::{
-    transport::webrtc::Socket as WebrtcSocket,
-    Client, Timer,
-};
+use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Client, Timer};
 
 use asset_loader::{AssetManager, AssetMetadataStore};
 use filesystem::FileSystemManager;
@@ -26,9 +23,13 @@ use world_server_naia_proto::messages::Auth as WorldAuth;
 
 use super::client_markers::{Session, World};
 use crate::{
-    world::{WorldConnectEvent, WorldDisconnectEvent}, session::{SessionMessageEvents, SessionRequestEvents, SessionDisconnectEvent, SessionRejectEvent, SessionConnectEvent},
     asset_cache::{AssetCache, AssetLoadedEvent},
     networked::asset_cache_checker::AssetCacheChecker,
+    session::{
+        SessionConnectEvent, SessionDisconnectEvent, SessionMessageEvents, SessionRejectEvent,
+        SessionRequestEvents,
+    },
+    world::{WorldConnectEvent, WorldDisconnectEvent},
 };
 
 type SessionClient<'a> = Client<'a, Session>;
@@ -137,12 +138,13 @@ impl ConnectionManager {
         mut connection_manager: ResMut<Self>,
     ) {
         for _ in event_reader.read() {
-            info!(
-                "Client disconnected from world server",
-            );
+            info!("Client disconnected from world server",);
 
             let ConnectionState::ConnectedToWorld = &connection_manager.connection_state else {
-                panic!("Shouldn't happen .. state is: {:?}", &connection_manager.connection_state);
+                panic!(
+                    "Shouldn't happen .. state is: {:?}",
+                    &connection_manager.connection_state
+                );
             };
 
             connection_manager.connection_state = ConnectionState::ConnectedToSession;

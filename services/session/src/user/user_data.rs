@@ -1,4 +1,3 @@
-
 use bevy_ecs::{entity::Entity, system::Commands};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
@@ -55,7 +54,11 @@ impl UserData {
         self.requesting_info
     }
 
-    pub(crate) fn user_join_lobby(&mut self, lobby_id: &LobbyId, lobby_member_entity: &Entity) -> (UserKey, Entity) {
+    pub(crate) fn user_join_lobby(
+        &mut self,
+        lobby_id: &LobbyId,
+        lobby_member_entity: &Entity,
+    ) -> (UserKey, Entity) {
         if self.lobby_id.is_some() {
             panic!("User already in lobby");
         }

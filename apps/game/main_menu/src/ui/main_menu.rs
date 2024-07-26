@@ -18,16 +18,17 @@ use game_engine::{
 use game_app_common::AppState;
 
 use crate::{
+    resources::{
+        lobby_manager::LobbyManager, match_manager::MatchManager, user_manager::UserManager,
+    },
     ui::{
         events::{
-            CurrentLobbyButtonClickedEvent, DevlogButtonClickedEvent, GlobalChatButtonClickedEvent, GoToSubUiEvent, HostMatchButtonClickedEvent,
-            JoinMatchButtonClickedEvent, LeaveLobbyButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent, ResyncUserListUiEvent, SettingsButtonClickedEvent, StartMatchButtonClickedEvent
+            CurrentLobbyButtonClickedEvent, DevlogButtonClickedEvent, GlobalChatButtonClickedEvent,
+            GoToSubUiEvent, HostMatchButtonClickedEvent, JoinMatchButtonClickedEvent,
+            LeaveLobbyButtonClickedEvent, ResyncMainMenuUiEvent, ResyncMessageListUiEvent,
+            ResyncUserListUiEvent, SettingsButtonClickedEvent, StartMatchButtonClickedEvent,
         },
         go_to_sub_ui, UiCatalog, UiKey,
-    },
-    resources::{user_manager::UserManager,
-                lobby_manager::LobbyManager,
-                match_manager::MatchManager,
     },
 };
 
@@ -53,14 +54,27 @@ pub(crate) fn on_main_menu_ui_load(
 
     ui_catalog.set_loaded(main_menu_ui_key);
 
-    ui_manager.register_ui_event::<HostMatchButtonClickedEvent>(&main_menu_ui_handle, "host_match_button");
-    ui_manager.register_ui_event::<JoinMatchButtonClickedEvent>(&main_menu_ui_handle, "join_match_button");
-    ui_manager.register_ui_event::<GlobalChatButtonClickedEvent>(&main_menu_ui_handle, "chat_button");
+    ui_manager.register_ui_event::<HostMatchButtonClickedEvent>(
+        &main_menu_ui_handle,
+        "host_match_button",
+    );
+    ui_manager.register_ui_event::<JoinMatchButtonClickedEvent>(
+        &main_menu_ui_handle,
+        "join_match_button",
+    );
+    ui_manager
+        .register_ui_event::<GlobalChatButtonClickedEvent>(&main_menu_ui_handle, "chat_button");
     ui_manager.register_ui_event::<DevlogButtonClickedEvent>(&main_menu_ui_handle, "devlog_button");
-    ui_manager.register_ui_event::<SettingsButtonClickedEvent>(&main_menu_ui_handle, "settings_button");
-    ui_manager.register_ui_event::<CurrentLobbyButtonClickedEvent>(&main_menu_ui_handle, "current_lobby_button");
-    ui_manager.register_ui_event::<StartMatchButtonClickedEvent>(&main_menu_ui_handle, "start_button");
-    ui_manager.register_ui_event::<LeaveLobbyButtonClickedEvent>(&main_menu_ui_handle, "leave_button");
+    ui_manager
+        .register_ui_event::<SettingsButtonClickedEvent>(&main_menu_ui_handle, "settings_button");
+    ui_manager.register_ui_event::<CurrentLobbyButtonClickedEvent>(
+        &main_menu_ui_handle,
+        "current_lobby_button",
+    );
+    ui_manager
+        .register_ui_event::<StartMatchButtonClickedEvent>(&main_menu_ui_handle, "start_button");
+    ui_manager
+        .register_ui_event::<LeaveLobbyButtonClickedEvent>(&main_menu_ui_handle, "leave_button");
 
     ui_manager.enable_ui(&main_menu_ui_handle);
 
@@ -286,7 +300,9 @@ pub(crate) fn handle_resync_main_menu_ui_events(
     if ui_catalog.get_ui_key(&active_ui_handle) != UiKey::MainMenu {
         panic!("unexpected ui");
     }
-    let Some(current_sub_ui_handle) = ui_manager.get_ui_container_contents(&active_ui_handle, "center_container") else {
+    let Some(current_sub_ui_handle) =
+        ui_manager.get_ui_container_contents(&active_ui_handle, "center_container")
+    else {
         return;
     };
     let current_sub_ui_key = ui_catalog.get_ui_key(&current_sub_ui_handle);
@@ -331,7 +347,11 @@ pub(crate) fn handle_resync_main_menu_ui_events(
 
         // make left side "lobby" button visible
         ui_manager.set_node_visible(&active_ui_handle, "current_lobby_button", true);
-        ui_manager.set_text(&active_ui_handle, "current_lobby_button_text", &current_lobby.name);
+        ui_manager.set_text(
+            &active_ui_handle,
+            "current_lobby_button_text",
+            &current_lobby.name,
+        );
         ui_manager.set_text(&active_ui_handle, "center_title_text", &current_lobby.name);
 
         // make right side "leave lobby" button visible
@@ -340,7 +360,10 @@ pub(crate) fn handle_resync_main_menu_ui_events(
 
         // make right side "start match" button visible (if host)
         let self_is_owner_of_lobby: bool = {
-            let lobby_owner_user_entity = current_lobby.owner_user_entity.get(&session_client).unwrap();
+            let lobby_owner_user_entity = current_lobby
+                .owner_user_entity
+                .get(&session_client)
+                .unwrap();
 
             let self_user_entity = user_manager.get_self_user_entity().unwrap();
 

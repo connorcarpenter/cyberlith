@@ -11,7 +11,6 @@ pub(crate) enum AssetDependency<T> {
 }
 
 impl<T> AssetDependency<T> {
-
     pub(crate) fn load_handle(&mut self, handle: Handle<T>) {
         if let AssetDependency::Handle(_) = self {
             panic!("cannot load handle twice!");

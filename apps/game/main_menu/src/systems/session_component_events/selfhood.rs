@@ -13,7 +13,10 @@ use game_engine::{
     },
 };
 
-use crate::{ui::events::ResyncUserListUiEvent, resources::{user_manager::UserManager, selfhood_events::SelfhoodEvents}};
+use crate::{
+    resources::{selfhood_events::SelfhoodEvents, user_manager::UserManager},
+    ui::events::ResyncUserListUiEvent,
+};
 
 pub struct SelfhoodComponentEventsPlugin;
 

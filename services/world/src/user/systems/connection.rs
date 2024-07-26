@@ -1,20 +1,27 @@
-
 use bevy_ecs::{
     change_detection::ResMut,
     event::EventReader,
     system::{Commands, Res},
 };
 
-use naia_bevy_server::{CommandsExt, events::{AuthEvents, ConnectEvent, DisconnectEvent}, Random, Server};
+use naia_bevy_server::{
+    events::{AuthEvents, ConnectEvent, DisconnectEvent},
+    CommandsExt, Random, Server,
+};
 
 use logging::{info, warn};
 use world_server_naia_proto::{
+    channels::EntityAssignmentChannel,
     components::{Main, NextTilePosition, Position, PrevTilePosition, TileMovement},
+    constants::{MOVEMENT_SPEED, TILE_COUNT},
     messages::{Auth, EntityAssignment},
-    channels::EntityAssignmentChannel, constants::{MOVEMENT_SPEED, TILE_COUNT},
 };
 
-use crate::{asset::{AssetCatalog, AssetCommandsExt, AssetManager}, social::LobbyManager, user::UserManager};
+use crate::{
+    asset::{AssetCatalog, AssetCommandsExt, AssetManager},
+    social::LobbyManager,
+    user::UserManager,
+};
 
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
@@ -26,7 +33,8 @@ pub fn auth_events(
             if let Some(user_data) = user_manager.spend_login_token(&auth.login_token) {
                 info!(
                     "Accepted connection. User Id: {:?}, Token: {}",
-                    user_data.user_id(), auth.login_token
+                    user_data.user_id(),
+                    auth.login_token
                 );
 
                 user_manager.add_user(&user_key, user_data);
@@ -69,10 +77,7 @@ pub fn connect_events(
         let tile_position_x = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
-        let next_tile_position = NextTilePosition::new(
-            tile_position_x,
-            tile_position_y,
-        );
+        let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
         let position = Position::new(false, tick, &next_tile_position);
         let prev_tile_position = PrevTilePosition::new(&next_tile_position);
 
@@ -88,13 +93,11 @@ pub fn connect_events(
                 &mut server,
                 AssetCatalog::AvatarUnit.into(),
             )
-
             // insert position components
             .insert(next_tile_position)
             .insert(prev_tile_position)
             .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
             .insert(position)
-
             // return Entity id
             .id();
 

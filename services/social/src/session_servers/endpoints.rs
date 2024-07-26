@@ -56,9 +56,7 @@ async fn async_recv_connect_session_server_request_impl(
         .collect();
 
     // get match lobbies
-    let match_lobbies = state
-        .match_lobbies
-        .get_lobbies();
+    let match_lobbies = state.match_lobbies.get_lobbies();
 
     // store session server details
     state

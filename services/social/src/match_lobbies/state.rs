@@ -92,8 +92,10 @@ impl MatchLobbiesState {
         let new_lobby_id = self.next_lobby_id;
         self.next_lobby_id = self.next_lobby_id.next();
 
-        self.lobbies
-            .insert(new_lobby_id, LobbyData::new(*creator_user_id, match_name.to_string()));
+        self.lobbies.insert(
+            new_lobby_id,
+            LobbyData::new(*creator_user_id, match_name.to_string()),
+        );
 
         // add to outgoing patches
         if !self.outgoing_patches.contains_key(&session_instance_id) {
@@ -120,17 +122,10 @@ impl MatchLobbiesState {
         lobby_data.users.insert(*joining_user_id);
 
         // add to outgoing patches
-        if !self
-            .outgoing_patches
-            .contains_key(&session_server_id)
-        {
-            self.outgoing_patches
-                .insert(*session_server_id, Vec::new());
+        if !self.outgoing_patches.contains_key(&session_server_id) {
+            self.outgoing_patches.insert(*session_server_id, Vec::new());
         }
-        let session_server_patches = self
-            .outgoing_patches
-            .get_mut(&session_server_id)
-            .unwrap();
+        let session_server_patches = self.outgoing_patches.get_mut(&session_server_id).unwrap();
         session_server_patches.push(LobbyPatch::Join(*lobby_id, *joining_user_id));
     }
 
@@ -138,7 +133,7 @@ impl MatchLobbiesState {
         &mut self,
         session_server_id: &SessionServerId,
         lobby_id: &LobbyId,
-        leaving_user_id: &UserId
+        leaving_user_id: &UserId,
     ) {
         let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
         lobby_data.users.remove(leaving_user_id);
@@ -150,18 +145,11 @@ impl MatchLobbiesState {
         }
 
         // add to outgoing patches
-        if !self
-            .outgoing_patches
-            .contains_key(&session_server_id)
-        {
-            self.outgoing_patches
-                .insert(*session_server_id, Vec::new());
+        if !self.outgoing_patches.contains_key(&session_server_id) {
+            self.outgoing_patches.insert(*session_server_id, Vec::new());
         }
 
-        let session_server_patches = self
-            .outgoing_patches
-            .get_mut(&session_server_id)
-            .unwrap();
+        let session_server_patches = self.outgoing_patches.get_mut(&session_server_id).unwrap();
         session_server_patches.push(LobbyPatch::Leave(*leaving_user_id));
     }
 
@@ -172,7 +160,6 @@ impl MatchLobbiesState {
         user_id: &UserId,
         message: &str,
     ) -> (MessageId, Timestamp) {
-
         let lobby_data = self.lobbies.get_mut(&lobby_id).unwrap();
         let (msg_id, timestamp) = lobby_data.send_message(user_id, message);
 
@@ -188,7 +175,12 @@ impl MatchLobbiesState {
             .outgoing_patches
             .get_mut(sending_session_server_id)
             .unwrap();
-        session_server_patches.push(LobbyPatch::Message(msg_id, timestamp, *user_id, message.to_string()));
+        session_server_patches.push(LobbyPatch::Message(
+            msg_id,
+            timestamp,
+            *user_id,
+            message.to_string(),
+        ));
 
         (msg_id, timestamp)
     }
@@ -197,7 +189,7 @@ impl MatchLobbiesState {
         &mut self,
         session_server_id: &SessionServerId,
         lobby_id: &LobbyId,
-        starting_user_id: &UserId
+        starting_user_id: &UserId,
     ) -> Result<(), String> {
         let lobby_data = self.lobbies.get_mut(lobby_id).unwrap();
         if lobby_data.owner_user_id != *starting_user_id {
@@ -211,18 +203,11 @@ impl MatchLobbiesState {
         self.starting_lobbies.push(*lobby_id);
 
         // add to outgoing patches
-        if !self
-            .outgoing_patches
-            .contains_key(&session_server_id)
-        {
-            self.outgoing_patches
-                .insert(*session_server_id, Vec::new());
+        if !self.outgoing_patches.contains_key(&session_server_id) {
+            self.outgoing_patches.insert(*session_server_id, Vec::new());
         }
 
-        let session_server_patches = self
-            .outgoing_patches
-            .get_mut(&session_server_id)
-            .unwrap();
+        let session_server_patches = self.outgoing_patches.get_mut(&session_server_id).unwrap();
         session_server_patches.push(LobbyPatch::Start(*lobby_id));
 
         return Ok(());

@@ -90,7 +90,6 @@ impl UiRuntime {
 
             match &self.camera.projection {
                 Projection::Orthographic(orthographic) => {
-
                     let x = viewport.width as f32 * 0.5;
                     let y = viewport.height as f32 * 0.5;
 
@@ -101,10 +100,13 @@ impl UiRuntime {
                     self.camera.transform.translation.x = x;
                     self.camera.transform.translation.y = y;
                     self.camera.transform.translation.z = z;
-                    self.camera.transform.look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
+                    self.camera
+                        .transform
+                        .look_at(Vec3::new(x, y, 0.0), Vec3::NEG_Y);
                 }
                 Projection::Perspective(perspective) => {
-                    let distance = ((viewport.height as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
+                    let distance =
+                        ((viewport.height as f32) / 2.0) / f32::tan(perspective.fov / 2.0);
                     //let distance = 1000.0;
                     let x = viewport.width as f32 * 0.5;
                     let y = viewport.height as f32 * 0.5;

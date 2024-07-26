@@ -1,18 +1,28 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
-use bevy_ecs::{entity::Entity, system::{Query, Commands}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Commands, Query},
+};
 
 use naia_bevy_server::{CommandsExt, RoomKey, Server, UserKey};
 
+use auth_server_types::UserId;
 use bevy_http_client::{ApiRequest, ApiResponse, HttpClient, ResponseKey};
 use logging::{info, warn};
-use auth_server_types::UserId;
 use session_server_http_proto::SocialLobbyPatch;
 use session_server_naia_proto::components::{Lobby, LobbyMember};
-use social_server_http_proto::{MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest, MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse, MatchLobbyStartRequest, MatchLobbyStartResponse};
+use social_server_http_proto::{
+    MatchLobbyCreateRequest, MatchLobbyCreateResponse, MatchLobbyJoinRequest,
+    MatchLobbyJoinResponse, MatchLobbyLeaveRequest, MatchLobbyLeaveResponse,
+    MatchLobbyStartRequest, MatchLobbyStartResponse,
+};
 use social_server_types::LobbyId;
 
-use crate::{social::chat_message_manager::ChatMessageManager, session_instance::SessionInstance, user::UserManager};
+use crate::{
+    session_instance::SessionInstance, social::chat_message_manager::ChatMessageManager,
+    user::UserManager,
+};
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 enum LobbyState {
@@ -54,7 +64,8 @@ impl LobbyData {
     }
 
     pub(crate) fn add_lobby_member_entity(&mut self, lobby_member_entity: Entity, user_id: UserId) {
-        self.lobby_member_entities.insert(lobby_member_entity, user_id);
+        self.lobby_member_entities
+            .insert(lobby_member_entity, user_id);
     }
 
     pub(crate) fn remove_lobby_member_entity(&mut self, lobby_member_entity: &Entity) {
@@ -87,11 +98,15 @@ impl LobbyManager {
     }
 
     pub(crate) fn get_lobby_entity(&self, lobby_id: &LobbyId) -> Option<Entity> {
-        self.lobbies.get(lobby_id).map(|lobby_data| lobby_data.lobby_entity)
+        self.lobbies
+            .get(lobby_id)
+            .map(|lobby_data| lobby_data.lobby_entity)
     }
 
     pub(crate) fn get_lobby_room_key(&self, lobby_id: &LobbyId) -> Option<RoomKey> {
-        self.lobbies.get(lobby_id).map(|lobby_data| lobby_data.room_key)
+        self.lobbies
+            .get(lobby_id)
+            .map(|lobby_data| lobby_data.room_key)
     }
 
     pub(crate) fn update(
@@ -147,7 +162,7 @@ impl LobbyManager {
                         social_server_url.as_ref(),
                         session_instance,
                         &owner_user_key,
-                        &match_name
+                        &match_name,
                     );
                 }
                 LobbyReqQueued::MatchJoin(user_key, lobby_id) => {
@@ -285,12 +300,7 @@ impl LobbyManager {
                             Ok(_response) => {
                                 // info!("received leave match lobby message response from social server");
 
-                                self.leave_lobby(
-                                    commands,
-                                    naia_server,
-                                    user_manager,
-                                    user_id,
-                                );
+                                self.leave_lobby(commands, naia_server, user_manager, user_id);
                             }
                             Err(e) => {
                                 warn!(
@@ -318,10 +328,7 @@ impl LobbyManager {
                                 // info!("received start match lobby message response from social server");
                                 let lobby_id = response.lobby_id();
 
-                                self.start_lobby(
-                                    lobby_q,
-                                    &lobby_id,
-                                );
+                                self.start_lobby(lobby_q, &lobby_id);
                             }
                             Err(e) => {
                                 warn!(
@@ -403,20 +410,15 @@ impl LobbyManager {
         let Some((social_server_addr, social_server_port)) = social_server_url else {
             warn!("received join match lobby request but no social server is available!");
 
-            self.queued_requests.push(LobbyReqQueued::MatchJoin(
-                *user_key,
-                *lobby_id,
-            ));
+            self.queued_requests
+                .push(LobbyReqQueued::MatchJoin(*user_key, *lobby_id));
 
             return;
         };
 
         // info!("sending match lobby join request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
-        let request = MatchLobbyJoinRequest::new(
-            session_instance.instance_secret(),
-            *lobby_id,
-            user_id,
-        );
+        let request =
+            MatchLobbyJoinRequest::new(session_instance.instance_secret(), *lobby_id, user_id);
 
         let host = "session";
         let remote = "social";
@@ -448,28 +450,22 @@ impl LobbyManager {
         let Some((social_server_addr, social_server_port)) = social_server_url else {
             warn!("received start match lobby request but no social server is available!");
 
-            self.queued_requests.push(LobbyReqQueued::MatchStart(
-                *user_key,
-            ));
+            self.queued_requests
+                .push(LobbyReqQueued::MatchStart(*user_key));
 
             return;
         };
 
         // info!("sending match lobby start request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
-        let request = MatchLobbyStartRequest::new(
-            session_instance.instance_secret(),
-            user_id,
-        );
+        let request = MatchLobbyStartRequest::new(session_instance.instance_secret(), user_id);
 
         let host = "session";
         let remote = "social";
         bevy_http_client::log_util::send_req(host, remote, MatchLobbyStartRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(LobbyReqInFlight::MatchStart(
-            user_id,
-            response_key,
-        ));
+        self.in_flight_requests
+            .push(LobbyReqInFlight::MatchStart(user_id, response_key));
 
         return;
     }
@@ -490,28 +486,22 @@ impl LobbyManager {
         let Some((social_server_addr, social_server_port)) = social_server_url else {
             warn!("received leave match lobby request but no social server is available!");
 
-            self.queued_requests.push(LobbyReqQueued::MatchLeave(
-                *user_key,
-            ));
+            self.queued_requests
+                .push(LobbyReqQueued::MatchLeave(*user_key));
 
             return;
         };
 
         // info!("sending match lobby leave request to social server - [userid {:?}]:(`{:?}`)", sending_user_id, message);
-        let request = MatchLobbyLeaveRequest::new(
-            session_instance.instance_secret(),
-            user_id,
-        );
+        let request = MatchLobbyLeaveRequest::new(session_instance.instance_secret(), user_id);
 
         let host = "session";
         let remote = "social";
         bevy_http_client::log_util::send_req(host, remote, MatchLobbyLeaveRequest::name());
         let response_key = http_client.send(social_server_addr, *social_server_port, request);
 
-        self.in_flight_requests.push(LobbyReqInFlight::MatchLeave(
-            user_id,
-            response_key,
-        ));
+        self.in_flight_requests
+            .push(LobbyReqInFlight::MatchLeave(user_id, response_key));
 
         return;
     }
@@ -552,7 +542,10 @@ impl LobbyManager {
                 //     self.remove_lobby(commands, naia_server, lobby_id);
                 // }
                 SocialLobbyPatch::Join(lobby_id, user_id) => {
-                    info!("joining lobby - [lobbyid {:?}], [userid {:?}]", lobby_id, user_id);
+                    info!(
+                        "joining lobby - [lobbyid {:?}], [userid {:?}]",
+                        lobby_id, user_id
+                    );
 
                     self.join_lobby(commands, naia_server, user_manager, lobby_id, user_id);
                 }
@@ -577,7 +570,7 @@ impl LobbyManager {
                         message_id,
                         timestamp,
                         user_id,
-                        message
+                        message,
                     );
                 }
                 SocialLobbyPatch::Start(lobby_id) => {
@@ -616,10 +609,18 @@ impl LobbyManager {
         let lobby_room_key = naia_server.make_room().key();
 
         // add to collection
-        self.lobbies
-            .insert(*lobby_id, LobbyData::new(lobby_entity, lobby_room_key, *owner_user_id));
+        self.lobbies.insert(
+            *lobby_id,
+            LobbyData::new(lobby_entity, lobby_room_key, *owner_user_id),
+        );
 
-        let owner_user_entity = user_manager.get_or_init_user_entity(commands, naia_server, http_client, main_menu_room_key, owner_user_id);
+        let owner_user_entity = user_manager.get_or_init_user_entity(
+            commands,
+            naia_server,
+            http_client,
+            main_menu_room_key,
+            owner_user_id,
+        );
 
         // set lobby owner
         lobby.owner_user_entity.set(naia_server, &owner_user_entity);
@@ -686,7 +687,8 @@ impl LobbyManager {
         let lobby_entity = &lobby_data.lobby_entity;
 
         // get user key & entity
-        let (joining_user_key, joining_user_entity) = user_manager.user_join_lobby(joining_user_id, lobby_id, &lobby_member_entity);
+        let (joining_user_key, joining_user_entity) =
+            user_manager.user_join_lobby(joining_user_id, lobby_id, &lobby_member_entity);
 
         // add user and lobbymember to room
         naia_server
@@ -731,11 +733,7 @@ impl LobbyManager {
         }
     }
 
-    fn start_lobby(
-        &mut self,
-        lobby_q: &mut Query<&mut Lobby>,
-        lobby_id: &LobbyId,
-    ) {
+    fn start_lobby(&mut self, lobby_q: &mut Query<&mut Lobby>, lobby_id: &LobbyId) {
         let lobby_data = self.lobbies.get_mut(&lobby_id).unwrap();
         lobby_data.start();
         let lobby_entity = lobby_data.lobby_entity;

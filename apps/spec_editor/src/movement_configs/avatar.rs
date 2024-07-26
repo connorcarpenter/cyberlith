@@ -14,5 +14,10 @@ pub fn define() -> (String, AssetId, ETag, MovementConfig) {
     // Create spec !
     let mut movement_config = MovementConfig::new(2.0);
 
-    (self_name.to_string(), self_asset_id, self_etag, movement_config)
+    (
+        self_name.to_string(),
+        self_asset_id,
+        self_etag,
+        movement_config,
+    )
 }

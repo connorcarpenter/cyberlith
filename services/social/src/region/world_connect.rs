@@ -13,21 +13,19 @@ pub async fn send_world_connect_request(
     // Vec<session_instance_secret, Vec<UserId>>
     user_ids: Vec<(String, Vec<UserId>)>,
 ) -> Result<(String, Vec<(UserId, String)>), ResponseError> {
-
     if !region_server_state.connected() {
-        return Err(ResponseError::NetworkError("region server not connected".to_string()));
+        return Err(ResponseError::NetworkError(
+            "region server not connected".to_string(),
+        ));
     }
 
-    let request = WorldConnectRequest::new(
-        SOCIAL_SERVER_GLOBAL_SECRET,
-        lobby_id,
-        user_ids,
-    );
+    let request = WorldConnectRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, lobby_id, user_ids);
 
     let host = "social";
     let remote = "region";
     http_server::log_util::send_req(host, remote, WorldConnectRequest::name());
-    let response_result = HttpClient::send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request).await;
+    let response_result =
+        HttpClient::send(REGION_SERVER_RECV_ADDR, REGION_SERVER_PORT, request).await;
     http_server::log_util::recv_res(host, remote, WorldConnectResponse::name());
     region_server_state.sent_to_region_server();
 

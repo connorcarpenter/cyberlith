@@ -1,12 +1,15 @@
-use bevy_ecs::{prelude::Commands, event::EventReader, change_detection::ResMut};
+use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Commands};
 
 use game_engine::{
-    world::{messages::EntityAssignment, WorldClient, WorldMessageEvents, channels::EntityAssignmentChannel},
     logging::info,
     time::Instant,
+    world::{
+        channels::EntityAssignmentChannel, messages::EntityAssignment, WorldClient,
+        WorldMessageEvents,
+    },
 };
 
-use crate::{systems::world_events::PredictionEvents, resources::Global};
+use crate::{resources::Global, systems::world_events::PredictionEvents};
 
 pub fn message_events(
     mut commands: Commands,

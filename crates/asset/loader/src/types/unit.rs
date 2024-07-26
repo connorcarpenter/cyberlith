@@ -1,7 +1,9 @@
-
 use asset_serde::bits::UnitBits;
 
-use crate::{AnimatedModelData, asset_dependency::AssetDependency, AssetHandle, MovementConfigData, TypedAssetId};
+use crate::{
+    asset_dependency::AssetDependency, AnimatedModelData, AssetHandle, MovementConfigData,
+    TypedAssetId,
+};
 
 pub struct UnitData {
     animated_model_file: AssetDependency<AnimatedModelData>,
@@ -34,7 +36,8 @@ impl From<&[u8]> for UnitData {
 
 impl UnitData {
     pub fn get_animated_model_file_handle(&self) -> Option<&AssetHandle<AnimatedModelData>> {
-        if let AssetDependency::<AnimatedModelData>::AssetHandle(handle) = &self.animated_model_file {
+        if let AssetDependency::<AnimatedModelData>::AssetHandle(handle) = &self.animated_model_file
+        {
             Some(handle)
         } else {
             None
@@ -42,7 +45,9 @@ impl UnitData {
     }
 
     pub fn get_movement_config_file_handle(&self) -> Option<&AssetHandle<MovementConfigData>> {
-        if let AssetDependency::<MovementConfigData>::AssetHandle(handle) = &self.movement_config_file {
+        if let AssetDependency::<MovementConfigData>::AssetHandle(handle) =
+            &self.movement_config_file
+        {
             Some(handle)
         } else {
             None
@@ -54,15 +59,20 @@ impl UnitData {
         handle: AssetHandle<Self>,
         dependencies: &mut Vec<(TypedAssetId, TypedAssetId)>,
     ) {
-        let AssetDependency::<AnimatedModelData>::AssetId(asset_id) = &self.animated_model_file else {
+        let AssetDependency::<AnimatedModelData>::AssetId(asset_id) = &self.animated_model_file
+        else {
             panic!("expected path right after load");
         };
         dependencies.push((handle.into(), TypedAssetId::AnimatedModel(asset_id.clone())));
 
-        let AssetDependency::<MovementConfigData>::AssetId(asset_id) = &self.movement_config_file else {
+        let AssetDependency::<MovementConfigData>::AssetId(asset_id) = &self.movement_config_file
+        else {
             panic!("expected path right after load");
         };
-        dependencies.push((handle.into(), TypedAssetId::MovementConfig(asset_id.clone())));
+        dependencies.push((
+            handle.into(),
+            TypedAssetId::MovementConfig(asset_id.clone()),
+        ));
     }
 
     pub(crate) fn finish_dependency(&mut self, dependency_typed_id: TypedAssetId) {

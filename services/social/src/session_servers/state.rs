@@ -84,8 +84,10 @@ impl SessionServersState {
         match_lobbies: Vec<(LobbyId, UserId, String, Vec<UserId>, LobbyState)>,
     ) {
         let id = self.next_session_id();
-        self.instances
-            .insert(id, SessionInstance::new(recv_addr, recv_port, instance_secret));
+        self.instances.insert(
+            id,
+            SessionInstance::new(recv_addr, recv_port, instance_secret),
+        );
         self.secret_to_session_server_id
             .insert(instance_secret.to_string(), id);
 
@@ -147,7 +149,11 @@ impl SessionServersState {
             let mut patches = Vec::new();
 
             for (lobby_id, owner_user_id, match_name, member_ids, state) in &match_lobbies {
-                patches.push(SocialLobbyPatch::Create(*lobby_id, match_name.clone(), *owner_user_id));
+                patches.push(SocialLobbyPatch::Create(
+                    *lobby_id,
+                    match_name.clone(),
+                    *owner_user_id,
+                ));
                 for member_id in member_ids {
                     patches.push(SocialLobbyPatch::Join(*lobby_id, *member_id));
                 }
@@ -156,8 +162,7 @@ impl SessionServersState {
                 }
             }
 
-            let request =
-                SocialPatchMatchLobbiesRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, patches);
+            let request = SocialPatchMatchLobbiesRequest::new(SOCIAL_SERVER_GLOBAL_SECRET, patches);
             let response = HttpClient::send(recv_addr, recv_port, request).await;
             match response {
                 Ok(_) => {
@@ -213,19 +218,31 @@ impl SessionServersState {
             .map(|instance| (instance.addr.as_str(), instance.port))
     }
 
-    pub(crate) fn session_server_user_connect(&mut self, session_server_id: &SessionServerId, user_id: &UserId) {
+    pub(crate) fn session_server_user_connect(
+        &mut self,
+        session_server_id: &SessionServerId,
+        user_id: &UserId,
+    ) {
         self.instances
             .get_mut(session_server_id)
             .map(|instance| instance.insert_connected_user(*user_id));
     }
 
-    pub(crate) fn session_server_user_disconnect(&mut self, session_server_id: &SessionServerId, user_id: &UserId) {
+    pub(crate) fn session_server_user_disconnect(
+        &mut self,
+        session_server_id: &SessionServerId,
+        user_id: &UserId,
+    ) {
         self.instances
             .get_mut(session_server_id)
             .map(|instance| instance.remove_connected_user(user_id));
     }
 
-    pub fn session_server_has_user_connected(&self, session_server_id: &SessionServerId, user_id: &UserId) -> bool {
+    pub fn session_server_has_user_connected(
+        &self,
+        session_server_id: &SessionServerId,
+        user_id: &UserId,
+    ) -> bool {
         self.instances
             .get(session_server_id)
             .map(|instance| instance.has_user_connected(user_id))

@@ -6,7 +6,6 @@ use crate::bits::AnimatedModelBits;
 
 impl From<&AnimatedModel> for AnimatedModelBits {
     fn from(value: &AnimatedModel) -> Self {
-
         let mut me = Self::new(value.get_model_asset_id());
 
         for (name, asset_id) in value.get_animations() {

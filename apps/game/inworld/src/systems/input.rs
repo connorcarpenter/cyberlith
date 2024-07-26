@@ -1,14 +1,13 @@
 use bevy_ecs::prelude::{Res, ResMut};
 
-use game_engine::{input::{Input, Key}, world::{WorldClient, messages::KeyCommand}};
+use game_engine::{
+    input::{Input, Key},
+    world::{messages::KeyCommand, WorldClient},
+};
 
 use crate::resources::Global;
 
-pub fn key_input(
-    client: WorldClient,
-    mut global: ResMut<Global>,
-    input: Res<Input>,
-) {
+pub fn key_input(client: WorldClient, mut global: ResMut<Global>, input: Res<Input>) {
     let w = input.is_pressed(Key::W);
     let s = input.is_pressed(Key::S);
     let a = input.is_pressed(Key::A);

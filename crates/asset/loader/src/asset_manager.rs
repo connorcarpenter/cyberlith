@@ -9,7 +9,10 @@ use render_api::{
 };
 use storage::Storage;
 
-use crate::{processed_asset_store::ProcessedAssetStore, AnimationData, AssetHandle, IconData, UnitData, AnimatedModelData, MovementConfigData};
+use crate::{
+    processed_asset_store::ProcessedAssetStore, AnimatedModelData, AnimationData, AssetHandle,
+    IconData, MovementConfigData, UnitData,
+};
 
 #[derive(Resource)]
 pub struct AssetManager {
@@ -106,12 +109,18 @@ impl AssetManager {
 
     // Unit
 
-    pub fn get_unit_animated_model_handle(&self, handle: &AssetHandle<UnitData>) -> Option<&AssetHandle<AnimatedModelData>> {
+    pub fn get_unit_animated_model_handle(
+        &self,
+        handle: &AssetHandle<UnitData>,
+    ) -> Option<&AssetHandle<AnimatedModelData>> {
         let unit = self.store.units.get(handle)?;
         unit.get_animated_model_file_handle()
     }
 
-    pub fn get_unit_movement_config(&self, handle: &AssetHandle<UnitData>) -> Option<&MovementConfigData> {
+    pub fn get_unit_movement_config(
+        &self,
+        handle: &AssetHandle<UnitData>,
+    ) -> Option<&MovementConfigData> {
         let unit = self.store.units.get(handle)?;
         let movement_config_handle = unit.get_movement_config_file_handle()?;
         self.store.movement_configs.get(movement_config_handle)

@@ -76,9 +76,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
     });
 
     let left_title_text_style = ui_config.create_text_style(|s| {
-        s
-            .set_size_pc(100.0)
-            .set_margin_left_pc(8.0);
+        s.set_size_pc(100.0).set_margin_left_pc(8.0);
     });
     let center_title_text_style = ui_config.create_text_style(|s| {
         s.set_size_pc(100.);
@@ -96,8 +94,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
             .set_margin_top_vp(0.2);
     });
     let side_space_style = ui_config.create_panel_style(|s| {
-        s
-            .set_background_alpha(0.0)
+        s.set_background_alpha(0.0)
             .set_width_pc(100.0)
             .set_height_vp(4.0)
             .set_margin_top_vp(0.2);
@@ -115,7 +112,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         c.add_panel().set_style(left_bar_style).contents(|c| {
             // top-most
             c.add_panel().set_style(left_top_bar_style).contents(|c| {
-                c.add_text("c y b e r l i t h").set_style(left_title_text_style);
+                c.add_text("c y b e r l i t h")
+                    .set_style(left_title_text_style);
             });
 
             // left buttons
@@ -158,9 +156,7 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 });
 
             // blank space
-            c.add_panel()
-                .set_style(side_space_style)
-                .contents(|c| {});
+            c.add_panel().set_style(side_space_style).contents(|c| {});
 
             // current lobby
             c.add_button("current_lobby_button")
@@ -168,7 +164,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
                 .set_enabled(false)
                 .set_style(side_button_style)
                 .contents(|c| {
-                    c.add_text_with_id("-", "current_lobby_button_text").set_style(base_button_text_style);
+                    c.add_text_with_id("-", "current_lobby_button_text")
+                        .set_style(base_button_text_style);
                 });
         });
 
@@ -176,7 +173,8 @@ pub fn ui_define() -> (String, AssetId, ETag, UiConfig) {
         c.add_panel().set_style(center_style).contents(|c| {
             // center title
             c.add_panel().set_style(center_top_bar_style).contents(|c| {
-                c.add_text_with_id("-", "center_title_text").set_style(center_title_text_style);
+                c.add_text_with_id("-", "center_title_text")
+                    .set_style(center_title_text_style);
             });
 
             // main

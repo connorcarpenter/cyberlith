@@ -5,6 +5,7 @@ use logging::warn;
 use ui_layout::NodeStateStore;
 use ui_runner_config::{NodeId, StyleId, UiNode, WidgetKind};
 
+use crate::button::ButtonState;
 use crate::{
     button::ButtonStyleState,
     panel::PanelStyleState,
@@ -15,7 +16,6 @@ use crate::{
     textbox::TextboxStyleState,
     UiNodeState,
 };
-use crate::button::ButtonState;
 
 pub struct UiStateStore {
     asset_id: AssetId,

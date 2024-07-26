@@ -8,7 +8,7 @@ impl From<&Unit> for UnitBits {
     fn from(value: &Unit) -> Self {
         Self::new(
             value.get_animated_model_asset_id(),
-            value.get_movement_config_asset_id()
+            value.get_movement_config_asset_id(),
         )
     }
 }

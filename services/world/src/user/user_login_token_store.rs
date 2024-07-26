@@ -29,7 +29,12 @@ impl UserLoginTokenStore {
             for (user_id, token) in tokens {
                 self.login_tokens.insert(
                     token.to_string(),
-                    UserData::new(session_server_addr, *session_server_port, *user_id, *lobby_id),
+                    UserData::new(
+                        session_server_addr,
+                        *session_server_port,
+                        *user_id,
+                        *lobby_id,
+                    ),
                 );
             }
         }
