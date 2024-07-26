@@ -40,6 +40,7 @@ pub struct TileMovement {
     distance: f32,
     distance_max: f32,
     speed: f32,
+    done: bool
 }
 
 impl TileMovement {
@@ -48,6 +49,7 @@ impl TileMovement {
             distance: 0.0,
             distance_max: 1.0,
             speed,
+            done: false,
         }
     }
 
@@ -66,31 +68,40 @@ impl TileMovement {
     pub fn next(&mut self, new_distance: f32) {
         self.distance = 0.0;
         self.distance_max = new_distance;
+        self.done = false;
     }
 
     pub fn tick(&mut self) {
+        if self.done {
+            return;
+        }
         self.distance += self.speed;
         if self.distance >= self.distance_max {
+            self.done = true;
             self.distance = self.distance_max;
         }
     }
 
     pub fn interp(&self) -> f32 {
-        self.distance / self.distance_max
+        if self.done {
+            return 1.0;
+        }
+        return self.distance / self.distance_max;
     }
 
     pub fn complete(&self) -> bool {
-        self.distance >= self.distance_max
+        self.done
     }
 
     pub fn mirror(&mut self, other: &Self) {
         self.distance = other.distance;
         self.distance_max = other.distance_max;
         self.speed = other.speed;
+        self.done = other.done;
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct Position {
     pub x: f32,
     pub y: f32,
