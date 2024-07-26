@@ -1,9 +1,7 @@
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate, Tick};
-
-use crate::constants::TILE_SIZE;
-
+use crate::messages::KeyCommand;
 // This is networked
 
 #[derive(Component, Replicate)]
@@ -42,147 +40,85 @@ impl NextTilePosition {
 // These are not networked
 
 #[derive(Component)]
-pub struct PrevTilePosition {
-    pub x: i16,
-    pub y: i16,
-}
-
-impl PrevTilePosition {
-    pub fn new(next_tile_position: &NextTilePosition) -> Self {
-        let x = next_tile_position.x();
-        let y = next_tile_position.y();
-
-        Self { x, y }
-    }
-
-    pub fn mirror(&mut self, other: &Self) {
-        self.x = other.x;
-        self.y = other.y;
-    }
-}
-
-#[derive(Component)]
 pub struct TileMovement {
-    predicted: bool,
-    tick: Tick,
-    distance: f32,
-    distance_max: f32,
-    speed: f32,
-    done: bool,
+    state: TileMovementState,
 }
 
 impl TileMovement {
-    pub fn new(predicted: bool, tick: Tick, speed: f32) -> Self {
+
+    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
         Self {
-            predicted,
-            tick,
-            distance: 0.0,
-            distance_max: 1.0,
-            speed,
-            done: false,
+            state: TileMovementState::stopped(),
         }
     }
 
-    // pub fn tick(&self) -> Tick {
-    //     self.tick
-    // }
-
-    pub fn speed(&self) -> f32 {
-        self.speed
-    }
-
-    pub fn distance(&self) -> f32 {
-        self.distance
-    }
-
-    pub fn distance_max(&self) -> f32 {
-        self.distance_max
-    }
-
-    pub fn next(&mut self, new_distance: f32) {
-        self.distance = 0.0;
-        self.distance_max = new_distance;
-        self.done = false;
-    }
-
-    pub fn process_tick(&mut self, tick: Tick) {
-        self.tick = tick;
-        if self.done {
-            return;
-        }
-        self.distance += self.speed;
-        if self.distance >= self.distance_max {
-            self.done = true;
-            self.distance = self.distance_max;
+    pub fn stopped() -> Self {
+        Self {
+            state: TileMovementState::stopped(),
         }
     }
 
-    pub fn interp(&self) -> f32 {
-        if self.done {
-            return 1.0;
+    pub fn moving() -> Self {
+        Self {
+            state: TileMovementState::moving(),
         }
-        return self.distance / self.distance_max;
     }
 
-    pub fn complete(&self) -> bool {
-        self.done
+    // retrieve the current position of the entity
+    pub fn current_position(&self) -> (f32, f32) {
+        todo!();
     }
 
-    pub fn mirror(&mut self, other: &Self) {
-        self.tick = other.tick;
-        self.distance = other.distance;
-        self.distance_max = other.distance_max;
-        self.speed = other.speed;
-        self.done = other.done;
+    //
+    pub fn recv_command(&mut self, key_command: &KeyCommand) {
+        todo!();
+    }
+
+    // called by confirmed (server) entities only
+    pub fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
+        todo!();
+    }
+
+    // called by predicted (client) entities only
+    pub fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
+        todo!();
     }
 }
 
-#[derive(Component, Debug)]
-pub struct Position {
-    predicted: bool,
-    tick: Tick,
-    x: f32,
-    y: f32,
+// Tile Movement State
+enum TileMovementState {
+    Stopped(TileMovementStoppedState),
+    Moving(TileMovementMovingState),
 }
 
-impl Position {
-    pub fn new(predicted: bool, tick: Tick, next_tile_position: &NextTilePosition) -> Self {
-        let x = next_tile_position.x() as f32 * TILE_SIZE;
-        let y = next_tile_position.y() as f32 * TILE_SIZE;
+impl TileMovementState {
+    fn stopped() -> Self {
+        Self::Stopped(TileMovementStoppedState::new())
+    }
 
+    fn moving() -> Self {
+        Self::Moving(TileMovementMovingState::new())
+    }
+}
+
+// Tile Movement Stopped State
+struct TileMovementStoppedState {
+}
+
+impl TileMovementStoppedState {
+    fn new() -> Self {
         Self {
-            predicted,
-            tick,
-            x,
-            y,
         }
     }
+}
 
-    pub fn predicted(&self) -> bool {
-        self.predicted
-    }
+// Tile Movement Moving State
+struct TileMovementMovingState {
+}
 
-    pub fn x(&self) -> f32 {
-        self.x
-    }
-
-    pub fn y(&self) -> f32 {
-        self.y
-    }
-
-    pub fn tick(&self) -> Tick {
-        self.tick
-    }
-
-    pub fn set(&mut self, tick: Tick, x: f32, y: f32) {
-        self.tick = tick;
-        self.x = x;
-        self.y = y;
-    }
-
-    pub fn mirror(&mut self, other: &Self) {
-        self.tick = other.tick;
-        self.x = other.x;
-        self.y = other.y;
+impl TileMovementMovingState {
+    fn new() -> Self {
+        Self {
+        }
     }
 }

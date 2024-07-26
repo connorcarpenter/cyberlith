@@ -5,14 +5,14 @@ use game_engine::{
     world::{
         behavior as shared_behavior,
         channels::PlayerCommandChannel,
-        components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+        components::{NextTilePosition, TileMovement},
         messages::KeyCommand,
         WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
 
 use crate::{
-    components::{BufferedNextTilePosition, Confirmed, Interp, Predicted},
+    components::{Confirmed, Predicted},
     resources::Global,
 };
 
@@ -21,13 +21,7 @@ pub fn client_tick_events(
     mut global: ResMut<Global>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<
-        (
-            &mut PrevTilePosition,
-            &mut NextTilePosition,
-            &mut TileMovement,
-            &mut Position,
-            &mut Interp,
-        ),
+        &mut TileMovement,
         With<Predicted>,
     >,
 ) {
@@ -45,23 +39,11 @@ pub fn client_tick_events(
         let client_tick = event.tick;
 
         // process movement
-        let (
-            mut prev_tile_position,
-            next_tile_position,
-            mut tile_movement,
-            mut position,
-            mut interp,
-        ) = position_q.get_mut(predicted_entity).unwrap();
+        let mut tile_movement = position_q.get_mut(predicted_entity).unwrap();
 
         shared_behavior::process_movement(
-            &mut prev_tile_position,
-            next_tile_position.x(),
-            next_tile_position.y(),
             &mut tile_movement,
-            &mut position,
-            client_tick,
         );
-        interp.next_position(&position, Some("client_tick_event"));
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
@@ -81,55 +63,29 @@ pub fn client_tick_events(
         global.command_history.insert(client_tick, command.clone());
 
         // Send command
-        client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &command);
-
-        let (prev_tile_position, mut next_tile_position, mut tile_movement, _position, _interp) =
-            position_q.get_mut(predicted_entity).unwrap();
+        client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
 
         // Apply command
         shared_behavior::process_command(
-            &command,
-            &prev_tile_position,
-            &mut next_tile_position,
             &mut tile_movement,
+            command,
         );
     }
 }
 
 pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<
-        (
-            &mut PrevTilePosition,
-            &BufferedNextTilePosition,
-            &mut TileMovement,
-            &mut Position,
-            &mut Interp,
-        ),
-        With<Confirmed>,
-    >,
+    mut position_q: Query<&mut TileMovement, With<Confirmed>>,
 ) {
-    for event in tick_reader.read() {
-        let server_tick = event.tick;
+    for _event in tick_reader.read() {
+        // let server_tick = event.tick;
 
         // process movement
-        for (
-            mut prev_tile_position,
-            buffered_next_tile_position,
-            mut tile_movement,
-            mut position,
-            mut interp,
-        ) in position_q.iter_mut()
+        for mut tile_movement in position_q.iter_mut()
         {
             shared_behavior::process_movement(
-                &mut prev_tile_position,
-                buffered_next_tile_position.x(),
-                buffered_next_tile_position.y(),
                 &mut tile_movement,
-                &mut position,
-                server_tick,
             );
-            interp.next_position(&position, Some("server_tick_event"));
         }
     }
 }

@@ -14,7 +14,7 @@ use logging::info;
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
-    components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+    components::{NextTilePosition, TileMovement},
     messages::KeyCommand,
 };
 
@@ -49,29 +49,17 @@ pub fn tick_events(world: &mut World) {
     {
         let mut system_state: SystemState<(
             Server,
-            Query<(
-                &mut PrevTilePosition,
-                &mut NextTilePosition,
-                &mut TileMovement,
-                &mut Position,
-            )>,
+            Query<&mut TileMovement>,
         )> = SystemState::new(world);
-        let (mut server, mut position_q) = system_state.get_mut(world);
+        let (mut server, mut tile_movement_q) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
             // All game logic should happen here, on a tick event
 
             // process movement
-            for (mut prev_tile_position, next_tile_position, mut tile_movement, mut position) in
-                position_q.iter_mut()
-            {
+            for mut tile_movement in tile_movement_q.iter_mut() {
                 shared_behavior::process_movement(
-                    &mut prev_tile_position,
-                    next_tile_position.x(),
-                    next_tile_position.y(),
                     &mut tile_movement,
-                    &mut position,
-                    *server_tick,
                 );
             }
 
@@ -80,16 +68,12 @@ pub fn tick_events(world: &mut World) {
                 let Some(entity) = &command.entity.get(&server) else {
                     continue;
                 };
-                let Ok((prev_tile_position, mut next_tile_position, mut tile_movement, _position)) =
-                    position_q.get_mut(*entity)
-                else {
+                let Ok(mut tile_movement) = tile_movement_q.get_mut(*entity) else {
                     continue;
                 };
                 shared_behavior::process_command(
-                    &command,
-                    &prev_tile_position,
-                    &mut next_tile_position,
                     &mut tile_movement,
+                    &command,
                 );
             }
         }

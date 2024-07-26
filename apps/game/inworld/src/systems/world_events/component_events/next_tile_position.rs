@@ -15,7 +15,7 @@ use game_engine::{
     time::Instant,
     world::{
         behavior as shared_behavior,
-        components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+        components::{NextTilePosition, TileMovement},
         constants::{MOVEMENT_SPEED, TILE_SIZE},
         WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
@@ -23,7 +23,7 @@ use game_engine::{
 };
 
 use crate::{
-    components::{AnimationState, BufferedNextTilePosition, Confirmed, Interp},
+    components::{AnimationState, Confirmed},
     resources::Global,
     systems::world_events::PredictionEvents,
 };
@@ -51,17 +51,10 @@ pub fn insert_next_tile_position_events(
 
         let layer = RenderLayers::layer(0);
 
-        let position = Position::new(false, tick, next_tile_position);
-        let interp = Interp::new(&position);
-
         commands
             .entity(entity)
             // Insert Position stuff
-            .insert(PrevTilePosition::new(&next_tile_position))
-            .insert(BufferedNextTilePosition::new(&next_tile_position))
-            .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
-            .insert(position)
-            .insert(interp)
+            .insert(TileMovement::new_stopped(next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(layer)
@@ -78,14 +71,8 @@ pub fn insert_next_tile_position_events(
 pub fn update_next_tile_position_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
-    mut position_q: Query<(
-        &mut PrevTilePosition,
-        Option<&mut BufferedNextTilePosition>,
-        &mut NextTilePosition,
-        &mut TileMovement,
-        &mut Position,
-        &mut Interp,
-    )>,
+    next_tile_position_q: Query<&NextTilePosition>,
+    mut tile_movement_q: Query<&mut TileMovement>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -110,48 +97,21 @@ pub fn update_next_tile_position_events(
     }
 
     for (updated_entity, update_tick) in updated_entities {
-        let Ok((
-            mut prev_tile_position,
-            mut buffered_tile_position,
-            next_tile_position,
-            mut tile_movement,
-            mut position,
-            mut interp,
-        )) = position_q.get_mut(updated_entity)
+        let Ok(next_tile_position) = next_tile_position_q.get(updated_entity)
         else {
             panic!(
                 "failed to get updated components for entity: {:?}",
                 updated_entity
             );
         };
-        let buffered_tile_position = buffered_tile_position.as_mut().unwrap();
-        let next_tile_changed = !buffered_tile_position.equals(&next_tile_position);
-
-        if next_tile_changed {
-            buffered_tile_position.incoming(&mut prev_tile_position, &next_tile_position);
-
-            let x_axis_changed = next_tile_position.x() != prev_tile_position.x;
-            let y_axis_changed = next_tile_position.y() != prev_tile_position.y;
-            if !x_axis_changed && !y_axis_changed {
-                panic!("is this possible?");
-            }
-            let distance = if x_axis_changed && y_axis_changed {
-                std::f32::consts::SQRT_2
-            } else {
-                1.0
-            };
-            tile_movement.next(distance * TILE_SIZE);
-
-            position.set(
-                update_tick,
-                prev_tile_position.x as f32 * TILE_SIZE,
-                prev_tile_position.y as f32 * TILE_SIZE,
+        let Ok(mut tile_movement) = tile_movement_q.get_mut(updated_entity)
+        else {
+            panic!(
+                "failed to get tile movement q for entity: {:?}",
+                updated_entity
             );
-
-            interp.next_position(&position, Some("update_next_tile_position"));
-        } else {
-            warn!("NextTilePosition update received, but no change detected");
-        }
+        };
+        tile_movement.recv_updated_next_tile_position(&next_tile_position, update_tick);
     }
 
     let Some(owned_entity) = &global.owned_entity else {
@@ -178,38 +138,17 @@ pub fn update_next_tile_position_events(
         return;
     };
 
-    let Ok(
-        [(
-            server_prev_tile_position,
-            server_buf_next_tile_position,
-            _,
-            server_tile_movement,
-            server_position,
-            server_interp,
-        ), (
-            mut client_prev_tile_position,
-            _,
-            mut client_next_tile_position,
-            mut client_tile_movement,
-            mut client_position,
-            mut client_interp,
-        )],
-    ) = position_q.get_many_mut([server_entity, client_entity])
-    else {
+    let Ok([server_tile_movement, mut client_tile_movement])
+        = tile_movement_q.get_many_mut([server_entity, client_entity]) else
+    {
         panic!(
             "failed to get components for entities: {:?}, {:?}",
             server_entity, client_entity
         );
     };
 
-    let server_next_tile_position = server_buf_next_tile_position.as_ref().unwrap();
-
     // Set to authoritative state
-    client_prev_tile_position.mirror(&*server_prev_tile_position);
-    client_next_tile_position.set(server_next_tile_position.x(), server_next_tile_position.y());
-    client_tile_movement.mirror(&*server_tile_movement);
-    client_position.mirror(&*server_position);
-    client_interp.mirror(&*server_interp);
+    client_tile_movement.recv_rollback(&server_tile_movement);
 
     // Replay all stored commands
 
@@ -224,21 +163,12 @@ pub fn update_next_tile_position_events(
         while sequence_greater_than(command_tick, current_tick) {
             current_tick = current_tick.wrapping_add(1);
 
-            shared_behavior::process_movement(
-                &mut client_prev_tile_position,
-                client_next_tile_position.x(),
-                client_next_tile_position.y(),
-                &mut client_tile_movement,
-                &mut client_position,
-                current_tick,
-            );
-            client_interp.next_position(&client_position, Some("replay_commands"));
+            // PREDICTION ROLLBACK
+            shared_behavior::process_movement(&mut client_tile_movement);
         }
         shared_behavior::process_command(
-            &command,
-            &client_prev_tile_position,
-            &mut client_next_tile_position,
             &mut client_tile_movement,
+            &command,
         );
     }
 }

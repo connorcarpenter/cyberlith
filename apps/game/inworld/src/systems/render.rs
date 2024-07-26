@@ -6,10 +6,10 @@ use game_engine::{
         components::{RenderLayer, Transform, Visibility},
         resources::RenderFrame,
     },
-    world::WorldClient,
+    world::{WorldClient, components::TileMovement},
 };
 
-use crate::components::{AnimationState, Confirmed, Interp, Predicted};
+use crate::components::{AnimationState, Confirmed, Predicted};
 
 pub fn draw_units(
     client: WorldClient,
@@ -18,7 +18,7 @@ pub fn draw_units(
     mut unit_q: Query<(
         &AssetHandle<UnitData>,
         &AnimationState,
-        &Interp,
+        &TileMovement,
         Option<&Confirmed>,
         Option<&Predicted>,
         &mut Transform,
@@ -30,7 +30,7 @@ pub fn draw_units(
     for (
         unit_handle,
         anim_state,
-        interp,
+        tile_movement,
         confirmed_opt,
         predicted_opt,
         mut transform,
@@ -50,17 +50,17 @@ pub fn draw_units(
             panic!("Unit cannot be both confirmed and predicted");
         }
 
-        let interpolation = if confirmed_opt.is_some() {
-            client.server_interpolation().unwrap()
+        if confirmed_opt.is_some() {
+            // is confirmed
         } else if predicted_opt.is_some() {
-            client.client_interpolation().unwrap()
+            continue;
         } else {
             panic!("Unit must be either confirmed or predicted");
         };
 
-        let (interp_x, interp_y) = interp.interpolate(interpolation);
-        transform.translation.x = interp_x;
-        transform.translation.y = interp_y;
+        let (current_position_x, current_position_y) = tile_movement.current_position();
+        transform.translation.x = current_position_x;
+        transform.translation.y = current_position_y;
 
         asset_manager.draw_animated_model(
             &mut render_frame,

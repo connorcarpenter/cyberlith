@@ -12,7 +12,7 @@ use naia_bevy_server::{
 use logging::{info, warn};
 use world_server_naia_proto::{
     channels::EntityAssignmentChannel,
-    components::{Main, NextTilePosition, Position, PrevTilePosition, TileMovement},
+    components::{Main, NextTilePosition, TileMovement},
     constants::{MOVEMENT_SPEED, TILE_COUNT},
     messages::{Auth, EntityAssignment},
 };
@@ -78,8 +78,7 @@ pub fn connect_events(
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
         let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
-        let position = Position::new(false, tick, &next_tile_position);
-        let prev_tile_position = PrevTilePosition::new(&next_tile_position);
+        let tile_movement = TileMovement::new_stopped(&next_tile_position);
 
         // give user an entity
         let user_entity = commands
@@ -95,9 +94,7 @@ pub fn connect_events(
             )
             // insert position components
             .insert(next_tile_position)
-            .insert(prev_tile_position)
-            .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
-            .insert(position)
+            .insert(tile_movement)
             // return Entity id
             .id();
 

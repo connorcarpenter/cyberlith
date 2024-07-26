@@ -14,14 +14,14 @@ use game_engine::{
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
-        components::{NextTilePosition, Position, PrevTilePosition, TileMovement},
+        components::{NextTilePosition, TileMovement},
         constants::MOVEMENT_SPEED,
         WorldClient,
     },
 };
 
 use crate::{
-    components::{AnimationState, Interp, Predicted},
+    components::{AnimationState, Predicted},
     resources::{Global, OwnedEntity},
 };
 
@@ -73,21 +73,10 @@ impl PredictionEvents {
 
             let prediction_entity = commands.spawn_empty().id();
 
-            let mut predicted_next_tile_position =
-                NextTilePosition::new(next_tile_position.x(), next_tile_position.y());
-            predicted_next_tile_position.localize();
-            let position = Position::new(true, client_tick, &predicted_next_tile_position);
-            let interp = Interp::new(&position);
-            let prev_tile_position = PrevTilePosition::new(&predicted_next_tile_position);
-
             commands
                 .entity(prediction_entity)
                 // Position stuff
-                .insert(predicted_next_tile_position)
-                .insert(prev_tile_position)
-                .insert(TileMovement::new(true, client_tick, MOVEMENT_SPEED))
-                .insert(position)
-                .insert(interp)
+                .insert(TileMovement::new_stopped(&next_tile_position))
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
