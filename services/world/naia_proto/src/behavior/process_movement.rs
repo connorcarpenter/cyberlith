@@ -18,9 +18,9 @@ pub fn process_movement(
     if tile_movement.complete() {
         prev_tile_position.x = *next_tile_position.x;
         prev_tile_position.y = *next_tile_position.y;
-    }
-
-    {
+        position.x = *next_tile_position.x as f32 * TILE_SIZE;
+        position.y = *next_tile_position.y as f32 * TILE_SIZE;
+    } else {
         let interp = tile_movement.interp();
         let prev_x = prev_tile_position.x as f32;
         let prev_y = prev_tile_position.y as f32;

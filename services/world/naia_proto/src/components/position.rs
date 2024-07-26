@@ -72,7 +72,7 @@ impl TileMovement {
     }
 
     pub fn complete(&self) -> bool {
-        self.distance == self.distance_max
+        self.distance >= self.distance_max
     }
 
     pub fn mirror(&mut self, other: &Self) {

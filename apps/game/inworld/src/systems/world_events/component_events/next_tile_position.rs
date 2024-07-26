@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
 
 use game_engine::{time::Instant, world::{constants::{MOVEMENT_SPEED, TILE_SIZE}, WorldInsertComponentEvent, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
@@ -61,11 +63,22 @@ pub fn update_next_tile_position_events(
     // So we roll the Prediction back to the authoritative Server state
     // and then execute all Player Commands since that tick, using the CommandHistory helper struct
 
+    let mut updated_entities = HashSet::new();
     let mut events = Vec::new();
     for event in event_reader.read() {
         let server_tick = event.tick;
         let updated_entity = event.entity;
 
+
+        updated_entities.insert(updated_entity);
+        events.push((server_tick, updated_entity));
+    }
+
+    if events.is_empty() {
+        return;
+    }
+
+    for updated_entity in updated_entities {
         let Ok(
             (
                 mut prev_tile_position,
@@ -97,12 +110,6 @@ pub fn update_next_tile_position_events(
             1.0
         };
         tile_movement.next(distance * TILE_SIZE);
-
-        events.push((server_tick, updated_entity));
-    }
-
-    if events.is_empty() {
-        return;
     }
 
     let Some(owned_entity) = &global.owned_entity else {
