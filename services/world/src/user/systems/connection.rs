@@ -11,7 +11,7 @@ use logging::{info, warn};
 use world_server_naia_proto::{
     components::{Main, NextTilePosition, Position, PrevTilePosition, TileMovement},
     messages::{Auth, EntityAssignment},
-    channels::EntityAssignmentChannel, constants::{MOVEMENT_SPEED, TILE_SIZE},
+    channels::EntityAssignmentChannel, constants::{MOVEMENT_SPEED, TILE_COUNT, TILE_SIZE},
 };
 
 use crate::{asset::{AssetCatalog, AssetCommandsExt, AssetManager}, social::LobbyManager, user::UserManager};
@@ -66,8 +66,8 @@ pub fn connect_events(
         let lobby_room_key = lobby_manager.lobby_room_key(&lobby_id).unwrap();
         server.room_mut(&lobby_room_key).add_user(&user_key);
 
-        let tile_position_x = Random::gen_range_i32(-5, 5) as i16;
-        let tile_position_y = Random::gen_range_i32(-5, 5) as i16;
+        let tile_position_x = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
+        let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
         // give user an entity
         let user_entity = commands

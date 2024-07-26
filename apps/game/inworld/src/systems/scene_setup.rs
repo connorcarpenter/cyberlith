@@ -13,10 +13,10 @@ use game_engine::{
         shapes,
     },
     storage::Storage,
+    world::constants::{TILE_SIZE, TILE_COUNT},
 };
 
-const ROOM_WIDTH: f32 = 50.0;
-const ROOM_DEPTH: f32 = 50.0;
+const TILE_SCALE: f32 = (TILE_SIZE * 0.5) - 5.0;
 
 pub fn scene_setup(
     commands: &mut Commands,
@@ -27,21 +27,20 @@ pub fn scene_setup(
 
     // spawn grid of floor tiles
 
-    const TILE_NUM: i32 = 5;
-    const NEG_TILE_NUM: i32 = -TILE_NUM;
-    const TOTAL_TILE_NUM: i32 = TILE_NUM * 2 + 1;
+    const NEG_TILE_NUM: i32 = -TILE_COUNT;
+    const TOTAL_TILE_NUM: i32 = TILE_COUNT * 2 + 1;
 
-    for tx in NEG_TILE_NUM..=TILE_NUM {
-        for ty in NEG_TILE_NUM..=TILE_NUM {
+    for tx in NEG_TILE_NUM..=TILE_COUNT {
+        for ty in NEG_TILE_NUM..=TILE_COUNT {
 
-            let x = tx as f32 * ROOM_WIDTH * 2.0;
-            let y = ty as f32 * ROOM_DEPTH * 2.0;
+            let x = tx as f32 * TILE_SIZE;
+            let y = ty as f32 * TILE_SIZE;
 
             commands
                 .spawn(RenderObjectBundle {
                     mesh: meshes.add(shapes::CenteredSquare),
                     material: materials.add(Color::DARK_GRAY),
-                    transform: Transform::from_scale(Vec3::new(ROOM_WIDTH - 5.0, ROOM_DEPTH - 5.0, 1.0))
+                    transform: Transform::from_scale(Vec3::new(TILE_SCALE, TILE_SCALE, 1.0))
                         .with_translation(Vec3::new(x, y, 0.0)),
                     ..Default::default()
                 })
@@ -74,7 +73,7 @@ pub fn scene_setup(
     let mut camera_z_scale: f32 = 1.0;
 
     const SCREEN_HEIGHT: f32 = 960.0;
-    const TOTAL_SCALE: f32 = (ROOM_DEPTH * 2.0 * (TOTAL_TILE_NUM as f32)) / SCREEN_HEIGHT;
+    const TOTAL_SCALE: f32 = (TILE_SIZE * (TOTAL_TILE_NUM as f32)) / SCREEN_HEIGHT;
     camera_x_scale *= TOTAL_SCALE;
     camera_y_scale *= TOTAL_SCALE;
     camera_z_scale *= TOTAL_SCALE;

@@ -9,6 +9,7 @@ use game_engine::{
     naia::Replicate,
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
+    math::Quat,
 };
 
 use crate::{resources::{Global, OwnedEntity}, components::{AnimationState, Interp, Predicted}};
@@ -79,7 +80,7 @@ impl PredictionEvents {
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
-                .insert(Transform::default())
+                .insert(Transform::default().with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))))
                 .insert(AnimationState::new())
                 .insert(unit_data_handle.clone())
 
