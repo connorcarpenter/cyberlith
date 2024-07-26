@@ -90,13 +90,16 @@ pub fn update_next_tile_position_events(
             panic!("failed to get updated components for entity: {:?}", updated_entity);
         };
         let buffered_tile_position = buffered_tile_position.as_mut().unwrap();
+        if buffered_tile_position.x == *next_tile_position.x && buffered_tile_position.y == *next_tile_position.y {
+            // unchanged
+            continue;
+        }
 
-        let last_next_tile_position = buffered_tile_position.clone();
+        prev_tile_position.x = buffered_tile_position.x;
+        prev_tile_position.y = buffered_tile_position.y;
+
         buffered_tile_position.x = *next_tile_position.x;
         buffered_tile_position.y = *next_tile_position.y;
-
-        prev_tile_position.x = last_next_tile_position.x;
-        prev_tile_position.y = last_next_tile_position.y;
 
         let x_axis_changed = *next_tile_position.x != prev_tile_position.x;
         let y_axis_changed = *next_tile_position.y != prev_tile_position.y;
@@ -168,14 +171,21 @@ pub fn update_next_tile_position_events(
     let modified_server_tick = server_tick.wrapping_sub(1);
 
     let replay_commands = global.command_history.replays(&modified_server_tick);
-    for (_command_tick, command) in replay_commands {
-        shared_behavior::process_movement(
-            &mut client_prev_tile_position,
-            *client_next_tile_position.x,
-            *client_next_tile_position.y,
-            &mut client_tile_movement,
-            &mut client_position
-        );
+
+    let mut current_tick = server_tick;
+    for (command_tick, command) in replay_commands {
+
+        while sequence_greater_than(command_tick, current_tick) {
+            current_tick = current_tick.wrapping_add(1);
+
+            shared_behavior::process_movement(
+                &mut client_prev_tile_position,
+                *client_next_tile_position.x,
+                *client_next_tile_position.y,
+                &mut client_tile_movement,
+                &mut client_position
+            );
+        }
         shared_behavior::process_command(
             &command,
             &client_prev_tile_position,
