@@ -24,7 +24,9 @@ pub fn protocol() -> Protocol {
         if #[cfg(feature = "local")]{
             use naia_bevy_shared::LinkConditionerConfig;
 
-            builder.link_condition(LinkConditionerConfig::new(100, 0, 0.0));
+            //builder.link_condition(LinkConditionerConfig::new(100, 0, 0.0));
+
+            builder.link_condition(LinkConditionerConfig::very_good_condition());
         }
         else {}
     }
