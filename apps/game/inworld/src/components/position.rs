@@ -1,13 +1,36 @@
 use bevy_ecs::prelude::Component;
 
+use game_engine::world::components::{NextTilePosition, PrevTilePosition};
+
 #[derive(Component, Clone)]
 pub struct BufferedNextTilePosition {
-    pub x: i16,
-    pub y: i16,
+    x: i16,
+    y: i16,
 }
 
 impl BufferedNextTilePosition {
     pub fn new(x: i16, y: i16) -> Self {
         Self { x, y }
+    }
+
+    pub fn x(&self) -> i16 {
+        self.x
+    }
+
+    pub fn y(&self) -> i16 {
+        self.y
+    }
+
+    pub fn equals(&self, ntp: &NextTilePosition) -> bool {
+        self.x == *ntp.x && self.y == *ntp.y
+    }
+
+    pub fn incoming(&mut self, ptp: &mut PrevTilePosition, ntp: &NextTilePosition) {
+
+        ptp.x = self.x;
+        ptp.y = self.y;
+
+        self.x = *ntp.x;
+        self.y = *ntp.y;
     }
 }

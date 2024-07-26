@@ -105,14 +105,11 @@ pub fn update_next_tile_position_events(
             panic!("failed to get updated components for entity: {:?}", updated_entity);
         };
         let buffered_tile_position = buffered_tile_position.as_mut().unwrap();
-        let next_tile_changed = buffered_tile_position.x != *next_tile_position.x || buffered_tile_position.y != *next_tile_position.y;
+        let next_tile_changed = !buffered_tile_position.equals(&next_tile_position);
 
         if next_tile_changed {
-            prev_tile_position.x = buffered_tile_position.x;
-            prev_tile_position.y = buffered_tile_position.y;
 
-            buffered_tile_position.x = *next_tile_position.x;
-            buffered_tile_position.y = *next_tile_position.y;
+            buffered_tile_position.incoming(&mut prev_tile_position, &next_tile_position);
 
             let x_axis_changed = *next_tile_position.x != prev_tile_position.x;
             let y_axis_changed = *next_tile_position.y != prev_tile_position.y;
@@ -128,7 +125,7 @@ pub fn update_next_tile_position_events(
 
             position.set(update_tick, prev_tile_position.x as f32 * TILE_SIZE, prev_tile_position.y as f32 * TILE_SIZE);
 
-            interp.next_position(&position);
+            interp.next_position(&position, Some("update_next_tile_position"));
         } else {
             warn!("NextTilePosition update received, but no change detected");
         }
@@ -206,7 +203,7 @@ pub fn update_next_tile_position_events(
                 &mut client_position,
                 current_tick,
             );
-            client_interp.next_position(&client_position);
+            client_interp.next_position(&client_position, Some("replay_commands"));
         }
         shared_behavior::process_command(
             &command,

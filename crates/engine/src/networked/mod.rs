@@ -7,7 +7,7 @@ mod session_events;
 mod world_events;
 
 pub mod naia {
-    pub use naia_bevy_client::{CommandHistory, ReceiveEvents, sequence_greater_than, CommandsExt, Tick, Replicate};
+    pub use naia_bevy_client::{CommandHistory, ReceiveEvents, sequence_greater_than, wrapping_diff, CommandsExt, Tick, Replicate};
 }
 
 pub mod world {

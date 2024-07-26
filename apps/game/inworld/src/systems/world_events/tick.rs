@@ -39,7 +39,7 @@ pub fn client_tick_events(
             &mut position,
             client_tick,
         );
-        interp.next_position(&position);
+        interp.next_position(&position, Some("client_tick_event"));
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
@@ -93,13 +93,13 @@ pub fn server_tick_events(
         ) in position_q.iter_mut() {
             shared_behavior::process_movement(
                 &mut prev_tile_position,
-                buffered_next_tile_position.x,
-                buffered_next_tile_position.y,
+                buffered_next_tile_position.x(),
+                buffered_next_tile_position.y(),
                 &mut tile_movement,
                 &mut position,
                 server_tick,
             );
-            interp.next_position(&position);
+            interp.next_position(&position, Some("server_tick_event"));
         }
     }
 }
