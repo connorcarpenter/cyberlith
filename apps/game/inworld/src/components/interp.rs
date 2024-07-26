@@ -2,14 +2,10 @@ use bevy_ecs::prelude::Component;
 
 #[derive(Component)]
 pub struct Interp {
-    interp: f32,
-    pub interp_x: f32,
-    pub interp_y: f32,
-
     last_x: f32,
     last_y: f32,
-    pub next_x: f32,
-    pub next_y: f32,
+    next_x: f32,
+    next_y: f32,
 }
 
 impl Interp {
@@ -17,10 +13,6 @@ impl Interp {
         let x = x as f32;
         let y = y as f32;
         Self {
-            interp: 0.0,
-            interp_x: x,
-            interp_y: y,
-
             last_x: x,
             last_y: y,
             next_x: x,
@@ -29,23 +21,26 @@ impl Interp {
     }
 
     pub(crate) fn next_position(&mut self, next_x: f32, next_y: f32) {
-        self.interp = 0.0;
         self.last_x = self.next_x;
         self.last_y = self.next_y;
-        self.interp_x = self.next_x;
-        self.interp_y = self.next_y;
         self.next_x = next_x;
         self.next_y = next_y;
     }
 
-    pub(crate) fn interpolate(&mut self, interpolation: f32) {
-        if self.interp >= 1.0 || interpolation == 0.0 {
-            return;
-        }
-        if self.interp < interpolation {
-            self.interp = interpolation;
-            self.interp_x = self.last_x + (self.next_x - self.last_x) * self.interp;
-            self.interp_y = self.last_y + (self.next_y - self.last_y) * self.interp;
-        }
+    pub(crate) fn interpolate(&self, interpolation: f32) -> (f32, f32) {
+        let x = self.last_x + ((self.next_x - self.last_x) * interpolation);
+        let y = self.last_y + ((self.next_y - self.last_y) * interpolation);
+
+        // let x = self.next_x;
+        // let y = self.next_y;
+
+        return (x, y);
+    }
+
+    pub fn mirror(&mut self, other: &Self) {
+        self.last_x = other.last_x;
+        self.last_y = other.last_y;
+        self.next_x = other.next_x;
+        self.next_y = other.next_y;
     }
 }

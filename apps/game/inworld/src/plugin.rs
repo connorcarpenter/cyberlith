@@ -62,8 +62,6 @@ impl Plugin for InWorldPlugin {
                 Update,
                 (
                     systems::input::key_input,
-                    systems::sync::sync_clientside_sprites,
-                    systems::sync::sync_serverside_sprites,
                 )
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::MainLoop),

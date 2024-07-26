@@ -55,7 +55,8 @@ pub fn update_next_tile_position_events(
         Option<&mut BufferedNextTilePosition>,
         &mut NextTilePosition,
         &mut TileMovement,
-        &mut Position
+        &mut Position,
+        &mut Interp,
     )>,
 ) {
     // When we receive a new Position update for the Player's Entity,
@@ -85,6 +86,7 @@ pub fn update_next_tile_position_events(
                 next_tile_position,
                 mut tile_movement,
                 mut position,
+                mut interp,
             )
         ) = position_q.get_mut(updated_entity) else {
             panic!("failed to get updated components for entity: {:?}", updated_entity);
@@ -115,6 +117,8 @@ pub fn update_next_tile_position_events(
 
         position.x = prev_tile_position.x as f32 * TILE_SIZE;
         position.y = prev_tile_position.y as f32 * TILE_SIZE;
+
+        interp.next_position(position.x, position.y);
     }
 
     let Some(owned_entity) = &global.owned_entity else {
@@ -147,13 +151,15 @@ pub fn update_next_tile_position_events(
             _,
             server_next_tile_position,
             server_tile_movement,
-            server_position
+            server_position,
+            server_interp,
         ), (
             mut client_prev_tile_position,
             _,
             mut client_next_tile_position,
             mut client_tile_movement,
             mut client_position,
+            mut client_interp,
         )]) = position_q.get_many_mut([server_entity, client_entity]) else {
         panic!("failed to get components for entities: {:?}, {:?}", server_entity, client_entity);
     };
@@ -163,6 +169,7 @@ pub fn update_next_tile_position_events(
     client_next_tile_position.mirror(&*server_next_tile_position);
     client_tile_movement.mirror(&*server_tile_movement);
     client_position.mirror(&*server_position);
+    client_interp.mirror(&*server_interp);
 
     // Replay all stored commands
 
@@ -185,6 +192,7 @@ pub fn update_next_tile_position_events(
                 &mut client_tile_movement,
                 &mut client_position
             );
+            client_interp.next_position(client_position.x, client_position.y);
         }
         shared_behavior::process_command(
             &command,

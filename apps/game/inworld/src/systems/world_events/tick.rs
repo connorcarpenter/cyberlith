@@ -2,13 +2,13 @@ use bevy_ecs::{query::With, prelude::Query, event::EventReader, change_detection
 
 use game_engine::{logging::warn, world::{WorldServerTickEvent, behavior as shared_behavior, messages::KeyCommand, components::{Position, TileMovement, NextTilePosition, PrevTilePosition}, WorldClient, WorldClientTickEvent, channels::PlayerCommandChannel}};
 
-use crate::{resources::Global, components::{BufferedNextTilePosition, Confirmed, Predicted}};
+use crate::{resources::Global, components::{Interp, BufferedNextTilePosition, Confirmed, Predicted}};
 
 pub fn client_tick_events(
     mut client: WorldClient,
     mut global: ResMut<Global>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    mut position_q: Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position), With<Predicted>>,
+    mut position_q: Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position, &mut Interp), With<Predicted>>,
 ) {
     let command_opt = global.queued_command.take();
 
@@ -28,6 +28,7 @@ pub fn client_tick_events(
             next_tile_position,
             mut tile_movement,
             mut position,
+            mut interp,
         ) = position_q.get_mut(predicted_entity).unwrap();
 
         shared_behavior::process_movement(
@@ -37,6 +38,7 @@ pub fn client_tick_events(
             &mut tile_movement,
             &mut position,
         );
+        interp.next_position(position.x, position.y);
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
@@ -60,6 +62,7 @@ pub fn client_tick_events(
             mut next_tile_position,
             mut tile_movement,
             _position,
+            _interp,
         ) = position_q.get_mut(predicted_entity).unwrap();
 
         // Apply command
@@ -74,7 +77,7 @@ pub fn client_tick_events(
 
 pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut PrevTilePosition, &BufferedNextTilePosition, &mut TileMovement, &mut Position), With<Confirmed>>,
+    mut position_q: Query<(&mut PrevTilePosition, &BufferedNextTilePosition, &mut TileMovement, &mut Position, &mut Interp), With<Confirmed>>,
 ) {
     for _event in tick_reader.read() {
         //let server_tick = event.tick;
@@ -85,6 +88,7 @@ pub fn server_tick_events(
             buffered_next_tile_position,
             mut tile_movement,
             mut position,
+            mut interp,
         ) in position_q.iter_mut() {
             shared_behavior::process_movement(
                 &mut prev_tile_position,
@@ -93,6 +97,7 @@ pub fn server_tick_events(
                 &mut tile_movement,
                 &mut position,
             );
+            interp.next_position(position.x, position.y);
         }
     }
 }
