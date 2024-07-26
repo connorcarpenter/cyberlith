@@ -33,8 +33,8 @@ pub fn client_tick_events(
 
         shared_behavior::process_movement(
             &mut prev_tile_position,
-            *next_tile_position.x,
-            *next_tile_position.y,
+            next_tile_position.x(),
+            next_tile_position.y(),
             &mut tile_movement,
             &mut position,
             client_tick,

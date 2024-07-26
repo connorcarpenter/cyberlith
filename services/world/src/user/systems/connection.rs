@@ -11,7 +11,7 @@ use logging::{info, warn};
 use world_server_naia_proto::{
     components::{Main, NextTilePosition, Position, PrevTilePosition, TileMovement},
     messages::{Auth, EntityAssignment},
-    channels::EntityAssignmentChannel, constants::{MOVEMENT_SPEED, TILE_COUNT, TILE_SIZE},
+    channels::EntityAssignmentChannel, constants::{MOVEMENT_SPEED, TILE_COUNT},
 };
 
 use crate::{asset::{AssetCatalog, AssetCommandsExt, AssetManager}, social::LobbyManager, user::UserManager};
@@ -69,6 +69,13 @@ pub fn connect_events(
         let tile_position_x = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
+        let next_tile_position = NextTilePosition::new(
+            tile_position_x,
+            tile_position_y,
+        );
+        let position = Position::new(false, tick, &next_tile_position);
+        let prev_tile_position = PrevTilePosition::new(&next_tile_position);
+
         // give user an entity
         let user_entity = commands
             // spawn new entity
@@ -81,17 +88,13 @@ pub fn connect_events(
                 &mut server,
                 AssetCatalog::AvatarUnit.into(),
             )
+
             // insert position components
-            .insert(NextTilePosition::new(
-                tile_position_x,
-                tile_position_y,
-            ))
-            .insert(PrevTilePosition::new(
-                tile_position_x,
-                tile_position_y,
-            ))
+            .insert(next_tile_position)
+            .insert(prev_tile_position)
             .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
-            .insert(Position::new(false, tick, tile_position_x as f32 * TILE_SIZE, tile_position_y as f32 * TILE_SIZE))
+            .insert(position)
+
             // return Entity id
             .id();
 

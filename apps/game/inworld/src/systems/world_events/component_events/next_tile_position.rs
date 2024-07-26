@@ -3,7 +3,7 @@ use std::collections::{HashMap};
 use bevy_ecs::{prelude::{Commands, Query}, event::EventReader, change_detection::ResMut};
 
 use game_engine::{logging::warn, time::Instant, world::{WorldClient, constants::{MOVEMENT_SPEED, TILE_SIZE}, WorldInsertComponentEvent, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, WorldRemoveComponentEvent, WorldUpdateComponentEvent, behavior as shared_behavior},
-                  render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Replicate, Tick}, math::{Quat, Vec3}, logging::info};
+                  render::components::{RenderLayers, Transform, Visibility}, naia::{sequence_greater_than, Tick}, math::{Quat, Vec3}, logging::info};
 
 use crate::{systems::world_events::PredictionEvents, resources::Global, components::{BufferedNextTilePosition, Confirmed, AnimationState, Interp}};
 
@@ -30,15 +30,15 @@ pub fn insert_next_tile_position_events(
 
         let layer = RenderLayers::layer(0);
 
-        let position = Position::new(false, tick, *next_tile_position.x as f32 * TILE_SIZE, *next_tile_position.y as f32 * TILE_SIZE);
+        let position = Position::new(false, tick, next_tile_position);
         let interp = Interp::new(&position);
 
         commands
             .entity(entity)
 
             // Insert Position stuff
-            .insert(PrevTilePosition::new(*next_tile_position.x, *next_tile_position.y))
-            .insert(BufferedNextTilePosition::new(*next_tile_position.x, *next_tile_position.y))
+            .insert(PrevTilePosition::new(&next_tile_position))
+            .insert(BufferedNextTilePosition::new(&next_tile_position))
             .insert(TileMovement::new(false, tick, MOVEMENT_SPEED))
             .insert(position)
             .insert(interp)
@@ -111,8 +111,8 @@ pub fn update_next_tile_position_events(
 
             buffered_tile_position.incoming(&mut prev_tile_position, &next_tile_position);
 
-            let x_axis_changed = *next_tile_position.x != prev_tile_position.x;
-            let y_axis_changed = *next_tile_position.y != prev_tile_position.y;
+            let x_axis_changed = next_tile_position.x() != prev_tile_position.x;
+            let y_axis_changed = next_tile_position.y() != prev_tile_position.y;
             if !x_axis_changed && !y_axis_changed {
                 panic!("is this possible?");
             }
@@ -158,8 +158,8 @@ pub fn update_next_tile_position_events(
     let Ok(
         [(
             server_prev_tile_position,
+            server_buf_next_tile_position,
             _,
-            server_next_tile_position,
             server_tile_movement,
             server_position,
             server_interp,
@@ -174,9 +174,11 @@ pub fn update_next_tile_position_events(
         panic!("failed to get components for entities: {:?}, {:?}", server_entity, client_entity);
     };
 
+    let server_next_tile_position = server_buf_next_tile_position.as_ref().unwrap();
+
     // Set to authoritative state
     client_prev_tile_position.mirror(&*server_prev_tile_position);
-    client_next_tile_position.mirror(&*server_next_tile_position);
+    client_next_tile_position.set(server_next_tile_position.x(), server_next_tile_position.y());
     client_tile_movement.mirror(&*server_tile_movement);
     client_position.mirror(&*server_position);
     client_interp.mirror(&*server_interp);
@@ -197,8 +199,8 @@ pub fn update_next_tile_position_events(
 
             shared_behavior::process_movement(
                 &mut client_prev_tile_position,
-                *client_next_tile_position.x,
-                *client_next_tile_position.y,
+                client_next_tile_position.x(),
+                client_next_tile_position.y(),
                 &mut client_tile_movement,
                 &mut client_position,
                 current_tick,

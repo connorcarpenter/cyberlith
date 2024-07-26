@@ -9,7 +9,10 @@ pub struct BufferedNextTilePosition {
 }
 
 impl BufferedNextTilePosition {
-    pub fn new(x: i16, y: i16) -> Self {
+    pub fn new(next_tile_position: &NextTilePosition) -> Self {
+        let x = next_tile_position.x();
+        let y = next_tile_position.y();
+
         Self { x, y }
     }
 
@@ -22,7 +25,7 @@ impl BufferedNextTilePosition {
     }
 
     pub fn equals(&self, ntp: &NextTilePosition) -> bool {
-        self.x == *ntp.x && self.y == *ntp.y
+        self.x == ntp.x() && self.y == ntp.y()
     }
 
     pub fn incoming(&mut self, ptp: &mut PrevTilePosition, ntp: &NextTilePosition) {
@@ -30,7 +33,7 @@ impl BufferedNextTilePosition {
         ptp.x = self.x;
         ptp.y = self.y;
 
-        self.x = *ntp.x;
-        self.y = *ntp.y;
+        self.x = ntp.x();
+        self.y = ntp.y();
     }
 }

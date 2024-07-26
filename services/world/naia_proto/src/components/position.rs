@@ -2,17 +2,40 @@ use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate, Tick};
 
+use crate::constants::TILE_SIZE;
+
 // This is networked
 
 #[derive(Component, Replicate)]
 pub struct NextTilePosition {
-    pub x: Property<i16>,
-    pub y: Property<i16>,
+    x: Property<i16>,
+    y: Property<i16>,
 }
 
 impl NextTilePosition {
     pub fn new(x: i16, y: i16) -> Self {
         Self::new_complete(x, y)
+    }
+
+    pub fn x(&self) -> i16 {
+        *self.x
+    }
+
+    pub fn y(&self) -> i16 {
+        *self.y
+    }
+
+    pub fn set_x(&mut self, x: i16) {
+        *self.x = x;
+    }
+
+    pub fn set_y(&mut self, y: i16) {
+        *self.y = y;
+    }
+
+    pub fn set(&mut self, x: i16, y: i16) {
+        *self.x = x;
+        *self.y = y;
     }
 }
 
@@ -25,7 +48,10 @@ pub struct PrevTilePosition {
 }
 
 impl PrevTilePosition {
-    pub fn new(x: i16, y: i16) -> Self {
+    pub fn new(next_tile_position: &NextTilePosition) -> Self {
+        let x = next_tile_position.x();
+        let y = next_tile_position.y();
+
         Self { x, y }
     }
 
@@ -120,7 +146,11 @@ pub struct Position {
 }
 
 impl Position {
-    pub fn new(predicted: bool, tick: Tick, x: f32, y: f32) -> Self {
+    pub fn new(predicted: bool, tick: Tick, next_tile_position: &NextTilePosition) -> Self {
+
+        let x = next_tile_position.x() as f32 * TILE_SIZE;
+        let y = next_tile_position.y() as f32 * TILE_SIZE;
+
         Self { predicted, tick, x, y }
     }
 

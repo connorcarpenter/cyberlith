@@ -38,11 +38,11 @@ impl Interp {
             panic!("Interp.predicted != Position.predicted");
         }
 
-        if !self.predicted {
-            if let Some(debug_str) = debug_opt {
-                info!("Interp.next_position() - {:?}, (predicted: {:?})", debug_str, self.predicted);
-            }
-        }
+        // if !self.predicted {
+        //     if let Some(debug_str) = debug_opt {
+        //         info!("Interp.next_position() - {:?}, (predicted: {:?})", debug_str, self.predicted);
+        //     }
+        // }
 
         self.last_tick = self.next_tick;
         self.last_x = self.next_x;
@@ -52,21 +52,21 @@ impl Interp {
         self.next_x = position.x();
         self.next_y = position.y();
 
-        if !self.predicted {
-            if self.last_tick == self.next_tick {
-                warn!("Interp.next_position: last_tick == next_tick");
-            }
-
-            info!("interp from tick {:?} -> tick {:?}", self.last_tick, self.next_tick);
-
-            if sequence_greater_than(self.last_tick, self.next_tick) {
-                warn!("Interp.next_position: last_tick > next_tick");
-            }
-            let tick_diff = wrapping_diff(self.last_tick, self.next_tick);
-            if tick_diff != 1 {
-                warn!("Interp.next_position: tick_diff: {:?}", tick_diff);
-            }
-        }
+        // if !self.predicted {
+        //     if self.last_tick == self.next_tick {
+        //         warn!("Interp.next_position: last_tick == next_tick");
+        //     }
+        //
+        //     info!("interp from tick {:?} -> tick {:?}", self.last_tick, self.next_tick);
+        //
+        //     if sequence_greater_than(self.last_tick, self.next_tick) {
+        //         warn!("Interp.next_position: last_tick > next_tick");
+        //     }
+        //     let tick_diff = wrapping_diff(self.last_tick, self.next_tick);
+        //     if tick_diff != 1 {
+        //         warn!("Interp.next_position: tick_diff: {:?}", tick_diff);
+        //     }
+        // }
     }
 
     pub(crate) fn interpolate(&self, interpolation: f32) -> (f32, f32) {
@@ -83,8 +83,11 @@ impl Interp {
         if !self.predicted {
             info!("mirroring");
         }
+        self.last_tick = other.last_tick;
         self.last_x = other.last_x;
         self.last_y = other.last_y;
+
+        self.next_tick = other.next_tick;
         self.next_x = other.next_x;
         self.next_y = other.next_y;
     }

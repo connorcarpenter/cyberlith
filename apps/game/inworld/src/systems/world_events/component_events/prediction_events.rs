@@ -4,7 +4,7 @@ use bevy_ecs::{system::{Commands, ResMut}, entity::Entity, prelude::{Resource, Q
 
 use game_engine::{
     logging::info,
-    world::{WorldClient, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, constants::{MOVEMENT_SPEED, TILE_SIZE}},
+    world::{WorldClient, components::{NextTilePosition, Position, PrevTilePosition, TileMovement}, constants::{MOVEMENT_SPEED}},
     asset::{AssetHandle, UnitData},
     naia::Replicate,
     render::components::{RenderLayers, Transform, Visibility},
@@ -62,17 +62,18 @@ impl PredictionEvents {
                 .spawn_empty()
                 .id();
 
-            let mut predicted_next_tile_position = NextTilePosition::new(*next_tile_position.x, *next_tile_position.y);
+            let mut predicted_next_tile_position = NextTilePosition::new(next_tile_position.x(), next_tile_position.y());
             predicted_next_tile_position.localize();
-            let position = Position::new(true, client_tick, *next_tile_position.x as f32 * TILE_SIZE, *next_tile_position.y as f32 * TILE_SIZE);
+            let position = Position::new(true, client_tick, &predicted_next_tile_position);
             let interp = Interp::new(&position);
+            let prev_tile_position = PrevTilePosition::new(&predicted_next_tile_position);
 
             commands
                 .entity(prediction_entity)
 
                 // Position stuff
                 .insert(predicted_next_tile_position)
-                .insert(PrevTilePosition::new(*next_tile_position.x, *next_tile_position.y))
+                .insert(prev_tile_position)
                 .insert(TileMovement::new(true, client_tick, MOVEMENT_SPEED))
                 .insert(position)
                 .insert(interp)
