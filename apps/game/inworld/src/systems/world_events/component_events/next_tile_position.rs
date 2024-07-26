@@ -69,7 +69,6 @@ pub fn update_next_tile_position_events(
         let server_tick = event.tick;
         let updated_entity = event.entity;
 
-
         updated_entities.insert(updated_entity);
         events.push((server_tick, updated_entity));
     }
@@ -85,7 +84,7 @@ pub fn update_next_tile_position_events(
                 mut buffered_tile_position,
                 next_tile_position,
                 mut tile_movement,
-                _,
+                mut position,
             )
         ) = position_q.get_mut(updated_entity) else {
             panic!("failed to get updated components for entity: {:?}", updated_entity);
@@ -110,6 +109,9 @@ pub fn update_next_tile_position_events(
             1.0
         };
         tile_movement.next(distance * TILE_SIZE);
+
+        position.x = prev_tile_position.x as f32 * TILE_SIZE;
+        position.y = prev_tile_position.y as f32 * TILE_SIZE;
     }
 
     let Some(owned_entity) = &global.owned_entity else {
@@ -167,8 +169,19 @@ pub fn update_next_tile_position_events(
 
     let replay_commands = global.command_history.replays(&modified_server_tick);
     for (_command_tick, command) in replay_commands {
-        shared_behavior::process_movement(&mut client_prev_tile_position, &client_next_tile_position, &mut client_tile_movement, &mut client_position);
-        shared_behavior::process_command(&command, &client_prev_tile_position, &mut client_next_tile_position, &mut client_tile_movement);
+        shared_behavior::process_movement(
+            &mut client_prev_tile_position,
+            *client_next_tile_position.x,
+            *client_next_tile_position.y,
+            &mut client_tile_movement,
+            &mut client_position
+        );
+        shared_behavior::process_command(
+            &command,
+            &client_prev_tile_position,
+            &mut client_next_tile_position,
+            &mut client_tile_movement
+        );
     }
 }
 

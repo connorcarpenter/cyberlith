@@ -55,6 +55,14 @@ impl TileMovement {
         self.speed
     }
 
+    pub fn distance(&self) -> f32 {
+        self.distance
+    }
+
+    pub fn distance_max(&self) -> f32 {
+        self.distance_max
+    }
+
     pub fn next(&mut self, new_distance: f32) {
         self.distance = 0.0;
         self.distance_max = new_distance;

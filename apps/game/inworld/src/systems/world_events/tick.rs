@@ -2,7 +2,7 @@ use bevy_ecs::{query::With, prelude::Query, event::EventReader, change_detection
 
 use game_engine::{logging::warn, world::{WorldServerTickEvent, behavior as shared_behavior, messages::KeyCommand, components::{Position, TileMovement, NextTilePosition, PrevTilePosition}, WorldClient, WorldClientTickEvent, channels::PlayerCommandChannel}};
 
-use crate::{resources::Global, components::{Confirmed, Predicted}};
+use crate::{resources::Global, components::{BufferedNextTilePosition, Confirmed, Predicted}};
 
 pub fn client_tick_events(
     mut client: WorldClient,
@@ -32,7 +32,8 @@ pub fn client_tick_events(
 
         shared_behavior::process_movement(
             &mut prev_tile_position,
-            &next_tile_position,
+            *next_tile_position.x,
+            *next_tile_position.y,
             &mut tile_movement,
             &mut position,
         );
@@ -73,7 +74,7 @@ pub fn client_tick_events(
 
 pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut PrevTilePosition, &mut NextTilePosition, &mut TileMovement, &mut Position), With<Confirmed>>,
+    mut position_q: Query<(&mut PrevTilePosition, &BufferedNextTilePosition, &mut TileMovement, &mut Position), With<Confirmed>>,
 ) {
     for _event in tick_reader.read() {
         //let server_tick = event.tick;
@@ -81,13 +82,14 @@ pub fn server_tick_events(
         // process movement
         for (
             mut prev_tile_position,
-            next_tile_position,
+            buffered_next_tile_position,
             mut tile_movement,
             mut position,
         ) in position_q.iter_mut() {
             shared_behavior::process_movement(
                 &mut prev_tile_position,
-                &next_tile_position,
+                buffered_next_tile_position.x,
+                buffered_next_tile_position.y,
                 &mut tile_movement,
                 &mut position,
             );

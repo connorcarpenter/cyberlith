@@ -12,7 +12,7 @@ pub fn protocol() -> Protocol {
     builder
         .rtc_endpoint("api/session_connect".to_string())
         .tick_interval(Duration::from_millis(40))
-        .enable_client_authoritative_entities()
+        // .enable_client_authoritative_entities()
         // Channels
         .add_plugin(ChannelsPlugin)
         // Messages

@@ -250,7 +250,7 @@ impl ConnectionManager {
             ConnectionState::WaitingForSessionConnect => {}
             ConnectionState::ConnectedToSession => {}
             ConnectionState::ConnectedToWorld => {
-                info!("world : connected!");
+                // info!("world : connected!");
             }
         }
     }
