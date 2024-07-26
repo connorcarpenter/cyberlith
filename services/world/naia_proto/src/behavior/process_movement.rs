@@ -19,13 +19,11 @@ pub fn process_movement(
     if tile_movement.complete() {
         prev_tile_position.x = next_tile_position_x;
         prev_tile_position.y = next_tile_position_y;
-        position.x = next_tile_position_x as f32 * TILE_SIZE;
-        position.y = next_tile_position_y as f32 * TILE_SIZE;
+        position.set(next_tile_position_x as f32 * TILE_SIZE, next_tile_position_y as f32 * TILE_SIZE);
     } else {
         let interp = tile_movement.interp();
         let prev_x = prev_tile_position.x as f32;
         let prev_y = prev_tile_position.y as f32;
-        position.x = (((next_tile_position_x as f32 - prev_x) * interp) + prev_x) * TILE_SIZE;
-        position.y = (((next_tile_position_y as f32 - prev_y) * interp) + prev_y) * TILE_SIZE;
+        position.set((((next_tile_position_x as f32 - prev_x) * interp) + prev_x) * TILE_SIZE, (((next_tile_position_y as f32 - prev_y) * interp) + prev_y) * TILE_SIZE);
     }
 }

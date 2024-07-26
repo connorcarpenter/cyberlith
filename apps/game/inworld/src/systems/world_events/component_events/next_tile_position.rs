@@ -115,10 +115,9 @@ pub fn update_next_tile_position_events(
         };
         tile_movement.next(distance * TILE_SIZE);
 
-        position.x = prev_tile_position.x as f32 * TILE_SIZE;
-        position.y = prev_tile_position.y as f32 * TILE_SIZE;
+        position.set(prev_tile_position.x as f32 * TILE_SIZE, prev_tile_position.y as f32 * TILE_SIZE);
 
-        interp.next_position(position.x, position.y);
+        interp.next_position(&position);
     }
 
     let Some(owned_entity) = &global.owned_entity else {
@@ -192,7 +191,7 @@ pub fn update_next_tile_position_events(
                 &mut client_tile_movement,
                 &mut client_position
             );
-            client_interp.next_position(client_position.x, client_position.y);
+            client_interp.next_position(&client_position);
         }
         shared_behavior::process_command(
             &command,

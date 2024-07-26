@@ -38,7 +38,7 @@ pub fn client_tick_events(
             &mut tile_movement,
             &mut position,
         );
-        interp.next_position(position.x, position.y);
+        interp.next_position(&position);
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
@@ -97,7 +97,7 @@ pub fn server_tick_events(
                 &mut tile_movement,
                 &mut position,
             );
-            interp.next_position(position.x, position.y);
+            interp.next_position(&position);
         }
     }
 }

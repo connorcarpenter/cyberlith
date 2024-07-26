@@ -1,5 +1,7 @@
 use bevy_ecs::prelude::Component;
 
+use game_engine::world::components::Position;
+
 #[derive(Component)]
 pub struct Interp {
     last_x: f32,
@@ -20,11 +22,11 @@ impl Interp {
         }
     }
 
-    pub(crate) fn next_position(&mut self, next_x: f32, next_y: f32) {
+    pub(crate) fn next_position(&mut self, position: &Position) {
         self.last_x = self.next_x;
         self.last_y = self.next_y;
-        self.next_x = next_x;
-        self.next_y = next_y;
+        self.next_x = position.x();
+        self.next_y = position.y();
     }
 
     pub(crate) fn interpolate(&self, interpolation: f32) -> (f32, f32) {
