@@ -1,6 +1,8 @@
+
 use bevy_ecs::prelude::Component;
 
-use naia_bevy_shared::Tick;
+use naia_bevy_shared::{Instant, Tick};
+use logging::{info};
 
 use crate::{components::NextTilePosition, messages::KeyCommand, constants::{MOVEMENT_SPEED, TILE_SIZE}};
 
@@ -8,9 +10,15 @@ use crate::{components::NextTilePosition, messages::KeyCommand, constants::{MOVE
 pub struct TileMovement {
     is_server: bool,
     is_predicted: bool,
-    last_processed_tick: Tick,
+
     state: TileMovementState,
-    outbound_next_tile: Option<(i16, i16)>
+    outbound_next_tile: Option<(i16, i16)>,
+
+    last_render_instant: Instant,
+    last_render_position: (f32, f32),
+    next_tick_position: (f32, f32),
+    last_ticked_render_position: (f32, f32),
+    last_ticked_time: Instant,
 }
 
 impl TileMovement {
@@ -18,32 +26,64 @@ impl TileMovement {
     pub fn new_stopped(
         is_server: bool,
         predicted: bool,
-        current_tick: Tick,
         next_tile_position: &NextTilePosition,
     ) -> Self {
         if is_server && predicted {
             panic!("Server entities cannot be predicted");
         }
-        Self {
+        let mut me = Self {
             is_server,
             is_predicted: predicted,
-            last_processed_tick: current_tick,
+
             state: TileMovementState::stopped(next_tile_position.x(), next_tile_position.y()),
             outbound_next_tile: None,
-        }
+
+            last_render_instant: Instant::now(),
+            last_render_position: (0.0, 0.0),
+            next_tick_position: (0.0, 0.0),
+            last_ticked_render_position: (0.0, 0.0),
+            last_ticked_time: Instant::now(),
+        };
+
+        let (current_position_x, current_position_y) = me.current_position();
+        me.last_render_position = (current_position_x, current_position_y);
+        me.next_tick_position = (current_position_x, current_position_y);
+        me.last_ticked_render_position = (current_position_x, current_position_y);
+
+        me
     }
 
     // retrieve the current position of the entity
-    pub fn current_position(&self) -> (f32, f32) {
+    fn current_position(&self) -> (f32, f32) {
         match &self.state {
             TileMovementState::Stopped(state) => state.current_position(),
             TileMovementState::Moving(state) => state.current_position(),
         }
     }
 
+    // retrieve interpolated position of the entity
+    pub fn render_position(&mut self, rendering: bool, now: &Instant) -> (f32, f32) {
+
+        let tick_duration_ms = 40.0; //self.tick_duration_avg_ms;
+        let time_elapsed_since_last_tick_ms = self.last_ticked_time.elapsed(now).as_secs_f32() * 1000.0;
+        let interpolation = (time_elapsed_since_last_tick_ms / tick_duration_ms).min(1.0).max(0.0);
+        // if rendering {
+        //     info!("render interp: {}", interpolation);
+        // }
+        let dis_x = self.next_tick_position.0 - self.last_ticked_render_position.0;
+        let dis_y = self.next_tick_position.1 - self.last_ticked_render_position.1;
+        let interp_x = self.last_ticked_render_position.0 + (dis_x * interpolation);
+        let interp_y = self.last_ticked_render_position.1 + (dis_y * interpolation);
+
+        self.last_render_instant = now.clone();
+        self.last_render_position = (interp_x, interp_y);
+
+        (interp_x, interp_y)
+    }
+
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, tick: Tick, key_command: &KeyCommand) {
+    pub fn recv_command(&mut self, key_command: &KeyCommand) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
@@ -79,7 +119,6 @@ impl TileMovement {
         }
 
         self.state = TileMovementState::moving(
-            tick,
             current_tile_x,
             current_tile_y,
             next_tile_x,
@@ -114,7 +153,6 @@ impl TileMovement {
                 return;
             }
             self.state = TileMovementState::moving(
-                update_tick,
                 current_tile_x,
                 current_tile_y,
                 next_tile_x,
@@ -158,19 +196,27 @@ impl TileMovement {
         if server_tile_movement.is_predicted {
             panic!("Predicted entities cannot send rollbacks");
         }
-        self.last_processed_tick = server_tile_movement.last_processed_tick;
+
+        // let now = Instant::now();
+        // self.render_position(false, &now);
+
         self.state = server_tile_movement.state.clone();
+
         // outbound_next_tile is only relevant for server entities
+        self.next_tick_position = server_tile_movement.next_tick_position;
+        self.last_ticked_render_position = self.last_render_position;
+        self.last_ticked_time = Instant::now();
     }
 
     // call on each tick
-    pub fn process_tick(&mut self, current_tick: Tick) {
+    pub fn process_tick(&mut self) {
 
-        self.last_processed_tick = current_tick;
+        let now = Instant::now();
+        // self.render_position(false, &now);
 
         let result = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
-            TileMovementState::Moving(state) => state.process_tick(current_tick),
+            TileMovementState::Moving(state) => state.process_tick(),
         };
 
         match result {
@@ -179,6 +225,29 @@ impl TileMovement {
             }
             ProcessTickResult::DoNothing => {}
         }
+
+        // buffer
+
+        let (current_position_x, current_position_y) = self.current_position();
+        self.next_tick_position = (current_position_x, current_position_y);
+        self.last_ticked_render_position = self.last_render_position;
+
+        // tick duration
+        // let duration_ms = self.last_ticked_time.elapsed(&now).as_secs_f32() * 1000.0;
+        self.last_ticked_time = now;
+
+        // if self.tick_duration_samples == 0 {
+        //     self.tick_duration_avg_ms = duration_ms;
+        //     self.tick_duration_samples = 1;
+        // } else {
+        //     self.tick_duration_avg_ms = ((self.tick_duration_avg_ms * self.tick_duration_samples as f32) + duration_ms) / (self.tick_duration_samples + 1) as f32;
+        //
+        //     info!("tick_duration_avg_ms: {}", self.tick_duration_avg_ms);
+        //
+        //     if self.tick_duration_samples < 20 {
+        //         self.tick_duration_samples += 1;
+        //     }
+        // }
     }
 }
 
@@ -194,8 +263,8 @@ impl TileMovementState {
         Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
     }
 
-    fn moving(tick: Tick, ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
-        Self::Moving(TileMovementMovingState::new(tick,
+    fn moving(ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
+        Self::Moving(TileMovementMovingState::new(
             ax, ay, bx, by, interp,
         ))
     }
@@ -244,7 +313,6 @@ impl TileMovementStoppedState {
 // Tile Movement Moving State
 #[derive(Clone)]
 struct TileMovementMovingState {
-    last_processed_tick: Tick,
     from_tile_x: i16,
     from_tile_y: i16,
     to_tile_x: i16,
@@ -255,7 +323,7 @@ struct TileMovementMovingState {
 }
 
 impl TileMovementMovingState {
-    fn new(tick: Tick, ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
+    fn new(ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
         if ax == bx && ay == by {
             panic!("from_tile and to_tile are the same");
         }
@@ -279,7 +347,6 @@ impl TileMovementMovingState {
         let done = interp == 1.0;
 
         Self {
-            last_processed_tick: tick,
             from_tile_x: ax,
             from_tile_y: ay,
             to_tile_x: bx,
@@ -306,9 +373,7 @@ impl TileMovementMovingState {
     }
 
     // call on each tick
-    fn process_tick(&mut self, tick: Tick) -> ProcessTickResult {
-
-        self.last_processed_tick = tick;
+    fn process_tick(&mut self) -> ProcessTickResult {
 
         if self.done {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
@@ -327,7 +392,7 @@ impl TileMovementMovingState {
 
     pub(crate) fn recv_updated_next_tile_position(&mut self, updated_tick: Tick, _next_x: i16, _next_y: i16) {
         // TODO: still need to implement this!
-        panic!("recv_updated_next_tile_position(). last tick: {:?}, updated tick: {:?}", self.last_processed_tick, updated_tick);
+        panic!("recv_updated_next_tile_position(). updated tick: {:?}", updated_tick);
     }
 }
 

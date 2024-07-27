@@ -7,18 +7,19 @@ use game_engine::{
         resources::RenderFrame,
     },
     world::{WorldClient, components::TileMovement},
+    time::Instant,
 };
 
 use crate::components::{AnimationState, Confirmed, Predicted};
 
 pub fn draw_units(
-    client: WorldClient,
+    // client: WorldClient,
     asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
     mut unit_q: Query<(
         &AssetHandle<UnitData>,
         &AnimationState,
-        &TileMovement,
+        &mut TileMovement,
         Option<&Confirmed>,
         Option<&Predicted>,
         &mut Transform,
@@ -30,7 +31,7 @@ pub fn draw_units(
     for (
         unit_handle,
         anim_state,
-        tile_movement,
+        mut tile_movement,
         confirmed_opt,
         predicted_opt,
         mut transform,
@@ -50,15 +51,12 @@ pub fn draw_units(
             panic!("Unit cannot be both confirmed and predicted");
         }
 
-        if confirmed_opt.is_some() {
-            // is confirmed
-        } else if predicted_opt.is_some() {
-            // continue;
-        } else {
-            panic!("Unit must be either confirmed or predicted");
-        };
+        if predicted_opt.is_some() {
+            continue;
+        }
 
-        let (current_position_x, current_position_y) = tile_movement.current_position();
+        let now = Instant::now();
+        let (current_position_x, current_position_y) = tile_movement.render_position(true, &now);
         transform.translation.x = current_position_x;
         transform.translation.y = current_position_y;
 

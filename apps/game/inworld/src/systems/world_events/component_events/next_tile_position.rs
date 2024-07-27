@@ -54,7 +54,7 @@ pub fn insert_next_tile_position_events(
         commands
             .entity(entity)
             // Insert Position stuff
-            .insert(TileMovement::new_stopped(false, false, server_tick, next_tile_position))
+            .insert(TileMovement::new_stopped(false, false, next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(layer)
@@ -173,20 +173,19 @@ pub fn update_next_tile_position_events(
 
             // process movement
             // info!("1. rollback::movement: tick({:?})", current_tick);
-            shared_behavior::process_movement(current_tick, &mut client_tile_movement);
+            shared_behavior::process_movement(&mut client_tile_movement);
         }
 
         // process command
         // info!("2. rollback::command: tick({:?})", command_tick);
         shared_behavior::process_command(
             &mut client_tile_movement,
-            command_tick,
             &command,
         );
 
         // process movement
         // info!("3. rollback::movement: tick({:?})", command_tick);
-        shared_behavior::process_movement(current_tick, &mut client_tile_movement);
+        shared_behavior::process_movement(&mut client_tile_movement);
 
         current_tick = current_tick.wrapping_add(1);
     }
@@ -201,7 +200,7 @@ pub fn update_next_tile_position_events(
 
         // process movement
         // info!("4. rollback::movement: tick({:?})", current_tick);
-        shared_behavior::process_movement(current_tick, &mut client_tile_movement);
+        shared_behavior::process_movement(&mut client_tile_movement);
     }
 
     // info!("--- (client_tick: {:?}) ---", client_tick);

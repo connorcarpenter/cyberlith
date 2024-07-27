@@ -61,15 +61,11 @@ pub fn client_tick_events(
 
         shared_behavior::process_command(
             &mut tile_movement,
-            client_tick,
             command,
         );
 
         // process movement
-        shared_behavior::process_movement(
-            client_tick,
-            &mut tile_movement,
-        );
+        shared_behavior::process_movement(&mut tile_movement);
 
         // send command
         client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
@@ -86,10 +82,7 @@ pub fn server_tick_events(
         // process movement
         for mut tile_movement in position_q.iter_mut()
         {
-            shared_behavior::process_movement(
-                server_tick,
-                &mut tile_movement,
-            );
+            shared_behavior::process_movement(&mut tile_movement);
         }
     }
 }

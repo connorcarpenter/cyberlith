@@ -76,7 +76,7 @@ impl PredictionEvents {
             commands
                 .entity(prediction_entity)
                 // Position stuff
-                .insert(TileMovement::new_stopped(false, true, client_tick, &next_tile_position))
+                .insert(TileMovement::new_stopped(false, true, &next_tile_position))
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
