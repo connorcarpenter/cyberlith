@@ -62,7 +62,7 @@ pub fn connect_events(
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
 
-        let tick = server.current_tick();
+        let server_tick = server.current_tick();
 
         info!("Server connected to: {}", address);
 
@@ -78,7 +78,7 @@ pub fn connect_events(
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
         let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
-        let tile_movement = TileMovement::new_stopped(&next_tile_position);
+        let tile_movement = TileMovement::new_stopped(true, false, server_tick, &next_tile_position);
 
         // give user an entity
         let user_entity = commands

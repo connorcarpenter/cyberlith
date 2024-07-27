@@ -68,6 +68,7 @@ pub fn tick_events(world: &mut World) {
                 };
                 shared_behavior::process_command(
                     &mut tile_movement,
+                    *server_tick,
                     &command,
                 );
             }
@@ -76,7 +77,9 @@ pub fn tick_events(world: &mut World) {
 
             // process movement
             for (entity, mut tile_movement) in tile_movement_q.iter_mut() {
+
                 shared_behavior::process_movement(
+                    *server_tick,
                     &mut tile_movement,
                 );
 

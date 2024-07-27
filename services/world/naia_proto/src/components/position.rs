@@ -2,7 +2,7 @@ use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate, Tick};
 
-use crate::messages::KeyCommand;
+use crate::{messages::KeyCommand, constants::{MOVEMENT_SPEED, TILE_SIZE}};
 
 // This is networked
 
@@ -43,26 +43,30 @@ impl NextTilePosition {
 
 #[derive(Component)]
 pub struct TileMovement {
+    is_server: bool,
+    is_predicted: bool,
+    last_processed_tick: Tick,
     state: TileMovementState,
+    outbound_next_tile: Option<(i16, i16)>
 }
 
 impl TileMovement {
 
-    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
+    pub fn new_stopped(
+        is_server: bool,
+        predicted: bool,
+        current_tick: Tick,
+        next_tile_position: &NextTilePosition,
+    ) -> Self {
+        if is_server && predicted {
+            panic!("Server entities cannot be predicted");
+        }
         Self {
+            is_server,
+            is_predicted: predicted,
+            last_processed_tick: current_tick,
             state: TileMovementState::stopped(next_tile_position.x(), next_tile_position.y()),
-        }
-    }
-
-    fn stopped(tile_x: i16, tile_y: i16) -> Self {
-        Self {
-            state: TileMovementState::stopped(tile_x, tile_y),
-        }
-    }
-
-    fn moving() -> Self {
-        Self {
-            state: TileMovementState::moving(),
+            outbound_next_tile: None,
         }
     }
 
@@ -76,50 +80,148 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, key_command: &KeyCommand) {
-        match &mut self.state {
-            TileMovementState::Stopped(state) => state.recv_command(key_command),
-            TileMovementState::Moving(state) => state.recv_command(key_command),
+    pub fn recv_command(&mut self, tick: Tick, key_command: &KeyCommand) {
+        if !self.is_server && !self.is_predicted {
+            panic!("Only predicted entities can receive commands");
+        }
+
+        if !key_command.a && !key_command.d && !key_command.w && !key_command.s {
+            return;
+        }
+
+        let is_stopped = self.state.is_stopped();
+        if !is_stopped {
+            return;
+        }
+
+        let TileMovementState::Stopped(state) = &self.state else {
+            panic!("Expected Stopped state");
+        };
+
+        let current_tile_x = state.tile_x;
+        let current_tile_y = state.tile_y;
+        let mut next_tile_x = state.tile_x;
+        let mut next_tile_y = state.tile_y;
+
+        if key_command.w {
+            next_tile_y -= 1;
+        }
+        if key_command.s {
+            next_tile_y += 1;
+        }
+        if key_command.a {
+            next_tile_x -= 1;
+        }
+        if key_command.d {
+            next_tile_x += 1;
+        }
+
+        self.state = TileMovementState::moving(
+            tick,
+            current_tile_x,
+            current_tile_y,
+            next_tile_x,
+            next_tile_y,
+            0.0,
+        );
+
+        if self.is_server {
+            self.outbound_next_tile = Some((next_tile_x, next_tile_y));
         }
     }
 
     // on the client, called by confirmed entities
     // on the server, never called
-    pub fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
-        match &mut self.state {
-            TileMovementState::Stopped(state) => state.recv_updated_next_tile_position(next_tile_position, update_tick),
-            TileMovementState::Moving(state) => state.recv_updated_next_tile_position(next_tile_position, update_tick),
+    pub fn recv_updated_next_tile_position(&mut self, update_tick: Tick, next_tile_position: &NextTilePosition) {
+        if self.is_server {
+            panic!("Server entities do not receive updates");
+        }
+        if self.is_predicted {
+            panic!("Predicted entities do not receive updates");
+        }
+
+        if self.state.is_stopped() {
+            // is stopped
+            let TileMovementState::Stopped(state) = &self.state else {
+                panic!("Expected Stopped state");
+            };
+
+            let (current_tile_x, current_tile_y) = (state.tile_x, state.tile_y);
+            let (next_tile_x, next_tile_y) = (next_tile_position.x(), next_tile_position.y());
+            if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
+                return;
+            }
+            self.state = TileMovementState::moving(
+                update_tick,
+                current_tile_x,
+                current_tile_y,
+                next_tile_x,
+                next_tile_y,
+                0.0,
+            );
+
+        } else {
+            // is moving
+            let TileMovementState::Moving(state) = &mut self.state else {
+                panic!("Expected Moving state");
+            };
+
+            state.recv_updated_next_tile_position(update_tick, next_tile_position.x(), next_tile_position.y());
         }
     }
 
     // on the client, never called
     // on the server, called by confirmed entities
     pub fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
-        match &mut self.state {
-            TileMovementState::Stopped(state) => state.send_updated_next_tile_position(next_tile_position),
-            TileMovementState::Moving(state) => state.send_updated_next_tile_position(next_tile_position),
+        if !self.is_server {
+            panic!("Client entities do not send updates");
+        }
+        if let Some((next_tile_x, next_tile_y)) = self.outbound_next_tile.take() {
+            next_tile_position.set(next_tile_x, next_tile_y);
         }
     }
 
     // on the client, called by predicted entities
     // on the server, never called
     pub fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
-        match &mut self.state {
-            TileMovementState::Stopped(state) => state.recv_rollback(server_tile_movement),
-            TileMovementState::Moving(state) => state.recv_rollback(server_tile_movement),
+        if self.is_server {
+            panic!("Server entities do not receive rollbacks");
         }
+        if !self.is_predicted {
+            panic!("Only predicted entities can receive rollbacks");
+        }
+        if server_tile_movement.is_server {
+            panic!("Server entities cannot send rollbacks");
+        }
+        if server_tile_movement.is_predicted {
+            panic!("Predicted entities cannot send rollbacks");
+        }
+        self.last_processed_tick = server_tile_movement.last_processed_tick;
+        self.state = server_tile_movement.state.clone();
+        // outbound_next_tile is only relevant for server entities
     }
 
     // call on each tick
-    pub fn process_movement(&mut self) {
-        match &mut self.state {
-            TileMovementState::Stopped(state) => state.process_movement(),
-            TileMovementState::Moving(state) => state.process_movement(),
+    pub fn process_tick(&mut self, current_tick: Tick) {
+
+        self.last_processed_tick = current_tick;
+
+        let result = match &mut self.state {
+            TileMovementState::Stopped(state) => state.process_tick(),
+            TileMovementState::Moving(state) => state.process_tick(current_tick),
+        };
+
+        match result {
+            ProcessTickResult::ShouldStop(tile_x, tile_y) => {
+                self.state = TileMovementState::stopped(tile_x, tile_y);
+            }
+            ProcessTickResult::DoNothing => {}
         }
     }
 }
 
 // Tile Movement State
+#[derive(Clone)]
 enum TileMovementState {
     Stopped(TileMovementStoppedState),
     Moving(TileMovementMovingState),
@@ -130,12 +232,29 @@ impl TileMovementState {
         Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
     }
 
-    fn moving() -> Self {
-        Self::Moving(TileMovementMovingState::new())
+    fn moving(tick: Tick, ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
+        Self::Moving(TileMovementMovingState::new(tick,
+            ax, ay, bx, by, interp,
+        ))
+    }
+
+    fn is_stopped(&self) -> bool {
+        match self {
+            Self::Stopped(_) => true,
+            Self::Moving(_) => false,
+        }
+    }
+
+    fn is_moving(&self) -> bool {
+        match self {
+            Self::Stopped(_) => false,
+            Self::Moving(_) => true,
+        }
     }
 }
 
 // Tile Movement Stopped State
+#[derive(Clone)]
 struct TileMovementStoppedState {
     tile_x: i16,
     tile_y: i16,
@@ -151,80 +270,105 @@ impl TileMovementStoppedState {
 
     // retrieve the current position of the entity
     fn current_position(&self) -> (f32, f32) {
-        todo!()
-    }
-
-    // on the client, called by predicted entities
-    // on the server, called by confirmed entities
-    fn recv_command(&mut self, key_command: &KeyCommand) {
-        todo!()
-    }
-
-    // on the client, called by confirmed entities
-    // on the server, never called
-    fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
-        todo!()
-    }
-
-    // on the client, never called
-    // on the server, called by confirmed entities
-    fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
-        todo!()
-    }
-
-    // on the client, called by predicted entities
-    // on the server, never called
-    fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
-        todo!()
+        (self.tile_x as f32 * TILE_SIZE, self.tile_y as f32 * TILE_SIZE)
     }
 
     // call on each tick
-    fn process_movement(&mut self) {
-        todo!()
+    fn process_tick(&mut self) -> ProcessTickResult {
+        return ProcessTickResult::DoNothing;
     }
 }
 
 // Tile Movement Moving State
+#[derive(Clone)]
 struct TileMovementMovingState {
+    last_processed_tick: Tick,
+    from_tile_x: i16,
+    from_tile_y: i16,
+    to_tile_x: i16,
+    to_tile_y: i16,
+    distance: f32,
+    distance_max: f32,
+    done: bool,
 }
 
 impl TileMovementMovingState {
-    fn new() -> Self {
+    fn new(tick: Tick, ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
+        if ax == bx && ay == by {
+            panic!("from_tile and to_tile are the same");
+        }
+        if interp < 0.0 || interp > 1.0 {
+            panic!("interp must be between 0.0 and 1.0");
+        }
+        if (ax - bx).abs() + (ay - by).abs() > 2 {
+            panic!("from_tile and to_tile are not adjacent");
+        }
+        let x_axis_changed: bool = ax != bx;
+        let y_axis_changed: bool = ay != by;
+
+        let distance_max = if x_axis_changed && y_axis_changed {
+            std::f32::consts::SQRT_2
+        } else {
+            1.0
+        };
+        let distance_max = distance_max * TILE_SIZE;
+        let distance = distance_max * interp;
+
+        let done = interp == 1.0;
+
         Self {
+            last_processed_tick: tick,
+            from_tile_x: ax,
+            from_tile_y: ay,
+            to_tile_x: bx,
+            to_tile_y: by,
+            distance,
+            distance_max,
+            done,
         }
     }
 
     // retrieve the current position of the entity
     fn current_position(&self) -> (f32, f32) {
-        todo!()
-    }
+        let interp = self.distance / self.distance_max;
 
-    // on the client, called by predicted entities
-    // on the server, called by confirmed entities
-    fn recv_command(&mut self, key_command: &KeyCommand) {
-        todo!()
-    }
+        let from_x = self.from_tile_x as f32 * TILE_SIZE;
+        let from_y = self.from_tile_y as f32 * TILE_SIZE;
+        let to_x = self.to_tile_x as f32 * TILE_SIZE;
+        let to_y = self.to_tile_y as f32 * TILE_SIZE;
 
-    // on the client, called by confirmed entities
-    // on the server, never called
-    fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
-        todo!()
-    }
+        let dis_x = to_x - from_x;
+        let dis_y = to_y - from_y;
 
-    // on the client, never called
-    // on the server, called by confirmed entities
-    fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
-        todo!()
-    }
-
-    // on the client, called by predicted entities
-    // on the server, never called
-    fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
-        todo!()
+        (from_x + (dis_x * interp), from_y + (dis_y * interp))
     }
 
     // call on each tick
-    fn process_movement(&mut self) {
-        todo!()
+    fn process_tick(&mut self, tick: Tick) -> ProcessTickResult {
+
+        self.last_processed_tick = tick;
+
+        if self.done {
+            return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
+        }
+
+        self.distance += MOVEMENT_SPEED;
+
+        if self.distance >= self.distance_max {
+            self.distance = self.distance_max;
+            self.done = true;
+            return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
+        } else {
+            return ProcessTickResult::DoNothing;
+        }
     }
+
+    pub(crate) fn recv_updated_next_tile_position(&mut self, updated_tick: Tick, next_x: i16, next_y: i16) {
+        panic!("recv_updated_next_tile_position(). last tick: {:?}, updated tick: {:?}", self.last_processed_tick, updated_tick);
+    }
+}
+
+enum ProcessTickResult {
+    ShouldStop(i16, i16),
+    DoNothing,
 }

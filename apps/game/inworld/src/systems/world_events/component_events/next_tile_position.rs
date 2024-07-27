@@ -37,7 +37,7 @@ pub fn insert_next_tile_position_events(
 ) {
     for event in event_reader.read() {
         let now = Instant::now();
-        let tick = client.server_tick().unwrap();
+        let server_tick = client.server_tick().unwrap();
         let entity = event.entity;
 
         info!(
@@ -54,7 +54,7 @@ pub fn insert_next_tile_position_events(
         commands
             .entity(entity)
             // Insert Position stuff
-            .insert(TileMovement::new_stopped(next_tile_position))
+            .insert(TileMovement::new_stopped(false, false, server_tick, next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(layer)
@@ -69,6 +69,7 @@ pub fn insert_next_tile_position_events(
 }
 
 pub fn update_next_tile_position_events(
+    client: WorldClient,
     mut global: ResMut<Global>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
@@ -111,7 +112,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        tile_movement.recv_updated_next_tile_position(&next_tile_position, update_tick);
+        tile_movement.recv_updated_next_tile_position(update_tick, &next_tile_position);
     }
 
     let Some(owned_entity) = &global.owned_entity else {
@@ -164,22 +165,35 @@ pub fn update_next_tile_position_events(
 
         while sequence_greater_than(command_tick, current_tick) {
 
+            current_tick = current_tick.wrapping_add(1);
+
             // process command (none)
 
             // process movement
-            shared_behavior::process_movement(&mut client_tile_movement);
-
-            current_tick = current_tick.wrapping_add(1);
+            shared_behavior::process_movement(current_tick, &mut client_tile_movement);
         }
 
         // process command
         shared_behavior::process_command(
             &mut client_tile_movement,
+            command_tick,
             &command,
         );
 
         // process movement
-        shared_behavior::process_movement(&mut client_tile_movement);
+        shared_behavior::process_movement(current_tick, &mut client_tile_movement);
+    }
+
+    let client_tick = client.client_tick().unwrap();
+
+    while sequence_greater_than(client_tick, current_tick) {
+
+        current_tick = current_tick.wrapping_add(1);
+
+        // process command (none)
+
+        // process movement
+        shared_behavior::process_movement(current_tick, &mut client_tile_movement);
     }
 }
 
