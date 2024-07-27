@@ -6,6 +6,9 @@ pub use asset_refs::*;
 mod position;
 pub use position::*;
 
+mod tile_movement;
+pub use tile_movement::*;
+
 // Plugin
 pub(crate) struct ComponentsPlugin;
 
