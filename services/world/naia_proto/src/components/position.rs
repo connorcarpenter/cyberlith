@@ -50,17 +50,17 @@ impl TileMovement {
 
     pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
         Self {
-            state: TileMovementState::stopped(),
+            state: TileMovementState::stopped(next_tile_position.x(), next_tile_position.y()),
         }
     }
 
-    pub fn stopped() -> Self {
+    fn stopped(tile_x: i16, tile_y: i16) -> Self {
         Self {
-            state: TileMovementState::stopped(),
+            state: TileMovementState::stopped(tile_x, tile_y),
         }
     }
 
-    pub fn moving() -> Self {
+    fn moving() -> Self {
         Self {
             state: TileMovementState::moving(),
         }
@@ -68,36 +68,54 @@ impl TileMovement {
 
     // retrieve the current position of the entity
     pub fn current_position(&self) -> (f32, f32) {
-        todo!();
+        match &self.state {
+            TileMovementState::Stopped(state) => state.current_position(),
+            TileMovementState::Moving(state) => state.current_position(),
+        }
     }
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
     pub fn recv_command(&mut self, key_command: &KeyCommand) {
-        todo!();
+        match &mut self.state {
+            TileMovementState::Stopped(state) => state.recv_command(key_command),
+            TileMovementState::Moving(state) => state.recv_command(key_command),
+        }
     }
 
     // on the client, called by confirmed entities
     // on the server, never called
     pub fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
-        todo!();
+        match &mut self.state {
+            TileMovementState::Stopped(state) => state.recv_updated_next_tile_position(next_tile_position, update_tick),
+            TileMovementState::Moving(state) => state.recv_updated_next_tile_position(next_tile_position, update_tick),
+        }
     }
 
     // on the client, never called
     // on the server, called by confirmed entities
     pub fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
-        todo!();
+        match &mut self.state {
+            TileMovementState::Stopped(state) => state.send_updated_next_tile_position(next_tile_position),
+            TileMovementState::Moving(state) => state.send_updated_next_tile_position(next_tile_position),
+        }
     }
 
     // on the client, called by predicted entities
     // on the server, never called
     pub fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
-        todo!();
+        match &mut self.state {
+            TileMovementState::Stopped(state) => state.recv_rollback(server_tile_movement),
+            TileMovementState::Moving(state) => state.recv_rollback(server_tile_movement),
+        }
     }
 
     // call on each tick
     pub fn process_movement(&mut self) {
-        todo!();
+        match &mut self.state {
+            TileMovementState::Stopped(state) => state.process_movement(),
+            TileMovementState::Moving(state) => state.process_movement(),
+        }
     }
 }
 
@@ -108,8 +126,8 @@ enum TileMovementState {
 }
 
 impl TileMovementState {
-    fn stopped() -> Self {
-        Self::Stopped(TileMovementStoppedState::new())
+    fn stopped(tile_x: i16, tile_y: i16) -> Self {
+        Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
     }
 
     fn moving() -> Self {
@@ -119,12 +137,50 @@ impl TileMovementState {
 
 // Tile Movement Stopped State
 struct TileMovementStoppedState {
+    tile_x: i16,
+    tile_y: i16,
 }
 
 impl TileMovementStoppedState {
-    fn new() -> Self {
+    fn new(tile_x: i16, tile_y: i16) -> Self {
         Self {
+            tile_x,
+            tile_y,
         }
+    }
+
+    // retrieve the current position of the entity
+    fn current_position(&self) -> (f32, f32) {
+        todo!()
+    }
+
+    // on the client, called by predicted entities
+    // on the server, called by confirmed entities
+    fn recv_command(&mut self, key_command: &KeyCommand) {
+        todo!()
+    }
+
+    // on the client, called by confirmed entities
+    // on the server, never called
+    fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
+        todo!()
+    }
+
+    // on the client, never called
+    // on the server, called by confirmed entities
+    fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
+        todo!()
+    }
+
+    // on the client, called by predicted entities
+    // on the server, never called
+    fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
+        todo!()
+    }
+
+    // call on each tick
+    fn process_movement(&mut self) {
+        todo!()
     }
 }
 
@@ -136,5 +192,39 @@ impl TileMovementMovingState {
     fn new() -> Self {
         Self {
         }
+    }
+
+    // retrieve the current position of the entity
+    fn current_position(&self) -> (f32, f32) {
+        todo!()
+    }
+
+    // on the client, called by predicted entities
+    // on the server, called by confirmed entities
+    fn recv_command(&mut self, key_command: &KeyCommand) {
+        todo!()
+    }
+
+    // on the client, called by confirmed entities
+    // on the server, never called
+    fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
+        todo!()
+    }
+
+    // on the client, never called
+    // on the server, called by confirmed entities
+    fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
+        todo!()
+    }
+
+    // on the client, called by predicted entities
+    // on the server, never called
+    fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
+        todo!()
+    }
+
+    // call on each tick
+    fn process_movement(&mut self) {
+        todo!()
     }
 }
