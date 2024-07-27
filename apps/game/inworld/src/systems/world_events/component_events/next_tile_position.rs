@@ -158,18 +158,28 @@ pub fn update_next_tile_position_events(
 
     let replay_commands = global.command_history.replays(&modified_server_tick);
 
+    // PREDICTION ROLLBACK
     let mut current_tick = server_tick;
     for (command_tick, command) in replay_commands {
-        while sequence_greater_than(command_tick, current_tick) {
-            current_tick = current_tick.wrapping_add(1);
 
-            // PREDICTION ROLLBACK
+        while sequence_greater_than(command_tick, current_tick) {
+
+            // process command (none)
+
+            // process movement
             shared_behavior::process_movement(&mut client_tile_movement);
+
+            current_tick = current_tick.wrapping_add(1);
         }
+
+        // process command
         shared_behavior::process_command(
             &mut client_tile_movement,
             &command,
         );
+
+        // process movement
+        shared_behavior::process_movement(&mut client_tile_movement);
     }
 }
 

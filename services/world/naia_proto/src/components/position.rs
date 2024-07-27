@@ -1,7 +1,9 @@
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate, Tick};
+
 use crate::messages::KeyCommand;
+
 // This is networked
 
 #[derive(Component, Replicate)]
@@ -69,18 +71,32 @@ impl TileMovement {
         todo!();
     }
 
-    //
+    // on the client, called by predicted entities
+    // on the server, called by confirmed entities
     pub fn recv_command(&mut self, key_command: &KeyCommand) {
         todo!();
     }
 
-    // called by confirmed (server) entities only
+    // on the client, called by confirmed entities
+    // on the server, never called
     pub fn recv_updated_next_tile_position(&mut self, next_tile_position: &NextTilePosition, update_tick: Tick) {
         todo!();
     }
 
-    // called by predicted (client) entities only
+    // on the client, never called
+    // on the server, called by confirmed entities
+    pub fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
+        todo!();
+    }
+
+    // on the client, called by predicted entities
+    // on the server, never called
     pub fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
+        todo!();
+    }
+
+    // call on each tick
+    pub fn process_movement(&mut self) {
         todo!();
     }
 }

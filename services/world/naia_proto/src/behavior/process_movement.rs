@@ -6,5 +6,5 @@ use crate::{
 pub fn process_movement(
     tile_movement: &mut TileMovement,
 ) {
-
+    tile_movement.process_movement();
 }

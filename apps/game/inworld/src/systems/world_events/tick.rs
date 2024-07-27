@@ -38,38 +38,39 @@ pub fn client_tick_events(
     for event in tick_reader.read() {
         let client_tick = event.tick;
 
-        // process movement
         let mut tile_movement = position_q.get_mut(predicted_entity).unwrap();
-
-        shared_behavior::process_movement(
-            &mut tile_movement,
-        );
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
             continue;
         };
-        // Command History
-        if !global.command_history.can_insert(&client_tick) {
-            // History is full, should this be possible??
-            warn!(
-                "Command History is full, cannot insert command for tick: {:?}",
-                client_tick
-            );
-            continue;
+
+        // save to command history
+        {
+            if !global.command_history.can_insert(&client_tick) {
+                // History is full, should this be possible??
+                panic!(
+                    "Command History is full, cannot insert command for tick: {:?}",
+                    client_tick
+                );
+            }
+
+            // Record command
+            global.command_history.insert(client_tick, command.clone());
         }
 
-        // Record command
-        global.command_history.insert(client_tick, command.clone());
-
-        // Send command
-        client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
-
-        // Apply command
         shared_behavior::process_command(
             &mut tile_movement,
             command,
         );
+
+        // process movement
+        shared_behavior::process_movement(
+            &mut tile_movement,
+        );
+
+        // send command
+        client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
     }
 }
 
