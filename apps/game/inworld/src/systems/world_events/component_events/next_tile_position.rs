@@ -161,6 +161,8 @@ pub fn update_next_tile_position_events(
 
     // PREDICTION ROLLBACK
     let mut current_tick = server_tick;
+    // info!("---");
+    // info!("rollback::start: tick({:?})", current_tick);
     for (command_tick, command) in replay_commands {
 
         while sequence_greater_than(command_tick, current_tick) {
@@ -170,10 +172,12 @@ pub fn update_next_tile_position_events(
             // process command (none)
 
             // process movement
+            // info!("1. rollback::movement: tick({:?})", current_tick);
             shared_behavior::process_movement(current_tick, &mut client_tile_movement);
         }
 
         // process command
+        // info!("2. rollback::command: tick({:?})", command_tick);
         shared_behavior::process_command(
             &mut client_tile_movement,
             command_tick,
@@ -181,7 +185,10 @@ pub fn update_next_tile_position_events(
         );
 
         // process movement
+        // info!("3. rollback::movement: tick({:?})", command_tick);
         shared_behavior::process_movement(current_tick, &mut client_tile_movement);
+
+        current_tick = current_tick.wrapping_add(1);
     }
 
     let client_tick = client.client_tick().unwrap();
@@ -193,8 +200,11 @@ pub fn update_next_tile_position_events(
         // process command (none)
 
         // process movement
+        // info!("4. rollback::movement: tick({:?})", current_tick);
         shared_behavior::process_movement(current_tick, &mut client_tile_movement);
     }
+
+    // info!("--- (client_tick: {:?}) ---", client_tick);
 }
 
 pub fn remove_next_tile_position_events(

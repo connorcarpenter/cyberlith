@@ -53,7 +53,7 @@ pub fn draw_units(
         if confirmed_opt.is_some() {
             // is confirmed
         } else if predicted_opt.is_some() {
-            continue;
+            // continue;
         } else {
             panic!("Unit must be either confirmed or predicted");
         };

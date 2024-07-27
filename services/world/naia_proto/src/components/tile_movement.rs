@@ -292,7 +292,7 @@ impl TileMovementMovingState {
 
     // retrieve the current position of the entity
     fn current_position(&self) -> (f32, f32) {
-        let interp = self.distance / self.distance_max;
+        let interp = self.distance / self.distance_max; // this is what is varying across frames
 
         let from_x = self.from_tile_x as f32 * TILE_SIZE;
         let from_y = self.from_tile_y as f32 * TILE_SIZE;
