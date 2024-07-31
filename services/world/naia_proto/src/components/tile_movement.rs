@@ -2,7 +2,6 @@
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Instant, Tick};
-use logging::{info};
 
 use crate::{components::NextTilePosition, messages::KeyCommand, constants::{MOVEMENT_SPEED, TILE_SIZE}};
 
@@ -13,12 +12,6 @@ pub struct TileMovement {
 
     state: TileMovementState,
     outbound_next_tile: Option<(i16, i16)>,
-
-    last_render_instant: Instant,
-    last_render_position: (f32, f32),
-    next_tick_position: (f32, f32),
-    last_ticked_render_position: (f32, f32),
-    last_ticked_time: Instant,
 }
 
 impl TileMovement {
@@ -37,48 +30,17 @@ impl TileMovement {
 
             state: TileMovementState::stopped(next_tile_position.x(), next_tile_position.y()),
             outbound_next_tile: None,
-
-            last_render_instant: Instant::now(),
-            last_render_position: (0.0, 0.0),
-            next_tick_position: (0.0, 0.0),
-            last_ticked_render_position: (0.0, 0.0),
-            last_ticked_time: Instant::now(),
         };
-
-        let (current_position_x, current_position_y) = me.current_position();
-        me.last_render_position = (current_position_x, current_position_y);
-        me.next_tick_position = (current_position_x, current_position_y);
-        me.last_ticked_render_position = (current_position_x, current_position_y);
 
         me
     }
 
     // retrieve the current position of the entity
-    fn current_position(&self) -> (f32, f32) {
+    pub fn current_position(&self) -> (f32, f32) {
         match &self.state {
             TileMovementState::Stopped(state) => state.current_position(),
             TileMovementState::Moving(state) => state.current_position(),
         }
-    }
-
-    // retrieve interpolated position of the entity
-    pub fn render_position(&mut self, rendering: bool, now: &Instant) -> (f32, f32) {
-
-        let tick_duration_ms = 40.0; //self.tick_duration_avg_ms;
-        let time_elapsed_since_last_tick_ms = self.last_ticked_time.elapsed(now).as_secs_f32() * 1000.0;
-        let interpolation = (time_elapsed_since_last_tick_ms / tick_duration_ms).min(1.0).max(0.0);
-        // if rendering {
-        //     info!("render interp: {}", interpolation);
-        // }
-        let dis_x = self.next_tick_position.0 - self.last_ticked_render_position.0;
-        let dis_y = self.next_tick_position.1 - self.last_ticked_render_position.1;
-        let interp_x = self.last_ticked_render_position.0 + (dis_x * interpolation);
-        let interp_y = self.last_ticked_render_position.1 + (dis_y * interpolation);
-
-        self.last_render_instant = now.clone();
-        self.last_render_position = (interp_x, interp_y);
-
-        (interp_x, interp_y)
     }
 
     // on the client, called by predicted entities
@@ -197,22 +159,11 @@ impl TileMovement {
             panic!("Predicted entities cannot send rollbacks");
         }
 
-        // let now = Instant::now();
-        // self.render_position(false, &now);
-
         self.state = server_tile_movement.state.clone();
-
-        // outbound_next_tile is only relevant for server entities
-        self.next_tick_position = server_tile_movement.next_tick_position;
-        self.last_ticked_render_position = self.last_render_position;
-        self.last_ticked_time = Instant::now();
     }
 
     // call on each tick
     pub fn process_tick(&mut self) {
-
-        let now = Instant::now();
-        // self.render_position(false, &now);
 
         let result = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
@@ -225,29 +176,6 @@ impl TileMovement {
             }
             ProcessTickResult::DoNothing => {}
         }
-
-        // buffer
-
-        let (current_position_x, current_position_y) = self.current_position();
-        self.next_tick_position = (current_position_x, current_position_y);
-        self.last_ticked_render_position = self.last_render_position;
-
-        // tick duration
-        // let duration_ms = self.last_ticked_time.elapsed(&now).as_secs_f32() * 1000.0;
-        self.last_ticked_time = now;
-
-        // if self.tick_duration_samples == 0 {
-        //     self.tick_duration_avg_ms = duration_ms;
-        //     self.tick_duration_samples = 1;
-        // } else {
-        //     self.tick_duration_avg_ms = ((self.tick_duration_avg_ms * self.tick_duration_samples as f32) + duration_ms) / (self.tick_duration_samples + 1) as f32;
-        //
-        //     info!("tick_duration_avg_ms: {}", self.tick_duration_avg_ms);
-        //
-        //     if self.tick_duration_samples < 20 {
-        //         self.tick_duration_samples += 1;
-        //     }
-        // }
     }
 }
 

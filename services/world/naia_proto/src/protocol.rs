@@ -11,7 +11,7 @@ pub fn protocol() -> Protocol {
     // Config
     builder
         .rtc_endpoint("api/world_connect".to_string())
-        .tick_interval(Duration::from_millis(40))
+        .tick_interval(Duration::from_millis(320))
         // .enable_client_authoritative_entities()
         // Channels
         .add_plugin(ChannelsPlugin)
@@ -24,9 +24,9 @@ pub fn protocol() -> Protocol {
         if #[cfg(feature = "local")]{
             use naia_bevy_shared::LinkConditionerConfig;
 
-            //builder.link_condition(LinkConditionerConfig::new(100, 0, 0.0));
+            builder.link_condition(LinkConditionerConfig::new(100, 0, 0.0));
 
-            builder.link_condition(LinkConditionerConfig::very_good_condition());
+            // builder.link_condition(LinkConditionerConfig::very_good_condition());
         }
         else {}
     }

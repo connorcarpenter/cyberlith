@@ -156,6 +156,18 @@ impl Transform {
         self.rotation = Quat::from_mat3(&Mat3::from_cols(right, up, forward));
     }
 
+    pub fn set_scale(&mut self, scale: Vec3) {
+        self.scale = scale;
+    }
+
+    pub fn set_translation(&mut self, translation: Vec3) {
+        self.translation = translation;
+    }
+
+    pub fn set_rotation(&mut self, rotation: Quat) {
+        self.rotation = rotation;
+    }
+
     pub fn view_matrix(&self) -> Mat4 {
         self.compute_matrix().inverse()
     }

@@ -11,7 +11,7 @@ use game_engine::{
     logging::warn,
     math::{Quat, Vec3},
     naia::{sequence_greater_than, Tick},
-    render::components::{RenderLayers, Transform, Visibility},
+    render::{components::{RenderLayers, Transform, Visibility}, base::{CpuMesh, CpuMaterial}},
     time::Instant,
     world::{
         behavior as shared_behavior,
@@ -20,17 +20,21 @@ use game_engine::{
         WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
+    storage::Storage,
 };
 
 use crate::{
-    components::{AnimationState, Confirmed},
+    components::{AnimationState, RenderHelper, Confirmed},
     resources::Global,
     systems::world_events::PredictionEvents,
 };
+use crate::components::RenderPosition;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
     mut commands: Commands,
+    mut meshes: ResMut<Storage<CpuMesh>>,
+    mut materials: ResMut<Storage<CpuMaterial>>,
     position_q: Query<&NextTilePosition>,
     mut prediction_events: ResMut<PredictionEvents>,
     mut event_reader: EventReader<WorldInsertComponentEvent<NextTilePosition>>,
@@ -57,6 +61,8 @@ pub fn insert_next_tile_position_events(
             .insert(TileMovement::new_stopped(false, false, next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
+            .insert(RenderHelper::new(&mut meshes, &mut materials))
+            .insert(RenderPosition::new())
             .insert(layer)
             .insert(Visibility::default())
             .insert(

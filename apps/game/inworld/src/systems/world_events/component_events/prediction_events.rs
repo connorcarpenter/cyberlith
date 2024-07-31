@@ -19,11 +19,13 @@ use game_engine::{
         WorldClient,
     },
 };
-
+use game_engine::render::base::{CpuMaterial, CpuMesh};
+use game_engine::storage::Storage;
 use crate::{
     components::{AnimationState, Predicted},
     resources::{Global, OwnedEntity},
 };
+use crate::components::{RenderHelper, RenderPosition};
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -54,6 +56,8 @@ impl PredictionEvents {
         client: WorldClient,
         mut commands: Commands,
         mut global: ResMut<Global>,
+        mut meshes: ResMut<Storage<CpuMesh>>,
+        mut materials: ResMut<Storage<CpuMaterial>>,
         mut prediction_events: ResMut<PredictionEvents>,
         position_q: Query<&NextTilePosition>,
     ) {
@@ -85,6 +89,8 @@ impl PredictionEvents {
                         .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
                 )
                 .insert(AnimationState::new())
+                .insert(RenderHelper::new(&mut meshes, &mut materials))
+                .insert(RenderPosition::new())
                 .insert(unit_data_handle.clone())
                 // mark as predicted
                 .insert(Predicted);
