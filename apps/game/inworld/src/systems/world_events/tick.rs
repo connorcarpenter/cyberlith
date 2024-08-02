@@ -15,13 +15,14 @@ use crate::{
     components::{Confirmed, Predicted},
     resources::Global,
 };
+use crate::components::RenderPosition;
 
 pub fn client_tick_events(
     mut client: WorldClient,
     mut global: ResMut<Global>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<
-        &mut TileMovement,
+        (&mut TileMovement, &mut RenderPosition),
         With<Predicted>,
     >,
 ) {
@@ -38,7 +39,7 @@ pub fn client_tick_events(
     for event in tick_reader.read() {
         let client_tick = event.tick;
 
-        let mut tile_movement = position_q.get_mut(predicted_entity).unwrap();
+        let (mut tile_movement, mut render_position) = position_q.get_mut(predicted_entity).unwrap();
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
@@ -66,6 +67,7 @@ pub fn client_tick_events(
 
         // process movement
         shared_behavior::process_movement(&mut tile_movement);
+        render_position.recv_position(tile_movement.current_position());
 
         // send command
         client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
@@ -74,15 +76,16 @@ pub fn client_tick_events(
 
 pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<&mut TileMovement, With<Confirmed>>,
+    mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Confirmed>>,
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
 
         // process movement
-        for mut tile_movement in position_q.iter_mut()
+        for (mut tile_movement, mut render_position) in position_q.iter_mut()
         {
             shared_behavior::process_movement(&mut tile_movement);
+            render_position.recv_position(tile_movement.current_position());
         }
     }
 }

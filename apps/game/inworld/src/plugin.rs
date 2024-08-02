@@ -60,7 +60,9 @@ impl Plugin for InWorldPlugin {
             .configure_sets(Update, systems::MainLoop.after(systems::Tick))
             .add_systems(
                 Update,
-                (systems::input::key_input,)
+                (
+                    systems::input::key_input,
+                )
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::MainLoop),
             )

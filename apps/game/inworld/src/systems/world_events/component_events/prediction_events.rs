@@ -80,7 +80,7 @@ impl PredictionEvents {
             commands
                 .entity(prediction_entity)
                 // Position stuff
-                .insert(TileMovement::new_stopped(false, true, &next_tile_position))
+                .insert(TileMovement::new_stopped(false, true, next_tile_position))
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())
@@ -90,7 +90,7 @@ impl PredictionEvents {
                 )
                 .insert(AnimationState::new())
                 .insert(RenderHelper::new(&mut meshes, &mut materials))
-                .insert(RenderPosition::new())
+                .insert(RenderPosition::new(next_tile_position))
                 .insert(unit_data_handle.clone())
                 // mark as predicted
                 .insert(Predicted);

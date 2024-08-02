@@ -62,7 +62,7 @@ pub fn insert_next_tile_position_events(
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderHelper::new(&mut meshes, &mut materials))
-            .insert(RenderPosition::new())
+            .insert(RenderPosition::new(next_tile_position))
             .insert(layer)
             .insert(Visibility::default())
             .insert(
@@ -79,7 +79,7 @@ pub fn update_next_tile_position_events(
     mut global: ResMut<Global>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
-    mut tile_movement_q: Query<&mut TileMovement>,
+    mut tile_movement_q: Query<(&mut TileMovement, &mut RenderPosition)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -111,7 +111,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        let Ok(mut tile_movement) = tile_movement_q.get_mut(updated_entity)
+        let Ok((mut tile_movement, _)) = tile_movement_q.get_mut(updated_entity)
         else {
             panic!(
                 "failed to get tile movement q for entity: {:?}",
@@ -145,7 +145,7 @@ pub fn update_next_tile_position_events(
         return;
     };
 
-    let Ok([server_tile_movement, mut client_tile_movement])
+    let Ok([(server_tile_movement, server_render_pos), (mut client_tile_movement, mut client_render_pos)])
         = tile_movement_q.get_many_mut([server_entity, client_entity]) else
     {
         panic!(
@@ -156,6 +156,7 @@ pub fn update_next_tile_position_events(
 
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
+    client_render_pos.recv_rollback(&server_render_pos);
 
     // Replay all stored commands
 
@@ -180,6 +181,7 @@ pub fn update_next_tile_position_events(
             // process movement
             // info!("1. rollback::movement: tick({:?})", current_tick);
             shared_behavior::process_movement(&mut client_tile_movement);
+            // render_position.recv_position(tile_movement.current_position());
         }
 
         // process command
@@ -192,6 +194,7 @@ pub fn update_next_tile_position_events(
         // process movement
         // info!("3. rollback::movement: tick({:?})", command_tick);
         shared_behavior::process_movement(&mut client_tile_movement);
+        //render_position.recv_position(tile_movement.current_position());
 
         current_tick = current_tick.wrapping_add(1);
     }
@@ -207,6 +210,7 @@ pub fn update_next_tile_position_events(
         // process movement
         // info!("4. rollback::movement: tick({:?})", current_tick);
         shared_behavior::process_movement(&mut client_tile_movement);
+        // render_position.recv_position(tile_movement.current_position());
     }
 
     // info!("--- (client_tick: {:?}) ---", client_tick);

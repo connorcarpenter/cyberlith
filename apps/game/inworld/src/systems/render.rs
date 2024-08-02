@@ -20,7 +20,7 @@ pub fn draw_units(
         &AssetHandle<UnitData>,
         // &AnimationState,
         &RenderHelper,
-        &RenderPosition,
+        &mut RenderPosition,
         &mut TileMovement,
         Option<&Confirmed>,
         Option<&Predicted>,
@@ -36,7 +36,7 @@ pub fn draw_units(
         unit_handle,
         // anim_state,
         render_helper,
-        render_position,
+        mut render_position,
         mut tile_movement,
         confirmed_opt,
         predicted_opt,
@@ -57,18 +57,17 @@ pub fn draw_units(
             panic!("Unit cannot be both confirmed and predicted");
         }
 
-        transform.set_scale(Vec3::splat(10.0));
-
         let (current_position_x, current_position_y) = tile_movement.current_position();
         transform.translation.x = current_position_x;
         transform.translation.y = current_position_y;
 
         if predicted_opt.is_some() {
             // draw predicted position
+            transform.set_scale(Vec3::new(10.0, 5.0, 20.0));
             render_frame.draw_mesh(
                 render_layer_opt,
                 &render_helper.cube_mesh_handle,
-                &render_helper.aqua_mat_handle,
+                &render_helper.aqua_mat_handle, // AQUA = PREDICTION
                 &transform,
             );
             continue;
@@ -84,13 +83,46 @@ pub fn draw_units(
         //     render_layer_opt,
         // );
 
-        // draw confirmed position
-        render_frame.draw_mesh(
-            render_layer_opt,
-            &render_helper.cube_mesh_handle,
-            &render_helper.blue_mat_handle,
-            &transform,
-        );
+        {
+            // draw confirmed position
+            // transform.set_scale(Vec3::new(10.0, 20.0, 5.0));
+            // render_frame.draw_mesh(
+            //     render_layer_opt,
+            //     &render_helper.cube_mesh_handle,
+            //     &render_helper.blue_mat_handle, // BLUE = CONFIRMED
+            //     &transform,
+            // );
+        }
+
+        {
+            // draw confirmed future queue
+            let future_positions = render_position.queue_ref();
+            for (future_tile_x, future_tile_y) in future_positions.iter() {
+                transform.translation.x = (*future_tile_x as f32);
+                transform.translation.y = (*future_tile_y as f32);
+                transform.set_scale(Vec3::new(5.0, 10.0, 20.0));
+                render_frame.draw_mesh(
+                    render_layer_opt,
+                    &render_helper.cube_mesh_handle,
+                    &render_helper.yellow_mat_handle, // YELLOW = FUTURE
+                    &transform,
+                );
+            }
+        }
+
+        {
+            // draw interpolated position
+            let (interp_x, interp_y) = render_position.render(&now);
+            transform.translation.x = interp_x;
+            transform.translation.y = interp_y;
+            transform.set_scale(Vec3::new(20.0, 10.0, 5.0));
+            render_frame.draw_mesh(
+                render_layer_opt,
+                &render_helper.cube_mesh_handle,
+                &render_helper.red_mat_handle, // RED = INTERPOLATED
+                &transform,
+            );
+        }
 
         // // draw confirmed next tile position position
         // let (next_tick_x, next_tick_y) = tile_movement.next_tick_position();
