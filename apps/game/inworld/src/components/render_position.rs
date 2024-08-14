@@ -7,8 +7,8 @@ use game_engine::{world::{constants::TILE_SIZE, components::NextTilePosition}, t
 #[derive(Component, Clone)]
 pub struct RenderPosition {
     queue: VecDeque<(f32, f32, GameInstant)>,
-    position: (f32, f32),
     last_render_instant: Instant,
+    interp_instant: GameInstant,
 }
 
 impl RenderPosition {
@@ -19,8 +19,8 @@ impl RenderPosition {
 
         let mut me = Self {
             queue: VecDeque::new(),
-            position: (x, y),
             last_render_instant: Instant::now(),
+            interp_instant: instant.clone(),
         };
 
         me.queue.push_back((x, y, instant));
@@ -47,48 +47,47 @@ impl RenderPosition {
     pub fn render(&mut self, now: &Instant) -> (f32, f32) {
         let duration_elapsed = self.last_render_instant.elapsed(&now);
         let duration_ms = (duration_elapsed.as_secs_f32() * 1000.0);
+        self.interp_instant = self.interp_instant.add_millis(duration_ms as u32);
+
         //info!("duration_ms: {:?}", duration_ms);
         self.last_render_instant = now.clone();
 
         // can't move to next position in queue unless there are two positions in the queue
         if self.queue.len() < 2 {
-            return self.position;
+            if self.queue.len() < 1 {
+                panic!("queue is empty");
+            }
+
+            let (target_x, target_y, _) = self.queue.get(0).unwrap();
+            return (*target_x, *target_y);
         }
 
-        let (target_x, target_y, target_instant) = self.queue.front().unwrap();
-        let target_x = *target_x;
-        let target_y = *target_y;
+        let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
+        let prev_x = *prev_x;
+        let prev_y = *prev_y;
 
-        // calculate the distance to the target position
-        let dx = target_x - self.position.0;
-        let dy = target_y - self.position.1;
-        let distance_to_target = (dx * dx + dy * dy).sqrt();
+        let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
+        let next_x = *next_x;
+        let next_y = *next_y;
 
-        const INTERP_SPEED: f32 = 0.2;
-
-        // calculate the distance to move this frame
-
-        //info!("duration_ms: {:?}", duration_ms);
-        let move_distance = INTERP_SPEED * (duration_ms);
-
-        if move_distance == 0.0 {
-            //warn!("move_distance is zero? speed * duration_ms = distance: {:?} * {:?} = {:?}", INTERP_SPEED, duration_ms, move_distance);
-            return self.position;
+        if prev_instant.is_more_than(&self.interp_instant) {
+            self.interp_instant = prev_instant.clone();
         }
 
-        // if the distance to move is greater than the distance to the target position
-        // then we have reached the target position
-        if move_distance >= distance_to_target {
-            self.position = (target_x, target_y);
+        if self.interp_instant.is_more_than(&next_instant) {
+            // TODO.. extrapolate?
             self.queue.pop_front();
-        } else {
-            // move towards the target position
-            let angle = dy.atan2(dx);
-            let new_x = self.position.0 + move_distance * angle.cos();
-            let new_y = self.position.1 + move_distance * angle.sin();
-            self.position = (new_x, new_y);
+            return (next_x, next_y);
         }
 
-        return self.position;
+        let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
+        let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
+        let total = prev_to_interp + interp_to_next;
+        let interp = prev_to_interp / total;
+
+        let interp_x = prev_x + ((next_x - prev_x) * interp);
+        let interp_y = prev_y + ((next_y - prev_y) * interp);
+
+        (interp_x, interp_y)
     }
 }
