@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run All [ODST]" type="CompoundRunConfigurationType">
+    <toRun name="ODST [RUN]" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Asset Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Gateway [local]" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Region Server" type="CargoCommandRunConfiguration" />
+    <toRun name="Run Session Server [ODST]" type="CargoCommandRunConfiguration" />
+    <toRun name="Run World Server [ODST]" type="CargoCommandRunConfiguration" />
+    <method v="2" />
+  </configuration>
+</component>
