@@ -42,6 +42,7 @@ pub fn insert_next_tile_position_events(
     for event in event_reader.read() {
         let now = Instant::now();
         let server_tick = client.server_tick().unwrap();
+        let server_tick_instant = client.tick_to_instant(server_tick).expect("failed to convert tick to instant");
         let entity = event.entity;
 
         info!(
@@ -62,7 +63,7 @@ pub fn insert_next_tile_position_events(
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderHelper::new(&mut meshes, &mut materials))
-            .insert(RenderPosition::new(next_tile_position))
+            .insert(RenderPosition::new(next_tile_position, server_tick_instant))
             .insert(layer)
             .insert(Visibility::default())
             .insert(

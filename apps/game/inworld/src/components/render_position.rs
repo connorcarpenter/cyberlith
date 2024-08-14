@@ -2,17 +2,17 @@ use std::collections::VecDeque;
 
 use bevy_ecs::component::Component;
 
-use game_engine::{world::{constants::TILE_SIZE, components::NextTilePosition}, time::Instant};
+use game_engine::{world::{constants::TILE_SIZE, components::NextTilePosition}, time::Instant, naia::GameInstant};
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {
-    queue: VecDeque<(f32, f32)>,
+    queue: VecDeque<(f32, f32, GameInstant)>,
     position: (f32, f32),
     last_render_instant: Instant,
 }
 
 impl RenderPosition {
-    pub fn new(next_tile_position: &NextTilePosition) -> Self {
+    pub fn new(next_tile_position: &NextTilePosition, instant: GameInstant) -> Self {
 
         let x = next_tile_position.x() as f32 * TILE_SIZE;
         let y = next_tile_position.y() as f32 * TILE_SIZE;
@@ -23,7 +23,7 @@ impl RenderPosition {
             last_render_instant: Instant::now(),
         };
 
-        me.queue.push_back((x, y));
+        me.queue.push_back((x, y, instant));
 
         me
     }
@@ -32,12 +32,12 @@ impl RenderPosition {
         self.queue.len()
     }
 
-    pub fn queue_ref(&self) -> &VecDeque<(f32, f32)> {
+    pub fn queue_ref(&self) -> &VecDeque<(f32, f32, GameInstant)> {
         &self.queue
     }
 
-    pub fn recv_position(&mut self, position: (f32, f32)) {
-        self.queue.push_back(position);
+    pub fn recv_position(&mut self, position: (f32, f32), instant: GameInstant) {
+        self.queue.push_back((position.0, position.1, instant));
     }
 
     pub fn recv_rollback(&mut self, _server_render_pos: &RenderPosition) {
@@ -55,7 +55,7 @@ impl RenderPosition {
             return self.position;
         }
 
-        let (target_x, target_y) = self.queue.front().unwrap();
+        let (target_x, target_y, target_instant) = self.queue.front().unwrap();
         let target_x = *target_x;
         let target_y = *target_y;
 

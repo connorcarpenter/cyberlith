@@ -71,6 +71,7 @@ impl PredictionEvents {
             );
 
             let client_tick = client.client_tick().unwrap();
+            let client_tick_instant = client.tick_to_instant(client_tick).expect("client uninitialized?");
 
             // Here we create a local copy of the Player entity, to use for client-side prediction
             let next_tile_position = position_q.get(future_prediction_entity).unwrap();
@@ -90,7 +91,7 @@ impl PredictionEvents {
                 )
                 .insert(AnimationState::new())
                 .insert(RenderHelper::new(&mut meshes, &mut materials))
-                .insert(RenderPosition::new(next_tile_position))
+                .insert(RenderPosition::new(next_tile_position, client_tick_instant))
                 .insert(unit_data_handle.clone())
                 // mark as predicted
                 .insert(Predicted);

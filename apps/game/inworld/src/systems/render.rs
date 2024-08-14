@@ -97,7 +97,7 @@ pub fn draw_units(
         {
             // draw confirmed future queue
             let future_positions = render_position.queue_ref();
-            for (future_tile_x, future_tile_y) in future_positions.iter() {
+            for (future_tile_x, future_tile_y, _future_instant) in future_positions.iter() {
                 transform.translation.x = (*future_tile_x as f32);
                 transform.translation.y = (*future_tile_y as f32);
                 transform.set_scale(Vec3::new(5.0, 10.0, 20.0));
