@@ -45,7 +45,7 @@ impl RenderPosition {
         // TODO: implement?
     }
 
-    pub fn render(&mut self, now: &Instant) -> (f32, f32) {
+    pub fn render(&mut self, now: &Instant, prediction: bool) -> (f32, f32) {
 
         let queue_len = self.queue.len();
 
@@ -80,21 +80,34 @@ impl RenderPosition {
         }
 
         // if queue is too long...
-        if queue_len > 4 {
+        if self.queue.len() > 4 {
             warn!("queue is too long, truncating");
 
-            while queue_len > 3 {
+            while self.queue.len() > 3 {
                 self.queue.pop_front();
             }
         }
 
-        let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
-        let prev_x = *prev_x;
-        let prev_y = *prev_y;
+        let (
+            prev_x,
+            prev_y,
+            prev_instant,
+            next_x,
+            next_y,
+            next_instant,
+        ) = {
+            loop {
+                let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
+                let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
 
-        let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
-        let next_x = *next_x;
-        let next_y = *next_y;
+                if prediction && self.queue.len() > 2 && prev_x == next_x && prev_y == next_y {
+                    self.queue.pop_front();
+                    continue;
+                }
+
+                break (*prev_x, *prev_y, prev_instant, *next_x, *next_y, next_instant);
+            }
+        };
 
         if prev_instant.is_more_than(&self.interp_instant) {
             self.interp_instant = prev_instant.clone();

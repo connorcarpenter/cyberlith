@@ -62,36 +62,36 @@ pub fn draw_units(
         transform.translation.y = current_position_y;
 
         if predicted_opt.is_some() {
-            // draw predicted position
-            {
-                transform.set_scale(Vec3::new(10.0, 5.0, 20.0));
-                render_frame.draw_mesh(
-                    render_layer_opt,
-                    &render_helper.cube_mesh_handle,
-                    &render_helper.aqua_mat_handle, // AQUA = PREDICTION
-                    &transform,
-                );
-            }
+            // // draw predicted position
+            // {
+            //     transform.set_scale(Vec3::new(10.0, 5.0, 20.0));
+            //     render_frame.draw_mesh(
+            //         render_layer_opt,
+            //         &render_helper.cube_mesh_handle,
+            //         &render_helper.aqua_mat_handle, // AQUA = PREDICTION
+            //         &transform,
+            //     );
+            // }
 
-            // draw predicted future queue
-            {
-                let future_positions = render_position.queue_ref();
-                for (future_tile_x, future_tile_y, _future_instant) in future_positions.iter() {
-                    transform.translation.x = (*future_tile_x as f32);
-                    transform.translation.y = (*future_tile_y as f32);
-                    transform.set_scale(Vec3::new(5.0, 10.0, 20.0));
-                    render_frame.draw_mesh(
-                        render_layer_opt,
-                        &render_helper.cube_mesh_handle,
-                        &render_helper.yellow_mat_handle, // YELLOW = FUTURE
-                        &transform,
-                    );
-                }
-            }
+            // // draw predicted future queue
+            // {
+            //     let future_positions = render_position.queue_ref();
+            //     for (future_tile_x, future_tile_y, _future_instant) in future_positions.iter() {
+            //         transform.translation.x = (*future_tile_x as f32);
+            //         transform.translation.y = (*future_tile_y as f32);
+            //         transform.set_scale(Vec3::new(5.0, 10.0, 20.0));
+            //         render_frame.draw_mesh(
+            //             render_layer_opt,
+            //             &render_helper.cube_mesh_handle,
+            //             &render_helper.yellow_mat_handle, // YELLOW = FUTURE
+            //             &transform,
+            //         );
+            //     }
+            // }
 
             {
                 // draw predicted interpolated position
-                let (interp_x, interp_y) = render_position.render(&now);
+                let (interp_x, interp_y) = render_position.render(&now, true);
                 transform.translation.x = interp_x;
                 transform.translation.y = interp_y;
                 transform.set_scale(Vec3::new(20.0, 10.0, 5.0));
@@ -145,7 +145,7 @@ pub fn draw_units(
 
         {
             // draw confirmed interpolated position
-            let (interp_x, interp_y) = render_position.render(&now);
+            let (interp_x, interp_y) = render_position.render(&now, false);
             transform.translation.x = interp_x;
             transform.translation.y = interp_y;
             transform.set_scale(Vec3::new(20.0, 10.0, 5.0));
