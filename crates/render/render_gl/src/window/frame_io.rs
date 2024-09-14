@@ -25,6 +25,9 @@ pub struct FrameInput {
     /// Milliseconds since last frame.
     pub elapsed_time_ms: f64,
 
+    /// Milliseconds accumulated time since start.
+    pub accumulated_time_ms: f64,
+
     /// Viewport of the window in physical pixels (not counting pixel ratio)
     pub physical_size: Viewport,
 

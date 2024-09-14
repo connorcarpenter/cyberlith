@@ -319,6 +319,7 @@ impl Window {
                         incoming_events: rlc.events.drain(..).collect(),
                         outgoing_events: Vec::new(),
                         elapsed_time_ms: elapsed_time,
+                        accumulated_time_ms: rlc.accumulated_time,
                         logical_size: Viewport::new_at_origin(logical_width, logical_height),
                         physical_size: Viewport::new_at_origin(physical_width, physical_height),
                         device_pixel_ratio,
