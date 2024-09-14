@@ -15,7 +15,8 @@ mod sync;
 pub(crate) use gpu_material_manager::*;
 pub(crate) use gpu_mesh_manager::*;
 pub(crate) use gpu_skin_manager::*;
-pub use plugin::*;
 
-pub use core::apply_effect;
+pub use plugin::RenderGlPlugin;
+pub use core::{apply_effect, GpuTexture2D, Context};
 pub use renderer::effect::FxaaEffect;
+pub use window::{FrameInput, OutgoingEvent};

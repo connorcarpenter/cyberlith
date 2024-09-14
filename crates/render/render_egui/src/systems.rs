@@ -4,7 +4,7 @@ use bevy_ecs::{
 };
 
 use render_api::base::CpuTexture2D;
-use render_gl::{core::GpuTexture2D, window::FrameInput};
+use render_gl::{GpuTexture2D, FrameInput};
 use storage::SideStorage;
 
 use crate::{EguiContext, EguiUserTextures, GUI};

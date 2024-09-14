@@ -19,6 +19,6 @@ logging = { path = "../../logging" }
 bevy_app = { version = "0.13", default-features = false }
 bevy_ecs = { version = "0.13", default-features = false }
 
-egui = { version = "0.22" }
+egui = { version = "=0.22.0" }
 # egui_extras = { version = "0.21.0" }
-winit = { version = "0.28" }
+winit = { version = "0.28", default-features = false, features = ["x11"] }

@@ -10,7 +10,7 @@ workspace = "../../.."
 gl = { path = "../gl" }
 logging = { path = "../../logging" }
 
-egui = { version = "0.22", default-features = false, features = [
+egui = { version = "=0.22.0", default-features = false, features = [
   "bytemuck",
 ] }
 bytemuck = { version = "1.7" }

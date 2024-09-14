@@ -8,8 +8,8 @@ use logging::info;
 use input::{IncomingEvent, Modifiers};
 use render_api::components::Viewport;
 use render_gl::{
-    core::Context,
-    window::{FrameInput, OutgoingEvent},
+    Context,
+    FrameInput, OutgoingEvent,
 };
 
 use crate::{gl_to_egui_key, gl_to_egui_modifiers, gl_to_egui_mouse_button};
@@ -61,7 +61,7 @@ impl GUI {
     ///
     pub fn pre_update(&mut self, egui_context: &egui::Context, frame_input: &mut FrameInput) {
         let events: &mut [IncomingEvent] = frame_input.incoming_events.as_mut_slice();
-        let accumulated_time_in_ms: f64 = frame_input.accumulated_time_ms;
+        let accumulated_time_in_ms: f64 = frame_input.elapsed_time_ms;
         let viewport: Viewport = frame_input.physical_size;
         let device_pixel_ratio: f64 = frame_input.device_pixel_ratio;
 
