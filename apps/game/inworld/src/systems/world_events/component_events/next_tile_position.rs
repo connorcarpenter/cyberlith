@@ -210,7 +210,7 @@ pub fn update_next_tile_position_events(
         process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
     }
 
-    client_render_position.advance_millis(over_render_millis);
+    client_render_position.advance_millis(true, over_render_millis);
 
     // info!("--- (client_tick: {:?}) ---", client_tick);
 }
