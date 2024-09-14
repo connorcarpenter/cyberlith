@@ -2,8 +2,7 @@ use std::collections::VecDeque;
 
 use bevy_ecs::component::Component;
 
-use game_engine::{world::{constants::TILE_SIZE, components::NextTilePosition}, time::Instant, naia::GameInstant};
-use game_engine::logging::warn;
+use game_engine::{logging::{warn, info}, world::{constants::TILE_SIZE, components::NextTilePosition}, time::Instant, naia::GameInstant};
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {
@@ -41,19 +40,38 @@ impl RenderPosition {
         self.queue.push_back((position.0, position.1, instant));
     }
 
-    pub fn recv_rollback(&mut self, _server_render_pos: &RenderPosition) {
-        // TODO: implement?
+    // returns number of milliseconds after tick
+    pub fn recv_rollback(&mut self, server_render_pos: &RenderPosition) -> u32 {
+        info!("recv_rollback()");
+
+        let output_ms: u32 = {
+            if self.queue.len() < 2 {
+                0
+            } else {
+                let (_, _, prev_instant) = self.queue.get(0).unwrap();
+                if prev_instant.is_more_than(&self.interp_instant) {
+                    0
+                } else {
+                    prev_instant.offset_from(&self.interp_instant) as u32
+                }
+            }
+        };
+
+
+        self.queue = server_render_pos.queue.clone();
+        self.interp_instant = server_render_pos.interp_instant.clone();
+        self.last_render_instant = server_render_pos.last_render_instant.clone();
+
+        output_ms
     }
 
     pub fn render(&mut self, now: &Instant, prediction: bool) -> (f32, f32) {
-
-        let queue_len = self.queue.len();
 
         {
             let duration_elapsed = self.last_render_instant.elapsed(&now);
             let duration_ms = (duration_elapsed.as_secs_f32() * 1000.0);
 
-            let adjust: f32 = match queue_len {
+            let adjust: f32 = match self.queue.len() {
                 2 => 0.9,
                 3 => 1.0,
                 4 => 1.1,
@@ -62,30 +80,19 @@ impl RenderPosition {
             };
             let duration_ms = duration_ms * adjust;
 
-            self.interp_instant = self.interp_instant.add_millis(duration_ms as u32);
+            self.advance_millis(prediction, duration_ms as u32);
         }
 
         //info!("duration_ms: {:?}", duration_ms);
         self.last_render_instant = now.clone();
 
-        // can't move to next position in queue unless there are two positions in the queue
-        if queue_len < 2 {
-            if queue_len < 1 {
+        if self.queue.len() < 2 {
+            if self.queue.len() < 1 {
                 panic!("queue is empty");
             }
 
-            warn!("queue is too short, returning current position");
-            let (target_x, target_y, _) = self.queue.get(0).unwrap();
-            return (*target_x, *target_y);
-        }
-
-        // if queue is too long...
-        if self.queue.len() > 4 {
-            warn!("queue is too long, truncating");
-
-            while self.queue.len() > 3 {
-                self.queue.pop_front();
-            }
+            let (x, y, _) = self.queue.get(0).unwrap();
+            return (*x, *y);
         }
 
         let (
@@ -96,28 +103,11 @@ impl RenderPosition {
             next_y,
             next_instant,
         ) = {
-            loop {
-                let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
-                let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
+            let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
+            let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
 
-                if prediction && self.queue.len() > 2 && prev_x == next_x && prev_y == next_y {
-                    self.queue.pop_front();
-                    continue;
-                }
-
-                break (*prev_x, *prev_y, prev_instant, *next_x, *next_y, next_instant);
-            }
+            (*prev_x, *prev_y, prev_instant, *next_x, *next_y, next_instant)
         };
-
-        if prev_instant.is_more_than(&self.interp_instant) {
-            self.interp_instant = prev_instant.clone();
-        }
-
-        if self.interp_instant.is_more_than(&next_instant) {
-            // TODO.. extrapolate?
-            self.queue.pop_front();
-            return (next_x, next_y);
-        }
 
         let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
         let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
@@ -128,5 +118,51 @@ impl RenderPosition {
         let interp_y = prev_y + ((next_y - prev_y) * interp);
 
         (interp_x, interp_y)
+    }
+
+    pub fn advance_millis(&mut self, prediction: bool, millis: u32) {
+
+        self.interp_instant = self.interp_instant.add_millis(millis);
+
+        loop {
+            if self.queue.len() < 1 {
+                panic!("queue is empty");
+            }
+
+            let (_, _, prev_instant) = self.queue.get(0).unwrap();
+
+            if prev_instant.is_more_than(&self.interp_instant) {
+                self.interp_instant = prev_instant.clone();
+                break;
+            }
+
+            if self.queue.len() < 2 {
+                break;
+            }
+
+            let (_, _, next_instant) = self.queue.get(1).unwrap();
+            if self.interp_instant.is_more_than(next_instant) {
+                self.queue.pop_front();
+            } else {
+                break;
+            }
+        }
+
+        if prediction {
+            loop {
+                if self.queue.len() < 2 {
+                    break;
+                }
+
+                let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
+                let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
+
+                if prev_x == next_x && prev_y == next_y {
+                    self.queue.pop_front();
+                } else {
+                    break;
+                }
+            }
+        }
     }
 }

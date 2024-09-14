@@ -1,6 +1,7 @@
 use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Query, query::With};
 
 use game_engine::{
+    naia::{Tick},
     world::{
         behavior as shared_behavior,
         channels::PlayerCommandChannel,
@@ -36,9 +37,8 @@ pub fn client_tick_events(
 
     for event in tick_reader.read() {
         let client_tick = event.tick;
-        let client_tick_instant = client.tick_to_instant(client_tick).expect("client not initialized?");
 
-        let (mut tile_movement, mut render_position) = position_q.get_mut(predicted_entity).unwrap();
+        let (mut client_tile_movement, mut client_render_position) = position_q.get_mut(predicted_entity).unwrap();
 
         // process commands
         let Some(command) = command_opt.as_ref() else {
@@ -60,17 +60,28 @@ pub fn client_tick_events(
         }
 
         shared_behavior::process_command(
-            &mut tile_movement,
+            &mut client_tile_movement,
             command,
         );
 
-        // process movement
-        shared_behavior::process_movement(&mut tile_movement);
-        render_position.recv_position(tile_movement.current_position(), client_tick_instant);
+        // process tick
+        process_tick(&client, client_tick, &mut client_tile_movement, &mut client_render_position);
 
         // send command
         client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
     }
+}
+
+pub fn process_tick(
+    client: &WorldClient,
+    tick: Tick,
+    mut tile_movement: &mut TileMovement,
+    render_position: &mut RenderPosition,
+) {
+    shared_behavior::process_movement(&mut tile_movement);
+
+    let tick_instant = client.tick_to_instant(tick).expect("client not initialized?");
+    render_position.recv_position(tile_movement.current_position(), tick_instant);
 }
 
 pub fn server_tick_events(
@@ -80,14 +91,11 @@ pub fn server_tick_events(
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
-        let server_tick_instant = client.tick_to_instant(server_tick).expect("client not initialized?");
 
         // process movement
-        for (mut tile_movement, mut render_position) in position_q.iter_mut()
+        for (mut server_tile_movement, mut server_render_position) in position_q.iter_mut()
         {
-            shared_behavior::process_movement(&mut tile_movement);
-
-            render_position.recv_position(tile_movement.current_position(), server_tick_instant.clone());
+            process_tick(&client, server_tick, &mut server_tile_movement, &mut server_render_position);
         }
     }
 }

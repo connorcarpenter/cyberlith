@@ -11,6 +11,7 @@ use bevy_ecs::{
 use naia_bevy_server::{events::TickEvent, Server, UserKey};
 
 use logging::info;
+
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,

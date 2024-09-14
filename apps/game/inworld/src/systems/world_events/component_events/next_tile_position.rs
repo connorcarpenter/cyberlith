@@ -7,8 +7,7 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    logging::info,
-    logging::warn,
+    logging::{info, warn},
     math::{Quat, Vec3},
     naia::{sequence_greater_than, Tick},
     render::{components::{RenderLayers, Transform, Visibility}, base::{CpuMesh, CpuMaterial}},
@@ -24,11 +23,11 @@ use game_engine::{
 };
 
 use crate::{
-    components::{AnimationState, RenderHelper, Confirmed},
+    components::{AnimationState, RenderPosition, RenderHelper, Confirmed},
     resources::Global,
     systems::world_events::PredictionEvents,
 };
-use crate::components::RenderPosition;
+use crate::systems::world_events::process_tick;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -146,7 +145,7 @@ pub fn update_next_tile_position_events(
         return;
     };
 
-    let Ok([(server_tile_movement, server_render_pos), (mut client_tile_movement, mut client_render_pos)])
+    let Ok([(server_tile_movement, server_render_position), (mut client_tile_movement, mut client_render_position)])
         = tile_movement_q.get_many_mut([server_entity, client_entity]) else
     {
         panic!(
@@ -157,7 +156,7 @@ pub fn update_next_tile_position_events(
 
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
-    client_render_pos.recv_rollback(&server_render_pos);
+    let over_render_millis = client_render_position.recv_rollback(&server_render_position);
 
     // Replay all stored commands
 
@@ -181,8 +180,7 @@ pub fn update_next_tile_position_events(
 
             // process movement
             // info!("1. rollback::movement: tick({:?})", current_tick);
-            shared_behavior::process_movement(&mut client_tile_movement);
-            // render_position.recv_position(tile_movement.current_position());
+            process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
         }
 
         // process command
@@ -194,8 +192,7 @@ pub fn update_next_tile_position_events(
 
         // process movement
         // info!("3. rollback::movement: tick({:?})", command_tick);
-        shared_behavior::process_movement(&mut client_tile_movement);
-        //render_position.recv_position(tile_movement.current_position());
+        process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
 
         current_tick = current_tick.wrapping_add(1);
     }
@@ -210,9 +207,10 @@ pub fn update_next_tile_position_events(
 
         // process movement
         // info!("4. rollback::movement: tick({:?})", current_tick);
-        shared_behavior::process_movement(&mut client_tile_movement);
-        // render_position.recv_position(tile_movement.current_position());
+        process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
     }
+
+    client_render_position.advance_millis(over_render_millis);
 
     // info!("--- (client_tick: {:?}) ---", client_tick);
 }
