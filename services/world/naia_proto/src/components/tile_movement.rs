@@ -43,6 +43,57 @@ impl TileMovement {
         }
     }
 
+    // return whether the entity is moving
+    pub fn is_moving(&self) -> bool {
+        self.state.is_moving()
+    }
+
+    // return rotation of the entity if moving
+    pub fn get_direction(&self) -> Option<f32> {
+        if !self.state.is_moving() {
+            return None;
+        }
+
+        let TileMovementState::Moving(state) = &self.state else {
+            panic!("Expected Moving state");
+        };
+
+        let from_x = state.from_tile_x;
+        let from_y = state.from_tile_y;
+        let to_x = state.to_tile_x;
+        let to_y = state.to_tile_y;
+
+        let dis_x = to_x - from_x;
+        let dis_y = to_y - from_y;
+
+        if dis_x == 0 && dis_y == -1 {
+            return Some(0.0 + 90.0);
+        }
+        if dis_x == 1 && dis_y == -1 {
+            return Some(45.0 + 90.0);
+        }
+        if dis_x == 1 && dis_y == 0 {
+            return Some(90.0 + 90.0);
+        }
+        if dis_x == 1 && dis_y == 1 {
+            return Some(135.0 + 90.0);
+        }
+        if dis_x == 0 && dis_y == 1 {
+            return Some(180.0 + 90.0);
+        }
+        if dis_x == -1 && dis_y == 1 {
+            return Some(225.0 + 90.0);
+        }
+        if dis_x == -1 && dis_y == 0 {
+            return Some(270.0 + 90.0);
+        }
+        if dis_x == -1 && dis_y == -1 {
+            return Some(315.0 + 90.0);
+        }
+
+        None
+    }
+
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
     pub fn recv_command(&mut self, key_command: &KeyCommand) {

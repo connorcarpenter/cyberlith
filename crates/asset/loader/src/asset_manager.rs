@@ -107,6 +107,18 @@ impl AssetManager {
         data.get_frame_count()
     }
 
+    // Animated Model
+
+    pub fn get_animated_model_animation_duration_ms(
+        &self,
+        handle: &AssetHandle<AnimatedModelData>,
+        animation_name: &str,
+    ) -> f32 {
+        let model = self.store.animated_models.get(handle).unwrap();
+        let animation_handle = model.get_animation_handle(animation_name).unwrap();
+        self.get_animation_duration_ms(animation_handle)
+    }
+
     // Unit
 
     pub fn get_unit_animated_model_handle(
