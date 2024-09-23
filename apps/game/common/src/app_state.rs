@@ -1,4 +1,4 @@
-use bevy_ecs::schedule::States;
+use bevy_state::state::States;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum AppState {

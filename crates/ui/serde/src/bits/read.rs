@@ -243,7 +243,7 @@ fn convert_nodes_recurse_panel(
                 parent_panel.add_child(child_id);
 
                 // add style
-                for style_index in &child_node_serde.style_id {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_id).unwrap();
@@ -269,7 +269,7 @@ fn convert_nodes_recurse_panel(
                 parent_panel.add_child(child_id);
 
                 // add style
-                for style_index in &child_node_serde.style_id {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_id).unwrap();
@@ -292,7 +292,7 @@ fn convert_nodes_recurse_panel(
                 parent_panel.add_child(child_id);
 
                 // add style
-                for style_index in &child_node_serde.style_id {
+                if let Some(style_index) = &child_node_serde.style_id {
                     let style_index = *style_index as usize;
                     let style_id = *style_index_to_id.get(&style_index).unwrap();
                     let child_node = ui_config.node_mut(&child_id).unwrap();

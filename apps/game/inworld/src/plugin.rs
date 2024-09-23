@@ -1,10 +1,9 @@
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::{
-    prelude::in_state,
-    prelude::not,
     schedule::{IntoSystemConfigs, IntoSystemSetConfigs},
 };
-
+use bevy_ecs::prelude::not;
+use bevy_state::condition::in_state;
 use game_engine::naia::ReceiveEvents;
 
 use game_app_common::AppState;

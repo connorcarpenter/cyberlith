@@ -4,17 +4,6 @@ version = "0.13.0"
 edition = "2021"
 workspace = "../../.."
 
-# [package.metadata.docs.rs]
-# default-target = "x86_64-unknown-linux-gnu"
-# targets = [
-#   "x86_64-unknown-linux-gnu",
-#   "x86_64-apple-darwin",
-#   "x86_64-pc-windows-msvc",
-#   "i686-unknown-linux-gnu",
-#   "i686-pc-windows-msvc",
-#   "wasm32-unknown-unknown"
-# ]
-
 [dependencies]
 logging = { path = "../../logging" }
 

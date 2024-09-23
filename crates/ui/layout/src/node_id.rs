@@ -58,7 +58,7 @@ impl NodeId {
 }
 
 impl NodeId {
-    pub(crate) fn children<'a>(&'a self, store: &'a dyn NodeStore) -> std::slice::Iter<NodeId> {
+    pub(crate) fn children<'a>(&'a self, store: &'a dyn NodeStore) -> std::slice::Iter<'a, NodeId> {
         store.node_children(self)
     }
 

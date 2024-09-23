@@ -1,8 +1,8 @@
 use bevy_app::{
-    App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedMainLoop,
-    StateTransition, Update,
+    App, First, Last, Main, Plugin, PostUpdate, PreStartup, PreUpdate, RunFixedMainLoop, Update,
 };
 use bevy_ecs::schedule::{ExecutorKind, Schedule};
+use bevy_state::state::StateTransition;
 
 use clipboard::ClipboardPlugin;
 use kernel::KernelPlugin;

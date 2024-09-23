@@ -16,6 +16,6 @@ asset_id = { path = "../../../crates/asset/id" }
 logging = { path = "../../../crates/logging" }
 social_server_types = { path = "../../social/types" }
 
-bevy_ecs = { version = "0.13", default-features=false }
+bevy_ecs = { version = "0.14", default-features=false }
 
 cfg-if = { version = "1.0" }

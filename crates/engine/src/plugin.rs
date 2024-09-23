@@ -1,6 +1,8 @@
+use std::sync::{Arc, RwLock};
+
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::system::ResMut;
-use std::sync::{Arc, RwLock};
+use bevy_state::app::StatesPlugin;
 
 use asset_loader::AssetPlugin;
 use filesystem::FileSystemPlugin;
@@ -41,6 +43,8 @@ impl Plugin for EnginePlugin {
             .add_plugins(UiPlugin)
             .add_plugins(UiRenderPlugin)
             .add_plugins(FileSystemPlugin)
+            .add_plugins(StatesPlugin)
+            // startup system
             .add_systems(Startup, engine_startup)
             // asset cache stuff, todo: maybe refactor out?
             .insert_resource(AssetCache::new("assets"))

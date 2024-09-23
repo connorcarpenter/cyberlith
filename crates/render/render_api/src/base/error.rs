@@ -16,43 +16,15 @@ pub enum Error {
     InvalidIndices(usize, usize),
     #[error("the transformation matrix cannot be inverted and is therefore invalid")]
     FailedInvertingTransformationMatrix,
-    #[cfg(feature = "image")]
-    #[error("error while parsing an image file")]
-    Image(#[from] image::ImageError),
-    #[cfg(feature = "obj")]
-    #[error("error while parsing an .obj file")]
-    Obj(#[from] wavefront_obj::ParseError),
-
-    #[cfg(feature = "pcd")]
-    #[error("error while parsing an .pcd file")]
-    Pcd(#[from] pcd_rs::anyhow::Error),
 
     #[cfg(not(target_arch = "wasm32"))]
     #[error("io error")]
     IO(#[from] std::io::Error),
-    #[cfg(feature = "gltf")]
-    #[error("error while parsing a .gltf file")]
-    Gltf(#[from] ::gltf::Error),
-    #[cfg(feature = "gltf")]
-    #[error("the .gltf file contain corrupt buffer data")]
-    GltfCorruptData,
-    #[cfg(feature = "gltf")]
-    #[error("the .gltf file contain missing buffer data")]
-    GltfMissingData,
     #[error("the .vol file contain wrong data size")]
     VolCorruptData,
     #[cfg(not(target_arch = "wasm32"))]
     #[error("error while loading the file {0}: {1}")]
     FailedLoading(String, std::io::Error),
-    #[cfg(feature = "reqwest")]
-    #[error("error while loading the url {0}: {1}")]
-    FailedLoadingUrl(String, reqwest::Error),
-    #[cfg(feature = "reqwest")]
-    #[error("error while parsing the url {0}")]
-    FailedParsingUrl(String),
-    #[cfg(feature = "data-url")]
-    #[error("error while parsing data-url {0}: {1}")]
-    FailedParsingDataUrl(String, String),
     #[error("tried to use {0} which was not loaded or otherwise added to the raw assets")]
     NotLoaded(String),
     #[error("the feature {0} is needed")]

@@ -2,8 +2,9 @@ use bevy_ecs::{
     change_detection::ResMut,
     entity::Entity,
     event::EventReader,
-    prelude::{Commands, NextState, Query},
+    prelude::{Commands, Query},
 };
+use bevy_state::state::NextState;
 
 use game_app_common::AppState;
 

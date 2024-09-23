@@ -109,26 +109,9 @@
 //! * Individual GL commands are generally safe to use once they've been properly loaded for the current context, but this crate doesn't attempt to sort out what is safe and what's not. All GL commands are blanket marked as being `unsafe`.
 //! It's up to you to try and manage this unsafety! Sorry, but this crate just does what you tell it to.
 
-#[cfg(any(
-    all(
-        not(feature = "log"),
-        any(feature = "debug_trace_calls", feature = "debug_automatic_glGetError")
-    ),
-    not(feature = "chlorine"),
-))]
 extern crate std;
 
-#[cfg(feature = "chlorine")]
-use chlorine::*;
 use std::os::raw::*;
-
-#[cfg(feature = "log")]
-#[allow(unused)]
-use logging::{error, trace};
-#[cfg(all(not(feature = "log"), feature = "debug_trace_calls"))]
-macro_rules! trace { ($($arg:tt)*) => { std::println!($($arg)*) } }
-#[cfg(all(not(feature = "log"), feature = "debug_automatic_glGetError"))]
-macro_rules! error { ($($arg:tt)*) => { std::eprintln!($($arg)*) } }
 
 use core::{
     mem::transmute,
@@ -139,10 +122,6 @@ use core::{
 const RELAX: Ordering = Ordering::Relaxed;
 #[allow(dead_code)]
 type APcv = AtomicPtr<c_void>;
-#[cfg(feature = "global_loader")]
-const fn ap_null() -> APcv {
-    AtomicPtr::new(null_mut())
-}
 
 pub use types::*;
 #[allow(missing_docs)]
@@ -4601,29 +4580,6 @@ fn load_dyn_name_atomic_ptr(
     }
 }
 
-/// Returns if an error was printed.
-#[cfg(feature = "debug_automatic_glGetError")]
-#[inline(never)]
-fn report_error_code_from(name: &str, err: GLenum) {
-    match err {
-        GL_NO_ERROR => return,
-        GL_INVALID_ENUM => error!("Invalid Enum to {name}.", name = name),
-        GL_INVALID_VALUE => error!("Invalid Value to {name}.", name = name),
-        GL_INVALID_OPERATION => error!("Invalid Operation to {name}.", name = name),
-        GL_INVALID_FRAMEBUFFER_OPERATION => {
-            error!("Invalid Framebuffer Operation to {name}.", name = name)
-        }
-        GL_OUT_OF_MEMORY => error!("Out of Memory in {name}.", name = name),
-        GL_STACK_UNDERFLOW => error!("Stack Underflow in {name}.", name = name),
-        GL_STACK_OVERFLOW => error!("Stack Overflow in {name}.", name = name),
-        unknown => error!(
-            "Unknown error code {unknown} to {name}.",
-            name = name,
-            unknown = unknown
-        ),
-    }
-}
-
 #[inline(always)]
 #[allow(dead_code)]
 unsafe fn call_atomic_ptr_0arg<Ret>(name: &str, ptr: &APcv) -> Ret {
@@ -4910,16 +4866,6 @@ pub mod struct_commands {
             let out: Self = core::mem::zeroed();
             out.load_all_with_dyn(&mut get_proc_address);
             out
-        }
-
-        #[cfg(feature = "debug_automatic_glGetError")]
-        #[inline(never)]
-        unsafe fn automatic_glGetError(&self, name: &str) {
-            let mut err = self.GetError();
-            while err != GL_NO_ERROR {
-                report_error_code_from(name, err);
-                err = self.GetError();
-            }
         }
 
         /// Loads all pointers using the `get_proc_address` given.
@@ -5627,29 +5573,7 @@ pub mod struct_commands {
             self.WaitSync_load_with_dyn(get_proc_address);
         }
         /// [glActiveShaderProgram](http://docs.gl/gl4/glActiveShaderProgram)(pipeline, program)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
-        pub unsafe fn ActiveShaderProgram(&self, pipeline: GLuint, program: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ActiveShaderProgram({:?}, {:?});",
-                    pipeline,
-                    program
-                );
-            }
-            let out = call_atomic_ptr_2arg(
-                "glActiveShaderProgram",
-                &self.glActiveShaderProgram_p,
-                pipeline,
-                program,
-            );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glActiveShaderProgram");
-            }
-            out
-        }
+        
         #[doc(hidden)]
         pub unsafe fn ActiveShaderProgram_load_with_dyn(
             &self,
@@ -5668,18 +5592,10 @@ pub mod struct_commands {
         }
         /// [glActiveTexture](http://docs.gl/gl4/glActiveTexture)(texture)
         /// * `texture` group: TextureUnit
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ActiveTexture(&self, texture: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ActiveTexture({:#X});", texture);
-            }
             let out = call_atomic_ptr_1arg("glActiveTexture", &self.glActiveTexture_p, texture);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glActiveTexture");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5699,19 +5615,11 @@ pub mod struct_commands {
             !self.glActiveTexture_p.load(RELAX).is_null()
         }
         /// [glAttachShader](http://docs.gl/gl4/glAttachShader)(program, shader)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn AttachShader(&self, program: GLuint, shader: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.AttachShader({:?}, {:?});", program, shader);
-            }
             let out =
                 call_atomic_ptr_2arg("glAttachShader", &self.glAttachShader_p, program, shader);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glAttachShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5732,23 +5640,15 @@ pub mod struct_commands {
         }
         /// [glBeginConditionalRender](http://docs.gl/gl4/glBeginConditionalRender)(id, mode)
         /// * `mode` group: ConditionalRenderMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BeginConditionalRender(&self, id: GLuint, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BeginConditionalRender({:?}, {:#X});", id, mode);
-            }
             let out = call_atomic_ptr_2arg(
                 "glBeginConditionalRender",
                 &self.glBeginConditionalRender_p,
                 id,
                 mode,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBeginConditionalRender");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5769,18 +5669,10 @@ pub mod struct_commands {
         }
         /// [glBeginQuery](http://docs.gl/gl4/glBeginQuery)(target, id)
         /// * `target` group: QueryTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BeginQuery(&self, target: GLenum, id: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BeginQuery({:#X}, {:?});", target, id);
-            }
             let out = call_atomic_ptr_2arg("glBeginQuery", &self.glBeginQuery_p, target, id);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBeginQuery");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5797,18 +5689,8 @@ pub mod struct_commands {
         }
         /// [glBeginQueryIndexed](http://docs.gl/gl4/glBeginQueryIndexed)(target, index, id)
         /// * `target` group: QueryTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BeginQueryIndexed(&self, target: GLenum, index: GLuint, id: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BeginQueryIndexed({:#X}, {:?}, {:?});",
-                    target,
-                    index,
-                    id
-                );
-            }
             let out = call_atomic_ptr_3arg(
                 "glBeginQueryIndexed",
                 &self.glBeginQueryIndexed_p,
@@ -5816,10 +5698,7 @@ pub mod struct_commands {
                 index,
                 id,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBeginQueryIndexed");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5840,22 +5719,14 @@ pub mod struct_commands {
         }
         /// [glBeginTransformFeedback](http://docs.gl/gl4/glBeginTransformFeedback)(primitiveMode)
         /// * `primitiveMode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BeginTransformFeedback(&self, primitiveMode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BeginTransformFeedback({:#X});", primitiveMode);
-            }
             let out = call_atomic_ptr_1arg(
                 "glBeginTransformFeedback",
                 &self.glBeginTransformFeedback_p,
                 primitiveMode,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBeginTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5875,23 +5746,13 @@ pub mod struct_commands {
             !self.glBeginTransformFeedback_p.load(RELAX).is_null()
         }
         /// [glBindAttribLocation](http://docs.gl/gl4/glBindAttribLocation)(program, index, name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindAttribLocation(
             &self,
             program: GLuint,
             index: GLuint,
             name: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindAttribLocation({:?}, {:?}, {:p});",
-                    program,
-                    index,
-                    name
-                );
-            }
             let out = call_atomic_ptr_3arg(
                 "glBindAttribLocation",
                 &self.glBindAttribLocation_p,
@@ -5899,10 +5760,7 @@ pub mod struct_commands {
                 index,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindAttribLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5923,18 +5781,10 @@ pub mod struct_commands {
         }
         /// [glBindBuffer](http://docs.gl/gl4/glBindBuffer)(target, buffer)
         /// * `target` group: BufferTargetARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindBuffer(&self, target: GLenum, buffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindBuffer({:#X}, {:?});", target, buffer);
-            }
             let out = call_atomic_ptr_2arg("glBindBuffer", &self.glBindBuffer_p, target, buffer);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5951,18 +5801,8 @@ pub mod struct_commands {
         }
         /// [glBindBufferBase](http://docs.gl/gl4/glBindBufferBase)(target, index, buffer)
         /// * `target` group: BufferTargetARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindBufferBase(&self, target: GLenum, index: GLuint, buffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindBufferBase({:#X}, {:?}, {:?});",
-                    target,
-                    index,
-                    buffer
-                );
-            }
             let out = call_atomic_ptr_3arg(
                 "glBindBufferBase",
                 &self.glBindBufferBase_p,
@@ -5970,10 +5810,7 @@ pub mod struct_commands {
                 index,
                 buffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindBufferBase");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -5996,8 +5833,7 @@ pub mod struct_commands {
         /// * `target` group: BufferTargetARB
         /// * `offset` group: BufferOffset
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindBufferRange(
             &self,
             target: GLenum,
@@ -6006,17 +5842,7 @@ pub mod struct_commands {
             offset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindBufferRange({:#X}, {:?}, {:?}, {:?}, {:?});",
-                    target,
-                    index,
-                    buffer,
-                    offset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glBindBufferRange",
                 &self.glBindBufferRange_p,
@@ -6026,10 +5852,7 @@ pub mod struct_commands {
                 offset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6051,8 +5874,7 @@ pub mod struct_commands {
         /// [glBindBuffersBase](http://docs.gl/gl4/glBindBuffersBase)(target, first, count, buffers)
         /// * `target` group: BufferTargetARB
         /// * `buffers` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindBuffersBase(
             &self,
             target: GLenum,
@@ -6060,16 +5882,7 @@ pub mod struct_commands {
             count: GLsizei,
             buffers: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindBuffersBase({:#X}, {:?}, {:?}, {:p});",
-                    target,
-                    first,
-                    count,
-                    buffers
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBindBuffersBase",
                 &self.glBindBuffersBase_p,
@@ -6078,10 +5891,7 @@ pub mod struct_commands {
                 count,
                 buffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindBuffersBase");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6105,8 +5915,7 @@ pub mod struct_commands {
         /// * `buffers` len: count
         /// * `offsets` len: count
         /// * `sizes` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindBuffersRange(
             &self,
             target: GLenum,
@@ -6116,18 +5925,7 @@ pub mod struct_commands {
             offsets: *const GLintptr,
             sizes: *const GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindBuffersRange({:#X}, {:?}, {:?}, {:p}, {:p}, {:p});",
-                    target,
-                    first,
-                    count,
-                    buffers,
-                    offsets,
-                    sizes
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glBindBuffersRange",
                 &self.glBindBuffersRange_p,
@@ -6138,10 +5936,7 @@ pub mod struct_commands {
                 offsets,
                 sizes,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindBuffersRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6162,23 +5957,14 @@ pub mod struct_commands {
         }
         /// [glBindFragDataLocation](http://docs.gl/gl4/glBindFragDataLocation)(program, color, name)
         /// * `name` len: COMPSIZE(name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindFragDataLocation(
             &self,
             program: GLuint,
             color: GLuint,
             name: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindFragDataLocation({:?}, {:?}, {:p});",
-                    program,
-                    color,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glBindFragDataLocation",
                 &self.glBindFragDataLocation_p,
@@ -6186,10 +5972,7 @@ pub mod struct_commands {
                 color,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindFragDataLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6209,8 +5992,7 @@ pub mod struct_commands {
             !self.glBindFragDataLocation_p.load(RELAX).is_null()
         }
         /// [glBindFragDataLocationIndexed](http://docs.gl/gl4/glBindFragDataLocationIndexed)(program, colorNumber, index, name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindFragDataLocationIndexed(
             &self,
             program: GLuint,
@@ -6218,16 +6000,7 @@ pub mod struct_commands {
             index: GLuint,
             name: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindFragDataLocationIndexed({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    colorNumber,
-                    index,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBindFragDataLocationIndexed",
                 &self.glBindFragDataLocationIndexed_p,
@@ -6236,10 +6009,7 @@ pub mod struct_commands {
                 index,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindFragDataLocationIndexed");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6260,27 +6030,16 @@ pub mod struct_commands {
         }
         /// [glBindFramebuffer](http://docs.gl/gl4/glBindFramebuffer)(target, framebuffer)
         /// * `target` group: FramebufferTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindFramebuffer(&self, target: GLenum, framebuffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindFramebuffer({:#X}, {:?});",
-                    target,
-                    framebuffer
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glBindFramebuffer",
                 &self.glBindFramebuffer_p,
                 target,
                 framebuffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindFramebuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6302,8 +6061,7 @@ pub mod struct_commands {
         /// [glBindImageTexture](http://docs.gl/gl4/glBindImageTexture)(unit, texture, level, layered, layer, access, format)
         /// * `access` group: BufferAccessARB
         /// * `format` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindImageTexture(
             &self,
             unit: GLuint,
@@ -6314,19 +6072,7 @@ pub mod struct_commands {
             access: GLenum,
             format: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindImageTexture({:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X});",
-                    unit,
-                    texture,
-                    level,
-                    layered,
-                    layer,
-                    access,
-                    format
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glBindImageTexture",
                 &self.glBindImageTexture_p,
@@ -6338,10 +6084,7 @@ pub mod struct_commands {
                 access,
                 format,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindImageTexture");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6362,23 +6105,14 @@ pub mod struct_commands {
         }
         /// [glBindImageTextures](http://docs.gl/gl4/glBindImageTextures)(first, count, textures)
         /// * `textures` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindImageTextures(
             &self,
             first: GLuint,
             count: GLsizei,
             textures: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindImageTextures({:?}, {:?}, {:p});",
-                    first,
-                    count,
-                    textures
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glBindImageTextures",
                 &self.glBindImageTextures_p,
@@ -6386,10 +6120,7 @@ pub mod struct_commands {
                 count,
                 textures,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindImageTextures");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6409,22 +6140,15 @@ pub mod struct_commands {
             !self.glBindImageTextures_p.load(RELAX).is_null()
         }
         /// [glBindProgramPipeline](http://docs.gl/gl4/glBindProgramPipeline)(pipeline)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindProgramPipeline(&self, pipeline: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindProgramPipeline({:?});", pipeline);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glBindProgramPipeline",
                 &self.glBindProgramPipeline_p,
                 pipeline,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindProgramPipeline");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6445,27 +6169,16 @@ pub mod struct_commands {
         }
         /// [glBindRenderbuffer](http://docs.gl/gl4/glBindRenderbuffer)(target, renderbuffer)
         /// * `target` group: RenderbufferTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindRenderbuffer(&self, target: GLenum, renderbuffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindRenderbuffer({:#X}, {:?});",
-                    target,
-                    renderbuffer
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glBindRenderbuffer",
                 &self.glBindRenderbuffer_p,
                 target,
                 renderbuffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindRenderbuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6485,18 +6198,11 @@ pub mod struct_commands {
             !self.glBindRenderbuffer_p.load(RELAX).is_null()
         }
         /// [glBindSampler](http://docs.gl/gl4/glBindSampler)(unit, sampler)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindSampler(&self, unit: GLuint, sampler: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindSampler({:?}, {:?});", unit, sampler);
-            }
+
             let out = call_atomic_ptr_2arg("glBindSampler", &self.glBindSampler_p, unit, sampler);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindSampler");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6513,18 +6219,9 @@ pub mod struct_commands {
         }
         /// [glBindSamplers](http://docs.gl/gl4/glBindSamplers)(first, count, samplers)
         /// * `samplers` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindSamplers(&self, first: GLuint, count: GLsizei, samplers: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindSamplers({:?}, {:?}, {:p});",
-                    first,
-                    count,
-                    samplers
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glBindSamplers",
                 &self.glBindSamplers_p,
@@ -6532,10 +6229,7 @@ pub mod struct_commands {
                 count,
                 samplers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindSamplers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6557,18 +6251,11 @@ pub mod struct_commands {
         /// [glBindTexture](http://docs.gl/gl4/glBindTexture)(target, texture)
         /// * `target` group: TextureTarget
         /// * `texture` group: Texture
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindTexture(&self, target: GLenum, texture: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindTexture({:#X}, {:?});", target, texture);
-            }
+
             let out = call_atomic_ptr_2arg("glBindTexture", &self.glBindTexture_p, target, texture);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindTexture");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6584,23 +6271,16 @@ pub mod struct_commands {
             !self.glBindTexture_p.load(RELAX).is_null()
         }
         /// [glBindTextureUnit](http://docs.gl/gl4/glBindTextureUnit)(unit, texture)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindTextureUnit(&self, unit: GLuint, texture: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindTextureUnit({:?}, {:?});", unit, texture);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glBindTextureUnit",
                 &self.glBindTextureUnit_p,
                 unit,
                 texture,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindTextureUnit");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6621,18 +6301,9 @@ pub mod struct_commands {
         }
         /// [glBindTextures](http://docs.gl/gl4/glBindTextures)(first, count, textures)
         /// * `textures` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindTextures(&self, first: GLuint, count: GLsizei, textures: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindTextures({:?}, {:?}, {:p});",
-                    first,
-                    count,
-                    textures
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glBindTextures",
                 &self.glBindTextures_p,
@@ -6640,10 +6311,7 @@ pub mod struct_commands {
                 count,
                 textures,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindTextures");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6664,23 +6332,16 @@ pub mod struct_commands {
         }
         /// [glBindTransformFeedback](http://docs.gl/gl4/glBindTransformFeedback)(target, id)
         /// * `target` group: BindTransformFeedbackTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindTransformFeedback(&self, target: GLenum, id: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindTransformFeedback({:#X}, {:?});", target, id);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glBindTransformFeedback",
                 &self.glBindTransformFeedback_p,
                 target,
                 id,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6700,18 +6361,11 @@ pub mod struct_commands {
             !self.glBindTransformFeedback_p.load(RELAX).is_null()
         }
         /// [glBindVertexArray](http://docs.gl/gl4/glBindVertexArray)(array)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindVertexArray(&self, array: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BindVertexArray({:?});", array);
-            }
+
             let out = call_atomic_ptr_1arg("glBindVertexArray", &self.glBindVertexArray_p, array);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindVertexArray");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6732,8 +6386,7 @@ pub mod struct_commands {
         }
         /// [glBindVertexBuffer](http://docs.gl/gl4/glBindVertexBuffer)(bindingindex, buffer, offset, stride)
         /// * `offset` group: BufferOffset
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindVertexBuffer(
             &self,
             bindingindex: GLuint,
@@ -6741,16 +6394,7 @@ pub mod struct_commands {
             offset: GLintptr,
             stride: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindVertexBuffer({:?}, {:?}, {:?}, {:?});",
-                    bindingindex,
-                    buffer,
-                    offset,
-                    stride
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBindVertexBuffer",
                 &self.glBindVertexBuffer_p,
@@ -6759,10 +6403,7 @@ pub mod struct_commands {
                 offset,
                 stride,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindVertexBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6785,8 +6426,7 @@ pub mod struct_commands {
         /// * `buffers` len: count
         /// * `offsets` len: count
         /// * `strides` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BindVertexBuffers(
             &self,
             first: GLuint,
@@ -6795,17 +6435,7 @@ pub mod struct_commands {
             offsets: *const GLintptr,
             strides: *const GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BindVertexBuffers({:?}, {:?}, {:p}, {:p}, {:p});",
-                    first,
-                    count,
-                    buffers,
-                    offsets,
-                    strides
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glBindVertexBuffers",
                 &self.glBindVertexBuffers_p,
@@ -6815,10 +6445,7 @@ pub mod struct_commands {
                 offsets,
                 strides,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBindVertexBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6838,18 +6465,11 @@ pub mod struct_commands {
             !self.glBindVertexBuffers_p.load(RELAX).is_null()
         }
         /// [glBlendBarrier](http://docs.gl/gl4/glBlendBarrier)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendBarrier(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlendBarrier();",);
-            }
+
             let out = call_atomic_ptr_0arg("glBlendBarrier", &self.glBlendBarrier_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendBarrier");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6873,8 +6493,7 @@ pub mod struct_commands {
         /// * `green` group: ColorF
         /// * `blue` group: ColorF
         /// * `alpha` group: ColorF
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendColor(
             &self,
             red: GLfloat,
@@ -6882,16 +6501,7 @@ pub mod struct_commands {
             blue: GLfloat,
             alpha: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BlendColor({:?}, {:?}, {:?}, {:?});",
-                    red,
-                    green,
-                    blue,
-                    alpha
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBlendColor",
                 &self.glBlendColor_p,
@@ -6900,10 +6510,7 @@ pub mod struct_commands {
                 blue,
                 alpha,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendColor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6920,18 +6527,11 @@ pub mod struct_commands {
         }
         /// [glBlendEquation](http://docs.gl/gl4/glBlendEquation)(mode)
         /// * `mode` group: BlendEquationModeEXT
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendEquation(&self, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlendEquation({:#X});", mode);
-            }
+
             let out = call_atomic_ptr_1arg("glBlendEquation", &self.glBlendEquation_p, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendEquation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6953,27 +6553,16 @@ pub mod struct_commands {
         /// [glBlendEquationSeparate](http://docs.gl/gl4/glBlendEquationSeparate)(modeRGB, modeAlpha)
         /// * `modeRGB` group: BlendEquationModeEXT
         /// * `modeAlpha` group: BlendEquationModeEXT
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendEquationSeparate(&self, modeRGB: GLenum, modeAlpha: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BlendEquationSeparate({:#X}, {:#X});",
-                    modeRGB,
-                    modeAlpha
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glBlendEquationSeparate",
                 &self.glBlendEquationSeparate_p,
                 modeRGB,
                 modeAlpha,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendEquationSeparate");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -6995,23 +6584,14 @@ pub mod struct_commands {
         /// [glBlendEquationSeparatei](http://docs.gl/gl4/glBlendEquationSeparate)(buf, modeRGB, modeAlpha)
         /// * `modeRGB` group: BlendEquationModeEXT
         /// * `modeAlpha` group: BlendEquationModeEXT
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendEquationSeparatei(
             &self,
             buf: GLuint,
             modeRGB: GLenum,
             modeAlpha: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BlendEquationSeparatei({:?}, {:#X}, {:#X});",
-                    buf,
-                    modeRGB,
-                    modeAlpha
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glBlendEquationSeparatei",
                 &self.glBlendEquationSeparatei_p,
@@ -7019,10 +6599,7 @@ pub mod struct_commands {
                 modeRGB,
                 modeAlpha,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendEquationSeparatei");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7043,18 +6620,11 @@ pub mod struct_commands {
         }
         /// [glBlendEquationi](http://docs.gl/gl4/glBlendEquation)(buf, mode)
         /// * `mode` group: BlendEquationModeEXT
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendEquationi(&self, buf: GLuint, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlendEquationi({:?}, {:#X});", buf, mode);
-            }
+
             let out = call_atomic_ptr_2arg("glBlendEquationi", &self.glBlendEquationi_p, buf, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendEquationi");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7076,18 +6646,11 @@ pub mod struct_commands {
         /// [glBlendFunc](http://docs.gl/gl4/glBlendFunc)(sfactor, dfactor)
         /// * `sfactor` group: BlendingFactor
         /// * `dfactor` group: BlendingFactor
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendFunc(&self, sfactor: GLenum, dfactor: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlendFunc({:#X}, {:#X});", sfactor, dfactor);
-            }
+
             let out = call_atomic_ptr_2arg("glBlendFunc", &self.glBlendFunc_p, sfactor, dfactor);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendFunc");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7107,8 +6670,7 @@ pub mod struct_commands {
         /// * `dfactorRGB` group: BlendingFactor
         /// * `sfactorAlpha` group: BlendingFactor
         /// * `dfactorAlpha` group: BlendingFactor
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendFuncSeparate(
             &self,
             sfactorRGB: GLenum,
@@ -7116,16 +6678,7 @@ pub mod struct_commands {
             sfactorAlpha: GLenum,
             dfactorAlpha: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BlendFuncSeparate({:#X}, {:#X}, {:#X}, {:#X});",
-                    sfactorRGB,
-                    dfactorRGB,
-                    sfactorAlpha,
-                    dfactorAlpha
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBlendFuncSeparate",
                 &self.glBlendFuncSeparate_p,
@@ -7134,10 +6687,7 @@ pub mod struct_commands {
                 sfactorAlpha,
                 dfactorAlpha,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendFuncSeparate");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7161,8 +6711,7 @@ pub mod struct_commands {
         /// * `dstRGB` group: BlendingFactor
         /// * `srcAlpha` group: BlendingFactor
         /// * `dstAlpha` group: BlendingFactor
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendFuncSeparatei(
             &self,
             buf: GLuint,
@@ -7171,17 +6720,7 @@ pub mod struct_commands {
             srcAlpha: GLenum,
             dstAlpha: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BlendFuncSeparatei({:?}, {:#X}, {:#X}, {:#X}, {:#X});",
-                    buf,
-                    srcRGB,
-                    dstRGB,
-                    srcAlpha,
-                    dstAlpha
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glBlendFuncSeparatei",
                 &self.glBlendFuncSeparatei_p,
@@ -7191,10 +6730,7 @@ pub mod struct_commands {
                 srcAlpha,
                 dstAlpha,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendFuncSeparatei");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7216,18 +6752,11 @@ pub mod struct_commands {
         /// [glBlendFunci](http://docs.gl/gl4/glBlendFunc)(buf, src, dst)
         /// * `src` group: BlendingFactor
         /// * `dst` group: BlendingFactor
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlendFunci(&self, buf: GLuint, src: GLenum, dst: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlendFunci({:?}, {:#X}, {:#X});", buf, src, dst);
-            }
+
             let out = call_atomic_ptr_3arg("glBlendFunci", &self.glBlendFunci_p, buf, src, dst);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlendFunci");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7245,8 +6774,7 @@ pub mod struct_commands {
         /// [glBlitFramebuffer](http://docs.gl/gl4/glBlitFramebuffer)(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
         /// * `mask` group: ClearBufferMask
         /// * `filter` group: BlitFramebufferFilter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlitFramebuffer(
             &self,
             srcX0: GLint,
@@ -7260,10 +6788,7 @@ pub mod struct_commands {
             mask: GLbitfield,
             filter: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlitFramebuffer({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X});", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            }
+
             let out = call_atomic_ptr_10arg(
                 "glBlitFramebuffer",
                 &self.glBlitFramebuffer_p,
@@ -7278,10 +6803,7 @@ pub mod struct_commands {
                 mask,
                 filter,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlitFramebuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7303,8 +6825,7 @@ pub mod struct_commands {
         /// [glBlitNamedFramebuffer](http://docs.gl/gl4/glBlitNamedFramebuffer)(readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
         /// * `mask` group: ClearBufferMask
         /// * `filter` group: BlitFramebufferFilter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BlitNamedFramebuffer(
             &self,
             readFramebuffer: GLuint,
@@ -7320,10 +6841,7 @@ pub mod struct_commands {
             mask: GLbitfield,
             filter: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.BlitNamedFramebuffer({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X});", readFramebuffer, drawFramebuffer, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
-            }
+
             let out = call_atomic_ptr_12arg(
                 "glBlitNamedFramebuffer",
                 &self.glBlitNamedFramebuffer_p,
@@ -7340,10 +6858,7 @@ pub mod struct_commands {
                 mask,
                 filter,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBlitNamedFramebuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7367,8 +6882,7 @@ pub mod struct_commands {
         /// * `size` group: BufferSize
         /// * `data` len: size
         /// * `usage` group: BufferUsageARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BufferData(
             &self,
             target: GLenum,
@@ -7376,16 +6890,7 @@ pub mod struct_commands {
             data: *const c_void,
             usage: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BufferData({:#X}, {:?}, {:p}, {:#X});",
-                    target,
-                    size,
-                    data,
-                    usage
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBufferData",
                 &self.glBufferData_p,
@@ -7394,10 +6899,7 @@ pub mod struct_commands {
                 data,
                 usage,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBufferData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7416,8 +6918,7 @@ pub mod struct_commands {
         /// * `target` group: BufferStorageTarget
         /// * `data` len: size
         /// * `flags` group: BufferStorageMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BufferStorage(
             &self,
             target: GLenum,
@@ -7425,16 +6926,7 @@ pub mod struct_commands {
             data: *const c_void,
             flags: GLbitfield,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BufferStorage({:#X}, {:?}, {:p}, {:?});",
-                    target,
-                    size,
-                    data,
-                    flags
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBufferStorage",
                 &self.glBufferStorage_p,
@@ -7443,10 +6935,7 @@ pub mod struct_commands {
                 data,
                 flags,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBufferStorage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7470,8 +6959,7 @@ pub mod struct_commands {
         /// * `data` len: size
         /// * `flags` group: BufferStorageMask
         /// * alias of: [`glBufferStorage`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BufferStorageEXT(
             &self,
             target: GLenum,
@@ -7479,16 +6967,7 @@ pub mod struct_commands {
             data: *const c_void,
             flags: GLbitfield,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BufferStorageEXT({:#X}, {:?}, {:p}, {:?});",
-                    target,
-                    size,
-                    data,
-                    flags
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBufferStorageEXT",
                 &self.glBufferStorageEXT_p,
@@ -7497,10 +6976,7 @@ pub mod struct_commands {
                 data,
                 flags,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBufferStorageEXT");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7524,8 +7000,7 @@ pub mod struct_commands {
         /// * `offset` group: BufferOffset
         /// * `size` group: BufferSize
         /// * `data` len: size
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn BufferSubData(
             &self,
             target: GLenum,
@@ -7533,16 +7008,7 @@ pub mod struct_commands {
             size: GLsizeiptr,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.BufferSubData({:#X}, {:?}, {:?}, {:p});",
-                    target,
-                    offset,
-                    size,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glBufferSubData",
                 &self.glBufferSubData_p,
@@ -7551,10 +7017,7 @@ pub mod struct_commands {
                 size,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7576,22 +7039,15 @@ pub mod struct_commands {
         /// [glCheckFramebufferStatus](http://docs.gl/gl4/glCheckFramebufferStatus)(target)
         /// * `target` group: FramebufferTarget
         /// * return value group: FramebufferStatus
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CheckFramebufferStatus(&self, target: GLenum) -> GLenum {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CheckFramebufferStatus({:#X});", target);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glCheckFramebufferStatus",
                 &self.glCheckFramebufferStatus_p,
                 target,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCheckFramebufferStatus");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7613,31 +7069,20 @@ pub mod struct_commands {
         /// [glCheckNamedFramebufferStatus](http://docs.gl/gl4/glCheckNamedFramebufferStatus)(framebuffer, target)
         /// * `target` group: FramebufferTarget
         /// * return value group: FramebufferStatus
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CheckNamedFramebufferStatus(
             &self,
             framebuffer: GLuint,
             target: GLenum,
         ) -> GLenum {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CheckNamedFramebufferStatus({:?}, {:#X});",
-                    framebuffer,
-                    target
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glCheckNamedFramebufferStatus",
                 &self.glCheckNamedFramebufferStatus_p,
                 framebuffer,
                 target,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCheckNamedFramebufferStatus");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7659,18 +7104,11 @@ pub mod struct_commands {
         /// [glClampColor](http://docs.gl/gl4/glClampColor)(target, clamp)
         /// * `target` group: ClampColorTargetARB
         /// * `clamp` group: ClampColorModeARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClampColor(&self, target: GLenum, clamp: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClampColor({:#X}, {:#X});", target, clamp);
-            }
+
             let out = call_atomic_ptr_2arg("glClampColor", &self.glClampColor_p, target, clamp);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClampColor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7687,18 +7125,11 @@ pub mod struct_commands {
         }
         /// [glClear](http://docs.gl/gl4/glClear)(mask)
         /// * `mask` group: ClearBufferMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Clear(&self, mask: GLbitfield) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Clear({:?});", mask);
-            }
+
             let out = call_atomic_ptr_1arg("glClear", &self.glClear_p, mask);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClear");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7719,8 +7150,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `data` len: COMPSIZE(format,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearBufferData(
             &self,
             target: GLenum,
@@ -7729,17 +7159,7 @@ pub mod struct_commands {
             type_: GLenum,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearBufferData({:#X}, {:#X}, {:#X}, {:#X}, {:p});",
-                    target,
-                    internalformat,
-                    format,
-                    type_,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glClearBufferData",
                 &self.glClearBufferData_p,
@@ -7749,10 +7169,7 @@ pub mod struct_commands {
                 type_,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearBufferData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7779,8 +7196,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `data` len: COMPSIZE(format,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearBufferSubData(
             &self,
             target: GLenum,
@@ -7791,19 +7207,7 @@ pub mod struct_commands {
             type_: GLenum,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearBufferSubData({:#X}, {:#X}, {:?}, {:?}, {:#X}, {:#X}, {:p});",
-                    target,
-                    internalformat,
-                    offset,
-                    size,
-                    format,
-                    type_,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glClearBufferSubData",
                 &self.glClearBufferSubData_p,
@@ -7815,10 +7219,7 @@ pub mod struct_commands {
                 type_,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7840,8 +7241,7 @@ pub mod struct_commands {
         /// [glClearBufferfi](http://docs.gl/gl4/glClearBuffer)(buffer, drawbuffer, depth, stencil)
         /// * `buffer` group: Buffer
         /// * `drawbuffer` group: DrawBufferName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearBufferfi(
             &self,
             buffer: GLenum,
@@ -7849,16 +7249,7 @@ pub mod struct_commands {
             depth: GLfloat,
             stencil: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearBufferfi({:#X}, {:?}, {:?}, {:?});",
-                    buffer,
-                    drawbuffer,
-                    depth,
-                    stencil
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glClearBufferfi",
                 &self.glClearBufferfi_p,
@@ -7867,10 +7258,7 @@ pub mod struct_commands {
                 depth,
                 stencil,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearBufferfi");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7893,23 +7281,14 @@ pub mod struct_commands {
         /// * `buffer` group: Buffer
         /// * `drawbuffer` group: DrawBufferName
         /// * `value` len: COMPSIZE(buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearBufferfv(
             &self,
             buffer: GLenum,
             drawbuffer: GLint,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearBufferfv({:#X}, {:?}, {:p});",
-                    buffer,
-                    drawbuffer,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glClearBufferfv",
                 &self.glClearBufferfv_p,
@@ -7917,10 +7296,7 @@ pub mod struct_commands {
                 drawbuffer,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearBufferfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7943,18 +7319,9 @@ pub mod struct_commands {
         /// * `buffer` group: Buffer
         /// * `drawbuffer` group: DrawBufferName
         /// * `value` len: COMPSIZE(buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearBufferiv(&self, buffer: GLenum, drawbuffer: GLint, value: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearBufferiv({:#X}, {:?}, {:p});",
-                    buffer,
-                    drawbuffer,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glClearBufferiv",
                 &self.glClearBufferiv_p,
@@ -7962,10 +7329,7 @@ pub mod struct_commands {
                 drawbuffer,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearBufferiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -7988,23 +7352,14 @@ pub mod struct_commands {
         /// * `buffer` group: Buffer
         /// * `drawbuffer` group: DrawBufferName
         /// * `value` len: COMPSIZE(buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearBufferuiv(
             &self,
             buffer: GLenum,
             drawbuffer: GLint,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearBufferuiv({:#X}, {:?}, {:p});",
-                    buffer,
-                    drawbuffer,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glClearBufferuiv",
                 &self.glClearBufferuiv_p,
@@ -8012,10 +7367,7 @@ pub mod struct_commands {
                 drawbuffer,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearBufferuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8039,8 +7391,7 @@ pub mod struct_commands {
         /// * `green` group: ColorF
         /// * `blue` group: ColorF
         /// * `alpha` group: ColorF
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearColor(
             &self,
             red: GLfloat,
@@ -8048,16 +7399,7 @@ pub mod struct_commands {
             blue: GLfloat,
             alpha: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearColor({:?}, {:?}, {:?}, {:?});",
-                    red,
-                    green,
-                    blue,
-                    alpha
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glClearColor",
                 &self.glClearColor_p,
@@ -8066,10 +7408,7 @@ pub mod struct_commands {
                 blue,
                 alpha,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearColor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8085,18 +7424,11 @@ pub mod struct_commands {
             !self.glClearColor_p.load(RELAX).is_null()
         }
         /// [glClearDepth](http://docs.gl/gl4/glClearDepth)(depth)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearDepth(&self, depth: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClearDepth({:?});", depth);
-            }
+
             let out = call_atomic_ptr_1arg("glClearDepth", &self.glClearDepth_p, depth);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearDepth");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8112,18 +7444,11 @@ pub mod struct_commands {
             !self.glClearDepth_p.load(RELAX).is_null()
         }
         /// [glClearDepthf](http://docs.gl/gl4/glClearDepth)(d)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearDepthf(&self, d: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClearDepthf({:?});", d);
-            }
+
             let out = call_atomic_ptr_1arg("glClearDepthf", &self.glClearDepthf_p, d);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearDepthf");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8142,8 +7467,7 @@ pub mod struct_commands {
         /// * `internalformat` group: InternalFormat
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearNamedBufferData(
             &self,
             buffer: GLuint,
@@ -8152,17 +7476,7 @@ pub mod struct_commands {
             type_: GLenum,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearNamedBufferData({:?}, {:#X}, {:#X}, {:#X}, {:p});",
-                    buffer,
-                    internalformat,
-                    format,
-                    type_,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glClearNamedBufferData",
                 &self.glClearNamedBufferData_p,
@@ -8172,10 +7486,7 @@ pub mod struct_commands {
                 type_,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearNamedBufferData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8199,8 +7510,7 @@ pub mod struct_commands {
         /// * `size` group: BufferSize
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearNamedBufferSubData(
             &self,
             buffer: GLuint,
@@ -8211,10 +7521,7 @@ pub mod struct_commands {
             type_: GLenum,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClearNamedBufferSubData({:?}, {:#X}, {:?}, {:?}, {:#X}, {:#X}, {:p});", buffer, internalformat, offset, size, format, type_, data);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glClearNamedBufferSubData",
                 &self.glClearNamedBufferSubData_p,
@@ -8226,10 +7533,7 @@ pub mod struct_commands {
                 type_,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearNamedBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8250,8 +7554,7 @@ pub mod struct_commands {
         }
         /// [glClearNamedFramebufferfi](http://docs.gl/gl4/glClearNamedFramebuffer)(framebuffer, buffer, drawbuffer, depth, stencil)
         /// * `buffer` group: Buffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearNamedFramebufferfi(
             &self,
             framebuffer: GLuint,
@@ -8260,17 +7563,7 @@ pub mod struct_commands {
             depth: GLfloat,
             stencil: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearNamedFramebufferfi({:?}, {:#X}, {:?}, {:?}, {:?});",
-                    framebuffer,
-                    buffer,
-                    drawbuffer,
-                    depth,
-                    stencil
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glClearNamedFramebufferfi",
                 &self.glClearNamedFramebufferfi_p,
@@ -8280,10 +7573,7 @@ pub mod struct_commands {
                 depth,
                 stencil,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearNamedFramebufferfi");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8304,8 +7594,7 @@ pub mod struct_commands {
         }
         /// [glClearNamedFramebufferfv](http://docs.gl/gl4/glClearNamedFramebuffer)(framebuffer, buffer, drawbuffer, value)
         /// * `buffer` group: Buffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearNamedFramebufferfv(
             &self,
             framebuffer: GLuint,
@@ -8313,16 +7602,7 @@ pub mod struct_commands {
             drawbuffer: GLint,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearNamedFramebufferfv({:?}, {:#X}, {:?}, {:p});",
-                    framebuffer,
-                    buffer,
-                    drawbuffer,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glClearNamedFramebufferfv",
                 &self.glClearNamedFramebufferfv_p,
@@ -8331,10 +7611,7 @@ pub mod struct_commands {
                 drawbuffer,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearNamedFramebufferfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8355,8 +7632,7 @@ pub mod struct_commands {
         }
         /// [glClearNamedFramebufferiv](http://docs.gl/gl4/glClearNamedFramebuffer)(framebuffer, buffer, drawbuffer, value)
         /// * `buffer` group: Buffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearNamedFramebufferiv(
             &self,
             framebuffer: GLuint,
@@ -8364,16 +7640,7 @@ pub mod struct_commands {
             drawbuffer: GLint,
             value: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearNamedFramebufferiv({:?}, {:#X}, {:?}, {:p});",
-                    framebuffer,
-                    buffer,
-                    drawbuffer,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glClearNamedFramebufferiv",
                 &self.glClearNamedFramebufferiv_p,
@@ -8382,10 +7649,7 @@ pub mod struct_commands {
                 drawbuffer,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearNamedFramebufferiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8406,8 +7670,7 @@ pub mod struct_commands {
         }
         /// [glClearNamedFramebufferuiv](http://docs.gl/gl4/glClearNamedFramebuffer)(framebuffer, buffer, drawbuffer, value)
         /// * `buffer` group: Buffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearNamedFramebufferuiv(
             &self,
             framebuffer: GLuint,
@@ -8415,16 +7678,7 @@ pub mod struct_commands {
             drawbuffer: GLint,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearNamedFramebufferuiv({:?}, {:#X}, {:?}, {:p});",
-                    framebuffer,
-                    buffer,
-                    drawbuffer,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glClearNamedFramebufferuiv",
                 &self.glClearNamedFramebufferuiv_p,
@@ -8433,10 +7687,7 @@ pub mod struct_commands {
                 drawbuffer,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearNamedFramebufferuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8457,18 +7708,11 @@ pub mod struct_commands {
         }
         /// [glClearStencil](http://docs.gl/gl4/glClearStencil)(s)
         /// * `s` group: StencilValue
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearStencil(&self, s: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClearStencil({:?});", s);
-            }
+
             let out = call_atomic_ptr_1arg("glClearStencil", &self.glClearStencil_p, s);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearStencil");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8491,8 +7735,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `data` len: COMPSIZE(format,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearTexImage(
             &self,
             texture: GLuint,
@@ -8501,17 +7744,7 @@ pub mod struct_commands {
             type_: GLenum,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClearTexImage({:?}, {:?}, {:#X}, {:#X}, {:p});",
-                    texture,
-                    level,
-                    format,
-                    type_,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glClearTexImage",
                 &self.glClearTexImage_p,
@@ -8521,10 +7754,7 @@ pub mod struct_commands {
                 type_,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearTexImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8547,8 +7777,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `data` len: COMPSIZE(format,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClearTexSubImage(
             &self,
             texture: GLuint,
@@ -8563,10 +7792,7 @@ pub mod struct_commands {
             type_: GLenum,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClearTexSubImage({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, data);
-            }
+
             let out = call_atomic_ptr_11arg(
                 "glClearTexSubImage",
                 &self.glClearTexSubImage_p,
@@ -8582,10 +7808,7 @@ pub mod struct_commands {
                 type_,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClearTexSubImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8608,23 +7831,14 @@ pub mod struct_commands {
         /// * `sync` group: sync
         /// * `flags` group: SyncObjectMask
         /// * return value group: SyncStatus
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClientWaitSync(
             &self,
             sync: GLsync,
             flags: GLbitfield,
             timeout: GLuint64,
         ) -> GLenum {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ClientWaitSync({:p}, {:?}, {:?});",
-                    sync,
-                    flags,
-                    timeout
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glClientWaitSync",
                 &self.glClientWaitSync_p,
@@ -8632,10 +7846,7 @@ pub mod struct_commands {
                 flags,
                 timeout,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClientWaitSync");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8657,18 +7868,11 @@ pub mod struct_commands {
         /// [glClipControl](http://docs.gl/gl4/glClipControl)(origin, depth)
         /// * `origin` group: ClipControlOrigin
         /// * `depth` group: ClipControlDepth
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ClipControl(&self, origin: GLenum, depth: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ClipControl({:#X}, {:#X});", origin, depth);
-            }
+
             let out = call_atomic_ptr_2arg("glClipControl", &self.glClipControl_p, origin, depth);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glClipControl");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8684,8 +7888,7 @@ pub mod struct_commands {
             !self.glClipControl_p.load(RELAX).is_null()
         }
         /// [glColorMask](http://docs.gl/gl4/glColorMask)(red, green, blue, alpha)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ColorMask(
             &self,
             red: GLboolean,
@@ -8693,22 +7896,10 @@ pub mod struct_commands {
             blue: GLboolean,
             alpha: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ColorMask({:?}, {:?}, {:?}, {:?});",
-                    red,
-                    green,
-                    blue,
-                    alpha
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glColorMask", &self.glColorMask_p, red, green, blue, alpha);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glColorMask");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8725,8 +7916,7 @@ pub mod struct_commands {
         }
         /// [glColorMaskIndexedEXT](http://docs.gl/gl4/glColorMaskIndexedEXT)(index, r, g, b, a)
         /// * alias of: [`glColorMaski`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ColorMaskIndexedEXT(
             &self,
             index: GLuint,
@@ -8735,17 +7925,7 @@ pub mod struct_commands {
             b: GLboolean,
             a: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ColorMaskIndexedEXT({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    r,
-                    g,
-                    b,
-                    a
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glColorMaskIndexedEXT",
                 &self.glColorMaskIndexedEXT_p,
@@ -8755,10 +7935,7 @@ pub mod struct_commands {
                 b,
                 a,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glColorMaskIndexedEXT");
-            }
+
             out
         }
 
@@ -8780,8 +7957,7 @@ pub mod struct_commands {
             !self.glColorMaskIndexedEXT_p.load(RELAX).is_null()
         }
         /// [glColorMaski](http://docs.gl/gl4/glColorMask)(index, r, g, b, a)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ColorMaski(
             &self,
             index: GLuint,
@@ -8790,22 +7966,9 @@ pub mod struct_commands {
             b: GLboolean,
             a: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ColorMaski({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    r,
-                    g,
-                    b,
-                    a
-                );
-            }
+
             let out = call_atomic_ptr_5arg("glColorMaski", &self.glColorMaski_p, index, r, g, b, a);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glColorMaski");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8821,18 +7984,11 @@ pub mod struct_commands {
             !self.glColorMaski_p.load(RELAX).is_null()
         }
         /// [glCompileShader](http://docs.gl/gl4/glCompileShader)(shader)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompileShader(&self, shader: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompileShader({:?});", shader);
-            }
+
             let out = call_atomic_ptr_1arg("glCompileShader", &self.glCompileShader_p, shader);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompileShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8858,8 +8014,7 @@ pub mod struct_commands {
         /// * `border` group: CheckedInt32
         /// * `data` group: CompressedTextureARB
         /// * `data` len: imageSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTexImage1D(
             &self,
             target: GLenum,
@@ -8870,19 +8025,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CompressedTexImage1D({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:p});",
-                    target,
-                    level,
-                    internalformat,
-                    width,
-                    border,
-                    imageSize,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glCompressedTexImage1D",
                 &self.glCompressedTexImage1D_p,
@@ -8894,10 +8037,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTexImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8923,8 +8063,7 @@ pub mod struct_commands {
         /// * `border` group: CheckedInt32
         /// * `data` group: CompressedTextureARB
         /// * `data` len: imageSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTexImage2D(
             &self,
             target: GLenum,
@@ -8936,10 +8075,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTexImage2D({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?}, {:p});", target, level, internalformat, width, height, border, imageSize, data);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glCompressedTexImage2D",
                 &self.glCompressedTexImage2D_p,
@@ -8952,10 +8088,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTexImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -8981,8 +8114,7 @@ pub mod struct_commands {
         /// * `border` group: CheckedInt32
         /// * `data` group: CompressedTextureARB
         /// * `data` len: imageSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTexImage3D(
             &self,
             target: GLenum,
@@ -8995,10 +8127,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTexImage3D({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:p});", target, level, internalformat, width, height, depth, border, imageSize, data);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glCompressedTexImage3D",
                 &self.glCompressedTexImage3D_p,
@@ -9012,10 +8141,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTexImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9041,8 +8167,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `data` group: CompressedTextureARB
         /// * `data` len: imageSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTexSubImage1D(
             &self,
             target: GLenum,
@@ -9053,10 +8178,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTexSubImage1D({:#X}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:p});", target, level, xoffset, width, format, imageSize, data);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glCompressedTexSubImage1D",
                 &self.glCompressedTexSubImage1D_p,
@@ -9068,10 +8190,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTexSubImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9098,8 +8217,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `data` group: CompressedTextureARB
         /// * `data` len: imageSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTexSubImage2D(
             &self,
             target: GLenum,
@@ -9112,10 +8230,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTexSubImage2D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:p});", target, level, xoffset, yoffset, width, height, format, imageSize, data);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glCompressedTexSubImage2D",
                 &self.glCompressedTexSubImage2D_p,
@@ -9129,10 +8244,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTexSubImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9160,8 +8272,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `data` group: CompressedTextureARB
         /// * `data` len: imageSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTexSubImage3D(
             &self,
             target: GLenum,
@@ -9176,10 +8287,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTexSubImage3D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:p});", target, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
-            }
+
             let out = call_atomic_ptr_11arg(
                 "glCompressedTexSubImage3D",
                 &self.glCompressedTexSubImage3D_p,
@@ -9195,10 +8303,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTexSubImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9219,8 +8324,7 @@ pub mod struct_commands {
         }
         /// [glCompressedTextureSubImage1D](http://docs.gl/gl4/glCompressedTextureSubImage1D)(texture, level, xoffset, width, format, imageSize, data)
         /// * `format` group: PixelFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTextureSubImage1D(
             &self,
             texture: GLuint,
@@ -9231,10 +8335,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTextureSubImage1D({:?}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:p});", texture, level, xoffset, width, format, imageSize, data);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glCompressedTextureSubImage1D",
                 &self.glCompressedTextureSubImage1D_p,
@@ -9246,10 +8347,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTextureSubImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9270,8 +8368,7 @@ pub mod struct_commands {
         }
         /// [glCompressedTextureSubImage2D](http://docs.gl/gl4/glCompressedTextureSubImage2D)(texture, level, xoffset, yoffset, width, height, format, imageSize, data)
         /// * `format` group: PixelFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTextureSubImage2D(
             &self,
             texture: GLuint,
@@ -9284,10 +8381,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTextureSubImage2D({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:p});", texture, level, xoffset, yoffset, width, height, format, imageSize, data);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glCompressedTextureSubImage2D",
                 &self.glCompressedTextureSubImage2D_p,
@@ -9301,10 +8395,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTextureSubImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9325,8 +8416,7 @@ pub mod struct_commands {
         }
         /// [glCompressedTextureSubImage3D](http://docs.gl/gl4/glCompressedTextureSubImage3D)(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data)
         /// * `format` group: PixelFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CompressedTextureSubImage3D(
             &self,
             texture: GLuint,
@@ -9341,10 +8431,7 @@ pub mod struct_commands {
             imageSize: GLsizei,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CompressedTextureSubImage3D({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:p});", texture, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
-            }
+
             let out = call_atomic_ptr_11arg(
                 "glCompressedTextureSubImage3D",
                 &self.glCompressedTextureSubImage3D_p,
@@ -9360,10 +8447,7 @@ pub mod struct_commands {
                 imageSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCompressedTextureSubImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9388,8 +8472,7 @@ pub mod struct_commands {
         /// * `readOffset` group: BufferOffset
         /// * `writeOffset` group: BufferOffset
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyBufferSubData(
             &self,
             readTarget: GLenum,
@@ -9398,17 +8481,7 @@ pub mod struct_commands {
             writeOffset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyBufferSubData({:#X}, {:#X}, {:?}, {:?}, {:?});",
-                    readTarget,
-                    writeTarget,
-                    readOffset,
-                    writeOffset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glCopyBufferSubData",
                 &self.glCopyBufferSubData_p,
@@ -9418,10 +8491,7 @@ pub mod struct_commands {
                 writeOffset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9447,8 +8517,7 @@ pub mod struct_commands {
         /// * `writeOffset` group: BufferOffset
         /// * `size` group: BufferSize
         /// * alias of: [`glCopyBufferSubData`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyBufferSubDataNV(
             &self,
             readTarget: GLenum,
@@ -9457,17 +8526,7 @@ pub mod struct_commands {
             writeOffset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyBufferSubDataNV({:#X}, {:#X}, {:?}, {:?}, {:?});",
-                    readTarget,
-                    writeTarget,
-                    readOffset,
-                    writeOffset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glCopyBufferSubDataNV",
                 &self.glCopyBufferSubDataNV_p,
@@ -9477,10 +8536,7 @@ pub mod struct_commands {
                 writeOffset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyBufferSubDataNV");
-            }
+
             out
         }
 
@@ -9504,8 +8560,7 @@ pub mod struct_commands {
         /// [glCopyImageSubData](http://docs.gl/gl4/glCopyImageSubData)(srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth)
         /// * `srcTarget` group: CopyImageSubDataTarget
         /// * `dstTarget` group: CopyImageSubDataTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyImageSubData(
             &self,
             srcName: GLuint,
@@ -9524,10 +8579,7 @@ pub mod struct_commands {
             srcHeight: GLsizei,
             srcDepth: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CopyImageSubData({:?}, {:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
-            }
+
             let out = call_atomic_ptr_15arg(
                 "glCopyImageSubData",
                 &self.glCopyImageSubData_p,
@@ -9547,10 +8599,7 @@ pub mod struct_commands {
                 srcHeight,
                 srcDepth,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyImageSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9571,8 +8620,7 @@ pub mod struct_commands {
         }
         /// [glCopyNamedBufferSubData](http://docs.gl/gl4/glCopyNamedBufferSubData)(readBuffer, writeBuffer, readOffset, writeOffset, size)
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyNamedBufferSubData(
             &self,
             readBuffer: GLuint,
@@ -9581,17 +8629,7 @@ pub mod struct_commands {
             writeOffset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyNamedBufferSubData({:?}, {:?}, {:?}, {:?}, {:?});",
-                    readBuffer,
-                    writeBuffer,
-                    readOffset,
-                    writeOffset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glCopyNamedBufferSubData",
                 &self.glCopyNamedBufferSubData_p,
@@ -9601,10 +8639,7 @@ pub mod struct_commands {
                 writeOffset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyNamedBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9630,8 +8665,7 @@ pub mod struct_commands {
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
         /// * `border` group: CheckedInt32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTexImage1D(
             &self,
             target: GLenum,
@@ -9642,19 +8676,7 @@ pub mod struct_commands {
             width: GLsizei,
             border: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyTexImage1D({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?});",
-                    target,
-                    level,
-                    internalformat,
-                    x,
-                    y,
-                    width,
-                    border
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glCopyTexImage1D",
                 &self.glCopyTexImage1D_p,
@@ -9666,10 +8688,7 @@ pub mod struct_commands {
                 width,
                 border,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTexImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9695,8 +8714,7 @@ pub mod struct_commands {
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
         /// * `border` group: CheckedInt32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTexImage2D(
             &self,
             target: GLenum,
@@ -9708,20 +8726,7 @@ pub mod struct_commands {
             height: GLsizei,
             border: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyTexImage2D({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    target,
-                    level,
-                    internalformat,
-                    x,
-                    y,
-                    width,
-                    height,
-                    border
-                );
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glCopyTexImage2D",
                 &self.glCopyTexImage2D_p,
@@ -9734,10 +8739,7 @@ pub mod struct_commands {
                 height,
                 border,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTexImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9762,8 +8764,7 @@ pub mod struct_commands {
         /// * `xoffset` group: CheckedInt32
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTexSubImage1D(
             &self,
             target: GLenum,
@@ -9773,18 +8774,7 @@ pub mod struct_commands {
             y: GLint,
             width: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyTexSubImage1D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    target,
-                    level,
-                    xoffset,
-                    x,
-                    y,
-                    width
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glCopyTexSubImage1D",
                 &self.glCopyTexSubImage1D_p,
@@ -9795,10 +8785,7 @@ pub mod struct_commands {
                 y,
                 width,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTexSubImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9824,8 +8811,7 @@ pub mod struct_commands {
         /// * `yoffset` group: CheckedInt32
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTexSubImage2D(
             &self,
             target: GLenum,
@@ -9837,10 +8823,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CopyTexSubImage2D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", target, level, xoffset, yoffset, x, y, width, height);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glCopyTexSubImage2D",
                 &self.glCopyTexSubImage2D_p,
@@ -9853,10 +8836,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTexSubImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9883,8 +8863,7 @@ pub mod struct_commands {
         /// * `zoffset` group: CheckedInt32
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTexSubImage3D(
             &self,
             target: GLenum,
@@ -9897,10 +8876,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CopyTexSubImage3D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", target, level, xoffset, yoffset, zoffset, x, y, width, height);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glCopyTexSubImage3D",
                 &self.glCopyTexSubImage3D_p,
@@ -9914,10 +8890,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTexSubImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9937,8 +8910,7 @@ pub mod struct_commands {
             !self.glCopyTexSubImage3D_p.load(RELAX).is_null()
         }
         /// [glCopyTextureSubImage1D](http://docs.gl/gl4/glCopyTextureSubImage1D)(texture, level, xoffset, x, y, width)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTextureSubImage1D(
             &self,
             texture: GLuint,
@@ -9948,18 +8920,7 @@ pub mod struct_commands {
             y: GLint,
             width: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CopyTextureSubImage1D({:?}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    texture,
-                    level,
-                    xoffset,
-                    x,
-                    y,
-                    width
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glCopyTextureSubImage1D",
                 &self.glCopyTextureSubImage1D_p,
@@ -9970,10 +8931,7 @@ pub mod struct_commands {
                 y,
                 width,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTextureSubImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -9993,8 +8951,7 @@ pub mod struct_commands {
             !self.glCopyTextureSubImage1D_p.load(RELAX).is_null()
         }
         /// [glCopyTextureSubImage2D](http://docs.gl/gl4/glCopyTextureSubImage2D)(texture, level, xoffset, yoffset, x, y, width, height)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTextureSubImage2D(
             &self,
             texture: GLuint,
@@ -10006,10 +8963,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CopyTextureSubImage2D({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", texture, level, xoffset, yoffset, x, y, width, height);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glCopyTextureSubImage2D",
                 &self.glCopyTextureSubImage2D_p,
@@ -10022,10 +8976,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTextureSubImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10045,8 +8996,7 @@ pub mod struct_commands {
             !self.glCopyTextureSubImage2D_p.load(RELAX).is_null()
         }
         /// [glCopyTextureSubImage3D](http://docs.gl/gl4/glCopyTextureSubImage3D)(texture, level, xoffset, yoffset, zoffset, x, y, width, height)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CopyTextureSubImage3D(
             &self,
             texture: GLuint,
@@ -10059,10 +9009,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CopyTextureSubImage3D({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", texture, level, xoffset, yoffset, zoffset, x, y, width, height);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glCopyTextureSubImage3D",
                 &self.glCopyTextureSubImage3D_p,
@@ -10076,10 +9023,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCopyTextureSubImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10100,18 +9044,11 @@ pub mod struct_commands {
         }
         /// [glCreateBuffers](http://docs.gl/gl4/glCreateBuffers)(n, buffers)
         /// * `buffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateBuffers(&self, n: GLsizei, buffers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CreateBuffers({:?}, {:p});", n, buffers);
-            }
+
             let out = call_atomic_ptr_2arg("glCreateBuffers", &self.glCreateBuffers_p, n, buffers);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10132,27 +9069,16 @@ pub mod struct_commands {
         }
         /// [glCreateFramebuffers](http://docs.gl/gl4/glCreateFramebuffers)(n, framebuffers)
         /// * `framebuffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateFramebuffers(&self, n: GLsizei, framebuffers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CreateFramebuffers({:?}, {:p});",
-                    n,
-                    framebuffers
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glCreateFramebuffers",
                 &self.glCreateFramebuffers_p,
                 n,
                 framebuffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateFramebuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10172,18 +9098,11 @@ pub mod struct_commands {
             !self.glCreateFramebuffers_p.load(RELAX).is_null()
         }
         /// [glCreateProgram](http://docs.gl/gl4/glCreateProgram)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateProgram(&self) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CreateProgram();",);
-            }
+
             let out = call_atomic_ptr_0arg("glCreateProgram", &self.glCreateProgram_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateProgram");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10204,27 +9123,16 @@ pub mod struct_commands {
         }
         /// [glCreateProgramPipelines](http://docs.gl/gl4/glCreateProgramPipelines)(n, pipelines)
         /// * `pipelines` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateProgramPipelines(&self, n: GLsizei, pipelines: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CreateProgramPipelines({:?}, {:p});",
-                    n,
-                    pipelines
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glCreateProgramPipelines",
                 &self.glCreateProgramPipelines_p,
                 n,
                 pipelines,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateProgramPipelines");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10246,24 +9154,12 @@ pub mod struct_commands {
         /// [glCreateQueries](http://docs.gl/gl4/glCreateQueries)(target, n, ids)
         /// * `target` group: QueryTarget
         /// * `ids` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateQueries(&self, target: GLenum, n: GLsizei, ids: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CreateQueries({:#X}, {:?}, {:p});",
-                    target,
-                    n,
-                    ids
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glCreateQueries", &self.glCreateQueries_p, target, n, ids);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateQueries");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10284,27 +9180,16 @@ pub mod struct_commands {
         }
         /// [glCreateRenderbuffers](http://docs.gl/gl4/glCreateRenderbuffers)(n, renderbuffers)
         /// * `renderbuffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateRenderbuffers(&self, n: GLsizei, renderbuffers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CreateRenderbuffers({:?}, {:p});",
-                    n,
-                    renderbuffers
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glCreateRenderbuffers",
                 &self.glCreateRenderbuffers_p,
                 n,
                 renderbuffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateRenderbuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10325,19 +9210,12 @@ pub mod struct_commands {
         }
         /// [glCreateSamplers](http://docs.gl/gl4/glCreateSamplers)(n, samplers)
         /// * `samplers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateSamplers(&self, n: GLsizei, samplers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CreateSamplers({:?}, {:p});", n, samplers);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glCreateSamplers", &self.glCreateSamplers_p, n, samplers);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateSamplers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10358,18 +9236,11 @@ pub mod struct_commands {
         }
         /// [glCreateShader](http://docs.gl/gl4/glCreateShader)(type_)
         /// * `type_` group: ShaderType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateShader(&self, type_: GLenum) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CreateShader({:#X});", type_);
-            }
+
             let out = call_atomic_ptr_1arg("glCreateShader", &self.glCreateShader_p, type_);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10391,23 +9262,14 @@ pub mod struct_commands {
         /// [glCreateShaderProgramv](http://docs.gl/gl4/glCreateShaderProgramv)(type_, count, strings)
         /// * `type_` group: ShaderType
         /// * `strings` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateShaderProgramv(
             &self,
             type_: GLenum,
             count: GLsizei,
             strings: *const *const GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CreateShaderProgramv({:#X}, {:?}, {:p});",
-                    type_,
-                    count,
-                    strings
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glCreateShaderProgramv",
                 &self.glCreateShaderProgramv_p,
@@ -10415,10 +9277,7 @@ pub mod struct_commands {
                 count,
                 strings,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateShaderProgramv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10440,18 +9299,9 @@ pub mod struct_commands {
         /// [glCreateTextures](http://docs.gl/gl4/glCreateTextures)(target, n, textures)
         /// * `target` group: TextureTarget
         /// * `textures` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateTextures(&self, target: GLenum, n: GLsizei, textures: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.CreateTextures({:#X}, {:?}, {:p});",
-                    target,
-                    n,
-                    textures
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glCreateTextures",
                 &self.glCreateTextures_p,
@@ -10459,10 +9309,7 @@ pub mod struct_commands {
                 n,
                 textures,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateTextures");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10483,23 +9330,16 @@ pub mod struct_commands {
         }
         /// [glCreateTransformFeedbacks](http://docs.gl/gl4/glCreateTransformFeedbacks)(n, ids)
         /// * `ids` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateTransformFeedbacks(&self, n: GLsizei, ids: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CreateTransformFeedbacks({:?}, {:p});", n, ids);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glCreateTransformFeedbacks",
                 &self.glCreateTransformFeedbacks_p,
                 n,
                 ids,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateTransformFeedbacks");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10520,23 +9360,16 @@ pub mod struct_commands {
         }
         /// [glCreateVertexArrays](http://docs.gl/gl4/glCreateVertexArrays)(n, arrays)
         /// * `arrays` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CreateVertexArrays(&self, n: GLsizei, arrays: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CreateVertexArrays({:?}, {:p});", n, arrays);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glCreateVertexArrays",
                 &self.glCreateVertexArrays_p,
                 n,
                 arrays,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCreateVertexArrays");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10557,18 +9390,11 @@ pub mod struct_commands {
         }
         /// [glCullFace](http://docs.gl/gl4/glCullFace)(mode)
         /// * `mode` group: CullFaceMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn CullFace(&self, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.CullFace({:#X});", mode);
-            }
+
             let out = call_atomic_ptr_1arg("glCullFace", &self.glCullFace_p, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glCullFace");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10584,27 +9410,16 @@ pub mod struct_commands {
             !self.glCullFace_p.load(RELAX).is_null()
         }
         /// [glDebugMessageCallback](http://docs.gl/gl4/glDebugMessageCallback)(callback, userParam)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageCallback(&self, callback: GLDEBUGPROC, userParam: *const c_void) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageCallback({:?}, {:p});",
-                    transmute::<_, Option<fn()>>(callback),
-                    userParam
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDebugMessageCallback",
                 &self.glDebugMessageCallback_p,
                 callback,
                 userParam,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageCallback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10626,31 +9441,20 @@ pub mod struct_commands {
         /// [glDebugMessageCallbackARB](http://docs.gl/gl4/glDebugMessageCallbackARB)(callback, userParam)
         /// * `userParam` len: COMPSIZE(callback)
         /// * alias of: [`glDebugMessageCallback`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageCallbackARB(
             &self,
             callback: GLDEBUGPROCARB,
             userParam: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageCallbackARB({:?}, {:p});",
-                    transmute::<_, Option<fn()>>(callback),
-                    userParam
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDebugMessageCallbackARB",
                 &self.glDebugMessageCallbackARB_p,
                 callback,
                 userParam,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageCallbackARB");
-            }
+
             out
         }
 
@@ -10673,31 +9477,20 @@ pub mod struct_commands {
         }
         /// [glDebugMessageCallbackKHR](http://docs.gl/gl4/glDebugMessageCallbackKHR)(callback, userParam)
         /// * alias of: [`glDebugMessageCallback`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageCallbackKHR(
             &self,
             callback: GLDEBUGPROCKHR,
             userParam: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageCallbackKHR({:?}, {:p});",
-                    transmute::<_, Option<fn()>>(callback),
-                    userParam
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDebugMessageCallbackKHR",
                 &self.glDebugMessageCallbackKHR_p,
                 callback,
                 userParam,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageCallbackKHR");
-            }
+
             out
         }
 
@@ -10723,8 +9516,7 @@ pub mod struct_commands {
         /// * `type_` group: DebugType
         /// * `severity` group: DebugSeverity
         /// * `ids` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageControl(
             &self,
             source: GLenum,
@@ -10734,18 +9526,7 @@ pub mod struct_commands {
             ids: *const GLuint,
             enabled: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageControl({:#X}, {:#X}, {:#X}, {:?}, {:p}, {:?});",
-                    source,
-                    type_,
-                    severity,
-                    count,
-                    ids,
-                    enabled
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDebugMessageControl",
                 &self.glDebugMessageControl_p,
@@ -10756,10 +9537,7 @@ pub mod struct_commands {
                 ids,
                 enabled,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageControl");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10784,8 +9562,7 @@ pub mod struct_commands {
         /// * `severity` group: DebugSeverity
         /// * `ids` len: count
         /// * alias of: [`glDebugMessageControl`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageControlARB(
             &self,
             source: GLenum,
@@ -10795,18 +9572,7 @@ pub mod struct_commands {
             ids: *const GLuint,
             enabled: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageControlARB({:#X}, {:#X}, {:#X}, {:?}, {:p}, {:?});",
-                    source,
-                    type_,
-                    severity,
-                    count,
-                    ids,
-                    enabled
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDebugMessageControlARB",
                 &self.glDebugMessageControlARB_p,
@@ -10817,10 +9583,7 @@ pub mod struct_commands {
                 ids,
                 enabled,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageControlARB");
-            }
+
             out
         }
 
@@ -10846,8 +9609,7 @@ pub mod struct_commands {
         /// * `type_` group: DebugType
         /// * `severity` group: DebugSeverity
         /// * alias of: [`glDebugMessageControl`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageControlKHR(
             &self,
             source: GLenum,
@@ -10857,18 +9619,7 @@ pub mod struct_commands {
             ids: *const GLuint,
             enabled: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageControlKHR({:#X}, {:#X}, {:#X}, {:?}, {:p}, {:?});",
-                    source,
-                    type_,
-                    severity,
-                    count,
-                    ids,
-                    enabled
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDebugMessageControlKHR",
                 &self.glDebugMessageControlKHR_p,
@@ -10879,10 +9630,7 @@ pub mod struct_commands {
                 ids,
                 enabled,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageControlKHR");
-            }
+
             out
         }
 
@@ -10908,8 +9656,7 @@ pub mod struct_commands {
         /// * `type_` group: DebugType
         /// * `severity` group: DebugSeverity
         /// * `buf` len: COMPSIZE(buf,length)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageInsert(
             &self,
             source: GLenum,
@@ -10919,18 +9666,7 @@ pub mod struct_commands {
             length: GLsizei,
             buf: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageInsert({:#X}, {:#X}, {:?}, {:#X}, {:?}, {:p});",
-                    source,
-                    type_,
-                    id,
-                    severity,
-                    length,
-                    buf
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDebugMessageInsert",
                 &self.glDebugMessageInsert_p,
@@ -10941,10 +9677,7 @@ pub mod struct_commands {
                 length,
                 buf,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageInsert");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -10969,8 +9702,7 @@ pub mod struct_commands {
         /// * `severity` group: DebugSeverity
         /// * `buf` len: length
         /// * alias of: [`glDebugMessageInsert`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageInsertARB(
             &self,
             source: GLenum,
@@ -10980,18 +9712,7 @@ pub mod struct_commands {
             length: GLsizei,
             buf: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageInsertARB({:#X}, {:#X}, {:?}, {:#X}, {:?}, {:p});",
-                    source,
-                    type_,
-                    id,
-                    severity,
-                    length,
-                    buf
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDebugMessageInsertARB",
                 &self.glDebugMessageInsertARB_p,
@@ -11002,10 +9723,7 @@ pub mod struct_commands {
                 length,
                 buf,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageInsertARB");
-            }
+
             out
         }
 
@@ -11031,8 +9749,7 @@ pub mod struct_commands {
         /// * `type_` group: DebugType
         /// * `severity` group: DebugSeverity
         /// * alias of: [`glDebugMessageInsert`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DebugMessageInsertKHR(
             &self,
             source: GLenum,
@@ -11042,18 +9759,7 @@ pub mod struct_commands {
             length: GLsizei,
             buf: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DebugMessageInsertKHR({:#X}, {:#X}, {:?}, {:#X}, {:?}, {:p});",
-                    source,
-                    type_,
-                    id,
-                    severity,
-                    length,
-                    buf
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDebugMessageInsertKHR",
                 &self.glDebugMessageInsertKHR_p,
@@ -11064,10 +9770,7 @@ pub mod struct_commands {
                 length,
                 buf,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDebugMessageInsertKHR");
-            }
+
             out
         }
 
@@ -11090,18 +9793,11 @@ pub mod struct_commands {
         }
         /// [glDeleteBuffers](http://docs.gl/gl4/glDeleteBuffers)(n, buffers)
         /// * `buffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteBuffers(&self, n: GLsizei, buffers: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteBuffers({:?}, {:p});", n, buffers);
-            }
+
             let out = call_atomic_ptr_2arg("glDeleteBuffers", &self.glDeleteBuffers_p, n, buffers);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11122,27 +9818,16 @@ pub mod struct_commands {
         }
         /// [glDeleteFramebuffers](http://docs.gl/gl4/glDeleteFramebuffers)(n, framebuffers)
         /// * `framebuffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteFramebuffers(&self, n: GLsizei, framebuffers: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DeleteFramebuffers({:?}, {:p});",
-                    n,
-                    framebuffers
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDeleteFramebuffers",
                 &self.glDeleteFramebuffers_p,
                 n,
                 framebuffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteFramebuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11162,18 +9847,11 @@ pub mod struct_commands {
             !self.glDeleteFramebuffers_p.load(RELAX).is_null()
         }
         /// [glDeleteProgram](http://docs.gl/gl4/glDeleteProgram)(program)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteProgram(&self, program: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteProgram({:?});", program);
-            }
+
             let out = call_atomic_ptr_1arg("glDeleteProgram", &self.glDeleteProgram_p, program);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteProgram");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11194,27 +9872,16 @@ pub mod struct_commands {
         }
         /// [glDeleteProgramPipelines](http://docs.gl/gl4/glDeleteProgramPipelines)(n, pipelines)
         /// * `pipelines` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteProgramPipelines(&self, n: GLsizei, pipelines: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DeleteProgramPipelines({:?}, {:p});",
-                    n,
-                    pipelines
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDeleteProgramPipelines",
                 &self.glDeleteProgramPipelines_p,
                 n,
                 pipelines,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteProgramPipelines");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11235,18 +9902,11 @@ pub mod struct_commands {
         }
         /// [glDeleteQueries](http://docs.gl/gl4/glDeleteQueries)(n, ids)
         /// * `ids` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteQueries(&self, n: GLsizei, ids: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteQueries({:?}, {:p});", n, ids);
-            }
+
             let out = call_atomic_ptr_2arg("glDeleteQueries", &self.glDeleteQueries_p, n, ids);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteQueries");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11267,27 +9927,16 @@ pub mod struct_commands {
         }
         /// [glDeleteRenderbuffers](http://docs.gl/gl4/glDeleteRenderbuffers)(n, renderbuffers)
         /// * `renderbuffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteRenderbuffers(&self, n: GLsizei, renderbuffers: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DeleteRenderbuffers({:?}, {:p});",
-                    n,
-                    renderbuffers
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDeleteRenderbuffers",
                 &self.glDeleteRenderbuffers_p,
                 n,
                 renderbuffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteRenderbuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11308,23 +9957,16 @@ pub mod struct_commands {
         }
         /// [glDeleteSamplers](http://docs.gl/gl4/glDeleteSamplers)(count, samplers)
         /// * `samplers` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteSamplers(&self, count: GLsizei, samplers: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteSamplers({:?}, {:p});", count, samplers);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDeleteSamplers",
                 &self.glDeleteSamplers_p,
                 count,
                 samplers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteSamplers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11344,18 +9986,11 @@ pub mod struct_commands {
             !self.glDeleteSamplers_p.load(RELAX).is_null()
         }
         /// [glDeleteShader](http://docs.gl/gl4/glDeleteShader)(shader)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteShader(&self, shader: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteShader({:?});", shader);
-            }
+
             let out = call_atomic_ptr_1arg("glDeleteShader", &self.glDeleteShader_p, shader);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11376,18 +10011,11 @@ pub mod struct_commands {
         }
         /// [glDeleteSync](http://docs.gl/gl4/glDeleteSync)(sync)
         /// * `sync` group: sync
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteSync(&self, sync: GLsync) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteSync({:p});", sync);
-            }
+
             let out = call_atomic_ptr_1arg("glDeleteSync", &self.glDeleteSync_p, sync);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteSync");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11405,19 +10033,12 @@ pub mod struct_commands {
         /// [glDeleteTextures](http://docs.gl/gl4/glDeleteTextures)(n, textures)
         /// * `textures` group: Texture
         /// * `textures` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteTextures(&self, n: GLsizei, textures: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteTextures({:?}, {:p});", n, textures);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glDeleteTextures", &self.glDeleteTextures_p, n, textures);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteTextures");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11438,23 +10059,16 @@ pub mod struct_commands {
         }
         /// [glDeleteTransformFeedbacks](http://docs.gl/gl4/glDeleteTransformFeedbacks)(n, ids)
         /// * `ids` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteTransformFeedbacks(&self, n: GLsizei, ids: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteTransformFeedbacks({:?}, {:p});", n, ids);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDeleteTransformFeedbacks",
                 &self.glDeleteTransformFeedbacks_p,
                 n,
                 ids,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteTransformFeedbacks");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11475,23 +10089,16 @@ pub mod struct_commands {
         }
         /// [glDeleteVertexArrays](http://docs.gl/gl4/glDeleteVertexArrays)(n, arrays)
         /// * `arrays` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DeleteVertexArrays(&self, n: GLsizei, arrays: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DeleteVertexArrays({:?}, {:p});", n, arrays);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDeleteVertexArrays",
                 &self.glDeleteVertexArrays_p,
                 n,
                 arrays,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDeleteVertexArrays");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11512,18 +10119,11 @@ pub mod struct_commands {
         }
         /// [glDepthFunc](http://docs.gl/gl4/glDepthFunc)(func)
         /// * `func` group: DepthFunction
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DepthFunc(&self, func: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DepthFunc({:#X});", func);
-            }
+
             let out = call_atomic_ptr_1arg("glDepthFunc", &self.glDepthFunc_p, func);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDepthFunc");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11539,18 +10139,11 @@ pub mod struct_commands {
             !self.glDepthFunc_p.load(RELAX).is_null()
         }
         /// [glDepthMask](http://docs.gl/gl4/glDepthMask)(flag)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DepthMask(&self, flag: GLboolean) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DepthMask({:?});", flag);
-            }
+
             let out = call_atomic_ptr_1arg("glDepthMask", &self.glDepthMask_p, flag);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDepthMask");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11566,18 +10159,11 @@ pub mod struct_commands {
             !self.glDepthMask_p.load(RELAX).is_null()
         }
         /// [glDepthRange](http://docs.gl/gl4/glDepthRange)(n, f)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DepthRange(&self, n: GLdouble, f: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DepthRange({:?}, {:?});", n, f);
-            }
+
             let out = call_atomic_ptr_2arg("glDepthRange", &self.glDepthRange_p, n, f);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDepthRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11594,18 +10180,9 @@ pub mod struct_commands {
         }
         /// [glDepthRangeArrayv](http://docs.gl/gl4/glDepthRangeArrayv)(first, count, v)
         /// * `v` len: COMPSIZE(count)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DepthRangeArrayv(&self, first: GLuint, count: GLsizei, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DepthRangeArrayv({:?}, {:?}, {:p});",
-                    first,
-                    count,
-                    v
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glDepthRangeArrayv",
                 &self.glDepthRangeArrayv_p,
@@ -11613,10 +10190,7 @@ pub mod struct_commands {
                 count,
                 v,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDepthRangeArrayv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11636,18 +10210,9 @@ pub mod struct_commands {
             !self.glDepthRangeArrayv_p.load(RELAX).is_null()
         }
         /// [glDepthRangeIndexed](http://docs.gl/gl4/glDepthRangeIndexed)(index, n, f)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DepthRangeIndexed(&self, index: GLuint, n: GLdouble, f: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DepthRangeIndexed({:?}, {:?}, {:?});",
-                    index,
-                    n,
-                    f
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glDepthRangeIndexed",
                 &self.glDepthRangeIndexed_p,
@@ -11655,10 +10220,7 @@ pub mod struct_commands {
                 n,
                 f,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDepthRangeIndexed");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11678,18 +10240,11 @@ pub mod struct_commands {
             !self.glDepthRangeIndexed_p.load(RELAX).is_null()
         }
         /// [glDepthRangef](http://docs.gl/gl4/glDepthRange)(n, f)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DepthRangef(&self, n: GLfloat, f: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DepthRangef({:?}, {:?});", n, f);
-            }
+
             let out = call_atomic_ptr_2arg("glDepthRangef", &self.glDepthRangef_p, n, f);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDepthRangef");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11705,19 +10260,12 @@ pub mod struct_commands {
             !self.glDepthRangef_p.load(RELAX).is_null()
         }
         /// [glDetachShader](http://docs.gl/gl4/glDetachShader)(program, shader)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DetachShader(&self, program: GLuint, shader: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DetachShader({:?}, {:?});", program, shader);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glDetachShader", &self.glDetachShader_p, program, shader);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDetachShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11738,18 +10286,11 @@ pub mod struct_commands {
         }
         /// [glDisable](http://docs.gl/gl4/glDisable)(cap)
         /// * `cap` group: EnableCap
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Disable(&self, cap: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Disable({:#X});", cap);
-            }
+
             let out = call_atomic_ptr_1arg("glDisable", &self.glDisable_p, cap);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDisable");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11767,23 +10308,16 @@ pub mod struct_commands {
         /// [glDisableIndexedEXT](http://docs.gl/gl4/glDisableIndexedEXT)(target, index)
         /// * `target` group: EnableCap
         /// * alias of: [`glDisablei`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DisableIndexedEXT(&self, target: GLenum, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DisableIndexedEXT({:#X}, {:?});", target, index);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDisableIndexedEXT",
                 &self.glDisableIndexedEXT_p,
                 target,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDisableIndexedEXT");
-            }
+
             out
         }
 
@@ -11805,27 +10339,16 @@ pub mod struct_commands {
             !self.glDisableIndexedEXT_p.load(RELAX).is_null()
         }
         /// [glDisableVertexArrayAttrib](http://docs.gl/gl4/glDisableVertexArrayAttrib)(vaobj, index)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DisableVertexArrayAttrib(&self, vaobj: GLuint, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DisableVertexArrayAttrib({:?}, {:?});",
-                    vaobj,
-                    index
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDisableVertexArrayAttrib",
                 &self.glDisableVertexArrayAttrib_p,
                 vaobj,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDisableVertexArrayAttrib");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11845,22 +10368,15 @@ pub mod struct_commands {
             !self.glDisableVertexArrayAttrib_p.load(RELAX).is_null()
         }
         /// [glDisableVertexAttribArray](http://docs.gl/gl4/glDisableVertexAttribArray)(index)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DisableVertexAttribArray(&self, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DisableVertexAttribArray({:?});", index);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glDisableVertexAttribArray",
                 &self.glDisableVertexAttribArray_p,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDisableVertexAttribArray");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11881,18 +10397,11 @@ pub mod struct_commands {
         }
         /// [glDisablei](http://docs.gl/gl4/glDisable)(target, index)
         /// * `target` group: EnableCap
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Disablei(&self, target: GLenum, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Disablei({:#X}, {:?});", target, index);
-            }
+
             let out = call_atomic_ptr_2arg("glDisablei", &self.glDisablei_p, target, index);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDisablei");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11908,23 +10417,14 @@ pub mod struct_commands {
             !self.glDisablei_p.load(RELAX).is_null()
         }
         /// [glDispatchCompute](http://docs.gl/gl4/glDispatchCompute)(num_groups_x, num_groups_y, num_groups_z)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DispatchCompute(
             &self,
             num_groups_x: GLuint,
             num_groups_y: GLuint,
             num_groups_z: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DispatchCompute({:?}, {:?}, {:?});",
-                    num_groups_x,
-                    num_groups_y,
-                    num_groups_z
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glDispatchCompute",
                 &self.glDispatchCompute_p,
@@ -11932,10 +10432,7 @@ pub mod struct_commands {
                 num_groups_y,
                 num_groups_z,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDispatchCompute");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11956,22 +10453,15 @@ pub mod struct_commands {
         }
         /// [glDispatchComputeIndirect](http://docs.gl/gl4/glDispatchComputeIndirect)(indirect)
         /// * `indirect` group: BufferOffset
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DispatchComputeIndirect(&self, indirect: GLintptr) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DispatchComputeIndirect({:?});", indirect);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glDispatchComputeIndirect",
                 &self.glDispatchComputeIndirect_p,
                 indirect,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDispatchComputeIndirect");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -11992,24 +10482,12 @@ pub mod struct_commands {
         }
         /// [glDrawArrays](http://docs.gl/gl4/glDrawArrays)(mode, first, count)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawArrays(&self, mode: GLenum, first: GLint, count: GLsizei) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawArrays({:#X}, {:?}, {:?});",
-                    mode,
-                    first,
-                    count
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glDrawArrays", &self.glDrawArrays_p, mode, first, count);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawArrays");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12026,27 +10504,16 @@ pub mod struct_commands {
         }
         /// [glDrawArraysIndirect](http://docs.gl/gl4/glDrawArraysIndirect)(mode, indirect)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawArraysIndirect(&self, mode: GLenum, indirect: *const c_void) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawArraysIndirect({:#X}, {:p});",
-                    mode,
-                    indirect
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDrawArraysIndirect",
                 &self.glDrawArraysIndirect_p,
                 mode,
                 indirect,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawArraysIndirect");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12067,8 +10534,7 @@ pub mod struct_commands {
         }
         /// [glDrawArraysInstanced](http://docs.gl/gl4/glDrawArraysInstanced)(mode, first, count, instancecount)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawArraysInstanced(
             &self,
             mode: GLenum,
@@ -12076,16 +10542,7 @@ pub mod struct_commands {
             count: GLsizei,
             instancecount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawArraysInstanced({:#X}, {:?}, {:?}, {:?});",
-                    mode,
-                    first,
-                    count,
-                    instancecount
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glDrawArraysInstanced",
                 &self.glDrawArraysInstanced_p,
@@ -12094,10 +10551,7 @@ pub mod struct_commands {
                 count,
                 instancecount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawArraysInstanced");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12119,8 +10573,7 @@ pub mod struct_commands {
         /// [glDrawArraysInstancedARB](http://docs.gl/gl4/glDrawArraysInstancedARB)(mode, first, count, primcount)
         /// * `mode` group: PrimitiveType
         /// * alias of: [`glDrawArraysInstanced`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawArraysInstancedARB(
             &self,
             mode: GLenum,
@@ -12128,16 +10581,7 @@ pub mod struct_commands {
             count: GLsizei,
             primcount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawArraysInstancedARB({:#X}, {:?}, {:?}, {:?});",
-                    mode,
-                    first,
-                    count,
-                    primcount
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glDrawArraysInstancedARB",
                 &self.glDrawArraysInstancedARB_p,
@@ -12146,10 +10590,7 @@ pub mod struct_commands {
                 count,
                 primcount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawArraysInstancedARB");
-            }
+
             out
         }
 
@@ -12172,8 +10613,7 @@ pub mod struct_commands {
         }
         /// [glDrawArraysInstancedBaseInstance](http://docs.gl/gl4/glDrawArraysInstancedBaseInstance)(mode, first, count, instancecount, baseinstance)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawArraysInstancedBaseInstance(
             &self,
             mode: GLenum,
@@ -12182,17 +10622,7 @@ pub mod struct_commands {
             instancecount: GLsizei,
             baseinstance: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawArraysInstancedBaseInstance({:#X}, {:?}, {:?}, {:?}, {:?});",
-                    mode,
-                    first,
-                    count,
-                    instancecount,
-                    baseinstance
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glDrawArraysInstancedBaseInstance",
                 &self.glDrawArraysInstancedBaseInstance_p,
@@ -12202,10 +10632,7 @@ pub mod struct_commands {
                 instancecount,
                 baseinstance,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawArraysInstancedBaseInstance");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12229,18 +10656,11 @@ pub mod struct_commands {
         }
         /// [glDrawBuffer](http://docs.gl/gl4/glDrawBuffer)(buf)
         /// * `buf` group: DrawBufferMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawBuffer(&self, buf: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawBuffer({:#X});", buf);
-            }
+
             let out = call_atomic_ptr_1arg("glDrawBuffer", &self.glDrawBuffer_p, buf);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12258,18 +10678,11 @@ pub mod struct_commands {
         /// [glDrawBuffers](http://docs.gl/gl4/glDrawBuffers)(n, bufs)
         /// * `bufs` group: DrawBufferMode
         /// * `bufs` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawBuffers(&self, n: GLsizei, bufs: *const GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawBuffers({:?}, {:p});", n, bufs);
-            }
+
             let out = call_atomic_ptr_2arg("glDrawBuffers", &self.glDrawBuffers_p, n, bufs);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12288,8 +10701,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElements(
             &self,
             mode: GLenum,
@@ -12297,16 +10709,7 @@ pub mod struct_commands {
             type_: GLenum,
             indices: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawElements({:#X}, {:?}, {:#X}, {:p});",
-                    mode,
-                    count,
-                    type_,
-                    indices
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glDrawElements",
                 &self.glDrawElements_p,
@@ -12315,10 +10718,7 @@ pub mod struct_commands {
                 type_,
                 indices,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElements");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12341,8 +10741,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsBaseVertex(
             &self,
             mode: GLenum,
@@ -12351,17 +10750,7 @@ pub mod struct_commands {
             indices: *const c_void,
             basevertex: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawElementsBaseVertex({:#X}, {:?}, {:#X}, {:p}, {:?});",
-                    mode,
-                    count,
-                    type_,
-                    indices,
-                    basevertex
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glDrawElementsBaseVertex",
                 &self.glDrawElementsBaseVertex_p,
@@ -12371,10 +10760,7 @@ pub mod struct_commands {
                 indices,
                 basevertex,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsBaseVertex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12396,23 +10782,14 @@ pub mod struct_commands {
         /// [glDrawElementsIndirect](http://docs.gl/gl4/glDrawElementsIndirect)(mode, type_, indirect)
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsIndirect(
             &self,
             mode: GLenum,
             type_: GLenum,
             indirect: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawElementsIndirect({:#X}, {:#X}, {:p});",
-                    mode,
-                    type_,
-                    indirect
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glDrawElementsIndirect",
                 &self.glDrawElementsIndirect_p,
@@ -12420,10 +10797,7 @@ pub mod struct_commands {
                 type_,
                 indirect,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsIndirect");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12446,8 +10820,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsInstanced(
             &self,
             mode: GLenum,
@@ -12456,17 +10829,7 @@ pub mod struct_commands {
             indices: *const c_void,
             instancecount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawElementsInstanced({:#X}, {:?}, {:#X}, {:p}, {:?});",
-                    mode,
-                    count,
-                    type_,
-                    indices,
-                    instancecount
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glDrawElementsInstanced",
                 &self.glDrawElementsInstanced_p,
@@ -12476,10 +10839,7 @@ pub mod struct_commands {
                 indices,
                 instancecount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsInstanced");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12503,8 +10863,7 @@ pub mod struct_commands {
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
         /// * alias of: [`glDrawElementsInstanced`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsInstancedARB(
             &self,
             mode: GLenum,
@@ -12513,17 +10872,7 @@ pub mod struct_commands {
             indices: *const c_void,
             primcount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawElementsInstancedARB({:#X}, {:?}, {:#X}, {:p}, {:?});",
-                    mode,
-                    count,
-                    type_,
-                    indices,
-                    primcount
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glDrawElementsInstancedARB",
                 &self.glDrawElementsInstancedARB_p,
@@ -12533,10 +10882,7 @@ pub mod struct_commands {
                 indices,
                 primcount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsInstancedARB");
-            }
+
             out
         }
 
@@ -12561,8 +10907,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: PrimitiveType
         /// * `indices` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsInstancedBaseInstance(
             &self,
             mode: GLenum,
@@ -12572,10 +10917,7 @@ pub mod struct_commands {
             instancecount: GLsizei,
             baseinstance: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawElementsInstancedBaseInstance({:#X}, {:?}, {:#X}, {:p}, {:?}, {:?});", mode, count, type_, indices, instancecount, baseinstance);
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDrawElementsInstancedBaseInstance",
                 &self.glDrawElementsInstancedBaseInstance_p,
@@ -12586,10 +10928,7 @@ pub mod struct_commands {
                 instancecount,
                 baseinstance,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsInstancedBaseInstance");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12615,8 +10954,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsInstancedBaseVertex(
             &self,
             mode: GLenum,
@@ -12626,10 +10964,7 @@ pub mod struct_commands {
             instancecount: GLsizei,
             basevertex: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawElementsInstancedBaseVertex({:#X}, {:?}, {:#X}, {:p}, {:?}, {:?});", mode, count, type_, indices, instancecount, basevertex);
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDrawElementsInstancedBaseVertex",
                 &self.glDrawElementsInstancedBaseVertex_p,
@@ -12640,10 +10975,7 @@ pub mod struct_commands {
                 instancecount,
                 basevertex,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsInstancedBaseVertex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12669,8 +11001,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawElementsInstancedBaseVertexBaseInstance(
             &self,
             mode: GLenum,
@@ -12681,10 +11012,7 @@ pub mod struct_commands {
             basevertex: GLint,
             baseinstance: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawElementsInstancedBaseVertexBaseInstance({:#X}, {:?}, {:#X}, {:p}, {:?}, {:?}, {:?});", mode, count, type_, indices, instancecount, basevertex, baseinstance);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glDrawElementsInstancedBaseVertexBaseInstance",
                 &self.glDrawElementsInstancedBaseVertexBaseInstance_p,
@@ -12696,10 +11024,7 @@ pub mod struct_commands {
                 basevertex,
                 baseinstance,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawElementsInstancedBaseVertexBaseInstance");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12725,8 +11050,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawRangeElements(
             &self,
             mode: GLenum,
@@ -12736,18 +11060,7 @@ pub mod struct_commands {
             type_: GLenum,
             indices: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawRangeElements({:#X}, {:?}, {:?}, {:?}, {:#X}, {:p});",
-                    mode,
-                    start,
-                    end,
-                    count,
-                    type_,
-                    indices
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glDrawRangeElements",
                 &self.glDrawRangeElements_p,
@@ -12758,10 +11071,7 @@ pub mod struct_commands {
                 type_,
                 indices,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawRangeElements");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12784,8 +11094,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(count,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawRangeElementsBaseVertex(
             &self,
             mode: GLenum,
@@ -12796,10 +11105,7 @@ pub mod struct_commands {
             indices: *const c_void,
             basevertex: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawRangeElementsBaseVertex({:#X}, {:?}, {:?}, {:?}, {:#X}, {:p}, {:?});", mode, start, end, count, type_, indices, basevertex);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glDrawRangeElementsBaseVertex",
                 &self.glDrawRangeElementsBaseVertex_p,
@@ -12811,10 +11117,7 @@ pub mod struct_commands {
                 indices,
                 basevertex,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawRangeElementsBaseVertex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12835,23 +11138,16 @@ pub mod struct_commands {
         }
         /// [glDrawTransformFeedback](http://docs.gl/gl4/glDrawTransformFeedback)(mode, id)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawTransformFeedback(&self, mode: GLenum, id: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.DrawTransformFeedback({:#X}, {:?});", mode, id);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glDrawTransformFeedback",
                 &self.glDrawTransformFeedback_p,
                 mode,
                 id,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12872,23 +11168,14 @@ pub mod struct_commands {
         }
         /// [glDrawTransformFeedbackInstanced](http://docs.gl/gl4/glDrawTransformFeedbackInstanced)(mode, id, instancecount)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawTransformFeedbackInstanced(
             &self,
             mode: GLenum,
             id: GLuint,
             instancecount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawTransformFeedbackInstanced({:#X}, {:?}, {:?});",
-                    mode,
-                    id,
-                    instancecount
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glDrawTransformFeedbackInstanced",
                 &self.glDrawTransformFeedbackInstanced_p,
@@ -12896,10 +11183,7 @@ pub mod struct_commands {
                 id,
                 instancecount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawTransformFeedbackInstanced");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12923,18 +11207,9 @@ pub mod struct_commands {
         }
         /// [glDrawTransformFeedbackStream](http://docs.gl/gl4/glDrawTransformFeedbackStream)(mode, id, stream)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawTransformFeedbackStream(&self, mode: GLenum, id: GLuint, stream: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawTransformFeedbackStream({:#X}, {:?}, {:?});",
-                    mode,
-                    id,
-                    stream
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glDrawTransformFeedbackStream",
                 &self.glDrawTransformFeedbackStream_p,
@@ -12942,10 +11217,7 @@ pub mod struct_commands {
                 id,
                 stream,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawTransformFeedbackStream");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -12966,8 +11238,7 @@ pub mod struct_commands {
         }
         /// [glDrawTransformFeedbackStreamInstanced](http://docs.gl/gl4/glDrawTransformFeedbackStreamInstanced)(mode, id, stream, instancecount)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn DrawTransformFeedbackStreamInstanced(
             &self,
             mode: GLenum,
@@ -12975,16 +11246,7 @@ pub mod struct_commands {
             stream: GLuint,
             instancecount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.DrawTransformFeedbackStreamInstanced({:#X}, {:?}, {:?}, {:?});",
-                    mode,
-                    id,
-                    stream,
-                    instancecount
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glDrawTransformFeedbackStreamInstanced",
                 &self.glDrawTransformFeedbackStreamInstanced_p,
@@ -12993,10 +11255,7 @@ pub mod struct_commands {
                 stream,
                 instancecount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glDrawTransformFeedbackStreamInstanced");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13020,18 +11279,11 @@ pub mod struct_commands {
         }
         /// [glEnable](http://docs.gl/gl4/glEnable)(cap)
         /// * `cap` group: EnableCap
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Enable(&self, cap: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Enable({:#X});", cap);
-            }
+
             let out = call_atomic_ptr_1arg("glEnable", &self.glEnable_p, cap);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEnable");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13049,23 +11301,16 @@ pub mod struct_commands {
         /// [glEnableIndexedEXT](http://docs.gl/gl4/glEnableIndexedEXT)(target, index)
         /// * `target` group: EnableCap
         /// * alias of: [`glEnablei`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EnableIndexedEXT(&self, target: GLenum, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.EnableIndexedEXT({:#X}, {:?});", target, index);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glEnableIndexedEXT",
                 &self.glEnableIndexedEXT_p,
                 target,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEnableIndexedEXT");
-            }
+
             out
         }
 
@@ -13087,27 +11332,16 @@ pub mod struct_commands {
             !self.glEnableIndexedEXT_p.load(RELAX).is_null()
         }
         /// [glEnableVertexArrayAttrib](http://docs.gl/gl4/glEnableVertexArrayAttrib)(vaobj, index)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EnableVertexArrayAttrib(&self, vaobj: GLuint, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.EnableVertexArrayAttrib({:?}, {:?});",
-                    vaobj,
-                    index
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glEnableVertexArrayAttrib",
                 &self.glEnableVertexArrayAttrib_p,
                 vaobj,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEnableVertexArrayAttrib");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13127,22 +11361,15 @@ pub mod struct_commands {
             !self.glEnableVertexArrayAttrib_p.load(RELAX).is_null()
         }
         /// [glEnableVertexAttribArray](http://docs.gl/gl4/glEnableVertexAttribArray)(index)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EnableVertexAttribArray(&self, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.EnableVertexAttribArray({:?});", index);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glEnableVertexAttribArray",
                 &self.glEnableVertexAttribArray_p,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEnableVertexAttribArray");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13163,18 +11390,11 @@ pub mod struct_commands {
         }
         /// [glEnablei](http://docs.gl/gl4/glEnable)(target, index)
         /// * `target` group: EnableCap
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Enablei(&self, target: GLenum, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Enablei({:#X}, {:?});", target, index);
-            }
+
             let out = call_atomic_ptr_2arg("glEnablei", &self.glEnablei_p, target, index);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEnablei");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13190,19 +11410,12 @@ pub mod struct_commands {
             !self.glEnablei_p.load(RELAX).is_null()
         }
         /// [glEndConditionalRender](http://docs.gl/gl4/glEndConditionalRender)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EndConditionalRender(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.EndConditionalRender();",);
-            }
+
             let out =
                 call_atomic_ptr_0arg("glEndConditionalRender", &self.glEndConditionalRender_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEndConditionalRender");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13223,18 +11436,11 @@ pub mod struct_commands {
         }
         /// [glEndQuery](http://docs.gl/gl4/glEndQuery)(target)
         /// * `target` group: QueryTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EndQuery(&self, target: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.EndQuery({:#X});", target);
-            }
+
             let out = call_atomic_ptr_1arg("glEndQuery", &self.glEndQuery_p, target);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEndQuery");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13251,23 +11457,16 @@ pub mod struct_commands {
         }
         /// [glEndQueryIndexed](http://docs.gl/gl4/glEndQueryIndexed)(target, index)
         /// * `target` group: QueryTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EndQueryIndexed(&self, target: GLenum, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.EndQueryIndexed({:#X}, {:?});", target, index);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glEndQueryIndexed",
                 &self.glEndQueryIndexed_p,
                 target,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEndQueryIndexed");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13287,19 +11486,12 @@ pub mod struct_commands {
             !self.glEndQueryIndexed_p.load(RELAX).is_null()
         }
         /// [glEndTransformFeedback](http://docs.gl/gl4/glEndTransformFeedback)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn EndTransformFeedback(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.EndTransformFeedback();",);
-            }
+
             let out =
                 call_atomic_ptr_0arg("glEndTransformFeedback", &self.glEndTransformFeedback_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glEndTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13322,18 +11514,11 @@ pub mod struct_commands {
         /// * `condition` group: SyncCondition
         /// * `flags` group: SyncBehaviorFlags
         /// * return value group: sync
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FenceSync(&self, condition: GLenum, flags: GLbitfield) -> GLsync {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.FenceSync({:#X}, {:?});", condition, flags);
-            }
+
             let out = call_atomic_ptr_2arg("glFenceSync", &self.glFenceSync_p, condition, flags);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFenceSync");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13349,18 +11534,11 @@ pub mod struct_commands {
             !self.glFenceSync_p.load(RELAX).is_null()
         }
         /// [glFinish](http://docs.gl/gl4/glFinish)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Finish(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Finish();",);
-            }
+
             let out = call_atomic_ptr_0arg("glFinish", &self.glFinish_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFinish");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13376,18 +11554,11 @@ pub mod struct_commands {
             !self.glFinish_p.load(RELAX).is_null()
         }
         /// [glFlush](http://docs.gl/gl4/glFlush)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Flush(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Flush();",);
-            }
+
             let out = call_atomic_ptr_0arg("glFlush", &self.glFlush_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFlush");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13406,23 +11577,14 @@ pub mod struct_commands {
         /// * `target` group: BufferTargetARB
         /// * `offset` group: BufferOffset
         /// * `length` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FlushMappedBufferRange(
             &self,
             target: GLenum,
             offset: GLintptr,
             length: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FlushMappedBufferRange({:#X}, {:?}, {:?});",
-                    target,
-                    offset,
-                    length
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glFlushMappedBufferRange",
                 &self.glFlushMappedBufferRange_p,
@@ -13430,10 +11592,7 @@ pub mod struct_commands {
                 offset,
                 length,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFlushMappedBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13454,23 +11613,14 @@ pub mod struct_commands {
         }
         /// [glFlushMappedNamedBufferRange](http://docs.gl/gl4/glFlushMappedNamedBufferRange)(buffer, offset, length)
         /// * `length` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FlushMappedNamedBufferRange(
             &self,
             buffer: GLuint,
             offset: GLintptr,
             length: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FlushMappedNamedBufferRange({:?}, {:?}, {:?});",
-                    buffer,
-                    offset,
-                    length
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glFlushMappedNamedBufferRange",
                 &self.glFlushMappedNamedBufferRange_p,
@@ -13478,10 +11628,7 @@ pub mod struct_commands {
                 offset,
                 length,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFlushMappedNamedBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13503,18 +11650,9 @@ pub mod struct_commands {
         /// [glFramebufferParameteri](http://docs.gl/gl4/glFramebufferParameter)(target, pname, param)
         /// * `target` group: FramebufferTarget
         /// * `pname` group: FramebufferParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferParameteri(&self, target: GLenum, pname: GLenum, param: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferParameteri({:#X}, {:#X}, {:?});",
-                    target,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glFramebufferParameteri",
                 &self.glFramebufferParameteri_p,
@@ -13522,10 +11660,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13548,8 +11683,7 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `attachment` group: FramebufferAttachment
         /// * `renderbuffertarget` group: RenderbufferTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferRenderbuffer(
             &self,
             target: GLenum,
@@ -13557,16 +11691,7 @@ pub mod struct_commands {
             renderbuffertarget: GLenum,
             renderbuffer: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferRenderbuffer({:#X}, {:#X}, {:#X}, {:?});",
-                    target,
-                    attachment,
-                    renderbuffertarget,
-                    renderbuffer
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glFramebufferRenderbuffer",
                 &self.glFramebufferRenderbuffer_p,
@@ -13575,10 +11700,7 @@ pub mod struct_commands {
                 renderbuffertarget,
                 renderbuffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferRenderbuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13600,8 +11722,7 @@ pub mod struct_commands {
         /// [glFramebufferTexture](http://docs.gl/gl4/glFramebufferTexture)(target, attachment, texture, level)
         /// * `target` group: FramebufferTarget
         /// * `attachment` group: FramebufferAttachment
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferTexture(
             &self,
             target: GLenum,
@@ -13609,16 +11730,7 @@ pub mod struct_commands {
             texture: GLuint,
             level: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferTexture({:#X}, {:#X}, {:?}, {:?});",
-                    target,
-                    attachment,
-                    texture,
-                    level
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glFramebufferTexture",
                 &self.glFramebufferTexture_p,
@@ -13627,10 +11739,7 @@ pub mod struct_commands {
                 texture,
                 level,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferTexture");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13653,8 +11762,7 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `attachment` group: FramebufferAttachment
         /// * `textarget` group: TextureTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferTexture1D(
             &self,
             target: GLenum,
@@ -13663,17 +11771,7 @@ pub mod struct_commands {
             texture: GLuint,
             level: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferTexture1D({:#X}, {:#X}, {:#X}, {:?}, {:?});",
-                    target,
-                    attachment,
-                    textarget,
-                    texture,
-                    level
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glFramebufferTexture1D",
                 &self.glFramebufferTexture1D_p,
@@ -13683,10 +11781,7 @@ pub mod struct_commands {
                 texture,
                 level,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferTexture1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13709,8 +11804,7 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `attachment` group: FramebufferAttachment
         /// * `textarget` group: TextureTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferTexture2D(
             &self,
             target: GLenum,
@@ -13719,17 +11813,7 @@ pub mod struct_commands {
             texture: GLuint,
             level: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferTexture2D({:#X}, {:#X}, {:#X}, {:?}, {:?});",
-                    target,
-                    attachment,
-                    textarget,
-                    texture,
-                    level
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glFramebufferTexture2D",
                 &self.glFramebufferTexture2D_p,
@@ -13739,10 +11823,7 @@ pub mod struct_commands {
                 texture,
                 level,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferTexture2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13765,8 +11846,7 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `attachment` group: FramebufferAttachment
         /// * `textarget` group: TextureTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferTexture3D(
             &self,
             target: GLenum,
@@ -13776,18 +11856,7 @@ pub mod struct_commands {
             level: GLint,
             zoffset: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferTexture3D({:#X}, {:#X}, {:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    attachment,
-                    textarget,
-                    texture,
-                    level,
-                    zoffset
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glFramebufferTexture3D",
                 &self.glFramebufferTexture3D_p,
@@ -13798,10 +11867,7 @@ pub mod struct_commands {
                 level,
                 zoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferTexture3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13826,8 +11892,7 @@ pub mod struct_commands {
         /// * `texture` group: Texture
         /// * `level` group: CheckedInt32
         /// * `layer` group: CheckedInt32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FramebufferTextureLayer(
             &self,
             target: GLenum,
@@ -13836,17 +11901,7 @@ pub mod struct_commands {
             level: GLint,
             layer: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.FramebufferTextureLayer({:#X}, {:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    attachment,
-                    texture,
-                    level,
-                    layer
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glFramebufferTextureLayer",
                 &self.glFramebufferTextureLayer_p,
@@ -13856,10 +11911,7 @@ pub mod struct_commands {
                 level,
                 layer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFramebufferTextureLayer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13880,18 +11932,11 @@ pub mod struct_commands {
         }
         /// [glFrontFace](http://docs.gl/gl4/glFrontFace)(mode)
         /// * `mode` group: FrontFaceDirection
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn FrontFace(&self, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.FrontFace({:#X});", mode);
-            }
+
             let out = call_atomic_ptr_1arg("glFrontFace", &self.glFrontFace_p, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glFrontFace");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13908,18 +11953,11 @@ pub mod struct_commands {
         }
         /// [glGenBuffers](http://docs.gl/gl4/glGenBuffers)(n, buffers)
         /// * `buffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenBuffers(&self, n: GLsizei, buffers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenBuffers({:?}, {:p});", n, buffers);
-            }
+
             let out = call_atomic_ptr_2arg("glGenBuffers", &self.glGenBuffers_p, n, buffers);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13936,23 +11974,16 @@ pub mod struct_commands {
         }
         /// [glGenFramebuffers](http://docs.gl/gl4/glGenFramebuffers)(n, framebuffers)
         /// * `framebuffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenFramebuffers(&self, n: GLsizei, framebuffers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenFramebuffers({:?}, {:p});", n, framebuffers);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGenFramebuffers",
                 &self.glGenFramebuffers_p,
                 n,
                 framebuffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenFramebuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -13973,23 +12004,16 @@ pub mod struct_commands {
         }
         /// [glGenProgramPipelines](http://docs.gl/gl4/glGenProgramPipelines)(n, pipelines)
         /// * `pipelines` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenProgramPipelines(&self, n: GLsizei, pipelines: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenProgramPipelines({:?}, {:p});", n, pipelines);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGenProgramPipelines",
                 &self.glGenProgramPipelines_p,
                 n,
                 pipelines,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenProgramPipelines");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14010,18 +12034,11 @@ pub mod struct_commands {
         }
         /// [glGenQueries](http://docs.gl/gl4/glGenQueries)(n, ids)
         /// * `ids` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenQueries(&self, n: GLsizei, ids: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenQueries({:?}, {:p});", n, ids);
-            }
+
             let out = call_atomic_ptr_2arg("glGenQueries", &self.glGenQueries_p, n, ids);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenQueries");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14038,23 +12055,16 @@ pub mod struct_commands {
         }
         /// [glGenRenderbuffers](http://docs.gl/gl4/glGenRenderbuffers)(n, renderbuffers)
         /// * `renderbuffers` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenRenderbuffers(&self, n: GLsizei, renderbuffers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenRenderbuffers({:?}, {:p});", n, renderbuffers);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGenRenderbuffers",
                 &self.glGenRenderbuffers_p,
                 n,
                 renderbuffers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenRenderbuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14075,18 +12085,11 @@ pub mod struct_commands {
         }
         /// [glGenSamplers](http://docs.gl/gl4/glGenSamplers)(count, samplers)
         /// * `samplers` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenSamplers(&self, count: GLsizei, samplers: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenSamplers({:?}, {:p});", count, samplers);
-            }
+
             let out = call_atomic_ptr_2arg("glGenSamplers", &self.glGenSamplers_p, count, samplers);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenSamplers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14104,18 +12107,11 @@ pub mod struct_commands {
         /// [glGenTextures](http://docs.gl/gl4/glGenTextures)(n, textures)
         /// * `textures` group: Texture
         /// * `textures` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenTextures(&self, n: GLsizei, textures: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenTextures({:?}, {:p});", n, textures);
-            }
+
             let out = call_atomic_ptr_2arg("glGenTextures", &self.glGenTextures_p, n, textures);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenTextures");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14132,23 +12128,16 @@ pub mod struct_commands {
         }
         /// [glGenTransformFeedbacks](http://docs.gl/gl4/glGenTransformFeedbacks)(n, ids)
         /// * `ids` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenTransformFeedbacks(&self, n: GLsizei, ids: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenTransformFeedbacks({:?}, {:p});", n, ids);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGenTransformFeedbacks",
                 &self.glGenTransformFeedbacks_p,
                 n,
                 ids,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenTransformFeedbacks");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14169,19 +12158,12 @@ pub mod struct_commands {
         }
         /// [glGenVertexArrays](http://docs.gl/gl4/glGenVertexArrays)(n, arrays)
         /// * `arrays` len: n
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenVertexArrays(&self, n: GLsizei, arrays: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenVertexArrays({:?}, {:p});", n, arrays);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glGenVertexArrays", &self.glGenVertexArrays_p, n, arrays);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenVertexArrays");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14202,18 +12184,11 @@ pub mod struct_commands {
         }
         /// [glGenerateMipmap](http://docs.gl/gl4/glGenerateMipmap)(target)
         /// * `target` group: TextureTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenerateMipmap(&self, target: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenerateMipmap({:#X});", target);
-            }
+
             let out = call_atomic_ptr_1arg("glGenerateMipmap", &self.glGenerateMipmap_p, target);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenerateMipmap");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14233,22 +12208,15 @@ pub mod struct_commands {
             !self.glGenerateMipmap_p.load(RELAX).is_null()
         }
         /// [glGenerateTextureMipmap](http://docs.gl/gl4/glGenerateTextureMipmap)(texture)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GenerateTextureMipmap(&self, texture: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GenerateTextureMipmap({:?});", texture);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glGenerateTextureMipmap",
                 &self.glGenerateTextureMipmap_p,
                 texture,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGenerateTextureMipmap");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14270,8 +12238,7 @@ pub mod struct_commands {
         /// [glGetActiveAtomicCounterBufferiv](http://docs.gl/gl4/glGetActiveAtomicCounterBuffer)(program, bufferIndex, pname, params)
         /// * `pname` group: AtomicCounterBufferPName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveAtomicCounterBufferiv(
             &self,
             program: GLuint,
@@ -14279,16 +12246,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveAtomicCounterBufferiv({:?}, {:?}, {:#X}, {:p});",
-                    program,
-                    bufferIndex,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetActiveAtomicCounterBufferiv",
                 &self.glGetActiveAtomicCounterBufferiv_p,
@@ -14297,10 +12255,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveAtomicCounterBufferiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14328,8 +12283,7 @@ pub mod struct_commands {
         /// * `type_` group: AttributeType
         /// * `type_` len: 1
         /// * `name` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveAttrib(
             &self,
             program: GLuint,
@@ -14340,19 +12294,7 @@ pub mod struct_commands {
             type_: *mut GLenum,
             name: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveAttrib({:?}, {:?}, {:?}, {:p}, {:p}, {:p}, {:p});",
-                    program,
-                    index,
-                    bufSize,
-                    length,
-                    size,
-                    type_,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glGetActiveAttrib",
                 &self.glGetActiveAttrib_p,
@@ -14364,10 +12306,7 @@ pub mod struct_commands {
                 type_,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveAttrib");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14390,8 +12329,7 @@ pub mod struct_commands {
         /// * `shadertype` group: ShaderType
         /// * `length` len: 1
         /// * `name` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveSubroutineName(
             &self,
             program: GLuint,
@@ -14401,18 +12339,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             name: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveSubroutineName({:?}, {:#X}, {:?}, {:?}, {:p}, {:p});",
-                    program,
-                    shadertype,
-                    index,
-                    bufSize,
-                    length,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glGetActiveSubroutineName",
                 &self.glGetActiveSubroutineName_p,
@@ -14423,10 +12350,7 @@ pub mod struct_commands {
                 length,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveSubroutineName");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14449,8 +12373,7 @@ pub mod struct_commands {
         /// * `shadertype` group: ShaderType
         /// * `length` len: 1
         /// * `name` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveSubroutineUniformName(
             &self,
             program: GLuint,
@@ -14460,10 +12383,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             name: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetActiveSubroutineUniformName({:?}, {:#X}, {:?}, {:?}, {:p}, {:p});", program, shadertype, index, bufSize, length, name);
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glGetActiveSubroutineUniformName",
                 &self.glGetActiveSubroutineUniformName_p,
@@ -14474,10 +12394,7 @@ pub mod struct_commands {
                 length,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveSubroutineUniformName");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14503,8 +12420,7 @@ pub mod struct_commands {
         /// * `shadertype` group: ShaderType
         /// * `pname` group: SubroutineParameterName
         /// * `values` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveSubroutineUniformiv(
             &self,
             program: GLuint,
@@ -14513,17 +12429,7 @@ pub mod struct_commands {
             pname: GLenum,
             values: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveSubroutineUniformiv({:?}, {:#X}, {:?}, {:#X}, {:p});",
-                    program,
-                    shadertype,
-                    index,
-                    pname,
-                    values
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetActiveSubroutineUniformiv",
                 &self.glGetActiveSubroutineUniformiv_p,
@@ -14533,10 +12439,7 @@ pub mod struct_commands {
                 pname,
                 values,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveSubroutineUniformiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14561,8 +12464,7 @@ pub mod struct_commands {
         /// * `type_` group: UniformType
         /// * `type_` len: 1
         /// * `name` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveUniform(
             &self,
             program: GLuint,
@@ -14573,19 +12475,7 @@ pub mod struct_commands {
             type_: *mut GLenum,
             name: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveUniform({:?}, {:?}, {:?}, {:p}, {:p}, {:p}, {:p});",
-                    program,
-                    index,
-                    bufSize,
-                    length,
-                    size,
-                    type_,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glGetActiveUniform",
                 &self.glGetActiveUniform_p,
@@ -14597,10 +12487,7 @@ pub mod struct_commands {
                 type_,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveUniform");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14622,8 +12509,7 @@ pub mod struct_commands {
         /// [glGetActiveUniformBlockName](http://docs.gl/gl4/glGetActiveUniformBlockName)(program, uniformBlockIndex, bufSize, length, uniformBlockName)
         /// * `length` len: 1
         /// * `uniformBlockName` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveUniformBlockName(
             &self,
             program: GLuint,
@@ -14632,17 +12518,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             uniformBlockName: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveUniformBlockName({:?}, {:?}, {:?}, {:p}, {:p});",
-                    program,
-                    uniformBlockIndex,
-                    bufSize,
-                    length,
-                    uniformBlockName
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetActiveUniformBlockName",
                 &self.glGetActiveUniformBlockName_p,
@@ -14652,10 +12528,7 @@ pub mod struct_commands {
                 length,
                 uniformBlockName,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveUniformBlockName");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14677,8 +12550,7 @@ pub mod struct_commands {
         /// [glGetActiveUniformBlockiv](http://docs.gl/gl4/glGetActiveUniformBlockiv)(program, uniformBlockIndex, pname, params)
         /// * `pname` group: UniformBlockPName
         /// * `params` len: COMPSIZE(program,uniformBlockIndex,pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveUniformBlockiv(
             &self,
             program: GLuint,
@@ -14686,16 +12558,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveUniformBlockiv({:?}, {:?}, {:#X}, {:p});",
-                    program,
-                    uniformBlockIndex,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetActiveUniformBlockiv",
                 &self.glGetActiveUniformBlockiv_p,
@@ -14704,10 +12567,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveUniformBlockiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14729,8 +12589,7 @@ pub mod struct_commands {
         /// [glGetActiveUniformName](http://docs.gl/gl4/glGetActiveUniformName)(program, uniformIndex, bufSize, length, uniformName)
         /// * `length` len: 1
         /// * `uniformName` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveUniformName(
             &self,
             program: GLuint,
@@ -14739,17 +12598,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             uniformName: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveUniformName({:?}, {:?}, {:?}, {:p}, {:p});",
-                    program,
-                    uniformIndex,
-                    bufSize,
-                    length,
-                    uniformName
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetActiveUniformName",
                 &self.glGetActiveUniformName_p,
@@ -14759,10 +12608,7 @@ pub mod struct_commands {
                 length,
                 uniformName,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveUniformName");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14785,8 +12631,7 @@ pub mod struct_commands {
         /// * `uniformIndices` len: uniformCount
         /// * `pname` group: UniformPName
         /// * `params` len: COMPSIZE(uniformCount,pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetActiveUniformsiv(
             &self,
             program: GLuint,
@@ -14795,17 +12640,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetActiveUniformsiv({:?}, {:?}, {:p}, {:#X}, {:p});",
-                    program,
-                    uniformCount,
-                    uniformIndices,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetActiveUniformsiv",
                 &self.glGetActiveUniformsiv_p,
@@ -14815,10 +12650,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetActiveUniformsiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14840,8 +12672,7 @@ pub mod struct_commands {
         /// [glGetAttachedShaders](http://docs.gl/gl4/glGetAttachedShaders)(program, maxCount, count, shaders)
         /// * `count` len: 1
         /// * `shaders` len: maxCount
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetAttachedShaders(
             &self,
             program: GLuint,
@@ -14849,16 +12680,7 @@ pub mod struct_commands {
             count: *mut GLsizei,
             shaders: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetAttachedShaders({:?}, {:?}, {:p}, {:p});",
-                    program,
-                    maxCount,
-                    count,
-                    shaders
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetAttachedShaders",
                 &self.glGetAttachedShaders_p,
@@ -14867,10 +12689,7 @@ pub mod struct_commands {
                 count,
                 shaders,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetAttachedShaders");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14890,23 +12709,16 @@ pub mod struct_commands {
             !self.glGetAttachedShaders_p.load(RELAX).is_null()
         }
         /// [glGetAttribLocation](http://docs.gl/gl4/glGetAttribLocation)(program, name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetAttribLocation(&self, program: GLuint, name: *const GLchar) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetAttribLocation({:?}, {:p});", program, name);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGetAttribLocation",
                 &self.glGetAttribLocation_p,
                 program,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetAttribLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -14929,23 +12741,14 @@ pub mod struct_commands {
         /// * `target` group: BufferTargetARB
         /// * `data` len: COMPSIZE(target)
         /// * alias of: [`glGetBooleani_v`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBooleanIndexedvEXT(
             &self,
             target: GLenum,
             index: GLuint,
             data: *mut GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetBooleanIndexedvEXT({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetBooleanIndexedvEXT",
                 &self.glGetBooleanIndexedvEXT_p,
@@ -14953,10 +12756,7 @@ pub mod struct_commands {
                 index,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBooleanIndexedvEXT");
-            }
+
             out
         }
 
@@ -14980,18 +12780,9 @@ pub mod struct_commands {
         /// [glGetBooleani_v](http://docs.gl/gl4/glGet)(target, index, data)
         /// * `target` group: BufferTargetARB
         /// * `data` len: COMPSIZE(target)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBooleani_v(&self, target: GLenum, index: GLuint, data: *mut GLboolean) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetBooleani_v({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetBooleani_v",
                 &self.glGetBooleani_v_p,
@@ -14999,10 +12790,7 @@ pub mod struct_commands {
                 index,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBooleani_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15024,18 +12812,11 @@ pub mod struct_commands {
         /// [glGetBooleanv](http://docs.gl/gl4/glGet)(pname, data)
         /// * `pname` group: GetPName
         /// * `data` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBooleanv(&self, pname: GLenum, data: *mut GLboolean) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetBooleanv({:#X}, {:p});", pname, data);
-            }
+
             let out = call_atomic_ptr_2arg("glGetBooleanv", &self.glGetBooleanv_p, pname, data);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBooleanv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15054,23 +12835,14 @@ pub mod struct_commands {
         /// * `target` group: BufferTargetARB
         /// * `pname` group: BufferPNameARB
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBufferParameteri64v(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut GLint64,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetBufferParameteri64v({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetBufferParameteri64v",
                 &self.glGetBufferParameteri64v_p,
@@ -15078,10 +12850,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBufferParameteri64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15104,23 +12873,14 @@ pub mod struct_commands {
         /// * `target` group: BufferTargetARB
         /// * `pname` group: BufferPNameARB
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBufferParameteriv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetBufferParameteriv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetBufferParameteriv",
                 &self.glGetBufferParameteriv_p,
@@ -15128,10 +12888,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBufferParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15154,23 +12911,14 @@ pub mod struct_commands {
         /// * `target` group: BufferTargetARB
         /// * `pname` group: BufferPointerNameARB
         /// * `params` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBufferPointerv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetBufferPointerv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetBufferPointerv",
                 &self.glGetBufferPointerv_p,
@@ -15178,10 +12926,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBufferPointerv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15205,8 +12950,7 @@ pub mod struct_commands {
         /// * `offset` group: BufferOffset
         /// * `size` group: BufferSize
         /// * `data` len: size
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetBufferSubData(
             &self,
             target: GLenum,
@@ -15214,16 +12958,7 @@ pub mod struct_commands {
             size: GLsizeiptr,
             data: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetBufferSubData({:#X}, {:?}, {:?}, {:p});",
-                    target,
-                    offset,
-                    size,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetBufferSubData",
                 &self.glGetBufferSubData_p,
@@ -15232,10 +12967,7 @@ pub mod struct_commands {
                 size,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15259,18 +12991,9 @@ pub mod struct_commands {
         /// * `level` group: CheckedInt32
         /// * `img` group: CompressedTextureARB
         /// * `img` len: COMPSIZE(target,level)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetCompressedTexImage(&self, target: GLenum, level: GLint, img: *mut c_void) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetCompressedTexImage({:#X}, {:?}, {:p});",
-                    target,
-                    level,
-                    img
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetCompressedTexImage",
                 &self.glGetCompressedTexImage_p,
@@ -15278,10 +13001,7 @@ pub mod struct_commands {
                 level,
                 img,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetCompressedTexImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15301,8 +13021,7 @@ pub mod struct_commands {
             !self.glGetCompressedTexImage_p.load(RELAX).is_null()
         }
         /// [glGetCompressedTextureImage](http://docs.gl/gl4/glGetCompressedTextureImage)(texture, level, bufSize, pixels)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetCompressedTextureImage(
             &self,
             texture: GLuint,
@@ -15310,16 +13029,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetCompressedTextureImage({:?}, {:?}, {:?}, {:p});",
-                    texture,
-                    level,
-                    bufSize,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetCompressedTextureImage",
                 &self.glGetCompressedTextureImage_p,
@@ -15328,10 +13038,7 @@ pub mod struct_commands {
                 bufSize,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetCompressedTextureImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15351,8 +13058,7 @@ pub mod struct_commands {
             !self.glGetCompressedTextureImage_p.load(RELAX).is_null()
         }
         /// [glGetCompressedTextureSubImage](http://docs.gl/gl4/glGetCompressedTextureSubImage)(texture, level, xoffset, yoffset, zoffset, width, height, depth, bufSize, pixels)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetCompressedTextureSubImage(
             &self,
             texture: GLuint,
@@ -15366,10 +13072,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetCompressedTextureSubImage({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:p});", texture, level, xoffset, yoffset, zoffset, width, height, depth, bufSize, pixels);
-            }
+
             let out = call_atomic_ptr_10arg(
                 "glGetCompressedTextureSubImage",
                 &self.glGetCompressedTextureSubImage_p,
@@ -15384,10 +13087,7 @@ pub mod struct_commands {
                 bufSize,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetCompressedTextureSubImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15416,8 +13116,7 @@ pub mod struct_commands {
         /// * `severities` len: count
         /// * `lengths` len: count
         /// * `messageLog` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetDebugMessageLog(
             &self,
             count: GLuint,
@@ -15429,10 +13128,7 @@ pub mod struct_commands {
             lengths: *mut GLsizei,
             messageLog: *mut GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetDebugMessageLog({:?}, {:?}, {:p}, {:p}, {:p}, {:p}, {:p}, {:p});", count, bufSize, sources, types, ids, severities, lengths, messageLog);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glGetDebugMessageLog",
                 &self.glGetDebugMessageLog_p,
@@ -15445,10 +13141,7 @@ pub mod struct_commands {
                 lengths,
                 messageLog,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetDebugMessageLog");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15478,8 +13171,7 @@ pub mod struct_commands {
         /// * `lengths` len: count
         /// * `messageLog` len: bufSize
         /// * alias of: [`glGetDebugMessageLog`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetDebugMessageLogARB(
             &self,
             count: GLuint,
@@ -15491,10 +13183,7 @@ pub mod struct_commands {
             lengths: *mut GLsizei,
             messageLog: *mut GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetDebugMessageLogARB({:?}, {:?}, {:p}, {:p}, {:p}, {:p}, {:p}, {:p});", count, bufSize, sources, types, ids, severities, lengths, messageLog);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glGetDebugMessageLogARB",
                 &self.glGetDebugMessageLogARB_p,
@@ -15507,10 +13196,7 @@ pub mod struct_commands {
                 lengths,
                 messageLog,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetDebugMessageLogARB");
-            }
+
             out
         }
 
@@ -15542,8 +13228,7 @@ pub mod struct_commands {
         /// * `lengths` len: count
         /// * `messageLog` len: bufSize
         /// * alias of: [`glGetDebugMessageLog`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetDebugMessageLogKHR(
             &self,
             count: GLuint,
@@ -15555,10 +13240,7 @@ pub mod struct_commands {
             lengths: *mut GLsizei,
             messageLog: *mut GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetDebugMessageLogKHR({:?}, {:?}, {:p}, {:p}, {:p}, {:p}, {:p}, {:p});", count, bufSize, sources, types, ids, severities, lengths, messageLog);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glGetDebugMessageLogKHR",
                 &self.glGetDebugMessageLogKHR_p,
@@ -15571,10 +13253,7 @@ pub mod struct_commands {
                 lengths,
                 messageLog,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetDebugMessageLogKHR");
-            }
+
             out
         }
 
@@ -15598,18 +13277,9 @@ pub mod struct_commands {
         /// [glGetDoublei_v](http://docs.gl/gl4/glGetDoublei_v)(target, index, data)
         /// * `target` group: GetPName
         /// * `data` len: COMPSIZE(target)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetDoublei_v(&self, target: GLenum, index: GLuint, data: *mut GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetDoublei_v({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetDoublei_v",
                 &self.glGetDoublei_v_p,
@@ -15617,10 +13287,7 @@ pub mod struct_commands {
                 index,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetDoublei_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15642,18 +13309,11 @@ pub mod struct_commands {
         /// [glGetDoublev](http://docs.gl/gl4/glGetDoublev)(pname, data)
         /// * `pname` group: GetPName
         /// * `data` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetDoublev(&self, pname: GLenum, data: *mut GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetDoublev({:#X}, {:p});", pname, data);
-            }
+
             let out = call_atomic_ptr_2arg("glGetDoublev", &self.glGetDoublev_p, pname, data);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetDoublev");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15670,13 +13330,9 @@ pub mod struct_commands {
         }
         /// [glGetError](http://docs.gl/gl4/glGetError)()
         /// * return value group: ErrorCode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetError(&self) -> GLenum {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetError();",);
-            }
+
             let out = call_atomic_ptr_0arg("glGetError", &self.glGetError_p);
 
             out
@@ -15696,24 +13352,12 @@ pub mod struct_commands {
         /// [glGetFloati_v](http://docs.gl/gl4/glGetFloati_v)(target, index, data)
         /// * `target` group: GetPName
         /// * `data` len: COMPSIZE(target)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetFloati_v(&self, target: GLenum, index: GLuint, data: *mut GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetFloati_v({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glGetFloati_v", &self.glGetFloati_v_p, target, index, data);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetFloati_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15731,18 +13375,11 @@ pub mod struct_commands {
         /// [glGetFloatv](http://docs.gl/gl4/glGet)(pname, data)
         /// * `pname` group: GetPName
         /// * `data` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetFloatv(&self, pname: GLenum, data: *mut GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetFloatv({:#X}, {:p});", pname, data);
-            }
+
             let out = call_atomic_ptr_2arg("glGetFloatv", &self.glGetFloatv_p, pname, data);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetFloatv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15758,23 +13395,16 @@ pub mod struct_commands {
             !self.glGetFloatv_p.load(RELAX).is_null()
         }
         /// [glGetFragDataIndex](http://docs.gl/gl4/glGetFragDataIndex)(program, name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetFragDataIndex(&self, program: GLuint, name: *const GLchar) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetFragDataIndex({:?}, {:p});", program, name);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGetFragDataIndex",
                 &self.glGetFragDataIndex_p,
                 program,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetFragDataIndex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15795,23 +13425,16 @@ pub mod struct_commands {
         }
         /// [glGetFragDataLocation](http://docs.gl/gl4/glGetFragDataLocation)(program, name)
         /// * `name` len: COMPSIZE(name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetFragDataLocation(&self, program: GLuint, name: *const GLchar) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetFragDataLocation({:?}, {:p});", program, name);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGetFragDataLocation",
                 &self.glGetFragDataLocation_p,
                 program,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetFragDataLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15835,8 +13458,7 @@ pub mod struct_commands {
         /// * `attachment` group: FramebufferAttachment
         /// * `pname` group: FramebufferAttachmentParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetFramebufferAttachmentParameteriv(
             &self,
             target: GLenum,
@@ -15844,16 +13466,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetFramebufferAttachmentParameteriv({:#X}, {:#X}, {:#X}, {:p});",
-                    target,
-                    attachment,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetFramebufferAttachmentParameteriv",
                 &self.glGetFramebufferAttachmentParameteriv_p,
@@ -15862,10 +13475,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetFramebufferAttachmentParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15891,23 +13501,14 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `pname` group: FramebufferAttachmentParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetFramebufferParameteriv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetFramebufferParameteriv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetFramebufferParameteriv",
                 &self.glGetFramebufferParameteriv_p,
@@ -15915,10 +13516,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetFramebufferParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15939,19 +13537,12 @@ pub mod struct_commands {
         }
         /// [glGetGraphicsResetStatus](http://docs.gl/gl4/glGetGraphicsResetStatus)()
         /// * return value group: GraphicsResetStatus
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetGraphicsResetStatus(&self) -> GLenum {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetGraphicsResetStatus();",);
-            }
+
             let out =
                 call_atomic_ptr_0arg("glGetGraphicsResetStatus", &self.glGetGraphicsResetStatus_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetGraphicsResetStatus");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -15973,18 +13564,9 @@ pub mod struct_commands {
         /// [glGetInteger64i_v](http://docs.gl/gl4/glGet)(target, index, data)
         /// * `target` group: GetPName
         /// * `data` len: COMPSIZE(target)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetInteger64i_v(&self, target: GLenum, index: GLuint, data: *mut GLint64) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetInteger64i_v({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetInteger64i_v",
                 &self.glGetInteger64i_v_p,
@@ -15992,10 +13574,7 @@ pub mod struct_commands {
                 index,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetInteger64i_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16017,18 +13596,11 @@ pub mod struct_commands {
         /// [glGetInteger64v](http://docs.gl/gl4/glGet)(pname, data)
         /// * `pname` group: GetPName
         /// * `data` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetInteger64v(&self, pname: GLenum, data: *mut GLint64) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetInteger64v({:#X}, {:p});", pname, data);
-            }
+
             let out = call_atomic_ptr_2arg("glGetInteger64v", &self.glGetInteger64v_p, pname, data);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetInteger64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16051,23 +13623,14 @@ pub mod struct_commands {
         /// * `target` group: GetPName
         /// * `data` len: COMPSIZE(target)
         /// * alias of: [`glGetIntegeri_v`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetIntegerIndexedvEXT(
             &self,
             target: GLenum,
             index: GLuint,
             data: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetIntegerIndexedvEXT({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetIntegerIndexedvEXT",
                 &self.glGetIntegerIndexedvEXT_p,
@@ -16075,10 +13638,7 @@ pub mod struct_commands {
                 index,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetIntegerIndexedvEXT");
-            }
+
             out
         }
 
@@ -16102,18 +13662,9 @@ pub mod struct_commands {
         /// [glGetIntegeri_v](http://docs.gl/gl4/glGet)(target, index, data)
         /// * `target` group: GetPName
         /// * `data` len: COMPSIZE(target)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetIntegeri_v(&self, target: GLenum, index: GLuint, data: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetIntegeri_v({:#X}, {:?}, {:p});",
-                    target,
-                    index,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetIntegeri_v",
                 &self.glGetIntegeri_v_p,
@@ -16121,10 +13672,7 @@ pub mod struct_commands {
                 index,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetIntegeri_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16146,18 +13694,11 @@ pub mod struct_commands {
         /// [glGetIntegerv](http://docs.gl/gl4/glGet)(pname, data)
         /// * `pname` group: GetPName
         /// * `data` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetIntegerv(&self, pname: GLenum, data: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetIntegerv({:#X}, {:p});", pname, data);
-            }
+
             let out = call_atomic_ptr_2arg("glGetIntegerv", &self.glGetIntegerv_p, pname, data);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetIntegerv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16177,8 +13718,7 @@ pub mod struct_commands {
         /// * `internalformat` group: InternalFormat
         /// * `pname` group: InternalFormatPName
         /// * `params` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetInternalformati64v(
             &self,
             target: GLenum,
@@ -16187,17 +13727,7 @@ pub mod struct_commands {
             count: GLsizei,
             params: *mut GLint64,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetInternalformati64v({:#X}, {:#X}, {:#X}, {:?}, {:p});",
-                    target,
-                    internalformat,
-                    pname,
-                    count,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetInternalformati64v",
                 &self.glGetInternalformati64v_p,
@@ -16207,10 +13737,7 @@ pub mod struct_commands {
                 count,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetInternalformati64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16234,8 +13761,7 @@ pub mod struct_commands {
         /// * `internalformat` group: InternalFormat
         /// * `pname` group: InternalFormatPName
         /// * `params` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetInternalformativ(
             &self,
             target: GLenum,
@@ -16244,17 +13770,7 @@ pub mod struct_commands {
             count: GLsizei,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetInternalformativ({:#X}, {:#X}, {:#X}, {:?}, {:p});",
-                    target,
-                    internalformat,
-                    pname,
-                    count,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetInternalformativ",
                 &self.glGetInternalformativ_p,
@@ -16264,10 +13780,7 @@ pub mod struct_commands {
                 count,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetInternalformativ");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16289,18 +13802,9 @@ pub mod struct_commands {
         /// [glGetMultisamplefv](http://docs.gl/gl4/glGetMultisample)(pname, index, val)
         /// * `pname` group: GetMultisamplePNameNV
         /// * `val` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetMultisamplefv(&self, pname: GLenum, index: GLuint, val: *mut GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetMultisamplefv({:#X}, {:?}, {:p});",
-                    pname,
-                    index,
-                    val
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetMultisamplefv",
                 &self.glGetMultisamplefv_p,
@@ -16308,10 +13812,7 @@ pub mod struct_commands {
                 index,
                 val,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetMultisamplefv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16332,23 +13833,14 @@ pub mod struct_commands {
         }
         /// [glGetNamedBufferParameteri64v](http://docs.gl/gl4/glGetNamedBufferParameter)(buffer, pname, params)
         /// * `pname` group: BufferPNameARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedBufferParameteri64v(
             &self,
             buffer: GLuint,
             pname: GLenum,
             params: *mut GLint64,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetNamedBufferParameteri64v({:?}, {:#X}, {:p});",
-                    buffer,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetNamedBufferParameteri64v",
                 &self.glGetNamedBufferParameteri64v_p,
@@ -16356,10 +13848,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedBufferParameteri64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16380,23 +13869,14 @@ pub mod struct_commands {
         }
         /// [glGetNamedBufferParameteriv](http://docs.gl/gl4/glGetNamedBufferParameter)(buffer, pname, params)
         /// * `pname` group: BufferPNameARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedBufferParameteriv(
             &self,
             buffer: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetNamedBufferParameteriv({:?}, {:#X}, {:p});",
-                    buffer,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetNamedBufferParameteriv",
                 &self.glGetNamedBufferParameteriv_p,
@@ -16404,10 +13884,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedBufferParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16428,23 +13905,14 @@ pub mod struct_commands {
         }
         /// [glGetNamedBufferPointerv](http://docs.gl/gl4/glGetNamedBufferPointerv)(buffer, pname, params)
         /// * `pname` group: BufferPointerNameARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedBufferPointerv(
             &self,
             buffer: GLuint,
             pname: GLenum,
             params: *mut *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetNamedBufferPointerv({:?}, {:#X}, {:p});",
-                    buffer,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetNamedBufferPointerv",
                 &self.glGetNamedBufferPointerv_p,
@@ -16452,10 +13920,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedBufferPointerv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16476,8 +13941,7 @@ pub mod struct_commands {
         }
         /// [glGetNamedBufferSubData](http://docs.gl/gl4/glGetNamedBufferSubData)(buffer, offset, size, data)
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedBufferSubData(
             &self,
             buffer: GLuint,
@@ -16485,16 +13949,7 @@ pub mod struct_commands {
             size: GLsizeiptr,
             data: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetNamedBufferSubData({:?}, {:?}, {:?}, {:p});",
-                    buffer,
-                    offset,
-                    size,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetNamedBufferSubData",
                 &self.glGetNamedBufferSubData_p,
@@ -16503,10 +13958,7 @@ pub mod struct_commands {
                 size,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16528,8 +13980,7 @@ pub mod struct_commands {
         /// [glGetNamedFramebufferAttachmentParameteriv](http://docs.gl/gl4/glGetNamedFramebufferAttachmentParameter)(framebuffer, attachment, pname, params)
         /// * `attachment` group: FramebufferAttachment
         /// * `pname` group: FramebufferAttachmentParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedFramebufferAttachmentParameteriv(
             &self,
             framebuffer: GLuint,
@@ -16537,10 +13988,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetNamedFramebufferAttachmentParameteriv({:?}, {:#X}, {:#X}, {:p});", framebuffer, attachment, pname, params);
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetNamedFramebufferAttachmentParameteriv",
                 &self.glGetNamedFramebufferAttachmentParameteriv_p,
@@ -16549,10 +13997,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedFramebufferAttachmentParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16576,23 +14021,14 @@ pub mod struct_commands {
         }
         /// [glGetNamedFramebufferParameteriv](http://docs.gl/gl4/glGetNamedFramebufferParameter)(framebuffer, pname, param)
         /// * `pname` group: GetFramebufferParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedFramebufferParameteriv(
             &self,
             framebuffer: GLuint,
             pname: GLenum,
             param: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetNamedFramebufferParameteriv({:?}, {:#X}, {:p});",
-                    framebuffer,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetNamedFramebufferParameteriv",
                 &self.glGetNamedFramebufferParameteriv_p,
@@ -16600,10 +14036,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedFramebufferParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16627,23 +14060,14 @@ pub mod struct_commands {
         }
         /// [glGetNamedRenderbufferParameteriv](http://docs.gl/gl4/glGetNamedRenderbufferParameter)(renderbuffer, pname, params)
         /// * `pname` group: RenderbufferParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetNamedRenderbufferParameteriv(
             &self,
             renderbuffer: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetNamedRenderbufferParameteriv({:?}, {:#X}, {:p});",
-                    renderbuffer,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetNamedRenderbufferParameteriv",
                 &self.glGetNamedRenderbufferParameteriv_p,
@@ -16651,10 +14075,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetNamedRenderbufferParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16680,8 +14101,7 @@ pub mod struct_commands {
         /// * `identifier` group: ObjectIdentifier
         /// * `length` len: 1
         /// * `label` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetObjectLabel(
             &self,
             identifier: GLenum,
@@ -16690,17 +14110,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             label: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetObjectLabel({:#X}, {:?}, {:?}, {:p}, {:p});",
-                    identifier,
-                    name,
-                    bufSize,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetObjectLabel",
                 &self.glGetObjectLabel_p,
@@ -16710,10 +14120,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetObjectLabel");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16735,8 +14142,7 @@ pub mod struct_commands {
         /// [glGetObjectLabelKHR](http://docs.gl/gl4/glGetObjectLabelKHR)(identifier, name, bufSize, length, label)
         /// * `label` len: bufSize
         /// * alias of: [`glGetObjectLabel`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetObjectLabelKHR(
             &self,
             identifier: GLenum,
@@ -16745,17 +14151,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             label: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetObjectLabelKHR({:#X}, {:?}, {:?}, {:p}, {:p});",
-                    identifier,
-                    name,
-                    bufSize,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetObjectLabelKHR",
                 &self.glGetObjectLabelKHR_p,
@@ -16765,10 +14161,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetObjectLabelKHR");
-            }
+
             out
         }
 
@@ -16792,8 +14185,7 @@ pub mod struct_commands {
         /// [glGetObjectPtrLabel](http://docs.gl/gl4/glGetObjectPtrLabel)(ptr, bufSize, length, label)
         /// * `length` len: 1
         /// * `label` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetObjectPtrLabel(
             &self,
             ptr: *const c_void,
@@ -16801,16 +14193,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             label: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetObjectPtrLabel({:p}, {:?}, {:p}, {:p});",
-                    ptr,
-                    bufSize,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetObjectPtrLabel",
                 &self.glGetObjectPtrLabel_p,
@@ -16819,10 +14202,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetObjectPtrLabel");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16845,8 +14225,7 @@ pub mod struct_commands {
         /// * `length` len: 1
         /// * `label` len: bufSize
         /// * alias of: [`glGetObjectPtrLabel`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetObjectPtrLabelKHR(
             &self,
             ptr: *const c_void,
@@ -16854,16 +14233,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             label: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetObjectPtrLabelKHR({:p}, {:?}, {:p}, {:p});",
-                    ptr,
-                    bufSize,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetObjectPtrLabelKHR",
                 &self.glGetObjectPtrLabelKHR_p,
@@ -16872,10 +14242,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetObjectPtrLabelKHR");
-            }
+
             out
         }
 
@@ -16899,18 +14266,11 @@ pub mod struct_commands {
         /// [glGetPointerv](http://docs.gl/gl4/glGetPointerv)(pname, params)
         /// * `pname` group: GetPointervPName
         /// * `params` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetPointerv(&self, pname: GLenum, params: *mut *mut c_void) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetPointerv({:#X}, {:p});", pname, params);
-            }
+
             let out = call_atomic_ptr_2arg("glGetPointerv", &self.glGetPointerv_p, pname, params);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetPointerv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -16927,19 +14287,12 @@ pub mod struct_commands {
         }
         /// [glGetPointervKHR](http://docs.gl/gl4/glGetPointervKHR)(pname, params)
         /// * alias of: [`glGetPointerv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetPointervKHR(&self, pname: GLenum, params: *mut *mut c_void) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetPointervKHR({:#X}, {:p});", pname, params);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glGetPointervKHR", &self.glGetPointervKHR_p, pname, params);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetPointervKHR");
-            }
+
             out
         }
 
@@ -16964,8 +14317,7 @@ pub mod struct_commands {
         /// * `length` len: 1
         /// * `binaryFormat` len: 1
         /// * `binary` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramBinary(
             &self,
             program: GLuint,
@@ -16974,17 +14326,7 @@ pub mod struct_commands {
             binaryFormat: *mut GLenum,
             binary: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramBinary({:?}, {:?}, {:p}, {:p}, {:p});",
-                    program,
-                    bufSize,
-                    length,
-                    binaryFormat,
-                    binary
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetProgramBinary",
                 &self.glGetProgramBinary_p,
@@ -16994,10 +14336,7 @@ pub mod struct_commands {
                 binaryFormat,
                 binary,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramBinary");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17019,8 +14358,7 @@ pub mod struct_commands {
         /// [glGetProgramInfoLog](http://docs.gl/gl4/glGetProgramInfoLog)(program, bufSize, length, infoLog)
         /// * `length` len: 1
         /// * `infoLog` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramInfoLog(
             &self,
             program: GLuint,
@@ -17028,16 +14366,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             infoLog: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramInfoLog({:?}, {:?}, {:p}, {:p});",
-                    program,
-                    bufSize,
-                    length,
-                    infoLog
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetProgramInfoLog",
                 &self.glGetProgramInfoLog_p,
@@ -17046,10 +14375,7 @@ pub mod struct_commands {
                 length,
                 infoLog,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramInfoLog");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17072,8 +14398,7 @@ pub mod struct_commands {
         /// * `programInterface` group: ProgramInterface
         /// * `pname` group: ProgramInterfacePName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramInterfaceiv(
             &self,
             program: GLuint,
@@ -17081,16 +14406,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramInterfaceiv({:?}, {:#X}, {:#X}, {:p});",
-                    program,
-                    programInterface,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetProgramInterfaceiv",
                 &self.glGetProgramInterfaceiv_p,
@@ -17099,10 +14415,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramInterfaceiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17124,8 +14437,7 @@ pub mod struct_commands {
         /// [glGetProgramPipelineInfoLog](http://docs.gl/gl4/glGetProgramPipelineInfoLog)(pipeline, bufSize, length, infoLog)
         /// * `length` len: 1
         /// * `infoLog` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramPipelineInfoLog(
             &self,
             pipeline: GLuint,
@@ -17133,16 +14445,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             infoLog: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramPipelineInfoLog({:?}, {:?}, {:p}, {:p});",
-                    pipeline,
-                    bufSize,
-                    length,
-                    infoLog
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetProgramPipelineInfoLog",
                 &self.glGetProgramPipelineInfoLog_p,
@@ -17151,10 +14454,7 @@ pub mod struct_commands {
                 length,
                 infoLog,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramPipelineInfoLog");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17176,23 +14476,14 @@ pub mod struct_commands {
         /// [glGetProgramPipelineiv](http://docs.gl/gl4/glGetProgramPipeline)(pipeline, pname, params)
         /// * `pname` group: PipelineParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramPipelineiv(
             &self,
             pipeline: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramPipelineiv({:?}, {:#X}, {:p});",
-                    pipeline,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetProgramPipelineiv",
                 &self.glGetProgramPipelineiv_p,
@@ -17200,10 +14491,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramPipelineiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17225,23 +14513,14 @@ pub mod struct_commands {
         /// [glGetProgramResourceIndex](http://docs.gl/gl4/glGetProgramResourceIndex)(program, programInterface, name)
         /// * `programInterface` group: ProgramInterface
         /// * `name` len: COMPSIZE(name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramResourceIndex(
             &self,
             program: GLuint,
             programInterface: GLenum,
             name: *const GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramResourceIndex({:?}, {:#X}, {:p});",
-                    program,
-                    programInterface,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetProgramResourceIndex",
                 &self.glGetProgramResourceIndex_p,
@@ -17249,10 +14528,7 @@ pub mod struct_commands {
                 programInterface,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramResourceIndex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17274,23 +14550,14 @@ pub mod struct_commands {
         /// [glGetProgramResourceLocation](http://docs.gl/gl4/glGetProgramResourceLocation)(program, programInterface, name)
         /// * `programInterface` group: ProgramInterface
         /// * `name` len: COMPSIZE(name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramResourceLocation(
             &self,
             program: GLuint,
             programInterface: GLenum,
             name: *const GLchar,
         ) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramResourceLocation({:?}, {:#X}, {:p});",
-                    program,
-                    programInterface,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetProgramResourceLocation",
                 &self.glGetProgramResourceLocation_p,
@@ -17298,10 +14565,7 @@ pub mod struct_commands {
                 programInterface,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramResourceLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17323,23 +14587,14 @@ pub mod struct_commands {
         /// [glGetProgramResourceLocationIndex](http://docs.gl/gl4/glGetProgramResourceLocationIndex)(program, programInterface, name)
         /// * `programInterface` group: ProgramInterface
         /// * `name` len: COMPSIZE(name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramResourceLocationIndex(
             &self,
             program: GLuint,
             programInterface: GLenum,
             name: *const GLchar,
         ) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramResourceLocationIndex({:?}, {:#X}, {:p});",
-                    program,
-                    programInterface,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetProgramResourceLocationIndex",
                 &self.glGetProgramResourceLocationIndex_p,
@@ -17347,10 +14602,7 @@ pub mod struct_commands {
                 programInterface,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramResourceLocationIndex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17376,8 +14628,7 @@ pub mod struct_commands {
         /// * `programInterface` group: ProgramInterface
         /// * `length` len: 1
         /// * `name` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramResourceName(
             &self,
             program: GLuint,
@@ -17387,18 +14638,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             name: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramResourceName({:?}, {:#X}, {:?}, {:?}, {:p}, {:p});",
-                    program,
-                    programInterface,
-                    index,
-                    bufSize,
-                    length,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glGetProgramResourceName",
                 &self.glGetProgramResourceName_p,
@@ -17409,10 +14649,7 @@ pub mod struct_commands {
                 length,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramResourceName");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17437,8 +14674,7 @@ pub mod struct_commands {
         /// * `props` len: propCount
         /// * `length` len: 1
         /// * `params` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramResourceiv(
             &self,
             program: GLuint,
@@ -17450,10 +14686,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetProgramResourceiv({:?}, {:#X}, {:?}, {:?}, {:p}, {:?}, {:p}, {:p});", program, programInterface, index, propCount, props, count, length, params);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glGetProgramResourceiv",
                 &self.glGetProgramResourceiv_p,
@@ -17466,10 +14699,7 @@ pub mod struct_commands {
                 length,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramResourceiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17492,8 +14722,7 @@ pub mod struct_commands {
         /// * `shadertype` group: ShaderType
         /// * `pname` group: ProgramStagePName
         /// * `values` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramStageiv(
             &self,
             program: GLuint,
@@ -17501,16 +14730,7 @@ pub mod struct_commands {
             pname: GLenum,
             values: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramStageiv({:?}, {:#X}, {:#X}, {:p});",
-                    program,
-                    shadertype,
-                    pname,
-                    values
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetProgramStageiv",
                 &self.glGetProgramStageiv_p,
@@ -17519,10 +14739,7 @@ pub mod struct_commands {
                 pname,
                 values,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramStageiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17544,18 +14761,9 @@ pub mod struct_commands {
         /// [glGetProgramiv](http://docs.gl/gl4/glGetProgram)(program, pname, params)
         /// * `pname` group: ProgramPropertyARB
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetProgramiv(&self, program: GLuint, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetProgramiv({:?}, {:#X}, {:p});",
-                    program,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetProgramiv",
                 &self.glGetProgramiv_p,
@@ -17563,10 +14771,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetProgramiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17587,8 +14792,7 @@ pub mod struct_commands {
         }
         /// [glGetQueryBufferObjecti64v](http://docs.gl/gl4/glGetQueryBufferObject)(id, buffer, pname, offset)
         /// * `pname` group: QueryObjectParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryBufferObjecti64v(
             &self,
             id: GLuint,
@@ -17596,16 +14800,7 @@ pub mod struct_commands {
             pname: GLenum,
             offset: GLintptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryBufferObjecti64v({:?}, {:?}, {:#X}, {:?});",
-                    id,
-                    buffer,
-                    pname,
-                    offset
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetQueryBufferObjecti64v",
                 &self.glGetQueryBufferObjecti64v_p,
@@ -17614,10 +14809,7 @@ pub mod struct_commands {
                 pname,
                 offset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryBufferObjecti64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17638,8 +14830,7 @@ pub mod struct_commands {
         }
         /// [glGetQueryBufferObjectiv](http://docs.gl/gl4/glGetQueryBufferObject)(id, buffer, pname, offset)
         /// * `pname` group: QueryObjectParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryBufferObjectiv(
             &self,
             id: GLuint,
@@ -17647,16 +14838,7 @@ pub mod struct_commands {
             pname: GLenum,
             offset: GLintptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryBufferObjectiv({:?}, {:?}, {:#X}, {:?});",
-                    id,
-                    buffer,
-                    pname,
-                    offset
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetQueryBufferObjectiv",
                 &self.glGetQueryBufferObjectiv_p,
@@ -17665,10 +14847,7 @@ pub mod struct_commands {
                 pname,
                 offset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryBufferObjectiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17689,8 +14868,7 @@ pub mod struct_commands {
         }
         /// [glGetQueryBufferObjectui64v](http://docs.gl/gl4/glGetQueryBufferObjectu)(id, buffer, pname, offset)
         /// * `pname` group: QueryObjectParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryBufferObjectui64v(
             &self,
             id: GLuint,
@@ -17698,16 +14876,7 @@ pub mod struct_commands {
             pname: GLenum,
             offset: GLintptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryBufferObjectui64v({:?}, {:?}, {:#X}, {:?});",
-                    id,
-                    buffer,
-                    pname,
-                    offset
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetQueryBufferObjectui64v",
                 &self.glGetQueryBufferObjectui64v_p,
@@ -17716,10 +14885,7 @@ pub mod struct_commands {
                 pname,
                 offset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryBufferObjectui64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17740,8 +14906,7 @@ pub mod struct_commands {
         }
         /// [glGetQueryBufferObjectuiv](http://docs.gl/gl4/glGetQueryBufferObject)(id, buffer, pname, offset)
         /// * `pname` group: QueryObjectParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryBufferObjectuiv(
             &self,
             id: GLuint,
@@ -17749,16 +14914,7 @@ pub mod struct_commands {
             pname: GLenum,
             offset: GLintptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryBufferObjectuiv({:?}, {:?}, {:#X}, {:?});",
-                    id,
-                    buffer,
-                    pname,
-                    offset
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetQueryBufferObjectuiv",
                 &self.glGetQueryBufferObjectuiv_p,
@@ -17767,10 +14923,7 @@ pub mod struct_commands {
                 pname,
                 offset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryBufferObjectuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17793,8 +14946,7 @@ pub mod struct_commands {
         /// * `target` group: QueryTarget
         /// * `pname` group: QueryParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryIndexediv(
             &self,
             target: GLenum,
@@ -17802,16 +14954,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryIndexediv({:#X}, {:?}, {:#X}, {:p});",
-                    target,
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetQueryIndexediv",
                 &self.glGetQueryIndexediv_p,
@@ -17820,10 +14963,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryIndexediv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17845,18 +14985,9 @@ pub mod struct_commands {
         /// [glGetQueryObjecti64v](http://docs.gl/gl4/glGetQueryObject)(id, pname, params)
         /// * `pname` group: QueryObjectParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryObjecti64v(&self, id: GLuint, pname: GLenum, params: *mut GLint64) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryObjecti64v({:?}, {:#X}, {:p});",
-                    id,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetQueryObjecti64v",
                 &self.glGetQueryObjecti64v_p,
@@ -17864,10 +14995,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryObjecti64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17889,18 +15017,9 @@ pub mod struct_commands {
         /// [glGetQueryObjectiv](http://docs.gl/gl4/glGetQueryObject)(id, pname, params)
         /// * `pname` group: QueryObjectParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryObjectiv(&self, id: GLuint, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryObjectiv({:?}, {:#X}, {:p});",
-                    id,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetQueryObjectiv",
                 &self.glGetQueryObjectiv_p,
@@ -17908,10 +15027,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryObjectiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17933,18 +15049,9 @@ pub mod struct_commands {
         /// [glGetQueryObjectui64v](http://docs.gl/gl4/glGetQueryObjectu)(id, pname, params)
         /// * `pname` group: QueryObjectParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryObjectui64v(&self, id: GLuint, pname: GLenum, params: *mut GLuint64) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryObjectui64v({:?}, {:#X}, {:p});",
-                    id,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetQueryObjectui64v",
                 &self.glGetQueryObjectui64v_p,
@@ -17952,10 +15059,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryObjectui64v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -17977,18 +15081,9 @@ pub mod struct_commands {
         /// [glGetQueryObjectuiv](http://docs.gl/gl4/glGetQueryObject)(id, pname, params)
         /// * `pname` group: QueryObjectParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryObjectuiv(&self, id: GLuint, pname: GLenum, params: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryObjectuiv({:?}, {:#X}, {:p});",
-                    id,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetQueryObjectuiv",
                 &self.glGetQueryObjectuiv_p,
@@ -17996,10 +15091,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryObjectuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18022,24 +15114,12 @@ pub mod struct_commands {
         /// * `target` group: QueryTarget
         /// * `pname` group: QueryParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetQueryiv(&self, target: GLenum, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetQueryiv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glGetQueryiv", &self.glGetQueryiv_p, target, pname, params);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetQueryiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18058,23 +15138,14 @@ pub mod struct_commands {
         /// * `target` group: RenderbufferTarget
         /// * `pname` group: RenderbufferParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetRenderbufferParameteriv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetRenderbufferParameteriv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetRenderbufferParameteriv",
                 &self.glGetRenderbufferParameteriv_p,
@@ -18082,10 +15153,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetRenderbufferParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18107,23 +15175,14 @@ pub mod struct_commands {
         /// [glGetSamplerParameterIiv](http://docs.gl/gl4/glGetSamplerParameter)(sampler, pname, params)
         /// * `pname` group: SamplerParameterI
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSamplerParameterIiv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSamplerParameterIiv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetSamplerParameterIiv",
                 &self.glGetSamplerParameterIiv_p,
@@ -18131,10 +15190,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSamplerParameterIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18156,23 +15212,14 @@ pub mod struct_commands {
         /// [glGetSamplerParameterIuiv](http://docs.gl/gl4/glGetSamplerParameter)(sampler, pname, params)
         /// * `pname` group: SamplerParameterI
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSamplerParameterIuiv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             params: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSamplerParameterIuiv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetSamplerParameterIuiv",
                 &self.glGetSamplerParameterIuiv_p,
@@ -18180,10 +15227,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSamplerParameterIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18205,23 +15249,14 @@ pub mod struct_commands {
         /// [glGetSamplerParameterfv](http://docs.gl/gl4/glGetSamplerParameter)(sampler, pname, params)
         /// * `pname` group: SamplerParameterF
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSamplerParameterfv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             params: *mut GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSamplerParameterfv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetSamplerParameterfv",
                 &self.glGetSamplerParameterfv_p,
@@ -18229,10 +15264,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSamplerParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18254,23 +15286,14 @@ pub mod struct_commands {
         /// [glGetSamplerParameteriv](http://docs.gl/gl4/glGetSamplerParameter)(sampler, pname, params)
         /// * `pname` group: SamplerParameterI
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSamplerParameteriv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSamplerParameteriv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetSamplerParameteriv",
                 &self.glGetSamplerParameteriv_p,
@@ -18278,10 +15301,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSamplerParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18303,8 +15323,7 @@ pub mod struct_commands {
         /// [glGetShaderInfoLog](http://docs.gl/gl4/glGetShaderInfoLog)(shader, bufSize, length, infoLog)
         /// * `length` len: 1
         /// * `infoLog` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetShaderInfoLog(
             &self,
             shader: GLuint,
@@ -18312,16 +15331,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             infoLog: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetShaderInfoLog({:?}, {:?}, {:p}, {:p});",
-                    shader,
-                    bufSize,
-                    length,
-                    infoLog
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetShaderInfoLog",
                 &self.glGetShaderInfoLog_p,
@@ -18330,10 +15340,7 @@ pub mod struct_commands {
                 length,
                 infoLog,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetShaderInfoLog");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18357,8 +15364,7 @@ pub mod struct_commands {
         /// * `precisiontype` group: PrecisionType
         /// * `range` len: 2
         /// * `precision` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetShaderPrecisionFormat(
             &self,
             shadertype: GLenum,
@@ -18366,16 +15372,7 @@ pub mod struct_commands {
             range: *mut GLint,
             precision: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetShaderPrecisionFormat({:#X}, {:#X}, {:p}, {:p});",
-                    shadertype,
-                    precisiontype,
-                    range,
-                    precision
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetShaderPrecisionFormat",
                 &self.glGetShaderPrecisionFormat_p,
@@ -18384,10 +15381,7 @@ pub mod struct_commands {
                 range,
                 precision,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetShaderPrecisionFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18409,8 +15403,7 @@ pub mod struct_commands {
         /// [glGetShaderSource](http://docs.gl/gl4/glGetShaderSource)(shader, bufSize, length, source)
         /// * `length` len: 1
         /// * `source` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetShaderSource(
             &self,
             shader: GLuint,
@@ -18418,16 +15411,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             source: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetShaderSource({:?}, {:?}, {:p}, {:p});",
-                    shader,
-                    bufSize,
-                    length,
-                    source
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetShaderSource",
                 &self.glGetShaderSource_p,
@@ -18436,10 +15420,7 @@ pub mod struct_commands {
                 length,
                 source,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetShaderSource");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18461,18 +15442,9 @@ pub mod struct_commands {
         /// [glGetShaderiv](http://docs.gl/gl4/glGetShaderiv)(shader, pname, params)
         /// * `pname` group: ShaderParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetShaderiv(&self, shader: GLuint, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetShaderiv({:?}, {:#X}, {:p});",
-                    shader,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetShaderiv",
                 &self.glGetShaderiv_p,
@@ -18480,10 +15452,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetShaderiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18501,18 +15470,11 @@ pub mod struct_commands {
         /// [glGetString](http://docs.gl/gl4/glGetString)(name)
         /// * `name` group: StringName
         /// * return value group: String
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetString(&self, name: GLenum) -> *const GLubyte {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetString({:#X});", name);
-            }
+
             let out = call_atomic_ptr_1arg("glGetString", &self.glGetString_p, name);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetString");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18530,18 +15492,11 @@ pub mod struct_commands {
         /// [glGetStringi](http://docs.gl/gl4/glGetString)(name, index)
         /// * `name` group: StringName
         /// * return value group: String
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetStringi(&self, name: GLenum, index: GLuint) -> *const GLubyte {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetStringi({:#X}, {:?});", name, index);
-            }
+
             let out = call_atomic_ptr_2arg("glGetStringi", &self.glGetStringi_p, name, index);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetStringi");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18558,23 +15513,14 @@ pub mod struct_commands {
         }
         /// [glGetSubroutineIndex](http://docs.gl/gl4/glGetSubroutineIndex)(program, shadertype, name)
         /// * `shadertype` group: ShaderType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSubroutineIndex(
             &self,
             program: GLuint,
             shadertype: GLenum,
             name: *const GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSubroutineIndex({:?}, {:#X}, {:p});",
-                    program,
-                    shadertype,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetSubroutineIndex",
                 &self.glGetSubroutineIndex_p,
@@ -18582,10 +15528,7 @@ pub mod struct_commands {
                 shadertype,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSubroutineIndex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18606,23 +15549,14 @@ pub mod struct_commands {
         }
         /// [glGetSubroutineUniformLocation](http://docs.gl/gl4/glGetSubroutineUniformLocation)(program, shadertype, name)
         /// * `shadertype` group: ShaderType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSubroutineUniformLocation(
             &self,
             program: GLuint,
             shadertype: GLenum,
             name: *const GLchar,
         ) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSubroutineUniformLocation({:?}, {:#X}, {:p});",
-                    program,
-                    shadertype,
-                    name
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetSubroutineUniformLocation",
                 &self.glGetSubroutineUniformLocation_p,
@@ -18630,10 +15564,7 @@ pub mod struct_commands {
                 shadertype,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSubroutineUniformLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18657,8 +15588,7 @@ pub mod struct_commands {
         /// * `pname` group: SyncParameterName
         /// * `length` len: 1
         /// * `values` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetSynciv(
             &self,
             sync: GLsync,
@@ -18667,17 +15597,7 @@ pub mod struct_commands {
             length: *mut GLsizei,
             values: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetSynciv({:p}, {:#X}, {:?}, {:p}, {:p});",
-                    sync,
-                    pname,
-                    count,
-                    length,
-                    values
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetSynciv",
                 &self.glGetSynciv_p,
@@ -18687,10 +15607,7 @@ pub mod struct_commands {
                 length,
                 values,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetSynciv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18711,8 +15628,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(target,level,format,type)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexImage(
             &self,
             target: GLenum,
@@ -18721,17 +15637,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexImage({:#X}, {:?}, {:#X}, {:#X}, {:p});",
-                    target,
-                    level,
-                    format,
-                    type_,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glGetTexImage",
                 &self.glGetTexImage_p,
@@ -18741,10 +15647,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18764,8 +15667,7 @@ pub mod struct_commands {
         /// * `level` group: CheckedInt32
         /// * `pname` group: GetTextureParameter
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexLevelParameterfv(
             &self,
             target: GLenum,
@@ -18773,16 +15675,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexLevelParameterfv({:#X}, {:?}, {:#X}, {:p});",
-                    target,
-                    level,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetTexLevelParameterfv",
                 &self.glGetTexLevelParameterfv_p,
@@ -18791,10 +15684,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexLevelParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18818,8 +15708,7 @@ pub mod struct_commands {
         /// * `level` group: CheckedInt32
         /// * `pname` group: GetTextureParameter
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexLevelParameteriv(
             &self,
             target: GLenum,
@@ -18827,16 +15716,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexLevelParameteriv({:#X}, {:?}, {:#X}, {:p});",
-                    target,
-                    level,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetTexLevelParameteriv",
                 &self.glGetTexLevelParameteriv_p,
@@ -18845,10 +15725,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexLevelParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18871,18 +15748,9 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: GetTextureParameter
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexParameterIiv(&self, target: GLenum, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexParameterIiv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTexParameterIiv",
                 &self.glGetTexParameterIiv_p,
@@ -18890,10 +15758,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexParameterIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18916,23 +15781,14 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: GetTextureParameter
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexParameterIuiv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexParameterIuiv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTexParameterIuiv",
                 &self.glGetTexParameterIuiv_p,
@@ -18940,10 +15796,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexParameterIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -18966,23 +15819,14 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: GetTextureParameter
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexParameterfv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *mut GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexParameterfv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTexParameterfv",
                 &self.glGetTexParameterfv_p,
@@ -18990,10 +15834,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19016,18 +15857,9 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: GetTextureParameter
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTexParameteriv(&self, target: GLenum, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTexParameteriv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTexParameteriv",
                 &self.glGetTexParameteriv_p,
@@ -19035,10 +15867,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTexParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19060,8 +15889,7 @@ pub mod struct_commands {
         /// [glGetTextureImage](http://docs.gl/gl4/glGetTextureImage)(texture, level, format, type_, bufSize, pixels)
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureImage(
             &self,
             texture: GLuint,
@@ -19071,18 +15899,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureImage({:?}, {:?}, {:#X}, {:#X}, {:?}, {:p});",
-                    texture,
-                    level,
-                    format,
-                    type_,
-                    bufSize,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glGetTextureImage",
                 &self.glGetTextureImage_p,
@@ -19093,10 +15910,7 @@ pub mod struct_commands {
                 bufSize,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19117,8 +15931,7 @@ pub mod struct_commands {
         }
         /// [glGetTextureLevelParameterfv](http://docs.gl/gl4/glGetTextureLevelParameter)(texture, level, pname, params)
         /// * `pname` group: GetTextureParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureLevelParameterfv(
             &self,
             texture: GLuint,
@@ -19126,16 +15939,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureLevelParameterfv({:?}, {:?}, {:#X}, {:p});",
-                    texture,
-                    level,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetTextureLevelParameterfv",
                 &self.glGetTextureLevelParameterfv_p,
@@ -19144,10 +15948,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureLevelParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19168,8 +15969,7 @@ pub mod struct_commands {
         }
         /// [glGetTextureLevelParameteriv](http://docs.gl/gl4/glGetTextureLevelParameter)(texture, level, pname, params)
         /// * `pname` group: GetTextureParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureLevelParameteriv(
             &self,
             texture: GLuint,
@@ -19177,16 +15977,7 @@ pub mod struct_commands {
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureLevelParameteriv({:?}, {:?}, {:#X}, {:p});",
-                    texture,
-                    level,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetTextureLevelParameteriv",
                 &self.glGetTextureLevelParameteriv_p,
@@ -19195,10 +15986,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureLevelParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19219,23 +16007,14 @@ pub mod struct_commands {
         }
         /// [glGetTextureParameterIiv](http://docs.gl/gl4/glGetTextureParameter)(texture, pname, params)
         /// * `pname` group: GetTextureParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureParameterIiv(
             &self,
             texture: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureParameterIiv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTextureParameterIiv",
                 &self.glGetTextureParameterIiv_p,
@@ -19243,10 +16022,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureParameterIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19267,23 +16043,14 @@ pub mod struct_commands {
         }
         /// [glGetTextureParameterIuiv](http://docs.gl/gl4/glGetTextureParameter)(texture, pname, params)
         /// * `pname` group: GetTextureParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureParameterIuiv(
             &self,
             texture: GLuint,
             pname: GLenum,
             params: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureParameterIuiv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTextureParameterIuiv",
                 &self.glGetTextureParameterIuiv_p,
@@ -19291,10 +16058,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureParameterIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19315,23 +16079,14 @@ pub mod struct_commands {
         }
         /// [glGetTextureParameterfv](http://docs.gl/gl4/glGetTextureParameter)(texture, pname, params)
         /// * `pname` group: GetTextureParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureParameterfv(
             &self,
             texture: GLuint,
             pname: GLenum,
             params: *mut GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureParameterfv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTextureParameterfv",
                 &self.glGetTextureParameterfv_p,
@@ -19339,10 +16094,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19363,23 +16115,14 @@ pub mod struct_commands {
         }
         /// [glGetTextureParameteriv](http://docs.gl/gl4/glGetTextureParameter)(texture, pname, params)
         /// * `pname` group: GetTextureParameter
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureParameteriv(
             &self,
             texture: GLuint,
             pname: GLenum,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTextureParameteriv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTextureParameteriv",
                 &self.glGetTextureParameteriv_p,
@@ -19387,10 +16130,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19412,8 +16152,7 @@ pub mod struct_commands {
         /// [glGetTextureSubImage](http://docs.gl/gl4/glGetTextureSubImage)(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, bufSize, pixels)
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTextureSubImage(
             &self,
             texture: GLuint,
@@ -19429,10 +16168,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetTextureSubImage({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:?}, {:p});", texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, bufSize, pixels);
-            }
+
             let out = call_atomic_ptr_12arg(
                 "glGetTextureSubImage",
                 &self.glGetTextureSubImage_p,
@@ -19449,10 +16185,7 @@ pub mod struct_commands {
                 bufSize,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTextureSubImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19477,8 +16210,7 @@ pub mod struct_commands {
         /// * `type_` group: AttributeType
         /// * `type_` len: 1
         /// * `name` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTransformFeedbackVarying(
             &self,
             program: GLuint,
@@ -19489,10 +16221,7 @@ pub mod struct_commands {
             type_: *mut GLenum,
             name: *mut GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetTransformFeedbackVarying({:?}, {:?}, {:?}, {:p}, {:p}, {:p}, {:p});", program, index, bufSize, length, size, type_, name);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glGetTransformFeedbackVarying",
                 &self.glGetTransformFeedbackVarying_p,
@@ -19504,10 +16233,7 @@ pub mod struct_commands {
                 type_,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTransformFeedbackVarying");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19528,8 +16254,7 @@ pub mod struct_commands {
         }
         /// [glGetTransformFeedbacki64_v](http://docs.gl/gl4/glGetTransformFeedbacki64_v)(xfb, pname, index, param)
         /// * `pname` group: TransformFeedbackPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTransformFeedbacki64_v(
             &self,
             xfb: GLuint,
@@ -19537,16 +16262,7 @@ pub mod struct_commands {
             index: GLuint,
             param: *mut GLint64,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTransformFeedbacki64_v({:?}, {:#X}, {:?}, {:p});",
-                    xfb,
-                    pname,
-                    index,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetTransformFeedbacki64_v",
                 &self.glGetTransformFeedbacki64_v_p,
@@ -19555,10 +16271,7 @@ pub mod struct_commands {
                 index,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTransformFeedbacki64_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19579,8 +16292,7 @@ pub mod struct_commands {
         }
         /// [glGetTransformFeedbacki_v](http://docs.gl/gl4/glGetTransformFeedbacki_v)(xfb, pname, index, param)
         /// * `pname` group: TransformFeedbackPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTransformFeedbacki_v(
             &self,
             xfb: GLuint,
@@ -19588,16 +16300,7 @@ pub mod struct_commands {
             index: GLuint,
             param: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTransformFeedbacki_v({:?}, {:#X}, {:?}, {:p});",
-                    xfb,
-                    pname,
-                    index,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetTransformFeedbacki_v",
                 &self.glGetTransformFeedbacki_v_p,
@@ -19606,10 +16309,7 @@ pub mod struct_commands {
                 index,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTransformFeedbacki_v");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19630,18 +16330,9 @@ pub mod struct_commands {
         }
         /// [glGetTransformFeedbackiv](http://docs.gl/gl4/glGetTransformFeedback)(xfb, pname, param)
         /// * `pname` group: TransformFeedbackPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetTransformFeedbackiv(&self, xfb: GLuint, pname: GLenum, param: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetTransformFeedbackiv({:?}, {:#X}, {:p});",
-                    xfb,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetTransformFeedbackiv",
                 &self.glGetTransformFeedbackiv_p,
@@ -19649,10 +16340,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetTransformFeedbackiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19673,31 +16361,20 @@ pub mod struct_commands {
         }
         /// [glGetUniformBlockIndex](http://docs.gl/gl4/glGetUniformBlockIndex)(program, uniformBlockName)
         /// * `uniformBlockName` len: COMPSIZE()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformBlockIndex(
             &self,
             program: GLuint,
             uniformBlockName: *const GLchar,
         ) -> GLuint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformBlockIndex({:?}, {:p});",
-                    program,
-                    uniformBlockName
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGetUniformBlockIndex",
                 &self.glGetUniformBlockIndex_p,
                 program,
                 uniformBlockName,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformBlockIndex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19719,8 +16396,7 @@ pub mod struct_commands {
         /// [glGetUniformIndices](http://docs.gl/gl4/glGetUniformIndices)(program, uniformCount, uniformNames, uniformIndices)
         /// * `uniformNames` len: COMPSIZE(uniformCount)
         /// * `uniformIndices` len: COMPSIZE(uniformCount)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformIndices(
             &self,
             program: GLuint,
@@ -19728,16 +16404,7 @@ pub mod struct_commands {
             uniformNames: *const *const GLchar,
             uniformIndices: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformIndices({:?}, {:?}, {:p}, {:p});",
-                    program,
-                    uniformCount,
-                    uniformNames,
-                    uniformIndices
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetUniformIndices",
                 &self.glGetUniformIndices_p,
@@ -19746,10 +16413,7 @@ pub mod struct_commands {
                 uniformNames,
                 uniformIndices,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformIndices");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19769,23 +16433,16 @@ pub mod struct_commands {
             !self.glGetUniformIndices_p.load(RELAX).is_null()
         }
         /// [glGetUniformLocation](http://docs.gl/gl4/glGetUniformLocation)(program, name)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformLocation(&self, program: GLuint, name: *const GLchar) -> GLint {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.GetUniformLocation({:?}, {:p});", program, name);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glGetUniformLocation",
                 &self.glGetUniformLocation_p,
                 program,
                 name,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformLocation");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19807,23 +16464,14 @@ pub mod struct_commands {
         /// [glGetUniformSubroutineuiv](http://docs.gl/gl4/glGetUniformSubroutine)(shadertype, location, params)
         /// * `shadertype` group: ShaderType
         /// * `params` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformSubroutineuiv(
             &self,
             shadertype: GLenum,
             location: GLint,
             params: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformSubroutineuiv({:#X}, {:?}, {:p});",
-                    shadertype,
-                    location,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetUniformSubroutineuiv",
                 &self.glGetUniformSubroutineuiv_p,
@@ -19831,10 +16479,7 @@ pub mod struct_commands {
                 location,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformSubroutineuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19855,18 +16500,9 @@ pub mod struct_commands {
         }
         /// [glGetUniformdv](http://docs.gl/gl4/glGetUniformdv)(program, location, params)
         /// * `params` len: COMPSIZE(program,location)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformdv(&self, program: GLuint, location: GLint, params: *mut GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformdv({:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetUniformdv",
                 &self.glGetUniformdv_p,
@@ -19874,10 +16510,7 @@ pub mod struct_commands {
                 location,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformdv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19898,18 +16531,9 @@ pub mod struct_commands {
         }
         /// [glGetUniformfv](http://docs.gl/gl4/glGetUniform)(program, location, params)
         /// * `params` len: COMPSIZE(program,location)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformfv(&self, program: GLuint, location: GLint, params: *mut GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformfv({:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetUniformfv",
                 &self.glGetUniformfv_p,
@@ -19917,10 +16541,7 @@ pub mod struct_commands {
                 location,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19941,18 +16562,9 @@ pub mod struct_commands {
         }
         /// [glGetUniformiv](http://docs.gl/gl4/glGetUniform)(program, location, params)
         /// * `params` len: COMPSIZE(program,location)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformiv(&self, program: GLuint, location: GLint, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformiv({:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetUniformiv",
                 &self.glGetUniformiv_p,
@@ -19960,10 +16572,7 @@ pub mod struct_commands {
                 location,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -19984,18 +16593,9 @@ pub mod struct_commands {
         }
         /// [glGetUniformuiv](http://docs.gl/gl4/glGetUniform)(program, location, params)
         /// * `params` len: COMPSIZE(program,location)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetUniformuiv(&self, program: GLuint, location: GLint, params: *mut GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetUniformuiv({:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetUniformuiv",
                 &self.glGetUniformuiv_p,
@@ -20003,10 +16603,7 @@ pub mod struct_commands {
                 location,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetUniformuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20027,8 +16624,7 @@ pub mod struct_commands {
         }
         /// [glGetVertexArrayIndexed64iv](http://docs.gl/gl4/glGetVertexArrayIndexed6)(vaobj, index, pname, param)
         /// * `pname` group: VertexArrayPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexArrayIndexed64iv(
             &self,
             vaobj: GLuint,
@@ -20036,16 +16632,7 @@ pub mod struct_commands {
             pname: GLenum,
             param: *mut GLint64,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexArrayIndexed64iv({:?}, {:?}, {:#X}, {:p});",
-                    vaobj,
-                    index,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetVertexArrayIndexed64iv",
                 &self.glGetVertexArrayIndexed64iv_p,
@@ -20054,10 +16641,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexArrayIndexed64iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20078,8 +16662,7 @@ pub mod struct_commands {
         }
         /// [glGetVertexArrayIndexediv](http://docs.gl/gl4/glGetVertexArrayIndexed)(vaobj, index, pname, param)
         /// * `pname` group: VertexArrayPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexArrayIndexediv(
             &self,
             vaobj: GLuint,
@@ -20087,16 +16670,7 @@ pub mod struct_commands {
             pname: GLenum,
             param: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexArrayIndexediv({:?}, {:?}, {:#X}, {:p});",
-                    vaobj,
-                    index,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetVertexArrayIndexediv",
                 &self.glGetVertexArrayIndexediv_p,
@@ -20105,10 +16679,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexArrayIndexediv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20129,18 +16700,9 @@ pub mod struct_commands {
         }
         /// [glGetVertexArrayiv](http://docs.gl/gl4/glGetVertexArray)(vaobj, pname, param)
         /// * `pname` group: VertexArrayPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexArrayiv(&self, vaobj: GLuint, pname: GLenum, param: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexArrayiv({:?}, {:#X}, {:p});",
-                    vaobj,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexArrayiv",
                 &self.glGetVertexArrayiv_p,
@@ -20148,10 +16710,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexArrayiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20173,18 +16732,9 @@ pub mod struct_commands {
         /// [glGetVertexAttribIiv](http://docs.gl/gl4/glGetVertexAttrib)(index, pname, params)
         /// * `pname` group: VertexAttribEnum
         /// * `params` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribIiv(&self, index: GLuint, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribIiv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribIiv",
                 &self.glGetVertexAttribIiv_p,
@@ -20192,10 +16742,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20217,23 +16764,14 @@ pub mod struct_commands {
         /// [glGetVertexAttribIuiv](http://docs.gl/gl4/glGetVertexAttrib)(index, pname, params)
         /// * `pname` group: VertexAttribEnum
         /// * `params` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribIuiv(
             &self,
             index: GLuint,
             pname: GLenum,
             params: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribIuiv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribIuiv",
                 &self.glGetVertexAttribIuiv_p,
@@ -20241,10 +16779,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20266,23 +16801,14 @@ pub mod struct_commands {
         /// [glGetVertexAttribLdv](http://docs.gl/gl4/glGetVertexAttribLdv)(index, pname, params)
         /// * `pname` group: VertexAttribEnum
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribLdv(
             &self,
             index: GLuint,
             pname: GLenum,
             params: *mut GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribLdv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribLdv",
                 &self.glGetVertexAttribLdv_p,
@@ -20290,10 +16816,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribLdv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20315,23 +16838,14 @@ pub mod struct_commands {
         /// [glGetVertexAttribPointerv](http://docs.gl/gl4/glGetVertexAttribPointerv)(index, pname, pointer)
         /// * `pname` group: VertexAttribPointerPropertyARB
         /// * `pointer` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribPointerv(
             &self,
             index: GLuint,
             pname: GLenum,
             pointer: *mut *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribPointerv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    pointer
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribPointerv",
                 &self.glGetVertexAttribPointerv_p,
@@ -20339,10 +16853,7 @@ pub mod struct_commands {
                 pname,
                 pointer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribPointerv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20364,23 +16875,14 @@ pub mod struct_commands {
         /// [glGetVertexAttribdv](http://docs.gl/gl4/glGetVertexAttribdv)(index, pname, params)
         /// * `pname` group: VertexAttribPropertyARB
         /// * `params` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribdv(
             &self,
             index: GLuint,
             pname: GLenum,
             params: *mut GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribdv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribdv",
                 &self.glGetVertexAttribdv_p,
@@ -20388,10 +16890,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribdv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20413,18 +16912,9 @@ pub mod struct_commands {
         /// [glGetVertexAttribfv](http://docs.gl/gl4/glGetVertexAttrib)(index, pname, params)
         /// * `pname` group: VertexAttribPropertyARB
         /// * `params` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribfv(&self, index: GLuint, pname: GLenum, params: *mut GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribfv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribfv",
                 &self.glGetVertexAttribfv_p,
@@ -20432,10 +16922,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20457,18 +16944,9 @@ pub mod struct_commands {
         /// [glGetVertexAttribiv](http://docs.gl/gl4/glGetVertexAttrib)(index, pname, params)
         /// * `pname` group: VertexAttribPropertyARB
         /// * `params` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetVertexAttribiv(&self, index: GLuint, pname: GLenum, params: *mut GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetVertexAttribiv({:?}, {:#X}, {:p});",
-                    index,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glGetVertexAttribiv",
                 &self.glGetVertexAttribiv_p,
@@ -20476,10 +16954,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetVertexAttribiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20500,8 +16975,7 @@ pub mod struct_commands {
         }
         /// [glGetnCompressedTexImage](http://docs.gl/gl4/glGetnCompressedTexImage)(target, lod, bufSize, pixels)
         /// * `target` group: TextureTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetnCompressedTexImage(
             &self,
             target: GLenum,
@@ -20509,16 +16983,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetnCompressedTexImage({:#X}, {:?}, {:?}, {:p});",
-                    target,
-                    lod,
-                    bufSize,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetnCompressedTexImage",
                 &self.glGetnCompressedTexImage_p,
@@ -20527,10 +16992,7 @@ pub mod struct_commands {
                 bufSize,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetnCompressedTexImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20554,8 +17016,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetnTexImage(
             &self,
             target: GLenum,
@@ -20565,18 +17026,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetnTexImage({:#X}, {:?}, {:#X}, {:#X}, {:?}, {:p});",
-                    target,
-                    level,
-                    format,
-                    type_,
-                    bufSize,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glGetnTexImage",
                 &self.glGetnTexImage_p,
@@ -20587,10 +17037,7 @@ pub mod struct_commands {
                 bufSize,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetnTexImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20611,8 +17058,7 @@ pub mod struct_commands {
         }
         /// [glGetnUniformdv](http://docs.gl/gl4/glGetnUniformdv)(program, location, bufSize, params)
         /// * `params` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetnUniformdv(
             &self,
             program: GLuint,
@@ -20620,16 +17066,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             params: *mut GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetnUniformdv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    bufSize,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetnUniformdv",
                 &self.glGetnUniformdv_p,
@@ -20638,10 +17075,7 @@ pub mod struct_commands {
                 bufSize,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetnUniformdv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20662,8 +17096,7 @@ pub mod struct_commands {
         }
         /// [glGetnUniformfv](http://docs.gl/gl4/glGetnUniform)(program, location, bufSize, params)
         /// * `params` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetnUniformfv(
             &self,
             program: GLuint,
@@ -20671,16 +17104,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             params: *mut GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetnUniformfv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    bufSize,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetnUniformfv",
                 &self.glGetnUniformfv_p,
@@ -20689,10 +17113,7 @@ pub mod struct_commands {
                 bufSize,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetnUniformfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20713,8 +17134,7 @@ pub mod struct_commands {
         }
         /// [glGetnUniformiv](http://docs.gl/gl4/glGetnUniform)(program, location, bufSize, params)
         /// * `params` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetnUniformiv(
             &self,
             program: GLuint,
@@ -20722,16 +17142,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             params: *mut GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetnUniformiv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    bufSize,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetnUniformiv",
                 &self.glGetnUniformiv_p,
@@ -20740,10 +17151,7 @@ pub mod struct_commands {
                 bufSize,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetnUniformiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20764,8 +17172,7 @@ pub mod struct_commands {
         }
         /// [glGetnUniformuiv](http://docs.gl/gl4/glGetnUniform)(program, location, bufSize, params)
         /// * `params` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn GetnUniformuiv(
             &self,
             program: GLuint,
@@ -20773,16 +17180,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             params: *mut GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.GetnUniformuiv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    bufSize,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glGetnUniformuiv",
                 &self.glGetnUniformuiv_p,
@@ -20791,10 +17189,7 @@ pub mod struct_commands {
                 bufSize,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glGetnUniformuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20816,18 +17211,11 @@ pub mod struct_commands {
         /// [glHint](http://docs.gl/gl4/glHint)(target, mode)
         /// * `target` group: HintTarget
         /// * `mode` group: HintMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Hint(&self, target: GLenum, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Hint({:#X}, {:#X});", target, mode);
-            }
+
             let out = call_atomic_ptr_2arg("glHint", &self.glHint_p, target, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glHint");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20843,22 +17231,15 @@ pub mod struct_commands {
             !self.glHint_p.load(RELAX).is_null()
         }
         /// [glInvalidateBufferData](http://docs.gl/gl4/glInvalidateBufferData)(buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateBufferData(&self, buffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.InvalidateBufferData({:?});", buffer);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glInvalidateBufferData",
                 &self.glInvalidateBufferData_p,
                 buffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateBufferData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20880,23 +17261,14 @@ pub mod struct_commands {
         /// [glInvalidateBufferSubData](http://docs.gl/gl4/glInvalidateBufferSubData)(buffer, offset, length)
         /// * `offset` group: BufferOffset
         /// * `length` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateBufferSubData(
             &self,
             buffer: GLuint,
             offset: GLintptr,
             length: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.InvalidateBufferSubData({:?}, {:?}, {:?});",
-                    buffer,
-                    offset,
-                    length
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glInvalidateBufferSubData",
                 &self.glInvalidateBufferSubData_p,
@@ -20904,10 +17276,7 @@ pub mod struct_commands {
                 offset,
                 length,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20930,23 +17299,14 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `attachments` group: InvalidateFramebufferAttachment
         /// * `attachments` len: numAttachments
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateFramebuffer(
             &self,
             target: GLenum,
             numAttachments: GLsizei,
             attachments: *const GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.InvalidateFramebuffer({:#X}, {:?}, {:p});",
-                    target,
-                    numAttachments,
-                    attachments
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glInvalidateFramebuffer",
                 &self.glInvalidateFramebuffer_p,
@@ -20954,10 +17314,7 @@ pub mod struct_commands {
                 numAttachments,
                 attachments,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateFramebuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -20978,23 +17335,14 @@ pub mod struct_commands {
         }
         /// [glInvalidateNamedFramebufferData](http://docs.gl/gl4/glInvalidateNamedFramebufferData)(framebuffer, numAttachments, attachments)
         /// * `attachments` group: FramebufferAttachment
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateNamedFramebufferData(
             &self,
             framebuffer: GLuint,
             numAttachments: GLsizei,
             attachments: *const GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.InvalidateNamedFramebufferData({:?}, {:?}, {:p});",
-                    framebuffer,
-                    numAttachments,
-                    attachments
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glInvalidateNamedFramebufferData",
                 &self.glInvalidateNamedFramebufferData_p,
@@ -21002,10 +17350,7 @@ pub mod struct_commands {
                 numAttachments,
                 attachments,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateNamedFramebufferData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21029,8 +17374,7 @@ pub mod struct_commands {
         }
         /// [glInvalidateNamedFramebufferSubData](http://docs.gl/gl4/glInvalidateNamedFramebufferSubData)(framebuffer, numAttachments, attachments, x, y, width, height)
         /// * `attachments` group: FramebufferAttachment
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateNamedFramebufferSubData(
             &self,
             framebuffer: GLuint,
@@ -21041,10 +17385,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.InvalidateNamedFramebufferSubData({:?}, {:?}, {:p}, {:?}, {:?}, {:?}, {:?});", framebuffer, numAttachments, attachments, x, y, width, height);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glInvalidateNamedFramebufferSubData",
                 &self.glInvalidateNamedFramebufferSubData_p,
@@ -21056,10 +17397,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateNamedFramebufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21085,8 +17423,7 @@ pub mod struct_commands {
         /// * `target` group: FramebufferTarget
         /// * `attachments` group: InvalidateFramebufferAttachment
         /// * `attachments` len: numAttachments
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateSubFramebuffer(
             &self,
             target: GLenum,
@@ -21097,10 +17434,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.InvalidateSubFramebuffer({:#X}, {:?}, {:p}, {:?}, {:?}, {:?}, {:?});", target, numAttachments, attachments, x, y, width, height);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glInvalidateSubFramebuffer",
                 &self.glInvalidateSubFramebuffer_p,
@@ -21112,10 +17446,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateSubFramebuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21135,23 +17466,16 @@ pub mod struct_commands {
             !self.glInvalidateSubFramebuffer_p.load(RELAX).is_null()
         }
         /// [glInvalidateTexImage](http://docs.gl/gl4/glInvalidateTexImage)(texture, level)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateTexImage(&self, texture: GLuint, level: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.InvalidateTexImage({:?}, {:?});", texture, level);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glInvalidateTexImage",
                 &self.glInvalidateTexImage_p,
                 texture,
                 level,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateTexImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21171,8 +17495,7 @@ pub mod struct_commands {
             !self.glInvalidateTexImage_p.load(RELAX).is_null()
         }
         /// [glInvalidateTexSubImage](http://docs.gl/gl4/glInvalidateTexSubImage)(texture, level, xoffset, yoffset, zoffset, width, height, depth)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn InvalidateTexSubImage(
             &self,
             texture: GLuint,
@@ -21184,10 +17507,7 @@ pub mod struct_commands {
             height: GLsizei,
             depth: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.InvalidateTexSubImage({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", texture, level, xoffset, yoffset, zoffset, width, height, depth);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glInvalidateTexSubImage",
                 &self.glInvalidateTexSubImage_p,
@@ -21200,10 +17520,7 @@ pub mod struct_commands {
                 height,
                 depth,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glInvalidateTexSubImage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21223,18 +17540,11 @@ pub mod struct_commands {
             !self.glInvalidateTexSubImage_p.load(RELAX).is_null()
         }
         /// [glIsBuffer](http://docs.gl/gl4/glIsBuffer)(buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsBuffer(&self, buffer: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsBuffer({:?});", buffer);
-            }
+
             let out = call_atomic_ptr_1arg("glIsBuffer", &self.glIsBuffer_p, buffer);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21251,18 +17561,11 @@ pub mod struct_commands {
         }
         /// [glIsEnabled](http://docs.gl/gl4/glIsEnabled)(cap)
         /// * `cap` group: EnableCap
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsEnabled(&self, cap: GLenum) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsEnabled({:#X});", cap);
-            }
+
             let out = call_atomic_ptr_1arg("glIsEnabled", &self.glIsEnabled_p, cap);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsEnabled");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21280,27 +17583,16 @@ pub mod struct_commands {
         /// [glIsEnabledIndexedEXT](http://docs.gl/gl4/glIsEnabledIndexedEXT)(target, index)
         /// * `target` group: EnableCap
         /// * alias of: [`glIsEnabledi`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsEnabledIndexedEXT(&self, target: GLenum, index: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.IsEnabledIndexedEXT({:#X}, {:?});",
-                    target,
-                    index
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glIsEnabledIndexedEXT",
                 &self.glIsEnabledIndexedEXT_p,
                 target,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsEnabledIndexedEXT");
-            }
+
             out
         }
 
@@ -21323,18 +17615,11 @@ pub mod struct_commands {
         }
         /// [glIsEnabledi](http://docs.gl/gl4/glIsEnabled)(target, index)
         /// * `target` group: EnableCap
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsEnabledi(&self, target: GLenum, index: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsEnabledi({:#X}, {:?});", target, index);
-            }
+
             let out = call_atomic_ptr_2arg("glIsEnabledi", &self.glIsEnabledi_p, target, index);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsEnabledi");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21350,18 +17635,11 @@ pub mod struct_commands {
             !self.glIsEnabledi_p.load(RELAX).is_null()
         }
         /// [glIsFramebuffer](http://docs.gl/gl4/glIsFramebuffer)(framebuffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsFramebuffer(&self, framebuffer: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsFramebuffer({:?});", framebuffer);
-            }
+
             let out = call_atomic_ptr_1arg("glIsFramebuffer", &self.glIsFramebuffer_p, framebuffer);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsFramebuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21381,18 +17659,11 @@ pub mod struct_commands {
             !self.glIsFramebuffer_p.load(RELAX).is_null()
         }
         /// [glIsProgram](http://docs.gl/gl4/glIsProgram)(program)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsProgram(&self, program: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsProgram({:?});", program);
-            }
+
             let out = call_atomic_ptr_1arg("glIsProgram", &self.glIsProgram_p, program);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsProgram");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21408,19 +17679,12 @@ pub mod struct_commands {
             !self.glIsProgram_p.load(RELAX).is_null()
         }
         /// [glIsProgramPipeline](http://docs.gl/gl4/glIsProgramPipeline)(pipeline)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsProgramPipeline(&self, pipeline: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsProgramPipeline({:?});", pipeline);
-            }
+
             let out =
                 call_atomic_ptr_1arg("glIsProgramPipeline", &self.glIsProgramPipeline_p, pipeline);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsProgramPipeline");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21440,18 +17704,11 @@ pub mod struct_commands {
             !self.glIsProgramPipeline_p.load(RELAX).is_null()
         }
         /// [glIsQuery](http://docs.gl/gl4/glIsQuery)(id)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsQuery(&self, id: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsQuery({:?});", id);
-            }
+
             let out = call_atomic_ptr_1arg("glIsQuery", &self.glIsQuery_p, id);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsQuery");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21467,19 +17724,12 @@ pub mod struct_commands {
             !self.glIsQuery_p.load(RELAX).is_null()
         }
         /// [glIsRenderbuffer](http://docs.gl/gl4/glIsRenderbuffer)(renderbuffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsRenderbuffer(&self, renderbuffer: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsRenderbuffer({:?});", renderbuffer);
-            }
+
             let out =
                 call_atomic_ptr_1arg("glIsRenderbuffer", &self.glIsRenderbuffer_p, renderbuffer);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsRenderbuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21499,18 +17749,11 @@ pub mod struct_commands {
             !self.glIsRenderbuffer_p.load(RELAX).is_null()
         }
         /// [glIsSampler](http://docs.gl/gl4/glIsSampler)(sampler)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsSampler(&self, sampler: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsSampler({:?});", sampler);
-            }
+
             let out = call_atomic_ptr_1arg("glIsSampler", &self.glIsSampler_p, sampler);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsSampler");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21526,18 +17769,11 @@ pub mod struct_commands {
             !self.glIsSampler_p.load(RELAX).is_null()
         }
         /// [glIsShader](http://docs.gl/gl4/glIsShader)(shader)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsShader(&self, shader: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsShader({:?});", shader);
-            }
+
             let out = call_atomic_ptr_1arg("glIsShader", &self.glIsShader_p, shader);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21554,18 +17790,11 @@ pub mod struct_commands {
         }
         /// [glIsSync](http://docs.gl/gl4/glIsSync)(sync)
         /// * `sync` group: sync
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsSync(&self, sync: GLsync) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsSync({:p});", sync);
-            }
+
             let out = call_atomic_ptr_1arg("glIsSync", &self.glIsSync_p, sync);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsSync");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21582,18 +17811,11 @@ pub mod struct_commands {
         }
         /// [glIsTexture](http://docs.gl/gl4/glIsTexture)(texture)
         /// * `texture` group: Texture
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsTexture(&self, texture: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsTexture({:?});", texture);
-            }
+
             let out = call_atomic_ptr_1arg("glIsTexture", &self.glIsTexture_p, texture);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsTexture");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21609,19 +17831,12 @@ pub mod struct_commands {
             !self.glIsTexture_p.load(RELAX).is_null()
         }
         /// [glIsTransformFeedback](http://docs.gl/gl4/glIsTransformFeedback)(id)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsTransformFeedback(&self, id: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsTransformFeedback({:?});", id);
-            }
+
             let out =
                 call_atomic_ptr_1arg("glIsTransformFeedback", &self.glIsTransformFeedback_p, id);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21641,18 +17856,11 @@ pub mod struct_commands {
             !self.glIsTransformFeedback_p.load(RELAX).is_null()
         }
         /// [glIsVertexArray](http://docs.gl/gl4/glIsVertexArray)(array)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn IsVertexArray(&self, array: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.IsVertexArray({:?});", array);
-            }
+
             let out = call_atomic_ptr_1arg("glIsVertexArray", &self.glIsVertexArray_p, array);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glIsVertexArray");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21673,18 +17881,11 @@ pub mod struct_commands {
         }
         /// [glLineWidth](http://docs.gl/gl4/glLineWidth)(width)
         /// * `width` group: CheckedFloat32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn LineWidth(&self, width: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.LineWidth({:?});", width);
-            }
+
             let out = call_atomic_ptr_1arg("glLineWidth", &self.glLineWidth_p, width);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glLineWidth");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21700,18 +17901,11 @@ pub mod struct_commands {
             !self.glLineWidth_p.load(RELAX).is_null()
         }
         /// [glLinkProgram](http://docs.gl/gl4/glLinkProgram)(program)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn LinkProgram(&self, program: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.LinkProgram({:?});", program);
-            }
+
             let out = call_atomic_ptr_1arg("glLinkProgram", &self.glLinkProgram_p, program);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glLinkProgram");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21728,18 +17922,11 @@ pub mod struct_commands {
         }
         /// [glLogicOp](http://docs.gl/gl4/glLogicOp)(opcode)
         /// * `opcode` group: LogicOp
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn LogicOp(&self, opcode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.LogicOp({:#X});", opcode);
-            }
+
             let out = call_atomic_ptr_1arg("glLogicOp", &self.glLogicOp_p, opcode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glLogicOp");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21757,18 +17944,11 @@ pub mod struct_commands {
         /// [glMapBuffer](http://docs.gl/gl4/glMapBuffer)(target, access)
         /// * `target` group: BufferTargetARB
         /// * `access` group: BufferAccessARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MapBuffer(&self, target: GLenum, access: GLenum) -> *mut c_void {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MapBuffer({:#X}, {:#X});", target, access);
-            }
+
             let out = call_atomic_ptr_2arg("glMapBuffer", &self.glMapBuffer_p, target, access);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMapBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21788,8 +17968,7 @@ pub mod struct_commands {
         /// * `offset` group: BufferOffset
         /// * `length` group: BufferSize
         /// * `access` group: MapBufferAccessMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MapBufferRange(
             &self,
             target: GLenum,
@@ -21797,16 +17976,7 @@ pub mod struct_commands {
             length: GLsizeiptr,
             access: GLbitfield,
         ) -> *mut c_void {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MapBufferRange({:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    offset,
-                    length,
-                    access
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glMapBufferRange",
                 &self.glMapBufferRange_p,
@@ -21815,10 +17985,7 @@ pub mod struct_commands {
                 length,
                 access,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMapBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21839,19 +18006,12 @@ pub mod struct_commands {
         }
         /// [glMapNamedBuffer](http://docs.gl/gl4/glMapNamedBuffer)(buffer, access)
         /// * `access` group: BufferAccessARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MapNamedBuffer(&self, buffer: GLuint, access: GLenum) -> *mut c_void {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MapNamedBuffer({:?}, {:#X});", buffer, access);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glMapNamedBuffer", &self.glMapNamedBuffer_p, buffer, access);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMapNamedBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21873,8 +18033,7 @@ pub mod struct_commands {
         /// [glMapNamedBufferRange](http://docs.gl/gl4/glMapNamedBufferRange)(buffer, offset, length, access)
         /// * `length` group: BufferSize
         /// * `access` group: MapBufferAccessMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MapNamedBufferRange(
             &self,
             buffer: GLuint,
@@ -21882,16 +18041,7 @@ pub mod struct_commands {
             length: GLsizeiptr,
             access: GLbitfield,
         ) -> *mut c_void {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MapNamedBufferRange({:?}, {:?}, {:?}, {:?});",
-                    buffer,
-                    offset,
-                    length,
-                    access
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glMapNamedBufferRange",
                 &self.glMapNamedBufferRange_p,
@@ -21900,10 +18050,7 @@ pub mod struct_commands {
                 length,
                 access,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMapNamedBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21924,22 +18071,15 @@ pub mod struct_commands {
         }
         /// [glMaxShaderCompilerThreadsARB](http://docs.gl/gl4/glMaxShaderCompilerThreadsARB)(count)
         /// * alias of: [`glMaxShaderCompilerThreadsKHR`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MaxShaderCompilerThreadsARB(&self, count: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MaxShaderCompilerThreadsARB({:?});", count);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glMaxShaderCompilerThreadsARB",
                 &self.glMaxShaderCompilerThreadsARB_p,
                 count,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMaxShaderCompilerThreadsARB");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21959,22 +18099,15 @@ pub mod struct_commands {
             !self.glMaxShaderCompilerThreadsARB_p.load(RELAX).is_null()
         }
         /// [glMaxShaderCompilerThreadsKHR](http://docs.gl/gl4/glMaxShaderCompilerThreadsKHR)(count)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MaxShaderCompilerThreadsKHR(&self, count: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MaxShaderCompilerThreadsKHR({:?});", count);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glMaxShaderCompilerThreadsKHR",
                 &self.glMaxShaderCompilerThreadsKHR_p,
                 count,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMaxShaderCompilerThreadsKHR");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -21995,18 +18128,11 @@ pub mod struct_commands {
         }
         /// [glMemoryBarrier](http://docs.gl/gl4/glMemoryBarrier)(barriers)
         /// * `barriers` group: MemoryBarrierMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MemoryBarrier(&self, barriers: GLbitfield) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MemoryBarrier({:?});", barriers);
-            }
+
             let out = call_atomic_ptr_1arg("glMemoryBarrier", &self.glMemoryBarrier_p, barriers);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMemoryBarrier");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22027,22 +18153,15 @@ pub mod struct_commands {
         }
         /// [glMemoryBarrierByRegion](http://docs.gl/gl4/glMemoryBarrierByRegion)(barriers)
         /// * `barriers` group: MemoryBarrierMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MemoryBarrierByRegion(&self, barriers: GLbitfield) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MemoryBarrierByRegion({:?});", barriers);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glMemoryBarrierByRegion",
                 &self.glMemoryBarrierByRegion_p,
                 barriers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMemoryBarrierByRegion");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22063,18 +18182,11 @@ pub mod struct_commands {
         }
         /// [glMinSampleShading](http://docs.gl/gl4/glMinSampleShading)(value)
         /// * `value` group: ColorF
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MinSampleShading(&self, value: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MinSampleShading({:?});", value);
-            }
+
             let out = call_atomic_ptr_1arg("glMinSampleShading", &self.glMinSampleShading_p, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMinSampleShading");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22097,8 +18209,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `first` len: COMPSIZE(drawcount)
         /// * `count` len: COMPSIZE(drawcount)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawArrays(
             &self,
             mode: GLenum,
@@ -22106,16 +18217,7 @@ pub mod struct_commands {
             count: *const GLsizei,
             drawcount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MultiDrawArrays({:#X}, {:p}, {:p}, {:?});",
-                    mode,
-                    first,
-                    count,
-                    drawcount
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glMultiDrawArrays",
                 &self.glMultiDrawArrays_p,
@@ -22124,10 +18226,7 @@ pub mod struct_commands {
                 count,
                 drawcount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawArrays");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22149,8 +18248,7 @@ pub mod struct_commands {
         /// [glMultiDrawArraysIndirect](http://docs.gl/gl4/glMultiDrawArraysIndirect)(mode, indirect, drawcount, stride)
         /// * `mode` group: PrimitiveType
         /// * `indirect` len: COMPSIZE(drawcount,stride)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawArraysIndirect(
             &self,
             mode: GLenum,
@@ -22158,16 +18256,7 @@ pub mod struct_commands {
             drawcount: GLsizei,
             stride: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MultiDrawArraysIndirect({:#X}, {:p}, {:?}, {:?});",
-                    mode,
-                    indirect,
-                    drawcount,
-                    stride
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glMultiDrawArraysIndirect",
                 &self.glMultiDrawArraysIndirect_p,
@@ -22176,10 +18265,7 @@ pub mod struct_commands {
                 drawcount,
                 stride,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawArraysIndirect");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22200,8 +18286,7 @@ pub mod struct_commands {
         }
         /// [glMultiDrawArraysIndirectCount](http://docs.gl/gl4/glMultiDrawArraysIndirectCount)(mode, indirect, drawcount, maxdrawcount, stride)
         /// * `mode` group: PrimitiveType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawArraysIndirectCount(
             &self,
             mode: GLenum,
@@ -22210,17 +18295,7 @@ pub mod struct_commands {
             maxdrawcount: GLsizei,
             stride: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MultiDrawArraysIndirectCount({:#X}, {:p}, {:?}, {:?}, {:?});",
-                    mode,
-                    indirect,
-                    drawcount,
-                    maxdrawcount,
-                    stride
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glMultiDrawArraysIndirectCount",
                 &self.glMultiDrawArraysIndirectCount_p,
@@ -22230,10 +18305,7 @@ pub mod struct_commands {
                 maxdrawcount,
                 stride,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawArraysIndirectCount");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22257,8 +18329,7 @@ pub mod struct_commands {
         /// * `count` len: COMPSIZE(drawcount)
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(drawcount)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawElements(
             &self,
             mode: GLenum,
@@ -22267,17 +18338,7 @@ pub mod struct_commands {
             indices: *const *const c_void,
             drawcount: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MultiDrawElements({:#X}, {:p}, {:#X}, {:p}, {:?});",
-                    mode,
-                    count,
-                    type_,
-                    indices,
-                    drawcount
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glMultiDrawElements",
                 &self.glMultiDrawElements_p,
@@ -22287,10 +18348,7 @@ pub mod struct_commands {
                 indices,
                 drawcount,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawElements");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22315,8 +18373,7 @@ pub mod struct_commands {
         /// * `type_` group: DrawElementsType
         /// * `indices` len: COMPSIZE(drawcount)
         /// * `basevertex` len: COMPSIZE(drawcount)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawElementsBaseVertex(
             &self,
             mode: GLenum,
@@ -22326,18 +18383,7 @@ pub mod struct_commands {
             drawcount: GLsizei,
             basevertex: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MultiDrawElementsBaseVertex({:#X}, {:p}, {:#X}, {:p}, {:?}, {:p});",
-                    mode,
-                    count,
-                    type_,
-                    indices,
-                    drawcount,
-                    basevertex
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glMultiDrawElementsBaseVertex",
                 &self.glMultiDrawElementsBaseVertex_p,
@@ -22348,10 +18394,7 @@ pub mod struct_commands {
                 drawcount,
                 basevertex,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawElementsBaseVertex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22374,8 +18417,7 @@ pub mod struct_commands {
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
         /// * `indirect` len: COMPSIZE(drawcount,stride)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawElementsIndirect(
             &self,
             mode: GLenum,
@@ -22384,17 +18426,7 @@ pub mod struct_commands {
             drawcount: GLsizei,
             stride: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.MultiDrawElementsIndirect({:#X}, {:#X}, {:p}, {:?}, {:?});",
-                    mode,
-                    type_,
-                    indirect,
-                    drawcount,
-                    stride
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glMultiDrawElementsIndirect",
                 &self.glMultiDrawElementsIndirect_p,
@@ -22404,10 +18436,7 @@ pub mod struct_commands {
                 drawcount,
                 stride,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawElementsIndirect");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22429,8 +18458,7 @@ pub mod struct_commands {
         /// [glMultiDrawElementsIndirectCount](http://docs.gl/gl4/glMultiDrawElementsIndirectCount)(mode, type_, indirect, drawcount, maxdrawcount, stride)
         /// * `mode` group: PrimitiveType
         /// * `type_` group: DrawElementsType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn MultiDrawElementsIndirectCount(
             &self,
             mode: GLenum,
@@ -22440,10 +18468,7 @@ pub mod struct_commands {
             maxdrawcount: GLsizei,
             stride: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.MultiDrawElementsIndirectCount({:#X}, {:#X}, {:p}, {:?}, {:?}, {:?});", mode, type_, indirect, drawcount, maxdrawcount, stride);
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glMultiDrawElementsIndirectCount",
                 &self.glMultiDrawElementsIndirectCount_p,
@@ -22454,10 +18479,7 @@ pub mod struct_commands {
                 maxdrawcount,
                 stride,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glMultiDrawElementsIndirectCount");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22482,8 +18504,7 @@ pub mod struct_commands {
         /// [glNamedBufferData](http://docs.gl/gl4/glNamedBufferData)(buffer, size, data, usage)
         /// * `size` group: BufferSize
         /// * `usage` group: VertexBufferObjectUsage
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedBufferData(
             &self,
             buffer: GLuint,
@@ -22491,16 +18512,7 @@ pub mod struct_commands {
             data: *const c_void,
             usage: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedBufferData({:?}, {:?}, {:p}, {:#X});",
-                    buffer,
-                    size,
-                    data,
-                    usage
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glNamedBufferData",
                 &self.glNamedBufferData_p,
@@ -22509,10 +18521,7 @@ pub mod struct_commands {
                 data,
                 usage,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedBufferData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22535,8 +18544,7 @@ pub mod struct_commands {
         /// * `size` group: BufferSize
         /// * `data` len: size
         /// * `flags` group: BufferStorageMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedBufferStorage(
             &self,
             buffer: GLuint,
@@ -22544,16 +18552,7 @@ pub mod struct_commands {
             data: *const c_void,
             flags: GLbitfield,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedBufferStorage({:?}, {:?}, {:p}, {:?});",
-                    buffer,
-                    size,
-                    data,
-                    flags
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glNamedBufferStorage",
                 &self.glNamedBufferStorage_p,
@@ -22562,10 +18561,7 @@ pub mod struct_commands {
                 data,
                 flags,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedBufferStorage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22587,8 +18583,7 @@ pub mod struct_commands {
         /// [glNamedBufferSubData](http://docs.gl/gl4/glNamedBufferSubData)(buffer, offset, size, data)
         /// * `size` group: BufferSize
         /// * `data` len: COMPSIZE(size)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedBufferSubData(
             &self,
             buffer: GLuint,
@@ -22596,16 +18591,7 @@ pub mod struct_commands {
             size: GLsizeiptr,
             data: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedBufferSubData({:?}, {:?}, {:?}, {:p});",
-                    buffer,
-                    offset,
-                    size,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glNamedBufferSubData",
                 &self.glNamedBufferSubData_p,
@@ -22614,10 +18600,7 @@ pub mod struct_commands {
                 size,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedBufferSubData");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22638,27 +18621,16 @@ pub mod struct_commands {
         }
         /// [glNamedFramebufferDrawBuffer](http://docs.gl/gl4/glNamedFramebufferDrawBuffer)(framebuffer, buf)
         /// * `buf` group: ColorBuffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferDrawBuffer(&self, framebuffer: GLuint, buf: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferDrawBuffer({:?}, {:#X});",
-                    framebuffer,
-                    buf
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glNamedFramebufferDrawBuffer",
                 &self.glNamedFramebufferDrawBuffer_p,
                 framebuffer,
                 buf,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferDrawBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22679,23 +18651,14 @@ pub mod struct_commands {
         }
         /// [glNamedFramebufferDrawBuffers](http://docs.gl/gl4/glNamedFramebufferDrawBuffers)(framebuffer, n, bufs)
         /// * `bufs` group: ColorBuffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferDrawBuffers(
             &self,
             framebuffer: GLuint,
             n: GLsizei,
             bufs: *const GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferDrawBuffers({:?}, {:?}, {:p});",
-                    framebuffer,
-                    n,
-                    bufs
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glNamedFramebufferDrawBuffers",
                 &self.glNamedFramebufferDrawBuffers_p,
@@ -22703,10 +18666,7 @@ pub mod struct_commands {
                 n,
                 bufs,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferDrawBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22727,23 +18687,14 @@ pub mod struct_commands {
         }
         /// [glNamedFramebufferParameteri](http://docs.gl/gl4/glNamedFramebufferParameter)(framebuffer, pname, param)
         /// * `pname` group: FramebufferParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferParameteri(
             &self,
             framebuffer: GLuint,
             pname: GLenum,
             param: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferParameteri({:?}, {:#X}, {:?});",
-                    framebuffer,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glNamedFramebufferParameteri",
                 &self.glNamedFramebufferParameteri_p,
@@ -22751,10 +18702,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22775,27 +18723,16 @@ pub mod struct_commands {
         }
         /// [glNamedFramebufferReadBuffer](http://docs.gl/gl4/glNamedFramebufferReadBuffer)(framebuffer, src)
         /// * `src` group: ColorBuffer
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferReadBuffer(&self, framebuffer: GLuint, src: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferReadBuffer({:?}, {:#X});",
-                    framebuffer,
-                    src
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glNamedFramebufferReadBuffer",
                 &self.glNamedFramebufferReadBuffer_p,
                 framebuffer,
                 src,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferReadBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22817,8 +18754,7 @@ pub mod struct_commands {
         /// [glNamedFramebufferRenderbuffer](http://docs.gl/gl4/glNamedFramebufferRenderbuffer)(framebuffer, attachment, renderbuffertarget, renderbuffer)
         /// * `attachment` group: FramebufferAttachment
         /// * `renderbuffertarget` group: RenderbufferTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferRenderbuffer(
             &self,
             framebuffer: GLuint,
@@ -22826,16 +18762,7 @@ pub mod struct_commands {
             renderbuffertarget: GLenum,
             renderbuffer: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferRenderbuffer({:?}, {:#X}, {:#X}, {:?});",
-                    framebuffer,
-                    attachment,
-                    renderbuffertarget,
-                    renderbuffer
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glNamedFramebufferRenderbuffer",
                 &self.glNamedFramebufferRenderbuffer_p,
@@ -22844,10 +18771,7 @@ pub mod struct_commands {
                 renderbuffertarget,
                 renderbuffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferRenderbuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22868,8 +18792,7 @@ pub mod struct_commands {
         }
         /// [glNamedFramebufferTexture](http://docs.gl/gl4/glNamedFramebufferTexture)(framebuffer, attachment, texture, level)
         /// * `attachment` group: FramebufferAttachment
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferTexture(
             &self,
             framebuffer: GLuint,
@@ -22877,16 +18800,7 @@ pub mod struct_commands {
             texture: GLuint,
             level: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferTexture({:?}, {:#X}, {:?}, {:?});",
-                    framebuffer,
-                    attachment,
-                    texture,
-                    level
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glNamedFramebufferTexture",
                 &self.glNamedFramebufferTexture_p,
@@ -22895,10 +18809,7 @@ pub mod struct_commands {
                 texture,
                 level,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferTexture");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22919,8 +18830,7 @@ pub mod struct_commands {
         }
         /// [glNamedFramebufferTextureLayer](http://docs.gl/gl4/glNamedFramebufferTextureLayer)(framebuffer, attachment, texture, level, layer)
         /// * `attachment` group: FramebufferAttachment
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedFramebufferTextureLayer(
             &self,
             framebuffer: GLuint,
@@ -22929,17 +18839,7 @@ pub mod struct_commands {
             level: GLint,
             layer: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedFramebufferTextureLayer({:?}, {:#X}, {:?}, {:?}, {:?});",
-                    framebuffer,
-                    attachment,
-                    texture,
-                    level,
-                    layer
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glNamedFramebufferTextureLayer",
                 &self.glNamedFramebufferTextureLayer_p,
@@ -22949,10 +18849,7 @@ pub mod struct_commands {
                 level,
                 layer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedFramebufferTextureLayer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -22973,8 +18870,7 @@ pub mod struct_commands {
         }
         /// [glNamedRenderbufferStorage](http://docs.gl/gl4/glNamedRenderbufferStorage)(renderbuffer, internalformat, width, height)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedRenderbufferStorage(
             &self,
             renderbuffer: GLuint,
@@ -22982,16 +18878,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.NamedRenderbufferStorage({:?}, {:#X}, {:?}, {:?});",
-                    renderbuffer,
-                    internalformat,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glNamedRenderbufferStorage",
                 &self.glNamedRenderbufferStorage_p,
@@ -23000,10 +18887,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedRenderbufferStorage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23024,8 +18908,7 @@ pub mod struct_commands {
         }
         /// [glNamedRenderbufferStorageMultisample](http://docs.gl/gl4/glNamedRenderbufferStorageMultisample)(renderbuffer, samples, internalformat, width, height)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn NamedRenderbufferStorageMultisample(
             &self,
             renderbuffer: GLuint,
@@ -23034,10 +18917,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.NamedRenderbufferStorageMultisample({:?}, {:?}, {:#X}, {:?}, {:?});", renderbuffer, samples, internalformat, width, height);
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glNamedRenderbufferStorageMultisample",
                 &self.glNamedRenderbufferStorageMultisample_p,
@@ -23047,10 +18927,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glNamedRenderbufferStorageMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23075,8 +18952,7 @@ pub mod struct_commands {
         /// [glObjectLabel](http://docs.gl/gl4/glObjectLabel)(identifier, name, length, label)
         /// * `identifier` group: ObjectIdentifier
         /// * `label` len: COMPSIZE(label,length)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ObjectLabel(
             &self,
             identifier: GLenum,
@@ -23084,16 +18960,7 @@ pub mod struct_commands {
             length: GLsizei,
             label: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ObjectLabel({:#X}, {:?}, {:?}, {:p});",
-                    identifier,
-                    name,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glObjectLabel",
                 &self.glObjectLabel_p,
@@ -23102,10 +18969,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glObjectLabel");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23123,8 +18987,7 @@ pub mod struct_commands {
         /// [glObjectLabelKHR](http://docs.gl/gl4/glObjectLabelKHR)(identifier, name, length, label)
         /// * `identifier` group: ObjectIdentifier
         /// * alias of: [`glObjectLabel`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ObjectLabelKHR(
             &self,
             identifier: GLenum,
@@ -23132,16 +18995,7 @@ pub mod struct_commands {
             length: GLsizei,
             label: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ObjectLabelKHR({:#X}, {:?}, {:?}, {:p});",
-                    identifier,
-                    name,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glObjectLabelKHR",
                 &self.glObjectLabelKHR_p,
@@ -23150,10 +19004,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glObjectLabelKHR");
-            }
+
             out
         }
 
@@ -23176,23 +19027,14 @@ pub mod struct_commands {
         }
         /// [glObjectPtrLabel](http://docs.gl/gl4/glObjectPtrLabel)(ptr, length, label)
         /// * `label` len: COMPSIZE(label,length)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ObjectPtrLabel(
             &self,
             ptr: *const c_void,
             length: GLsizei,
             label: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ObjectPtrLabel({:p}, {:?}, {:p});",
-                    ptr,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glObjectPtrLabel",
                 &self.glObjectPtrLabel_p,
@@ -23200,10 +19042,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glObjectPtrLabel");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23224,23 +19063,14 @@ pub mod struct_commands {
         }
         /// [glObjectPtrLabelKHR](http://docs.gl/gl4/glObjectPtrLabelKHR)(ptr, length, label)
         /// * alias of: [`glObjectPtrLabel`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ObjectPtrLabelKHR(
             &self,
             ptr: *const c_void,
             length: GLsizei,
             label: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ObjectPtrLabelKHR({:p}, {:?}, {:p});",
-                    ptr,
-                    length,
-                    label
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glObjectPtrLabelKHR",
                 &self.glObjectPtrLabelKHR_p,
@@ -23248,10 +19078,7 @@ pub mod struct_commands {
                 length,
                 label,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glObjectPtrLabelKHR");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23273,23 +19100,16 @@ pub mod struct_commands {
         /// [glPatchParameterfv](http://docs.gl/gl4/glPatchParameter)(pname, values)
         /// * `pname` group: PatchParameterName
         /// * `values` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PatchParameterfv(&self, pname: GLenum, values: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PatchParameterfv({:#X}, {:p});", pname, values);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glPatchParameterfv",
                 &self.glPatchParameterfv_p,
                 pname,
                 values,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPatchParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23310,19 +19130,12 @@ pub mod struct_commands {
         }
         /// [glPatchParameteri](http://docs.gl/gl4/glPatchParameter)(pname, value)
         /// * `pname` group: PatchParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PatchParameteri(&self, pname: GLenum, value: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PatchParameteri({:#X}, {:?});", pname, value);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glPatchParameteri", &self.glPatchParameteri_p, pname, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPatchParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23342,19 +19155,12 @@ pub mod struct_commands {
             !self.glPatchParameteri_p.load(RELAX).is_null()
         }
         /// [glPauseTransformFeedback](http://docs.gl/gl4/glPauseTransformFeedback)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PauseTransformFeedback(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PauseTransformFeedback();",);
-            }
+
             let out =
                 call_atomic_ptr_0arg("glPauseTransformFeedback", &self.glPauseTransformFeedback_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPauseTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23376,18 +19182,11 @@ pub mod struct_commands {
         /// [glPixelStoref](http://docs.gl/gl4/glPixelStore)(pname, param)
         /// * `pname` group: PixelStoreParameter
         /// * `param` group: CheckedFloat32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PixelStoref(&self, pname: GLenum, param: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PixelStoref({:#X}, {:?});", pname, param);
-            }
+
             let out = call_atomic_ptr_2arg("glPixelStoref", &self.glPixelStoref_p, pname, param);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPixelStoref");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23405,18 +19204,11 @@ pub mod struct_commands {
         /// [glPixelStorei](http://docs.gl/gl4/glPixelStore)(pname, param)
         /// * `pname` group: PixelStoreParameter
         /// * `param` group: CheckedInt32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PixelStorei(&self, pname: GLenum, param: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PixelStorei({:#X}, {:?});", pname, param);
-            }
+
             let out = call_atomic_ptr_2arg("glPixelStorei", &self.glPixelStorei_p, pname, param);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPixelStorei");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23434,19 +19226,12 @@ pub mod struct_commands {
         /// [glPointParameterf](http://docs.gl/gl4/glPointParameter)(pname, param)
         /// * `pname` group: PointParameterNameARB
         /// * `param` group: CheckedFloat32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PointParameterf(&self, pname: GLenum, param: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PointParameterf({:#X}, {:?});", pname, param);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glPointParameterf", &self.glPointParameterf_p, pname, param);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPointParameterf");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23469,23 +19254,16 @@ pub mod struct_commands {
         /// * `pname` group: PointParameterNameARB
         /// * `params` group: CheckedFloat32
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PointParameterfv(&self, pname: GLenum, params: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PointParameterfv({:#X}, {:p});", pname, params);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glPointParameterfv",
                 &self.glPointParameterfv_p,
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPointParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23506,19 +19284,12 @@ pub mod struct_commands {
         }
         /// [glPointParameteri](http://docs.gl/gl4/glPointParameter)(pname, param)
         /// * `pname` group: PointParameterNameARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PointParameteri(&self, pname: GLenum, param: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PointParameteri({:#X}, {:?});", pname, param);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glPointParameteri", &self.glPointParameteri_p, pname, param);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPointParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23540,23 +19311,16 @@ pub mod struct_commands {
         /// [glPointParameteriv](http://docs.gl/gl4/glPointParameter)(pname, params)
         /// * `pname` group: PointParameterNameARB
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PointParameteriv(&self, pname: GLenum, params: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PointParameteriv({:#X}, {:p});", pname, params);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glPointParameteriv",
                 &self.glPointParameteriv_p,
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPointParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23577,18 +19341,11 @@ pub mod struct_commands {
         }
         /// [glPointSize](http://docs.gl/gl4/glPointSize)(size)
         /// * `size` group: CheckedFloat32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PointSize(&self, size: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PointSize({:?});", size);
-            }
+
             let out = call_atomic_ptr_1arg("glPointSize", &self.glPointSize_p, size);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPointSize");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23606,18 +19363,11 @@ pub mod struct_commands {
         /// [glPolygonMode](http://docs.gl/gl4/glPolygonMode)(face, mode)
         /// * `face` group: MaterialFace
         /// * `mode` group: PolygonMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PolygonMode(&self, face: GLenum, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PolygonMode({:#X}, {:#X});", face, mode);
-            }
+
             let out = call_atomic_ptr_2arg("glPolygonMode", &self.glPolygonMode_p, face, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPolygonMode");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23633,19 +19383,12 @@ pub mod struct_commands {
             !self.glPolygonMode_p.load(RELAX).is_null()
         }
         /// [glPolygonOffset](http://docs.gl/gl4/glPolygonOffset)(factor, units)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PolygonOffset(&self, factor: GLfloat, units: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PolygonOffset({:?}, {:?});", factor, units);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glPolygonOffset", &self.glPolygonOffset_p, factor, units);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPolygonOffset");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23665,18 +19408,9 @@ pub mod struct_commands {
             !self.glPolygonOffset_p.load(RELAX).is_null()
         }
         /// [glPolygonOffsetClamp](http://docs.gl/gl4/glPolygonOffsetClamp)(factor, units, clamp)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PolygonOffsetClamp(&self, factor: GLfloat, units: GLfloat, clamp: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.PolygonOffsetClamp({:?}, {:?}, {:?});",
-                    factor,
-                    units,
-                    clamp
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glPolygonOffsetClamp",
                 &self.glPolygonOffsetClamp_p,
@@ -23684,10 +19418,7 @@ pub mod struct_commands {
                 units,
                 clamp,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPolygonOffsetClamp");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23707,18 +19438,11 @@ pub mod struct_commands {
             !self.glPolygonOffsetClamp_p.load(RELAX).is_null()
         }
         /// [glPopDebugGroup](http://docs.gl/gl4/glPopDebugGroup)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PopDebugGroup(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PopDebugGroup();",);
-            }
+
             let out = call_atomic_ptr_0arg("glPopDebugGroup", &self.glPopDebugGroup_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPopDebugGroup");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23739,18 +19463,11 @@ pub mod struct_commands {
         }
         /// [glPopDebugGroupKHR](http://docs.gl/gl4/glPopDebugGroupKHR)()
         /// * alias of: [`glPopDebugGroup`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PopDebugGroupKHR(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PopDebugGroupKHR();",);
-            }
+
             let out = call_atomic_ptr_0arg("glPopDebugGroupKHR", &self.glPopDebugGroupKHR_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPopDebugGroupKHR");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23770,8 +19487,7 @@ pub mod struct_commands {
             !self.glPopDebugGroupKHR_p.load(RELAX).is_null()
         }
         /// [glPrimitiveBoundingBox](http://docs.gl/gl4/glPrimitiveBoundingBox)(minX, minY, minZ, minW, maxX, maxY, maxZ, maxW)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PrimitiveBoundingBox(
             &self,
             minX: GLfloat,
@@ -23783,10 +19499,7 @@ pub mod struct_commands {
             maxZ: GLfloat,
             maxW: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PrimitiveBoundingBox({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?});", minX, minY, minZ, minW, maxX, maxY, maxZ, maxW);
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glPrimitiveBoundingBox",
                 &self.glPrimitiveBoundingBox_p,
@@ -23799,10 +19512,7 @@ pub mod struct_commands {
                 maxZ,
                 maxW,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPrimitiveBoundingBox");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23822,22 +19532,15 @@ pub mod struct_commands {
             !self.glPrimitiveBoundingBox_p.load(RELAX).is_null()
         }
         /// [glPrimitiveRestartIndex](http://docs.gl/gl4/glPrimitiveRestartIndex)(index)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PrimitiveRestartIndex(&self, index: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.PrimitiveRestartIndex({:?});", index);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glPrimitiveRestartIndex",
                 &self.glPrimitiveRestartIndex_p,
                 index,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPrimitiveRestartIndex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23858,8 +19561,7 @@ pub mod struct_commands {
         }
         /// [glProgramBinary](http://docs.gl/gl4/glProgramBinary)(program, binaryFormat, binary, length)
         /// * `binary` len: length
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramBinary(
             &self,
             program: GLuint,
@@ -23867,16 +19569,7 @@ pub mod struct_commands {
             binary: *const c_void,
             length: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramBinary({:?}, {:#X}, {:p}, {:?});",
-                    program,
-                    binaryFormat,
-                    binary,
-                    length
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramBinary",
                 &self.glProgramBinary_p,
@@ -23885,10 +19578,7 @@ pub mod struct_commands {
                 binary,
                 length,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramBinary");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23909,18 +19599,9 @@ pub mod struct_commands {
         }
         /// [glProgramParameteri](http://docs.gl/gl4/glProgramParameteri)(program, pname, value)
         /// * `pname` group: ProgramParameterPName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramParameteri(&self, program: GLuint, pname: GLenum, value: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramParameteri({:?}, {:#X}, {:?});",
-                    program,
-                    pname,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glProgramParameteri",
                 &self.glProgramParameteri_p,
@@ -23928,10 +19609,7 @@ pub mod struct_commands {
                 pname,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23951,18 +19629,9 @@ pub mod struct_commands {
             !self.glProgramParameteri_p.load(RELAX).is_null()
         }
         /// [glProgramUniform1d](http://docs.gl/gl4/glProgramUniform1d)(program, location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1d(&self, program: GLuint, location: GLint, v0: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1d({:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glProgramUniform1d",
                 &self.glProgramUniform1d_p,
@@ -23970,10 +19639,7 @@ pub mod struct_commands {
                 location,
                 v0,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -23994,8 +19660,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform1dv](http://docs.gl/gl4/glProgramUniform1dv)(program, location, count, value)
         /// * `value` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1dv(
             &self,
             program: GLuint,
@@ -24003,16 +19668,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1dv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform1dv",
                 &self.glProgramUniform1dv_p,
@@ -24021,10 +19677,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24044,18 +19697,9 @@ pub mod struct_commands {
             !self.glProgramUniform1dv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform1f](http://docs.gl/gl4/glProgramUniform)(program, location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1f(&self, program: GLuint, location: GLint, v0: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1f({:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glProgramUniform1f",
                 &self.glProgramUniform1f_p,
@@ -24063,10 +19707,7 @@ pub mod struct_commands {
                 location,
                 v0,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24087,8 +19728,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform1fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1fv(
             &self,
             program: GLuint,
@@ -24096,16 +19736,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1fv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform1fv",
                 &self.glProgramUniform1fv_p,
@@ -24114,10 +19745,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24137,18 +19765,9 @@ pub mod struct_commands {
             !self.glProgramUniform1fv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform1i](http://docs.gl/gl4/glProgramUniform)(program, location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1i(&self, program: GLuint, location: GLint, v0: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1i({:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glProgramUniform1i",
                 &self.glProgramUniform1i_p,
@@ -24156,10 +19775,7 @@ pub mod struct_commands {
                 location,
                 v0,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24180,8 +19796,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform1iv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1iv(
             &self,
             program: GLuint,
@@ -24189,16 +19804,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1iv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform1iv",
                 &self.glProgramUniform1iv_p,
@@ -24207,10 +19813,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24230,18 +19833,9 @@ pub mod struct_commands {
             !self.glProgramUniform1iv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform1ui](http://docs.gl/gl4/glProgramUniform)(program, location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1ui(&self, program: GLuint, location: GLint, v0: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1ui({:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glProgramUniform1ui",
                 &self.glProgramUniform1ui_p,
@@ -24249,10 +19843,7 @@ pub mod struct_commands {
                 location,
                 v0,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24273,8 +19864,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform1uiv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform1uiv(
             &self,
             program: GLuint,
@@ -24282,16 +19872,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform1uiv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform1uiv",
                 &self.glProgramUniform1uiv_p,
@@ -24300,10 +19881,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform1uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24323,8 +19901,7 @@ pub mod struct_commands {
             !self.glProgramUniform1uiv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform2d](http://docs.gl/gl4/glProgramUniform2d)(program, location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2d(
             &self,
             program: GLuint,
@@ -24332,16 +19909,7 @@ pub mod struct_commands {
             v0: GLdouble,
             v1: GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2d({:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2d",
                 &self.glProgramUniform2d_p,
@@ -24350,10 +19918,7 @@ pub mod struct_commands {
                 v0,
                 v1,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24374,8 +19939,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform2dv](http://docs.gl/gl4/glProgramUniform2dv)(program, location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2dv(
             &self,
             program: GLuint,
@@ -24383,16 +19947,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2dv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2dv",
                 &self.glProgramUniform2dv_p,
@@ -24401,10 +19956,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24424,8 +19976,7 @@ pub mod struct_commands {
             !self.glProgramUniform2dv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform2f](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2f(
             &self,
             program: GLuint,
@@ -24433,16 +19984,7 @@ pub mod struct_commands {
             v0: GLfloat,
             v1: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2f({:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2f",
                 &self.glProgramUniform2f_p,
@@ -24451,10 +19993,7 @@ pub mod struct_commands {
                 v0,
                 v1,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24475,8 +20014,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform2fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2fv(
             &self,
             program: GLuint,
@@ -24484,16 +20022,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2fv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2fv",
                 &self.glProgramUniform2fv_p,
@@ -24502,10 +20031,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24525,8 +20051,7 @@ pub mod struct_commands {
             !self.glProgramUniform2fv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform2i](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2i(
             &self,
             program: GLuint,
@@ -24534,16 +20059,7 @@ pub mod struct_commands {
             v0: GLint,
             v1: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2i({:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2i",
                 &self.glProgramUniform2i_p,
@@ -24552,10 +20068,7 @@ pub mod struct_commands {
                 v0,
                 v1,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24576,8 +20089,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform2iv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2iv(
             &self,
             program: GLuint,
@@ -24585,16 +20097,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2iv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2iv",
                 &self.glProgramUniform2iv_p,
@@ -24603,10 +20106,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24626,8 +20126,7 @@ pub mod struct_commands {
             !self.glProgramUniform2iv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform2ui](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2ui(
             &self,
             program: GLuint,
@@ -24635,16 +20134,7 @@ pub mod struct_commands {
             v0: GLuint,
             v1: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2ui({:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2ui",
                 &self.glProgramUniform2ui_p,
@@ -24653,10 +20143,7 @@ pub mod struct_commands {
                 v0,
                 v1,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24677,8 +20164,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform2uiv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform2uiv(
             &self,
             program: GLuint,
@@ -24686,16 +20172,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform2uiv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform2uiv",
                 &self.glProgramUniform2uiv_p,
@@ -24704,10 +20181,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform2uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24727,8 +20201,7 @@ pub mod struct_commands {
             !self.glProgramUniform2uiv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform3d](http://docs.gl/gl4/glProgramUniform3d)(program, location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3d(
             &self,
             program: GLuint,
@@ -24737,17 +20210,7 @@ pub mod struct_commands {
             v1: GLdouble,
             v2: GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3d({:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniform3d",
                 &self.glProgramUniform3d_p,
@@ -24757,10 +20220,7 @@ pub mod struct_commands {
                 v1,
                 v2,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24781,8 +20241,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform3dv](http://docs.gl/gl4/glProgramUniform3dv)(program, location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3dv(
             &self,
             program: GLuint,
@@ -24790,16 +20249,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3dv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform3dv",
                 &self.glProgramUniform3dv_p,
@@ -24808,10 +20258,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24831,8 +20278,7 @@ pub mod struct_commands {
             !self.glProgramUniform3dv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform3f](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3f(
             &self,
             program: GLuint,
@@ -24841,17 +20287,7 @@ pub mod struct_commands {
             v1: GLfloat,
             v2: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3f({:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniform3f",
                 &self.glProgramUniform3f_p,
@@ -24861,10 +20297,7 @@ pub mod struct_commands {
                 v1,
                 v2,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24885,8 +20318,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform3fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3fv(
             &self,
             program: GLuint,
@@ -24894,16 +20326,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3fv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform3fv",
                 &self.glProgramUniform3fv_p,
@@ -24912,10 +20335,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24935,8 +20355,7 @@ pub mod struct_commands {
             !self.glProgramUniform3fv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform3i](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3i(
             &self,
             program: GLuint,
@@ -24945,17 +20364,7 @@ pub mod struct_commands {
             v1: GLint,
             v2: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3i({:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniform3i",
                 &self.glProgramUniform3i_p,
@@ -24965,10 +20374,7 @@ pub mod struct_commands {
                 v1,
                 v2,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -24989,8 +20395,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform3iv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3iv(
             &self,
             program: GLuint,
@@ -24998,16 +20403,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3iv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform3iv",
                 &self.glProgramUniform3iv_p,
@@ -25016,10 +20412,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25039,8 +20432,7 @@ pub mod struct_commands {
             !self.glProgramUniform3iv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform3ui](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3ui(
             &self,
             program: GLuint,
@@ -25049,17 +20441,7 @@ pub mod struct_commands {
             v1: GLuint,
             v2: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3ui({:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniform3ui",
                 &self.glProgramUniform3ui_p,
@@ -25069,10 +20451,7 @@ pub mod struct_commands {
                 v1,
                 v2,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25093,8 +20472,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform3uiv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform3uiv(
             &self,
             program: GLuint,
@@ -25102,16 +20480,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform3uiv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform3uiv",
                 &self.glProgramUniform3uiv_p,
@@ -25120,10 +20489,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform3uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25143,8 +20509,7 @@ pub mod struct_commands {
             !self.glProgramUniform3uiv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform4d](http://docs.gl/gl4/glProgramUniform4d)(program, location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4d(
             &self,
             program: GLuint,
@@ -25154,18 +20519,7 @@ pub mod struct_commands {
             v2: GLdouble,
             v3: GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4d({:?}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glProgramUniform4d",
                 &self.glProgramUniform4d_p,
@@ -25176,10 +20530,7 @@ pub mod struct_commands {
                 v2,
                 v3,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25200,8 +20551,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform4dv](http://docs.gl/gl4/glProgramUniform4dv)(program, location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4dv(
             &self,
             program: GLuint,
@@ -25209,16 +20559,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4dv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform4dv",
                 &self.glProgramUniform4dv_p,
@@ -25227,10 +20568,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25250,8 +20588,7 @@ pub mod struct_commands {
             !self.glProgramUniform4dv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform4f](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4f(
             &self,
             program: GLuint,
@@ -25261,18 +20598,7 @@ pub mod struct_commands {
             v2: GLfloat,
             v3: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4f({:?}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glProgramUniform4f",
                 &self.glProgramUniform4f_p,
@@ -25283,10 +20609,7 @@ pub mod struct_commands {
                 v2,
                 v3,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25307,8 +20630,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform4fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4fv(
             &self,
             program: GLuint,
@@ -25316,16 +20638,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4fv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform4fv",
                 &self.glProgramUniform4fv_p,
@@ -25334,10 +20647,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25357,8 +20667,7 @@ pub mod struct_commands {
             !self.glProgramUniform4fv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform4i](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4i(
             &self,
             program: GLuint,
@@ -25368,18 +20677,7 @@ pub mod struct_commands {
             v2: GLint,
             v3: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4i({:?}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glProgramUniform4i",
                 &self.glProgramUniform4i_p,
@@ -25390,10 +20688,7 @@ pub mod struct_commands {
                 v2,
                 v3,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25414,8 +20709,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform4iv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4iv(
             &self,
             program: GLuint,
@@ -25423,16 +20717,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4iv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform4iv",
                 &self.glProgramUniform4iv_p,
@@ -25441,10 +20726,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25464,8 +20746,7 @@ pub mod struct_commands {
             !self.glProgramUniform4iv_p.load(RELAX).is_null()
         }
         /// [glProgramUniform4ui](http://docs.gl/gl4/glProgramUniform)(program, location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4ui(
             &self,
             program: GLuint,
@@ -25475,18 +20756,7 @@ pub mod struct_commands {
             v2: GLuint,
             v3: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4ui({:?}, {:?}, {:?}, {:?}, {:?}, {:?});",
-                    program,
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glProgramUniform4ui",
                 &self.glProgramUniform4ui_p,
@@ -25497,10 +20767,7 @@ pub mod struct_commands {
                 v2,
                 v3,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25521,8 +20788,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniform4uiv](http://docs.gl/gl4/glProgramUniform)(program, location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniform4uiv(
             &self,
             program: GLuint,
@@ -25530,16 +20796,7 @@ pub mod struct_commands {
             count: GLsizei,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniform4uiv({:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glProgramUniform4uiv",
                 &self.glProgramUniform4uiv_p,
@@ -25548,10 +20805,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniform4uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25572,8 +20826,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix2dv](http://docs.gl/gl4/glProgramUniformMatrix2dv)(program, location, count, transpose, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix2dv(
             &self,
             program: GLuint,
@@ -25582,17 +20835,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix2dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix2dv",
                 &self.glProgramUniformMatrix2dv_p,
@@ -25602,10 +20845,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25626,8 +20866,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix2fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix2fv(
             &self,
             program: GLuint,
@@ -25636,17 +20875,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix2fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix2fv",
                 &self.glProgramUniformMatrix2fv_p,
@@ -25656,10 +20885,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25680,8 +20906,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix2x3dv](http://docs.gl/gl4/glProgramUniformMatrix2x3dv)(program, location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix2x3dv(
             &self,
             program: GLuint,
@@ -25690,17 +20915,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix2x3dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix2x3dv",
                 &self.glProgramUniformMatrix2x3dv_p,
@@ -25710,10 +20925,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix2x3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25734,8 +20946,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix2x3fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix2x3fv(
             &self,
             program: GLuint,
@@ -25744,17 +20955,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix2x3fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix2x3fv",
                 &self.glProgramUniformMatrix2x3fv_p,
@@ -25764,10 +20965,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix2x3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25788,8 +20986,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix2x4dv](http://docs.gl/gl4/glProgramUniformMatrix2x4dv)(program, location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix2x4dv(
             &self,
             program: GLuint,
@@ -25798,17 +20995,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix2x4dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix2x4dv",
                 &self.glProgramUniformMatrix2x4dv_p,
@@ -25818,10 +21005,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix2x4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25842,8 +21026,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix2x4fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix2x4fv(
             &self,
             program: GLuint,
@@ -25852,17 +21035,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix2x4fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix2x4fv",
                 &self.glProgramUniformMatrix2x4fv_p,
@@ -25872,10 +21045,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix2x4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25896,8 +21066,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix3dv](http://docs.gl/gl4/glProgramUniformMatrix3dv)(program, location, count, transpose, value)
         /// * `value` len: count*9
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix3dv(
             &self,
             program: GLuint,
@@ -25906,17 +21075,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix3dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix3dv",
                 &self.glProgramUniformMatrix3dv_p,
@@ -25926,10 +21085,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -25950,8 +21106,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix3fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*9
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix3fv(
             &self,
             program: GLuint,
@@ -25960,17 +21115,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix3fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix3fv",
                 &self.glProgramUniformMatrix3fv_p,
@@ -25980,10 +21125,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26004,8 +21146,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix3x2dv](http://docs.gl/gl4/glProgramUniformMatrix3x2dv)(program, location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix3x2dv(
             &self,
             program: GLuint,
@@ -26014,17 +21155,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix3x2dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix3x2dv",
                 &self.glProgramUniformMatrix3x2dv_p,
@@ -26034,10 +21165,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix3x2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26058,8 +21186,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix3x2fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix3x2fv(
             &self,
             program: GLuint,
@@ -26068,17 +21195,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix3x2fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix3x2fv",
                 &self.glProgramUniformMatrix3x2fv_p,
@@ -26088,10 +21205,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix3x2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26112,8 +21226,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix3x4dv](http://docs.gl/gl4/glProgramUniformMatrix3x4dv)(program, location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix3x4dv(
             &self,
             program: GLuint,
@@ -26122,17 +21235,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix3x4dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix3x4dv",
                 &self.glProgramUniformMatrix3x4dv_p,
@@ -26142,10 +21245,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix3x4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26166,8 +21266,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix3x4fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix3x4fv(
             &self,
             program: GLuint,
@@ -26176,17 +21275,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix3x4fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix3x4fv",
                 &self.glProgramUniformMatrix3x4fv_p,
@@ -26196,10 +21285,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix3x4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26220,8 +21306,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix4dv](http://docs.gl/gl4/glProgramUniformMatrix4dv)(program, location, count, transpose, value)
         /// * `value` len: count*16
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix4dv(
             &self,
             program: GLuint,
@@ -26230,17 +21315,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix4dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix4dv",
                 &self.glProgramUniformMatrix4dv_p,
@@ -26250,10 +21325,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26274,8 +21346,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix4fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*16
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix4fv(
             &self,
             program: GLuint,
@@ -26284,17 +21355,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix4fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix4fv",
                 &self.glProgramUniformMatrix4fv_p,
@@ -26304,10 +21365,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26328,8 +21386,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix4x2dv](http://docs.gl/gl4/glProgramUniformMatrix4x2dv)(program, location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix4x2dv(
             &self,
             program: GLuint,
@@ -26338,17 +21395,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix4x2dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix4x2dv",
                 &self.glProgramUniformMatrix4x2dv_p,
@@ -26358,10 +21405,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix4x2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26382,8 +21426,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix4x2fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix4x2fv(
             &self,
             program: GLuint,
@@ -26392,17 +21435,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix4x2fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix4x2fv",
                 &self.glProgramUniformMatrix4x2fv_p,
@@ -26412,10 +21445,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix4x2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26436,8 +21466,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix4x3dv](http://docs.gl/gl4/glProgramUniformMatrix4x3dv)(program, location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix4x3dv(
             &self,
             program: GLuint,
@@ -26446,17 +21475,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix4x3dv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix4x3dv",
                 &self.glProgramUniformMatrix4x3dv_p,
@@ -26466,10 +21485,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix4x3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26490,8 +21506,7 @@ pub mod struct_commands {
         }
         /// [glProgramUniformMatrix4x3fv](http://docs.gl/gl4/glProgramUniform)(program, location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProgramUniformMatrix4x3fv(
             &self,
             program: GLuint,
@@ -26500,17 +21515,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ProgramUniformMatrix4x3fv({:?}, {:?}, {:?}, {:?}, {:p});",
-                    program,
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glProgramUniformMatrix4x3fv",
                 &self.glProgramUniformMatrix4x3fv_p,
@@ -26520,10 +21525,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProgramUniformMatrix4x3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26544,18 +21546,11 @@ pub mod struct_commands {
         }
         /// [glProvokingVertex](http://docs.gl/gl4/glProvokingVertex)(mode)
         /// * `mode` group: VertexProvokingMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ProvokingVertex(&self, mode: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ProvokingVertex({:#X});", mode);
-            }
+
             let out = call_atomic_ptr_1arg("glProvokingVertex", &self.glProvokingVertex_p, mode);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glProvokingVertex");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26577,8 +21572,7 @@ pub mod struct_commands {
         /// [glPushDebugGroup](http://docs.gl/gl4/glPushDebugGroup)(source, id, length, message)
         /// * `source` group: DebugSource
         /// * `message` len: COMPSIZE(message,length)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PushDebugGroup(
             &self,
             source: GLenum,
@@ -26586,16 +21580,7 @@ pub mod struct_commands {
             length: GLsizei,
             message: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.PushDebugGroup({:#X}, {:?}, {:?}, {:p});",
-                    source,
-                    id,
-                    length,
-                    message
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glPushDebugGroup",
                 &self.glPushDebugGroup_p,
@@ -26604,10 +21589,7 @@ pub mod struct_commands {
                 length,
                 message,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPushDebugGroup");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26629,8 +21611,7 @@ pub mod struct_commands {
         /// [glPushDebugGroupKHR](http://docs.gl/gl4/glPushDebugGroupKHR)(source, id, length, message)
         /// * `source` group: DebugSource
         /// * alias of: [`glPushDebugGroup`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn PushDebugGroupKHR(
             &self,
             source: GLenum,
@@ -26638,16 +21619,7 @@ pub mod struct_commands {
             length: GLsizei,
             message: *const GLchar,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.PushDebugGroupKHR({:#X}, {:?}, {:?}, {:p});",
-                    source,
-                    id,
-                    length,
-                    message
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glPushDebugGroupKHR",
                 &self.glPushDebugGroupKHR_p,
@@ -26656,10 +21628,7 @@ pub mod struct_commands {
                 length,
                 message,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glPushDebugGroupKHR");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26680,18 +21649,11 @@ pub mod struct_commands {
         }
         /// [glQueryCounter](http://docs.gl/gl4/glQueryCounter)(id, target)
         /// * `target` group: QueryCounterTarget
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn QueryCounter(&self, id: GLuint, target: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.QueryCounter({:?}, {:#X});", id, target);
-            }
+
             let out = call_atomic_ptr_2arg("glQueryCounter", &self.glQueryCounter_p, id, target);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glQueryCounter");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26712,18 +21674,11 @@ pub mod struct_commands {
         }
         /// [glReadBuffer](http://docs.gl/gl4/glReadBuffer)(src)
         /// * `src` group: ReadBufferMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ReadBuffer(&self, src: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ReadBuffer({:#X});", src);
-            }
+
             let out = call_atomic_ptr_1arg("glReadBuffer", &self.glReadBuffer_p, src);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glReadBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26744,8 +21699,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width,height)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ReadPixels(
             &self,
             x: GLint,
@@ -26756,19 +21710,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ReadPixels({:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});",
-                    x,
-                    y,
-                    width,
-                    height,
-                    format,
-                    type_,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glReadPixels",
                 &self.glReadPixels_p,
@@ -26780,10 +21722,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glReadPixels");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26802,8 +21741,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `data` len: bufSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ReadnPixels(
             &self,
             x: GLint,
@@ -26815,20 +21753,7 @@ pub mod struct_commands {
             bufSize: GLsizei,
             data: *mut c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ReadnPixels({:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:?}, {:p});",
-                    x,
-                    y,
-                    width,
-                    height,
-                    format,
-                    type_,
-                    bufSize,
-                    data
-                );
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glReadnPixels",
                 &self.glReadnPixels_p,
@@ -26841,10 +21766,7 @@ pub mod struct_commands {
                 bufSize,
                 data,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glReadnPixels");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26860,19 +21782,12 @@ pub mod struct_commands {
             !self.glReadnPixels_p.load(RELAX).is_null()
         }
         /// [glReleaseShaderCompiler](http://docs.gl/gl4/glReleaseShaderCompiler)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ReleaseShaderCompiler(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ReleaseShaderCompiler();",);
-            }
+
             let out =
                 call_atomic_ptr_0arg("glReleaseShaderCompiler", &self.glReleaseShaderCompiler_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glReleaseShaderCompiler");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26894,8 +21809,7 @@ pub mod struct_commands {
         /// [glRenderbufferStorage](http://docs.gl/gl4/glRenderbufferStorage)(target, internalformat, width, height)
         /// * `target` group: RenderbufferTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn RenderbufferStorage(
             &self,
             target: GLenum,
@@ -26903,16 +21817,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.RenderbufferStorage({:#X}, {:#X}, {:?}, {:?});",
-                    target,
-                    internalformat,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glRenderbufferStorage",
                 &self.glRenderbufferStorage_p,
@@ -26921,10 +21826,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glRenderbufferStorage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -26946,8 +21848,7 @@ pub mod struct_commands {
         /// [glRenderbufferStorageMultisample](http://docs.gl/gl4/glRenderbufferStorageMultisample)(target, samples, internalformat, width, height)
         /// * `target` group: RenderbufferTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn RenderbufferStorageMultisample(
             &self,
             target: GLenum,
@@ -26956,17 +21857,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.RenderbufferStorageMultisample({:#X}, {:?}, {:#X}, {:?}, {:?});",
-                    target,
-                    samples,
-                    internalformat,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glRenderbufferStorageMultisample",
                 &self.glRenderbufferStorageMultisample_p,
@@ -26976,10 +21867,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glRenderbufferStorageMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27002,21 +21890,14 @@ pub mod struct_commands {
                 .is_null()
         }
         /// [glResumeTransformFeedback](http://docs.gl/gl4/glResumeTransformFeedback)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ResumeTransformFeedback(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ResumeTransformFeedback();",);
-            }
+
             let out = call_atomic_ptr_0arg(
                 "glResumeTransformFeedback",
                 &self.glResumeTransformFeedback_p,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glResumeTransformFeedback");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27036,19 +21917,12 @@ pub mod struct_commands {
             !self.glResumeTransformFeedback_p.load(RELAX).is_null()
         }
         /// [glSampleCoverage](http://docs.gl/gl4/glSampleCoverage)(value, invert)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SampleCoverage(&self, value: GLfloat, invert: GLboolean) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.SampleCoverage({:?}, {:?});", value, invert);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glSampleCoverage", &self.glSampleCoverage_p, value, invert);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSampleCoverage");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27068,19 +21942,12 @@ pub mod struct_commands {
             !self.glSampleCoverage_p.load(RELAX).is_null()
         }
         /// [glSampleMaski](http://docs.gl/gl4/glSampleMask)(maskNumber, mask)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SampleMaski(&self, maskNumber: GLuint, mask: GLbitfield) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.SampleMaski({:?}, {:?});", maskNumber, mask);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glSampleMaski", &self.glSampleMaski_p, maskNumber, mask);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSampleMaski");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27098,23 +21965,14 @@ pub mod struct_commands {
         /// [glSamplerParameterIiv](http://docs.gl/gl4/glSamplerParameter)(sampler, pname, param)
         /// * `pname` group: SamplerParameterI
         /// * `param` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SamplerParameterIiv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             param: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SamplerParameterIiv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glSamplerParameterIiv",
                 &self.glSamplerParameterIiv_p,
@@ -27122,10 +21980,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSamplerParameterIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27147,23 +22002,14 @@ pub mod struct_commands {
         /// [glSamplerParameterIuiv](http://docs.gl/gl4/glSamplerParameter)(sampler, pname, param)
         /// * `pname` group: SamplerParameterI
         /// * `param` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SamplerParameterIuiv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             param: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SamplerParameterIuiv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glSamplerParameterIuiv",
                 &self.glSamplerParameterIuiv_p,
@@ -27171,10 +22017,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSamplerParameterIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27195,18 +22038,9 @@ pub mod struct_commands {
         }
         /// [glSamplerParameterf](http://docs.gl/gl4/glSamplerParameter)(sampler, pname, param)
         /// * `pname` group: SamplerParameterF
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SamplerParameterf(&self, sampler: GLuint, pname: GLenum, param: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SamplerParameterf({:?}, {:#X}, {:?});",
-                    sampler,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glSamplerParameterf",
                 &self.glSamplerParameterf_p,
@@ -27214,10 +22048,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSamplerParameterf");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27239,23 +22070,14 @@ pub mod struct_commands {
         /// [glSamplerParameterfv](http://docs.gl/gl4/glSamplerParameter)(sampler, pname, param)
         /// * `pname` group: SamplerParameterF
         /// * `param` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SamplerParameterfv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             param: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SamplerParameterfv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glSamplerParameterfv",
                 &self.glSamplerParameterfv_p,
@@ -27263,10 +22085,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSamplerParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27287,18 +22106,9 @@ pub mod struct_commands {
         }
         /// [glSamplerParameteri](http://docs.gl/gl4/glSamplerParameter)(sampler, pname, param)
         /// * `pname` group: SamplerParameterI
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SamplerParameteri(&self, sampler: GLuint, pname: GLenum, param: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SamplerParameteri({:?}, {:#X}, {:?});",
-                    sampler,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glSamplerParameteri",
                 &self.glSamplerParameteri_p,
@@ -27306,10 +22116,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSamplerParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27331,23 +22138,14 @@ pub mod struct_commands {
         /// [glSamplerParameteriv](http://docs.gl/gl4/glSamplerParameter)(sampler, pname, param)
         /// * `pname` group: SamplerParameterI
         /// * `param` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SamplerParameteriv(
             &self,
             sampler: GLuint,
             pname: GLenum,
             param: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SamplerParameteriv({:?}, {:#X}, {:p});",
-                    sampler,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glSamplerParameteriv",
                 &self.glSamplerParameteriv_p,
@@ -27355,10 +22153,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSamplerParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27380,24 +22175,11 @@ pub mod struct_commands {
         /// [glScissor](http://docs.gl/gl4/glScissor)(x, y, width, height)
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Scissor(&self, x: GLint, y: GLint, width: GLsizei, height: GLsizei) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Scissor({:?}, {:?}, {:?}, {:?});",
-                    x,
-                    y,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_4arg("glScissor", &self.glScissor_p, x, y, width, height);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glScissor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27414,24 +22196,12 @@ pub mod struct_commands {
         }
         /// [glScissorArrayv](http://docs.gl/gl4/glScissorArrayv)(first, count, v)
         /// * `v` len: COMPSIZE(count)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ScissorArrayv(&self, first: GLuint, count: GLsizei, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ScissorArrayv({:?}, {:?}, {:p});",
-                    first,
-                    count,
-                    v
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glScissorArrayv", &self.glScissorArrayv_p, first, count, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glScissorArrayv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27451,8 +22221,7 @@ pub mod struct_commands {
             !self.glScissorArrayv_p.load(RELAX).is_null()
         }
         /// [glScissorIndexed](http://docs.gl/gl4/glScissorIndexed)(index, left, bottom, width, height)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ScissorIndexed(
             &self,
             index: GLuint,
@@ -27461,17 +22230,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ScissorIndexed({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    left,
-                    bottom,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glScissorIndexed",
                 &self.glScissorIndexed_p,
@@ -27481,10 +22240,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glScissorIndexed");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27505,19 +22261,12 @@ pub mod struct_commands {
         }
         /// [glScissorIndexedv](http://docs.gl/gl4/glScissorIndexedv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ScissorIndexedv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ScissorIndexedv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glScissorIndexedv", &self.glScissorIndexedv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glScissorIndexedv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27540,8 +22289,7 @@ pub mod struct_commands {
         /// * `shaders` len: count
         /// * `binaryFormat` group: ShaderBinaryFormat
         /// * `binary` len: length
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ShaderBinary(
             &self,
             count: GLsizei,
@@ -27550,17 +22298,7 @@ pub mod struct_commands {
             binary: *const c_void,
             length: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ShaderBinary({:?}, {:p}, {:#X}, {:p}, {:?});",
-                    count,
-                    shaders,
-                    binaryFormat,
-                    binary,
-                    length
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glShaderBinary",
                 &self.glShaderBinary_p,
@@ -27570,10 +22308,7 @@ pub mod struct_commands {
                 binary,
                 length,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glShaderBinary");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27595,8 +22330,7 @@ pub mod struct_commands {
         /// [glShaderSource](http://docs.gl/gl4/glShaderSource)(shader, count, string, length)
         /// * `string` len: count
         /// * `length` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ShaderSource(
             &self,
             shader: GLuint,
@@ -27604,16 +22338,7 @@ pub mod struct_commands {
             string: *const *const GLchar,
             length: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ShaderSource({:?}, {:?}, {:p}, {:p});",
-                    shader,
-                    count,
-                    string,
-                    length
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glShaderSource",
                 &self.glShaderSource_p,
@@ -27622,10 +22347,7 @@ pub mod struct_commands {
                 string,
                 length,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glShaderSource");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27645,23 +22367,14 @@ pub mod struct_commands {
             !self.glShaderSource_p.load(RELAX).is_null()
         }
         /// [glShaderStorageBlockBinding](http://docs.gl/gl4/glShaderStorageBlockBinding)(program, storageBlockIndex, storageBlockBinding)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ShaderStorageBlockBinding(
             &self,
             program: GLuint,
             storageBlockIndex: GLuint,
             storageBlockBinding: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ShaderStorageBlockBinding({:?}, {:?}, {:?});",
-                    program,
-                    storageBlockIndex,
-                    storageBlockBinding
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glShaderStorageBlockBinding",
                 &self.glShaderStorageBlockBinding_p,
@@ -27669,10 +22382,7 @@ pub mod struct_commands {
                 storageBlockIndex,
                 storageBlockBinding,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glShaderStorageBlockBinding");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27692,8 +22402,7 @@ pub mod struct_commands {
             !self.glShaderStorageBlockBinding_p.load(RELAX).is_null()
         }
         /// [glSpecializeShader](http://docs.gl/gl4/glSpecializeShader)(shader, pEntryPoint, numSpecializationConstants, pConstantIndex, pConstantValue)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn SpecializeShader(
             &self,
             shader: GLuint,
@@ -27702,17 +22411,7 @@ pub mod struct_commands {
             pConstantIndex: *const GLuint,
             pConstantValue: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.SpecializeShader({:?}, {:p}, {:?}, {:p}, {:p});",
-                    shader,
-                    pEntryPoint,
-                    numSpecializationConstants,
-                    pConstantIndex,
-                    pConstantValue
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glSpecializeShader",
                 &self.glSpecializeShader_p,
@@ -27722,10 +22421,7 @@ pub mod struct_commands {
                 pConstantIndex,
                 pConstantValue,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glSpecializeShader");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27748,24 +22444,12 @@ pub mod struct_commands {
         /// * `func` group: StencilFunction
         /// * `ref_` group: StencilValue
         /// * `mask` group: MaskedStencilValue
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn StencilFunc(&self, func: GLenum, ref_: GLint, mask: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.StencilFunc({:#X}, {:?}, {:?});",
-                    func,
-                    ref_,
-                    mask
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glStencilFunc", &self.glStencilFunc_p, func, ref_, mask);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glStencilFunc");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27785,8 +22469,7 @@ pub mod struct_commands {
         /// * `func` group: StencilFunction
         /// * `ref_` group: StencilValue
         /// * `mask` group: MaskedStencilValue
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn StencilFuncSeparate(
             &self,
             face: GLenum,
@@ -27794,16 +22477,7 @@ pub mod struct_commands {
             ref_: GLint,
             mask: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.StencilFuncSeparate({:#X}, {:#X}, {:?}, {:?});",
-                    face,
-                    func,
-                    ref_,
-                    mask
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glStencilFuncSeparate",
                 &self.glStencilFuncSeparate_p,
@@ -27812,10 +22486,7 @@ pub mod struct_commands {
                 ref_,
                 mask,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glStencilFuncSeparate");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27836,18 +22507,11 @@ pub mod struct_commands {
         }
         /// [glStencilMask](http://docs.gl/gl4/glStencilMask)(mask)
         /// * `mask` group: MaskedStencilValue
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn StencilMask(&self, mask: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.StencilMask({:?});", mask);
-            }
+
             let out = call_atomic_ptr_1arg("glStencilMask", &self.glStencilMask_p, mask);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glStencilMask");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27865,23 +22529,16 @@ pub mod struct_commands {
         /// [glStencilMaskSeparate](http://docs.gl/gl4/glStencilMaskSeparate)(face, mask)
         /// * `face` group: StencilFaceDirection
         /// * `mask` group: MaskedStencilValue
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn StencilMaskSeparate(&self, face: GLenum, mask: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.StencilMaskSeparate({:#X}, {:?});", face, mask);
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glStencilMaskSeparate",
                 &self.glStencilMaskSeparate_p,
                 face,
                 mask,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glStencilMaskSeparate");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27904,23 +22561,11 @@ pub mod struct_commands {
         /// * `fail` group: StencilOp
         /// * `zfail` group: StencilOp
         /// * `zpass` group: StencilOp
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn StencilOp(&self, fail: GLenum, zfail: GLenum, zpass: GLenum) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.StencilOp({:#X}, {:#X}, {:#X});",
-                    fail,
-                    zfail,
-                    zpass
-                );
-            }
+
             let out = call_atomic_ptr_3arg("glStencilOp", &self.glStencilOp_p, fail, zfail, zpass);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glStencilOp");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27940,8 +22585,7 @@ pub mod struct_commands {
         /// * `sfail` group: StencilOp
         /// * `dpfail` group: StencilOp
         /// * `dppass` group: StencilOp
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn StencilOpSeparate(
             &self,
             face: GLenum,
@@ -27949,16 +22593,7 @@ pub mod struct_commands {
             dpfail: GLenum,
             dppass: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.StencilOpSeparate({:#X}, {:#X}, {:#X}, {:#X});",
-                    face,
-                    sfail,
-                    dpfail,
-                    dppass
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glStencilOpSeparate",
                 &self.glStencilOpSeparate_p,
@@ -27967,10 +22602,7 @@ pub mod struct_commands {
                 dpfail,
                 dppass,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glStencilOpSeparate");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -27992,18 +22624,9 @@ pub mod struct_commands {
         /// [glTexBuffer](http://docs.gl/gl4/glTexBuffer)(target, internalformat, buffer)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexBuffer(&self, target: GLenum, internalformat: GLenum, buffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexBuffer({:#X}, {:#X}, {:?});",
-                    target,
-                    internalformat,
-                    buffer
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexBuffer",
                 &self.glTexBuffer_p,
@@ -28011,10 +22634,7 @@ pub mod struct_commands {
                 internalformat,
                 buffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28034,8 +22654,7 @@ pub mod struct_commands {
         /// * `internalformat` group: InternalFormat
         /// * `offset` group: BufferOffset
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexBufferRange(
             &self,
             target: GLenum,
@@ -28044,17 +22663,7 @@ pub mod struct_commands {
             offset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexBufferRange({:#X}, {:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    internalformat,
-                    buffer,
-                    offset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glTexBufferRange",
                 &self.glTexBufferRange_p,
@@ -28064,10 +22673,7 @@ pub mod struct_commands {
                 offset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28094,8 +22700,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexImage1D(
             &self,
             target: GLenum,
@@ -28107,20 +22712,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexImage1D({:#X}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});",
-                    target,
-                    level,
-                    internalformat,
-                    width,
-                    border,
-                    format,
-                    type_,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glTexImage1D",
                 &self.glTexImage1D_p,
@@ -28133,10 +22725,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28159,8 +22748,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width,height)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexImage2D(
             &self,
             target: GLenum,
@@ -28173,10 +22761,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TexImage2D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", target, level, internalformat, width, height, border, format, type_, pixels);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glTexImage2D",
                 &self.glTexImage2D_p,
@@ -28190,10 +22775,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28211,8 +22793,7 @@ pub mod struct_commands {
         /// [glTexImage2DMultisample](http://docs.gl/gl4/glTexImage2DMultisample)(target, samples, internalformat, width, height, fixedsamplelocations)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexImage2DMultisample(
             &self,
             target: GLenum,
@@ -28222,18 +22803,7 @@ pub mod struct_commands {
             height: GLsizei,
             fixedsamplelocations: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexImage2DMultisample({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    samples,
-                    internalformat,
-                    width,
-                    height,
-                    fixedsamplelocations
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glTexImage2DMultisample",
                 &self.glTexImage2DMultisample_p,
@@ -28244,10 +22814,7 @@ pub mod struct_commands {
                 height,
                 fixedsamplelocations,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexImage2DMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28274,8 +22841,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width,height,depth)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexImage3D(
             &self,
             target: GLenum,
@@ -28289,10 +22855,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TexImage3D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", target, level, internalformat, width, height, depth, border, format, type_, pixels);
-            }
+
             let out = call_atomic_ptr_10arg(
                 "glTexImage3D",
                 &self.glTexImage3D_p,
@@ -28307,10 +22870,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28328,8 +22888,7 @@ pub mod struct_commands {
         /// [glTexImage3DMultisample](http://docs.gl/gl4/glTexImage3DMultisample)(target, samples, internalformat, width, height, depth, fixedsamplelocations)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexImage3DMultisample(
             &self,
             target: GLenum,
@@ -28340,19 +22899,7 @@ pub mod struct_commands {
             depth: GLsizei,
             fixedsamplelocations: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexImage3DMultisample({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?});",
-                    target,
-                    samples,
-                    internalformat,
-                    width,
-                    height,
-                    depth,
-                    fixedsamplelocations
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glTexImage3DMultisample",
                 &self.glTexImage3DMultisample_p,
@@ -28364,10 +22911,7 @@ pub mod struct_commands {
                 depth,
                 fixedsamplelocations,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexImage3DMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28390,18 +22934,9 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: TextureParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexParameterIiv(&self, target: GLenum, pname: GLenum, params: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexParameterIiv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexParameterIiv",
                 &self.glTexParameterIiv_p,
@@ -28409,10 +22944,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexParameterIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28435,23 +22967,14 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: TextureParameterName
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexParameterIuiv(
             &self,
             target: GLenum,
             pname: GLenum,
             params: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexParameterIuiv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexParameterIuiv",
                 &self.glTexParameterIuiv_p,
@@ -28459,10 +22982,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexParameterIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28485,18 +23005,9 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: TextureParameterName
         /// * `param` group: CheckedFloat32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexParameterf(&self, target: GLenum, pname: GLenum, param: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexParameterf({:#X}, {:#X}, {:?});",
-                    target,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexParameterf",
                 &self.glTexParameterf_p,
@@ -28504,10 +23015,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexParameterf");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28531,18 +23039,9 @@ pub mod struct_commands {
         /// * `pname` group: TextureParameterName
         /// * `params` group: CheckedFloat32
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexParameterfv(&self, target: GLenum, pname: GLenum, params: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexParameterfv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexParameterfv",
                 &self.glTexParameterfv_p,
@@ -28550,10 +23049,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28576,18 +23072,9 @@ pub mod struct_commands {
         /// * `target` group: TextureTarget
         /// * `pname` group: TextureParameterName
         /// * `param` group: CheckedInt32
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexParameteri(&self, target: GLenum, pname: GLenum, param: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexParameteri({:#X}, {:#X}, {:?});",
-                    target,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexParameteri",
                 &self.glTexParameteri_p,
@@ -28595,10 +23082,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28622,18 +23106,9 @@ pub mod struct_commands {
         /// * `pname` group: TextureParameterName
         /// * `params` group: CheckedInt32
         /// * `params` len: COMPSIZE(pname)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexParameteriv(&self, target: GLenum, pname: GLenum, params: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexParameteriv({:#X}, {:#X}, {:p});",
-                    target,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTexParameteriv",
                 &self.glTexParameteriv_p,
@@ -28641,10 +23116,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28666,8 +23138,7 @@ pub mod struct_commands {
         /// [glTexStorage1D](http://docs.gl/gl4/glTexStorage1D)(target, levels, internalformat, width)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexStorage1D(
             &self,
             target: GLenum,
@@ -28675,16 +23146,7 @@ pub mod struct_commands {
             internalformat: GLenum,
             width: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexStorage1D({:#X}, {:?}, {:#X}, {:?});",
-                    target,
-                    levels,
-                    internalformat,
-                    width
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glTexStorage1D",
                 &self.glTexStorage1D_p,
@@ -28693,10 +23155,7 @@ pub mod struct_commands {
                 internalformat,
                 width,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexStorage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28718,8 +23177,7 @@ pub mod struct_commands {
         /// [glTexStorage2D](http://docs.gl/gl4/glTexStorage2D)(target, levels, internalformat, width, height)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexStorage2D(
             &self,
             target: GLenum,
@@ -28728,17 +23186,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexStorage2D({:#X}, {:?}, {:#X}, {:?}, {:?});",
-                    target,
-                    levels,
-                    internalformat,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glTexStorage2D",
                 &self.glTexStorage2D_p,
@@ -28748,10 +23196,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexStorage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28773,8 +23218,7 @@ pub mod struct_commands {
         /// [glTexStorage2DMultisample](http://docs.gl/gl4/glTexStorage2DMultisample)(target, samples, internalformat, width, height, fixedsamplelocations)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexStorage2DMultisample(
             &self,
             target: GLenum,
@@ -28784,18 +23228,7 @@ pub mod struct_commands {
             height: GLsizei,
             fixedsamplelocations: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexStorage2DMultisample({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    samples,
-                    internalformat,
-                    width,
-                    height,
-                    fixedsamplelocations
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glTexStorage2DMultisample",
                 &self.glTexStorage2DMultisample_p,
@@ -28806,10 +23239,7 @@ pub mod struct_commands {
                 height,
                 fixedsamplelocations,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexStorage2DMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28831,8 +23261,7 @@ pub mod struct_commands {
         /// [glTexStorage3D](http://docs.gl/gl4/glTexStorage3D)(target, levels, internalformat, width, height, depth)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexStorage3D(
             &self,
             target: GLenum,
@@ -28842,18 +23271,7 @@ pub mod struct_commands {
             height: GLsizei,
             depth: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexStorage3D({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?});",
-                    target,
-                    levels,
-                    internalformat,
-                    width,
-                    height,
-                    depth
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glTexStorage3D",
                 &self.glTexStorage3D_p,
@@ -28864,10 +23282,7 @@ pub mod struct_commands {
                 height,
                 depth,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexStorage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28889,8 +23304,7 @@ pub mod struct_commands {
         /// [glTexStorage3DMultisample](http://docs.gl/gl4/glTexStorage3DMultisample)(target, samples, internalformat, width, height, depth, fixedsamplelocations)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexStorage3DMultisample(
             &self,
             target: GLenum,
@@ -28901,10 +23315,7 @@ pub mod struct_commands {
             depth: GLsizei,
             fixedsamplelocations: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TexStorage3DMultisample({:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?});", target, samples, internalformat, width, height, depth, fixedsamplelocations);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glTexStorage3DMultisample",
                 &self.glTexStorage3DMultisample_p,
@@ -28916,10 +23327,7 @@ pub mod struct_commands {
                 depth,
                 fixedsamplelocations,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexStorage3DMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -28945,8 +23353,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexSubImage1D(
             &self,
             target: GLenum,
@@ -28957,19 +23364,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TexSubImage1D({:#X}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});",
-                    target,
-                    level,
-                    xoffset,
-                    width,
-                    format,
-                    type_,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glTexSubImage1D",
                 &self.glTexSubImage1D_p,
@@ -28981,10 +23376,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexSubImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29011,8 +23403,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width,height)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexSubImage2D(
             &self,
             target: GLenum,
@@ -29025,10 +23416,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TexSubImage2D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", target, level, xoffset, yoffset, width, height, format, type_, pixels);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glTexSubImage2D",
                 &self.glTexSubImage2D_p,
@@ -29042,10 +23430,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexSubImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29073,8 +23458,7 @@ pub mod struct_commands {
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
         /// * `pixels` len: COMPSIZE(format,type,width,height,depth)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TexSubImage3D(
             &self,
             target: GLenum,
@@ -29089,10 +23473,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TexSubImage3D({:#X}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", target, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, pixels);
-            }
+
             let out = call_atomic_ptr_11arg(
                 "glTexSubImage3D",
                 &self.glTexSubImage3D_p,
@@ -29108,10 +23489,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTexSubImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29131,18 +23509,11 @@ pub mod struct_commands {
             !self.glTexSubImage3D_p.load(RELAX).is_null()
         }
         /// [glTextureBarrier](http://docs.gl/gl4/glTextureBarrier)()
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureBarrier(&self) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TextureBarrier();",);
-            }
+
             let out = call_atomic_ptr_0arg("glTextureBarrier", &self.glTextureBarrier_p);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureBarrier");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29163,23 +23534,14 @@ pub mod struct_commands {
         }
         /// [glTextureBuffer](http://docs.gl/gl4/glTextureBuffer)(texture, internalformat, buffer)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureBuffer(
             &self,
             texture: GLuint,
             internalformat: GLenum,
             buffer: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureBuffer({:?}, {:#X}, {:?});",
-                    texture,
-                    internalformat,
-                    buffer
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureBuffer",
                 &self.glTextureBuffer_p,
@@ -29187,10 +23549,7 @@ pub mod struct_commands {
                 internalformat,
                 buffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29212,8 +23571,7 @@ pub mod struct_commands {
         /// [glTextureBufferRange](http://docs.gl/gl4/glTextureBufferRange)(texture, internalformat, buffer, offset, size)
         /// * `internalformat` group: InternalFormat
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureBufferRange(
             &self,
             texture: GLuint,
@@ -29222,17 +23580,7 @@ pub mod struct_commands {
             offset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureBufferRange({:?}, {:#X}, {:?}, {:?}, {:?});",
-                    texture,
-                    internalformat,
-                    buffer,
-                    offset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glTextureBufferRange",
                 &self.glTextureBufferRange_p,
@@ -29242,10 +23590,7 @@ pub mod struct_commands {
                 offset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29266,23 +23611,14 @@ pub mod struct_commands {
         }
         /// [glTextureParameterIiv](http://docs.gl/gl4/glTextureParameter)(texture, pname, params)
         /// * `pname` group: TextureParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureParameterIiv(
             &self,
             texture: GLuint,
             pname: GLenum,
             params: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureParameterIiv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureParameterIiv",
                 &self.glTextureParameterIiv_p,
@@ -29290,10 +23626,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureParameterIiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29314,23 +23647,14 @@ pub mod struct_commands {
         }
         /// [glTextureParameterIuiv](http://docs.gl/gl4/glTextureParameter)(texture, pname, params)
         /// * `pname` group: TextureParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureParameterIuiv(
             &self,
             texture: GLuint,
             pname: GLenum,
             params: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureParameterIuiv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    params
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureParameterIuiv",
                 &self.glTextureParameterIuiv_p,
@@ -29338,10 +23662,7 @@ pub mod struct_commands {
                 pname,
                 params,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureParameterIuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29362,18 +23683,9 @@ pub mod struct_commands {
         }
         /// [glTextureParameterf](http://docs.gl/gl4/glTextureParameter)(texture, pname, param)
         /// * `pname` group: TextureParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureParameterf(&self, texture: GLuint, pname: GLenum, param: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureParameterf({:?}, {:#X}, {:?});",
-                    texture,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureParameterf",
                 &self.glTextureParameterf_p,
@@ -29381,10 +23693,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureParameterf");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29405,23 +23714,14 @@ pub mod struct_commands {
         }
         /// [glTextureParameterfv](http://docs.gl/gl4/glTextureParameter)(texture, pname, param)
         /// * `pname` group: TextureParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureParameterfv(
             &self,
             texture: GLuint,
             pname: GLenum,
             param: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureParameterfv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureParameterfv",
                 &self.glTextureParameterfv_p,
@@ -29429,10 +23729,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureParameterfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29453,18 +23750,9 @@ pub mod struct_commands {
         }
         /// [glTextureParameteri](http://docs.gl/gl4/glTextureParameter)(texture, pname, param)
         /// * `pname` group: TextureParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureParameteri(&self, texture: GLuint, pname: GLenum, param: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureParameteri({:?}, {:#X}, {:?});",
-                    texture,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureParameteri",
                 &self.glTextureParameteri_p,
@@ -29472,10 +23760,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureParameteri");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29496,23 +23781,14 @@ pub mod struct_commands {
         }
         /// [glTextureParameteriv](http://docs.gl/gl4/glTextureParameter)(texture, pname, param)
         /// * `pname` group: TextureParameterName
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureParameteriv(
             &self,
             texture: GLuint,
             pname: GLenum,
             param: *const GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureParameteriv({:?}, {:#X}, {:p});",
-                    texture,
-                    pname,
-                    param
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTextureParameteriv",
                 &self.glTextureParameteriv_p,
@@ -29520,10 +23796,7 @@ pub mod struct_commands {
                 pname,
                 param,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureParameteriv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29544,8 +23817,7 @@ pub mod struct_commands {
         }
         /// [glTextureStorage1D](http://docs.gl/gl4/glTextureStorage1D)(texture, levels, internalformat, width)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureStorage1D(
             &self,
             texture: GLuint,
@@ -29553,16 +23825,7 @@ pub mod struct_commands {
             internalformat: GLenum,
             width: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureStorage1D({:?}, {:?}, {:#X}, {:?});",
-                    texture,
-                    levels,
-                    internalformat,
-                    width
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glTextureStorage1D",
                 &self.glTextureStorage1D_p,
@@ -29571,10 +23834,7 @@ pub mod struct_commands {
                 internalformat,
                 width,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureStorage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29595,8 +23855,7 @@ pub mod struct_commands {
         }
         /// [glTextureStorage2D](http://docs.gl/gl4/glTextureStorage2D)(texture, levels, internalformat, width, height)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureStorage2D(
             &self,
             texture: GLuint,
@@ -29605,17 +23864,7 @@ pub mod struct_commands {
             width: GLsizei,
             height: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureStorage2D({:?}, {:?}, {:#X}, {:?}, {:?});",
-                    texture,
-                    levels,
-                    internalformat,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glTextureStorage2D",
                 &self.glTextureStorage2D_p,
@@ -29625,10 +23874,7 @@ pub mod struct_commands {
                 width,
                 height,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureStorage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29649,8 +23895,7 @@ pub mod struct_commands {
         }
         /// [glTextureStorage2DMultisample](http://docs.gl/gl4/glTextureStorage2DMultisample)(texture, samples, internalformat, width, height, fixedsamplelocations)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureStorage2DMultisample(
             &self,
             texture: GLuint,
@@ -29660,18 +23905,7 @@ pub mod struct_commands {
             height: GLsizei,
             fixedsamplelocations: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureStorage2DMultisample({:?}, {:?}, {:#X}, {:?}, {:?}, {:?});",
-                    texture,
-                    samples,
-                    internalformat,
-                    width,
-                    height,
-                    fixedsamplelocations
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glTextureStorage2DMultisample",
                 &self.glTextureStorage2DMultisample_p,
@@ -29682,10 +23916,7 @@ pub mod struct_commands {
                 height,
                 fixedsamplelocations,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureStorage2DMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29706,8 +23937,7 @@ pub mod struct_commands {
         }
         /// [glTextureStorage3D](http://docs.gl/gl4/glTextureStorage3D)(texture, levels, internalformat, width, height, depth)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureStorage3D(
             &self,
             texture: GLuint,
@@ -29717,18 +23947,7 @@ pub mod struct_commands {
             height: GLsizei,
             depth: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureStorage3D({:?}, {:?}, {:#X}, {:?}, {:?}, {:?});",
-                    texture,
-                    levels,
-                    internalformat,
-                    width,
-                    height,
-                    depth
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glTextureStorage3D",
                 &self.glTextureStorage3D_p,
@@ -29739,10 +23958,7 @@ pub mod struct_commands {
                 height,
                 depth,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureStorage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29763,8 +23979,7 @@ pub mod struct_commands {
         }
         /// [glTextureStorage3DMultisample](http://docs.gl/gl4/glTextureStorage3DMultisample)(texture, samples, internalformat, width, height, depth, fixedsamplelocations)
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureStorage3DMultisample(
             &self,
             texture: GLuint,
@@ -29775,10 +23990,7 @@ pub mod struct_commands {
             depth: GLsizei,
             fixedsamplelocations: GLboolean,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TextureStorage3DMultisample({:?}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?});", texture, samples, internalformat, width, height, depth, fixedsamplelocations);
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glTextureStorage3DMultisample",
                 &self.glTextureStorage3DMultisample_p,
@@ -29790,10 +24002,7 @@ pub mod struct_commands {
                 depth,
                 fixedsamplelocations,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureStorage3DMultisample");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29815,8 +24024,7 @@ pub mod struct_commands {
         /// [glTextureSubImage1D](http://docs.gl/gl4/glTextureSubImage1D)(texture, level, xoffset, width, format, type_, pixels)
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureSubImage1D(
             &self,
             texture: GLuint,
@@ -29827,19 +24035,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureSubImage1D({:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});",
-                    texture,
-                    level,
-                    xoffset,
-                    width,
-                    format,
-                    type_,
-                    pixels
-                );
-            }
+
             let out = call_atomic_ptr_7arg(
                 "glTextureSubImage1D",
                 &self.glTextureSubImage1D_p,
@@ -29851,10 +24047,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureSubImage1D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29876,8 +24069,7 @@ pub mod struct_commands {
         /// [glTextureSubImage2D](http://docs.gl/gl4/glTextureSubImage2D)(texture, level, xoffset, yoffset, width, height, format, type_, pixels)
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureSubImage2D(
             &self,
             texture: GLuint,
@@ -29890,10 +24082,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TextureSubImage2D({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", texture, level, xoffset, yoffset, width, height, format, type_, pixels);
-            }
+
             let out = call_atomic_ptr_9arg(
                 "glTextureSubImage2D",
                 &self.glTextureSubImage2D_p,
@@ -29907,10 +24096,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureSubImage2D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29932,8 +24118,7 @@ pub mod struct_commands {
         /// [glTextureSubImage3D](http://docs.gl/gl4/glTextureSubImage3D)(texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, pixels)
         /// * `format` group: PixelFormat
         /// * `type_` group: PixelType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureSubImage3D(
             &self,
             texture: GLuint,
@@ -29948,10 +24133,7 @@ pub mod struct_commands {
             type_: GLenum,
             pixels: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.TextureSubImage3D({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:#X}, {:#X}, {:p});", texture, level, xoffset, yoffset, zoffset, width, height, depth, format, type_, pixels);
-            }
+
             let out = call_atomic_ptr_11arg(
                 "glTextureSubImage3D",
                 &self.glTextureSubImage3D_p,
@@ -29967,10 +24149,7 @@ pub mod struct_commands {
                 type_,
                 pixels,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureSubImage3D");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -29992,8 +24171,7 @@ pub mod struct_commands {
         /// [glTextureView](http://docs.gl/gl4/glTextureView)(texture, target, origtexture, internalformat, minlevel, numlevels, minlayer, numlayers)
         /// * `target` group: TextureTarget
         /// * `internalformat` group: InternalFormat
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TextureView(
             &self,
             texture: GLuint,
@@ -30005,20 +24183,7 @@ pub mod struct_commands {
             minlayer: GLuint,
             numlayers: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TextureView({:?}, {:#X}, {:?}, {:#X}, {:?}, {:?}, {:?}, {:?});",
-                    texture,
-                    target,
-                    origtexture,
-                    internalformat,
-                    minlevel,
-                    numlevels,
-                    minlayer,
-                    numlayers
-                );
-            }
+
             let out = call_atomic_ptr_8arg(
                 "glTextureView",
                 &self.glTextureView_p,
@@ -30031,10 +24196,7 @@ pub mod struct_commands {
                 minlayer,
                 numlayers,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTextureView");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30050,23 +24212,14 @@ pub mod struct_commands {
             !self.glTextureView_p.load(RELAX).is_null()
         }
         /// [glTransformFeedbackBufferBase](http://docs.gl/gl4/glTransformFeedbackBufferBase)(xfb, index, buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TransformFeedbackBufferBase(
             &self,
             xfb: GLuint,
             index: GLuint,
             buffer: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TransformFeedbackBufferBase({:?}, {:?}, {:?});",
-                    xfb,
-                    index,
-                    buffer
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glTransformFeedbackBufferBase",
                 &self.glTransformFeedbackBufferBase_p,
@@ -30074,10 +24227,7 @@ pub mod struct_commands {
                 index,
                 buffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTransformFeedbackBufferBase");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30098,8 +24248,7 @@ pub mod struct_commands {
         }
         /// [glTransformFeedbackBufferRange](http://docs.gl/gl4/glTransformFeedbackBufferRange)(xfb, index, buffer, offset, size)
         /// * `size` group: BufferSize
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TransformFeedbackBufferRange(
             &self,
             xfb: GLuint,
@@ -30108,17 +24257,7 @@ pub mod struct_commands {
             offset: GLintptr,
             size: GLsizeiptr,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TransformFeedbackBufferRange({:?}, {:?}, {:?}, {:?}, {:?});",
-                    xfb,
-                    index,
-                    buffer,
-                    offset,
-                    size
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glTransformFeedbackBufferRange",
                 &self.glTransformFeedbackBufferRange_p,
@@ -30128,10 +24267,7 @@ pub mod struct_commands {
                 offset,
                 size,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTransformFeedbackBufferRange");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30153,8 +24289,7 @@ pub mod struct_commands {
         /// [glTransformFeedbackVaryings](http://docs.gl/gl4/glTransformFeedbackVaryings)(program, count, varyings, bufferMode)
         /// * `varyings` len: count
         /// * `bufferMode` group: TransformFeedbackBufferMode
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn TransformFeedbackVaryings(
             &self,
             program: GLuint,
@@ -30162,16 +24297,7 @@ pub mod struct_commands {
             varyings: *const *const GLchar,
             bufferMode: GLenum,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.TransformFeedbackVaryings({:?}, {:?}, {:p}, {:#X});",
-                    program,
-                    count,
-                    varyings,
-                    bufferMode
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glTransformFeedbackVaryings",
                 &self.glTransformFeedbackVaryings_p,
@@ -30180,10 +24306,7 @@ pub mod struct_commands {
                 varyings,
                 bufferMode,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glTransformFeedbackVaryings");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30203,18 +24326,11 @@ pub mod struct_commands {
             !self.glTransformFeedbackVaryings_p.load(RELAX).is_null()
         }
         /// [glUniform1d](http://docs.gl/gl4/glUniform1d)(location, x)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1d(&self, location: GLint, x: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform1d({:?}, {:?});", location, x);
-            }
+
             let out = call_atomic_ptr_2arg("glUniform1d", &self.glUniform1d_p, location, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30231,24 +24347,12 @@ pub mod struct_commands {
         }
         /// [glUniform1dv](http://docs.gl/gl4/glUniform1dv)(location, count, value)
         /// * `value` len: count*1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1dv(&self, location: GLint, count: GLsizei, value: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform1dv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform1dv", &self.glUniform1dv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30264,18 +24368,11 @@ pub mod struct_commands {
             !self.glUniform1dv_p.load(RELAX).is_null()
         }
         /// [glUniform1f](http://docs.gl/gl4/glUniform)(location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1f(&self, location: GLint, v0: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform1f({:?}, {:?});", location, v0);
-            }
+
             let out = call_atomic_ptr_2arg("glUniform1f", &self.glUniform1f_p, location, v0);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30292,24 +24389,12 @@ pub mod struct_commands {
         }
         /// [glUniform1fv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1fv(&self, location: GLint, count: GLsizei, value: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform1fv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform1fv", &self.glUniform1fv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30325,18 +24410,11 @@ pub mod struct_commands {
             !self.glUniform1fv_p.load(RELAX).is_null()
         }
         /// [glUniform1i](http://docs.gl/gl4/glUniform)(location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1i(&self, location: GLint, v0: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform1i({:?}, {:?});", location, v0);
-            }
+
             let out = call_atomic_ptr_2arg("glUniform1i", &self.glUniform1i_p, location, v0);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30353,24 +24431,12 @@ pub mod struct_commands {
         }
         /// [glUniform1iv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1iv(&self, location: GLint, count: GLsizei, value: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform1iv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform1iv", &self.glUniform1iv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30386,18 +24452,11 @@ pub mod struct_commands {
             !self.glUniform1iv_p.load(RELAX).is_null()
         }
         /// [glUniform1ui](http://docs.gl/gl4/glUniform)(location, v0)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1ui(&self, location: GLint, v0: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform1ui({:?}, {:?});", location, v0);
-            }
+
             let out = call_atomic_ptr_2arg("glUniform1ui", &self.glUniform1ui_p, location, v0);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30414,18 +24473,9 @@ pub mod struct_commands {
         }
         /// [glUniform1uiv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform1uiv(&self, location: GLint, count: GLsizei, value: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform1uiv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUniform1uiv",
                 &self.glUniform1uiv_p,
@@ -30433,10 +24483,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform1uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30452,18 +24499,11 @@ pub mod struct_commands {
             !self.glUniform1uiv_p.load(RELAX).is_null()
         }
         /// [glUniform2d](http://docs.gl/gl4/glUniform2d)(location, x, y)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2d(&self, location: GLint, x: GLdouble, y: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform2d({:?}, {:?}, {:?});", location, x, y);
-            }
+
             let out = call_atomic_ptr_3arg("glUniform2d", &self.glUniform2d_p, location, x, y);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30480,24 +24520,12 @@ pub mod struct_commands {
         }
         /// [glUniform2dv](http://docs.gl/gl4/glUniform2dv)(location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2dv(&self, location: GLint, count: GLsizei, value: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform2dv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform2dv", &self.glUniform2dv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30513,18 +24541,11 @@ pub mod struct_commands {
             !self.glUniform2dv_p.load(RELAX).is_null()
         }
         /// [glUniform2f](http://docs.gl/gl4/glUniform)(location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2f(&self, location: GLint, v0: GLfloat, v1: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform2f({:?}, {:?}, {:?});", location, v0, v1);
-            }
+
             let out = call_atomic_ptr_3arg("glUniform2f", &self.glUniform2f_p, location, v0, v1);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30541,24 +24562,12 @@ pub mod struct_commands {
         }
         /// [glUniform2fv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2fv(&self, location: GLint, count: GLsizei, value: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform2fv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform2fv", &self.glUniform2fv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30574,18 +24583,11 @@ pub mod struct_commands {
             !self.glUniform2fv_p.load(RELAX).is_null()
         }
         /// [glUniform2i](http://docs.gl/gl4/glUniform)(location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2i(&self, location: GLint, v0: GLint, v1: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform2i({:?}, {:?}, {:?});", location, v0, v1);
-            }
+
             let out = call_atomic_ptr_3arg("glUniform2i", &self.glUniform2i_p, location, v0, v1);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30602,24 +24604,12 @@ pub mod struct_commands {
         }
         /// [glUniform2iv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2iv(&self, location: GLint, count: GLsizei, value: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform2iv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform2iv", &self.glUniform2iv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30635,18 +24625,11 @@ pub mod struct_commands {
             !self.glUniform2iv_p.load(RELAX).is_null()
         }
         /// [glUniform2ui](http://docs.gl/gl4/glUniform)(location, v0, v1)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2ui(&self, location: GLint, v0: GLuint, v1: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.Uniform2ui({:?}, {:?}, {:?});", location, v0, v1);
-            }
+
             let out = call_atomic_ptr_3arg("glUniform2ui", &self.glUniform2ui_p, location, v0, v1);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30663,18 +24646,9 @@ pub mod struct_commands {
         }
         /// [glUniform2uiv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform2uiv(&self, location: GLint, count: GLsizei, value: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform2uiv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUniform2uiv",
                 &self.glUniform2uiv_p,
@@ -30682,10 +24656,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform2uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30701,24 +24672,11 @@ pub mod struct_commands {
             !self.glUniform2uiv_p.load(RELAX).is_null()
         }
         /// [glUniform3d](http://docs.gl/gl4/glUniform3d)(location, x, y, z)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3d(&self, location: GLint, x: GLdouble, y: GLdouble, z: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3d({:?}, {:?}, {:?}, {:?});",
-                    location,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out = call_atomic_ptr_4arg("glUniform3d", &self.glUniform3d_p, location, x, y, z);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30735,24 +24693,12 @@ pub mod struct_commands {
         }
         /// [glUniform3dv](http://docs.gl/gl4/glUniform3dv)(location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3dv(&self, location: GLint, count: GLsizei, value: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3dv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform3dv", &self.glUniform3dv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30768,25 +24714,12 @@ pub mod struct_commands {
             !self.glUniform3dv_p.load(RELAX).is_null()
         }
         /// [glUniform3f](http://docs.gl/gl4/glUniform)(location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3f(&self, location: GLint, v0: GLfloat, v1: GLfloat, v2: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3f({:?}, {:?}, {:?}, {:?});",
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glUniform3f", &self.glUniform3f_p, location, v0, v1, v2);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30803,24 +24736,12 @@ pub mod struct_commands {
         }
         /// [glUniform3fv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3fv(&self, location: GLint, count: GLsizei, value: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3fv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform3fv", &self.glUniform3fv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30836,25 +24757,12 @@ pub mod struct_commands {
             !self.glUniform3fv_p.load(RELAX).is_null()
         }
         /// [glUniform3i](http://docs.gl/gl4/glUniform)(location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3i(&self, location: GLint, v0: GLint, v1: GLint, v2: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3i({:?}, {:?}, {:?}, {:?});",
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glUniform3i", &self.glUniform3i_p, location, v0, v1, v2);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30871,24 +24779,12 @@ pub mod struct_commands {
         }
         /// [glUniform3iv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3iv(&self, location: GLint, count: GLsizei, value: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3iv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform3iv", &self.glUniform3iv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30904,25 +24800,12 @@ pub mod struct_commands {
             !self.glUniform3iv_p.load(RELAX).is_null()
         }
         /// [glUniform3ui](http://docs.gl/gl4/glUniform)(location, v0, v1, v2)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3ui(&self, location: GLint, v0: GLuint, v1: GLuint, v2: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3ui({:?}, {:?}, {:?}, {:?});",
-                    location,
-                    v0,
-                    v1,
-                    v2
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glUniform3ui", &self.glUniform3ui_p, location, v0, v1, v2);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30939,18 +24822,9 @@ pub mod struct_commands {
         }
         /// [glUniform3uiv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform3uiv(&self, location: GLint, count: GLsizei, value: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform3uiv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUniform3uiv",
                 &self.glUniform3uiv_p,
@@ -30958,10 +24832,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform3uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -30977,8 +24848,7 @@ pub mod struct_commands {
             !self.glUniform3uiv_p.load(RELAX).is_null()
         }
         /// [glUniform4d](http://docs.gl/gl4/glUniform4d)(location, x, y, z, w)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4d(
             &self,
             location: GLint,
@@ -30987,23 +24857,10 @@ pub mod struct_commands {
             z: GLdouble,
             w: GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4d({:?}, {:?}, {:?}, {:?}, {:?});",
-                    location,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out =
                 call_atomic_ptr_5arg("glUniform4d", &self.glUniform4d_p, location, x, y, z, w);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31020,24 +24877,12 @@ pub mod struct_commands {
         }
         /// [glUniform4dv](http://docs.gl/gl4/glUniform4dv)(location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4dv(&self, location: GLint, count: GLsizei, value: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4dv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform4dv", &self.glUniform4dv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31053,8 +24898,7 @@ pub mod struct_commands {
             !self.glUniform4dv_p.load(RELAX).is_null()
         }
         /// [glUniform4f](http://docs.gl/gl4/glUniform)(location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4f(
             &self,
             location: GLint,
@@ -31063,23 +24907,10 @@ pub mod struct_commands {
             v2: GLfloat,
             v3: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4f({:?}, {:?}, {:?}, {:?}, {:?});",
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out =
                 call_atomic_ptr_5arg("glUniform4f", &self.glUniform4f_p, location, v0, v1, v2, v3);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31096,24 +24927,12 @@ pub mod struct_commands {
         }
         /// [glUniform4fv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4fv(&self, location: GLint, count: GLsizei, value: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4fv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform4fv", &self.glUniform4fv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31129,8 +24948,7 @@ pub mod struct_commands {
             !self.glUniform4fv_p.load(RELAX).is_null()
         }
         /// [glUniform4i](http://docs.gl/gl4/glUniform)(location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4i(
             &self,
             location: GLint,
@@ -31139,23 +24957,10 @@ pub mod struct_commands {
             v2: GLint,
             v3: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4i({:?}, {:?}, {:?}, {:?}, {:?});",
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out =
                 call_atomic_ptr_5arg("glUniform4i", &self.glUniform4i_p, location, v0, v1, v2, v3);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31172,24 +24977,12 @@ pub mod struct_commands {
         }
         /// [glUniform4iv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4iv(&self, location: GLint, count: GLsizei, value: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4iv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out =
                 call_atomic_ptr_3arg("glUniform4iv", &self.glUniform4iv_p, location, count, value);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31205,8 +24998,7 @@ pub mod struct_commands {
             !self.glUniform4iv_p.load(RELAX).is_null()
         }
         /// [glUniform4ui](http://docs.gl/gl4/glUniform)(location, v0, v1, v2, v3)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4ui(
             &self,
             location: GLint,
@@ -31215,17 +25007,7 @@ pub mod struct_commands {
             v2: GLuint,
             v3: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4ui({:?}, {:?}, {:?}, {:?}, {:?});",
-                    location,
-                    v0,
-                    v1,
-                    v2,
-                    v3
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glUniform4ui",
                 &self.glUniform4ui_p,
@@ -31235,10 +25017,7 @@ pub mod struct_commands {
                 v2,
                 v3,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31255,18 +25034,9 @@ pub mod struct_commands {
         }
         /// [glUniform4uiv](http://docs.gl/gl4/glUniform)(location, count, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Uniform4uiv(&self, location: GLint, count: GLsizei, value: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Uniform4uiv({:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUniform4uiv",
                 &self.glUniform4uiv_p,
@@ -31274,10 +25044,7 @@ pub mod struct_commands {
                 count,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniform4uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31293,23 +25060,14 @@ pub mod struct_commands {
             !self.glUniform4uiv_p.load(RELAX).is_null()
         }
         /// [glUniformBlockBinding](http://docs.gl/gl4/glUniformBlockBinding)(program, uniformBlockIndex, uniformBlockBinding)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformBlockBinding(
             &self,
             program: GLuint,
             uniformBlockIndex: GLuint,
             uniformBlockBinding: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformBlockBinding({:?}, {:?}, {:?});",
-                    program,
-                    uniformBlockIndex,
-                    uniformBlockBinding
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUniformBlockBinding",
                 &self.glUniformBlockBinding_p,
@@ -31317,10 +25075,7 @@ pub mod struct_commands {
                 uniformBlockIndex,
                 uniformBlockBinding,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformBlockBinding");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31341,8 +25096,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix2dv](http://docs.gl/gl4/glUniformMatrix2dv)(location, count, transpose, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix2dv(
             &self,
             location: GLint,
@@ -31350,16 +25104,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix2dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix2dv",
                 &self.glUniformMatrix2dv_p,
@@ -31368,10 +25113,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31392,8 +25134,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix2fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix2fv(
             &self,
             location: GLint,
@@ -31401,16 +25142,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix2fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix2fv",
                 &self.glUniformMatrix2fv_p,
@@ -31419,10 +25151,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31443,8 +25172,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix2x3dv](http://docs.gl/gl4/glUniformMatrix2x3dv)(location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix2x3dv(
             &self,
             location: GLint,
@@ -31452,16 +25180,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix2x3dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix2x3dv",
                 &self.glUniformMatrix2x3dv_p,
@@ -31470,10 +25189,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix2x3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31494,8 +25210,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix2x3fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix2x3fv(
             &self,
             location: GLint,
@@ -31503,16 +25218,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix2x3fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix2x3fv",
                 &self.glUniformMatrix2x3fv_p,
@@ -31521,10 +25227,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix2x3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31545,8 +25248,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix2x4dv](http://docs.gl/gl4/glUniformMatrix2x4dv)(location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix2x4dv(
             &self,
             location: GLint,
@@ -31554,16 +25256,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix2x4dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix2x4dv",
                 &self.glUniformMatrix2x4dv_p,
@@ -31572,10 +25265,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix2x4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31596,8 +25286,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix2x4fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix2x4fv(
             &self,
             location: GLint,
@@ -31605,16 +25294,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix2x4fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix2x4fv",
                 &self.glUniformMatrix2x4fv_p,
@@ -31623,10 +25303,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix2x4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31647,8 +25324,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix3dv](http://docs.gl/gl4/glUniformMatrix3dv)(location, count, transpose, value)
         /// * `value` len: count*9
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix3dv(
             &self,
             location: GLint,
@@ -31656,16 +25332,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix3dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix3dv",
                 &self.glUniformMatrix3dv_p,
@@ -31674,10 +25341,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31698,8 +25362,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix3fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*9
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix3fv(
             &self,
             location: GLint,
@@ -31707,16 +25370,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix3fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix3fv",
                 &self.glUniformMatrix3fv_p,
@@ -31725,10 +25379,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31749,8 +25400,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix3x2dv](http://docs.gl/gl4/glUniformMatrix3x2dv)(location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix3x2dv(
             &self,
             location: GLint,
@@ -31758,16 +25408,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix3x2dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix3x2dv",
                 &self.glUniformMatrix3x2dv_p,
@@ -31776,10 +25417,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix3x2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31800,8 +25438,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix3x2fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*6
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix3x2fv(
             &self,
             location: GLint,
@@ -31809,16 +25446,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix3x2fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix3x2fv",
                 &self.glUniformMatrix3x2fv_p,
@@ -31827,10 +25455,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix3x2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31851,8 +25476,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix3x4dv](http://docs.gl/gl4/glUniformMatrix3x4dv)(location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix3x4dv(
             &self,
             location: GLint,
@@ -31860,16 +25484,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix3x4dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix3x4dv",
                 &self.glUniformMatrix3x4dv_p,
@@ -31878,10 +25493,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix3x4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31902,8 +25514,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix3x4fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix3x4fv(
             &self,
             location: GLint,
@@ -31911,16 +25522,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix3x4fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix3x4fv",
                 &self.glUniformMatrix3x4fv_p,
@@ -31929,10 +25531,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix3x4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -31953,8 +25552,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix4dv](http://docs.gl/gl4/glUniformMatrix4dv)(location, count, transpose, value)
         /// * `value` len: count*16
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix4dv(
             &self,
             location: GLint,
@@ -31962,16 +25560,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix4dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix4dv",
                 &self.glUniformMatrix4dv_p,
@@ -31980,10 +25569,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32004,8 +25590,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix4fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*16
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix4fv(
             &self,
             location: GLint,
@@ -32013,16 +25598,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix4fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix4fv",
                 &self.glUniformMatrix4fv_p,
@@ -32031,10 +25607,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32055,8 +25628,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix4x2dv](http://docs.gl/gl4/glUniformMatrix4x2dv)(location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix4x2dv(
             &self,
             location: GLint,
@@ -32064,16 +25636,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix4x2dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix4x2dv",
                 &self.glUniformMatrix4x2dv_p,
@@ -32082,10 +25645,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix4x2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32106,8 +25666,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix4x2fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*8
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix4x2fv(
             &self,
             location: GLint,
@@ -32115,16 +25674,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix4x2fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix4x2fv",
                 &self.glUniformMatrix4x2fv_p,
@@ -32133,10 +25683,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix4x2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32157,8 +25704,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix4x3dv](http://docs.gl/gl4/glUniformMatrix4x3dv)(location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix4x3dv(
             &self,
             location: GLint,
@@ -32166,16 +25712,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix4x3dv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix4x3dv",
                 &self.glUniformMatrix4x3dv_p,
@@ -32184,10 +25721,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix4x3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32208,8 +25742,7 @@ pub mod struct_commands {
         }
         /// [glUniformMatrix4x3fv](http://docs.gl/gl4/glUniform)(location, count, transpose, value)
         /// * `value` len: count*12
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformMatrix4x3fv(
             &self,
             location: GLint,
@@ -32217,16 +25750,7 @@ pub mod struct_commands {
             transpose: GLboolean,
             value: *const GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformMatrix4x3fv({:?}, {:?}, {:?}, {:p});",
-                    location,
-                    count,
-                    transpose,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glUniformMatrix4x3fv",
                 &self.glUniformMatrix4x3fv_p,
@@ -32235,10 +25759,7 @@ pub mod struct_commands {
                 transpose,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformMatrix4x3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32260,23 +25781,14 @@ pub mod struct_commands {
         /// [glUniformSubroutinesuiv](http://docs.gl/gl4/glUniformSubroutines)(shadertype, count, indices)
         /// * `shadertype` group: ShaderType
         /// * `indices` len: count
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UniformSubroutinesuiv(
             &self,
             shadertype: GLenum,
             count: GLsizei,
             indices: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UniformSubroutinesuiv({:#X}, {:?}, {:p});",
-                    shadertype,
-                    count,
-                    indices
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUniformSubroutinesuiv",
                 &self.glUniformSubroutinesuiv_p,
@@ -32284,10 +25796,7 @@ pub mod struct_commands {
                 count,
                 indices,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUniformSubroutinesuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32308,18 +25817,11 @@ pub mod struct_commands {
         }
         /// [glUnmapBuffer](http://docs.gl/gl4/glUnmapBuffer)(target)
         /// * `target` group: BufferTargetARB
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UnmapBuffer(&self, target: GLenum) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.UnmapBuffer({:#X});", target);
-            }
+
             let out = call_atomic_ptr_1arg("glUnmapBuffer", &self.glUnmapBuffer_p, target);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUnmapBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32335,19 +25837,12 @@ pub mod struct_commands {
             !self.glUnmapBuffer_p.load(RELAX).is_null()
         }
         /// [glUnmapNamedBuffer](http://docs.gl/gl4/glUnmapNamedBuffer)(buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UnmapNamedBuffer(&self, buffer: GLuint) -> GLboolean {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.UnmapNamedBuffer({:?});", buffer);
-            }
+
             let out =
                 call_atomic_ptr_1arg("glUnmapNamedBuffer", &self.glUnmapNamedBuffer_p, buffer);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUnmapNamedBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32367,18 +25862,11 @@ pub mod struct_commands {
             !self.glUnmapNamedBuffer_p.load(RELAX).is_null()
         }
         /// [glUseProgram](http://docs.gl/gl4/glUseProgram)(program)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UseProgram(&self, program: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.UseProgram({:?});", program);
-            }
+
             let out = call_atomic_ptr_1arg("glUseProgram", &self.glUseProgram_p, program);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUseProgram");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32395,23 +25883,14 @@ pub mod struct_commands {
         }
         /// [glUseProgramStages](http://docs.gl/gl4/glUseProgramStages)(pipeline, stages, program)
         /// * `stages` group: UseProgramStageMask
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn UseProgramStages(
             &self,
             pipeline: GLuint,
             stages: GLbitfield,
             program: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.UseProgramStages({:?}, {:?}, {:?});",
-                    pipeline,
-                    stages,
-                    program
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glUseProgramStages",
                 &self.glUseProgramStages_p,
@@ -32419,10 +25898,7 @@ pub mod struct_commands {
                 stages,
                 program,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glUseProgramStages");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32442,18 +25918,11 @@ pub mod struct_commands {
             !self.glUseProgramStages_p.load(RELAX).is_null()
         }
         /// [glValidateProgram](http://docs.gl/gl4/glValidateProgram)(program)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ValidateProgram(&self, program: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ValidateProgram({:?});", program);
-            }
+
             let out = call_atomic_ptr_1arg("glValidateProgram", &self.glValidateProgram_p, program);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glValidateProgram");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32473,22 +25942,15 @@ pub mod struct_commands {
             !self.glValidateProgram_p.load(RELAX).is_null()
         }
         /// [glValidateProgramPipeline](http://docs.gl/gl4/glValidateProgramPipeline)(pipeline)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ValidateProgramPipeline(&self, pipeline: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ValidateProgramPipeline({:?});", pipeline);
-            }
+
             let out = call_atomic_ptr_1arg(
                 "glValidateProgramPipeline",
                 &self.glValidateProgramPipeline_p,
                 pipeline,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glValidateProgramPipeline");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32508,23 +25970,14 @@ pub mod struct_commands {
             !self.glValidateProgramPipeline_p.load(RELAX).is_null()
         }
         /// [glVertexArrayAttribBinding](http://docs.gl/gl4/glVertexArrayAttribBinding)(vaobj, attribindex, bindingindex)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayAttribBinding(
             &self,
             vaobj: GLuint,
             attribindex: GLuint,
             bindingindex: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayAttribBinding({:?}, {:?}, {:?});",
-                    vaobj,
-                    attribindex,
-                    bindingindex
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glVertexArrayAttribBinding",
                 &self.glVertexArrayAttribBinding_p,
@@ -32532,10 +25985,7 @@ pub mod struct_commands {
                 attribindex,
                 bindingindex,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayAttribBinding");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32556,8 +26006,7 @@ pub mod struct_commands {
         }
         /// [glVertexArrayAttribFormat](http://docs.gl/gl4/glVertexArrayAttribFormat)(vaobj, attribindex, size, type_, normalized, relativeoffset)
         /// * `type_` group: VertexAttribType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayAttribFormat(
             &self,
             vaobj: GLuint,
@@ -32567,18 +26016,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             relativeoffset: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayAttribFormat({:?}, {:?}, {:?}, {:#X}, {:?}, {:?});",
-                    vaobj,
-                    attribindex,
-                    size,
-                    type_,
-                    normalized,
-                    relativeoffset
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glVertexArrayAttribFormat",
                 &self.glVertexArrayAttribFormat_p,
@@ -32589,10 +26027,7 @@ pub mod struct_commands {
                 normalized,
                 relativeoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayAttribFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32613,8 +26048,7 @@ pub mod struct_commands {
         }
         /// [glVertexArrayAttribIFormat](http://docs.gl/gl4/glVertexArrayAttribIFormat)(vaobj, attribindex, size, type_, relativeoffset)
         /// * `type_` group: VertexAttribIType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayAttribIFormat(
             &self,
             vaobj: GLuint,
@@ -32623,17 +26057,7 @@ pub mod struct_commands {
             type_: GLenum,
             relativeoffset: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayAttribIFormat({:?}, {:?}, {:?}, {:#X}, {:?});",
-                    vaobj,
-                    attribindex,
-                    size,
-                    type_,
-                    relativeoffset
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexArrayAttribIFormat",
                 &self.glVertexArrayAttribIFormat_p,
@@ -32643,10 +26067,7 @@ pub mod struct_commands {
                 type_,
                 relativeoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayAttribIFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32667,8 +26088,7 @@ pub mod struct_commands {
         }
         /// [glVertexArrayAttribLFormat](http://docs.gl/gl4/glVertexArrayAttribLFormat)(vaobj, attribindex, size, type_, relativeoffset)
         /// * `type_` group: VertexAttribLType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayAttribLFormat(
             &self,
             vaobj: GLuint,
@@ -32677,17 +26097,7 @@ pub mod struct_commands {
             type_: GLenum,
             relativeoffset: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayAttribLFormat({:?}, {:?}, {:?}, {:#X}, {:?});",
-                    vaobj,
-                    attribindex,
-                    size,
-                    type_,
-                    relativeoffset
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexArrayAttribLFormat",
                 &self.glVertexArrayAttribLFormat_p,
@@ -32697,10 +26107,7 @@ pub mod struct_commands {
                 type_,
                 relativeoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayAttribLFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32720,23 +26127,14 @@ pub mod struct_commands {
             !self.glVertexArrayAttribLFormat_p.load(RELAX).is_null()
         }
         /// [glVertexArrayBindingDivisor](http://docs.gl/gl4/glVertexArrayBindingDivisor)(vaobj, bindingindex, divisor)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayBindingDivisor(
             &self,
             vaobj: GLuint,
             bindingindex: GLuint,
             divisor: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayBindingDivisor({:?}, {:?}, {:?});",
-                    vaobj,
-                    bindingindex,
-                    divisor
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glVertexArrayBindingDivisor",
                 &self.glVertexArrayBindingDivisor_p,
@@ -32744,10 +26142,7 @@ pub mod struct_commands {
                 bindingindex,
                 divisor,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayBindingDivisor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32767,27 +26162,16 @@ pub mod struct_commands {
             !self.glVertexArrayBindingDivisor_p.load(RELAX).is_null()
         }
         /// [glVertexArrayElementBuffer](http://docs.gl/gl4/glVertexArrayElementBuffer)(vaobj, buffer)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayElementBuffer(&self, vaobj: GLuint, buffer: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayElementBuffer({:?}, {:?});",
-                    vaobj,
-                    buffer
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glVertexArrayElementBuffer",
                 &self.glVertexArrayElementBuffer_p,
                 vaobj,
                 buffer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayElementBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32807,8 +26191,7 @@ pub mod struct_commands {
             !self.glVertexArrayElementBuffer_p.load(RELAX).is_null()
         }
         /// [glVertexArrayVertexBuffer](http://docs.gl/gl4/glVertexArrayVertexBuffer)(vaobj, bindingindex, buffer, offset, stride)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayVertexBuffer(
             &self,
             vaobj: GLuint,
@@ -32817,17 +26200,7 @@ pub mod struct_commands {
             offset: GLintptr,
             stride: GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayVertexBuffer({:?}, {:?}, {:?}, {:?}, {:?});",
-                    vaobj,
-                    bindingindex,
-                    buffer,
-                    offset,
-                    stride
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexArrayVertexBuffer",
                 &self.glVertexArrayVertexBuffer_p,
@@ -32837,10 +26210,7 @@ pub mod struct_commands {
                 offset,
                 stride,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayVertexBuffer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32860,8 +26230,7 @@ pub mod struct_commands {
             !self.glVertexArrayVertexBuffer_p.load(RELAX).is_null()
         }
         /// [glVertexArrayVertexBuffers](http://docs.gl/gl4/glVertexArrayVertexBuffers)(vaobj, first, count, buffers, offsets, strides)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexArrayVertexBuffers(
             &self,
             vaobj: GLuint,
@@ -32871,18 +26240,7 @@ pub mod struct_commands {
             offsets: *const GLintptr,
             strides: *const GLsizei,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexArrayVertexBuffers({:?}, {:?}, {:?}, {:p}, {:p}, {:p});",
-                    vaobj,
-                    first,
-                    count,
-                    buffers,
-                    offsets,
-                    strides
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glVertexArrayVertexBuffers",
                 &self.glVertexArrayVertexBuffers_p,
@@ -32893,10 +26251,7 @@ pub mod struct_commands {
                 offsets,
                 strides,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexArrayVertexBuffers");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32917,18 +26272,11 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib1d](http://docs.gl/gl4/glVertexAttrib1d)(index, x)
         /// * vector equivalent: [`glVertexAttrib1dv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib1d(&self, index: GLuint, x: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib1d({:?}, {:?});", index, x);
-            }
+
             let out = call_atomic_ptr_2arg("glVertexAttrib1d", &self.glVertexAttrib1d_p, index, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib1d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32949,19 +26297,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib1dv](http://docs.gl/gl4/glVertexAttrib1dv)(index, v)
         /// * `v` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib1dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib1dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib1dv", &self.glVertexAttrib1dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib1dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -32982,18 +26323,11 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib1f](http://docs.gl/gl4/glVertexAttrib)(index, x)
         /// * vector equivalent: [`glVertexAttrib1fv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib1f(&self, index: GLuint, x: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib1f({:?}, {:?});", index, x);
-            }
+
             let out = call_atomic_ptr_2arg("glVertexAttrib1f", &self.glVertexAttrib1f_p, index, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib1f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33014,19 +26348,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib1fv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib1fv(&self, index: GLuint, v: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib1fv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib1fv", &self.glVertexAttrib1fv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib1fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33047,18 +26374,11 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib1s](http://docs.gl/gl4/glVertexAttrib1s)(index, x)
         /// * vector equivalent: [`glVertexAttrib1sv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib1s(&self, index: GLuint, x: GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib1s({:?}, {:?});", index, x);
-            }
+
             let out = call_atomic_ptr_2arg("glVertexAttrib1s", &self.glVertexAttrib1s_p, index, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib1s");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33079,19 +26399,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib1sv](http://docs.gl/gl4/glVertexAttrib1sv)(index, v)
         /// * `v` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib1sv(&self, index: GLuint, v: *const GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib1sv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib1sv", &self.glVertexAttrib1sv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib1sv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33112,19 +26425,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib2d](http://docs.gl/gl4/glVertexAttrib2d)(index, x, y)
         /// * vector equivalent: [`glVertexAttrib2dv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib2d(&self, index: GLuint, x: GLdouble, y: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib2d({:?}, {:?}, {:?});", index, x, y);
-            }
+
             let out =
                 call_atomic_ptr_3arg("glVertexAttrib2d", &self.glVertexAttrib2d_p, index, x, y);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib2d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33145,19 +26451,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib2dv](http://docs.gl/gl4/glVertexAttrib2dv)(index, v)
         /// * `v` len: 2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib2dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib2dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib2dv", &self.glVertexAttrib2dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33178,19 +26477,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib2f](http://docs.gl/gl4/glVertexAttrib)(index, x, y)
         /// * vector equivalent: [`glVertexAttrib2fv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib2f(&self, index: GLuint, x: GLfloat, y: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib2f({:?}, {:?}, {:?});", index, x, y);
-            }
+
             let out =
                 call_atomic_ptr_3arg("glVertexAttrib2f", &self.glVertexAttrib2f_p, index, x, y);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib2f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33211,19 +26503,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib2fv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib2fv(&self, index: GLuint, v: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib2fv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib2fv", &self.glVertexAttrib2fv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib2fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33244,19 +26529,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib2s](http://docs.gl/gl4/glVertexAttrib2s)(index, x, y)
         /// * vector equivalent: [`glVertexAttrib2sv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib2s(&self, index: GLuint, x: GLshort, y: GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib2s({:?}, {:?}, {:?});", index, x, y);
-            }
+
             let out =
                 call_atomic_ptr_3arg("glVertexAttrib2s", &self.glVertexAttrib2s_p, index, x, y);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib2s");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33277,19 +26555,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib2sv](http://docs.gl/gl4/glVertexAttrib2sv)(index, v)
         /// * `v` len: 2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib2sv(&self, index: GLuint, v: *const GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib2sv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib2sv", &self.glVertexAttrib2sv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib2sv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33310,25 +26581,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib3d](http://docs.gl/gl4/glVertexAttrib3d)(index, x, y, z)
         /// * vector equivalent: [`glVertexAttrib3dv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib3d(&self, index: GLuint, x: GLdouble, y: GLdouble, z: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib3d({:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glVertexAttrib3d", &self.glVertexAttrib3d_p, index, x, y, z);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib3d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33349,19 +26607,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib3dv](http://docs.gl/gl4/glVertexAttrib3dv)(index, v)
         /// * `v` len: 3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib3dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib3dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib3dv", &self.glVertexAttrib3dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33382,25 +26633,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib3f](http://docs.gl/gl4/glVertexAttrib)(index, x, y, z)
         /// * vector equivalent: [`glVertexAttrib3fv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib3f(&self, index: GLuint, x: GLfloat, y: GLfloat, z: GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib3f({:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glVertexAttrib3f", &self.glVertexAttrib3f_p, index, x, y, z);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib3f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33421,19 +26659,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib3fv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib3fv(&self, index: GLuint, v: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib3fv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib3fv", &self.glVertexAttrib3fv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib3fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33454,25 +26685,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib3s](http://docs.gl/gl4/glVertexAttrib3s)(index, x, y, z)
         /// * vector equivalent: [`glVertexAttrib3sv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib3s(&self, index: GLuint, x: GLshort, y: GLshort, z: GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib3s({:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out =
                 call_atomic_ptr_4arg("glVertexAttrib3s", &self.glVertexAttrib3s_p, index, x, y, z);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib3s");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33493,19 +26711,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib3sv](http://docs.gl/gl4/glVertexAttrib3sv)(index, v)
         /// * `v` len: 3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib3sv(&self, index: GLuint, v: *const GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib3sv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib3sv", &self.glVertexAttrib3sv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib3sv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33526,19 +26737,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4Nbv](http://docs.gl/gl4/glVertexAttrib4Nbv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Nbv(&self, index: GLuint, v: *const GLbyte) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4Nbv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4Nbv", &self.glVertexAttrib4Nbv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Nbv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33559,19 +26763,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4Niv](http://docs.gl/gl4/glVertexAttrib4N)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Niv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4Niv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4Niv", &self.glVertexAttrib4Niv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Niv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33592,19 +26789,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4Nsv](http://docs.gl/gl4/glVertexAttrib4Nsv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Nsv(&self, index: GLuint, v: *const GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4Nsv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4Nsv", &self.glVertexAttrib4Nsv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Nsv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33624,8 +26814,7 @@ pub mod struct_commands {
             !self.glVertexAttrib4Nsv_p.load(RELAX).is_null()
         }
         /// [glVertexAttrib4Nub](http://docs.gl/gl4/glVertexAttrib4Nub)(index, x, y, z, w)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Nub(
             &self,
             index: GLuint,
@@ -33634,17 +26823,7 @@ pub mod struct_commands {
             z: GLubyte,
             w: GLubyte,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib4Nub({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttrib4Nub",
                 &self.glVertexAttrib4Nub_p,
@@ -33654,10 +26833,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Nub");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33678,19 +26854,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4Nubv](http://docs.gl/gl4/glVertexAttrib4Nubv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Nubv(&self, index: GLuint, v: *const GLubyte) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4Nubv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4Nubv", &self.glVertexAttrib4Nubv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Nubv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33711,19 +26880,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4Nuiv](http://docs.gl/gl4/glVertexAttrib4N)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Nuiv(&self, index: GLuint, v: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4Nuiv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4Nuiv", &self.glVertexAttrib4Nuiv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Nuiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33744,19 +26906,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4Nusv](http://docs.gl/gl4/glVertexAttrib4Nusv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4Nusv(&self, index: GLuint, v: *const GLushort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4Nusv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4Nusv", &self.glVertexAttrib4Nusv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4Nusv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33777,19 +26932,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4bv](http://docs.gl/gl4/glVertexAttrib4bv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4bv(&self, index: GLuint, v: *const GLbyte) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4bv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4bv", &self.glVertexAttrib4bv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4bv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33810,8 +26958,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4d](http://docs.gl/gl4/glVertexAttrib4d)(index, x, y, z, w)
         /// * vector equivalent: [`glVertexAttrib4dv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4d(
             &self,
             index: GLuint,
@@ -33820,17 +26967,7 @@ pub mod struct_commands {
             z: GLdouble,
             w: GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib4d({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttrib4d",
                 &self.glVertexAttrib4d_p,
@@ -33840,10 +26977,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33864,19 +26998,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4dv](http://docs.gl/gl4/glVertexAttrib4dv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4dv", &self.glVertexAttrib4dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33897,8 +27024,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4f](http://docs.gl/gl4/glVertexAttrib)(index, x, y, z, w)
         /// * vector equivalent: [`glVertexAttrib4fv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4f(
             &self,
             index: GLuint,
@@ -33907,17 +27033,7 @@ pub mod struct_commands {
             z: GLfloat,
             w: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib4f({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttrib4f",
                 &self.glVertexAttrib4f_p,
@@ -33927,10 +27043,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4f");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33951,19 +27064,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4fv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4fv(&self, index: GLuint, v: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4fv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4fv", &self.glVertexAttrib4fv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4fv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -33984,19 +27090,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4iv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4iv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4iv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4iv", &self.glVertexAttrib4iv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34017,8 +27116,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4s](http://docs.gl/gl4/glVertexAttrib4s)(index, x, y, z, w)
         /// * vector equivalent: [`glVertexAttrib4sv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4s(
             &self,
             index: GLuint,
@@ -34027,17 +27125,7 @@ pub mod struct_commands {
             z: GLshort,
             w: GLshort,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttrib4s({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttrib4s",
                 &self.glVertexAttrib4s_p,
@@ -34047,10 +27135,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4s");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34071,19 +27156,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4sv](http://docs.gl/gl4/glVertexAttrib4sv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4sv(&self, index: GLuint, v: *const GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4sv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4sv", &self.glVertexAttrib4sv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4sv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34104,19 +27182,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4ubv](http://docs.gl/gl4/glVertexAttrib4ubv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4ubv(&self, index: GLuint, v: *const GLubyte) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4ubv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4ubv", &self.glVertexAttrib4ubv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4ubv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34137,19 +27208,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4uiv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4uiv(&self, index: GLuint, v: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4uiv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4uiv", &self.glVertexAttrib4uiv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34170,19 +27234,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttrib4usv](http://docs.gl/gl4/glVertexAttrib4usv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttrib4usv(&self, index: GLuint, v: *const GLushort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttrib4usv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttrib4usv", &self.glVertexAttrib4usv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttrib4usv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34202,27 +27259,16 @@ pub mod struct_commands {
             !self.glVertexAttrib4usv_p.load(RELAX).is_null()
         }
         /// [glVertexAttribBinding](http://docs.gl/gl4/glVertexAttribBinding)(attribindex, bindingindex)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribBinding(&self, attribindex: GLuint, bindingindex: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribBinding({:?}, {:?});",
-                    attribindex,
-                    bindingindex
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glVertexAttribBinding",
                 &self.glVertexAttribBinding_p,
                 attribindex,
                 bindingindex,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribBinding");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34242,27 +27288,16 @@ pub mod struct_commands {
             !self.glVertexAttribBinding_p.load(RELAX).is_null()
         }
         /// [glVertexAttribDivisor](http://docs.gl/gl4/glVertexAttribDivisor)(index, divisor)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribDivisor(&self, index: GLuint, divisor: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribDivisor({:?}, {:?});",
-                    index,
-                    divisor
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glVertexAttribDivisor",
                 &self.glVertexAttribDivisor_p,
                 index,
                 divisor,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribDivisor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34283,27 +27318,16 @@ pub mod struct_commands {
         }
         /// [glVertexAttribDivisorARB](http://docs.gl/gl4/glVertexAttribDivisorARB)(index, divisor)
         /// * alias of: [`glVertexAttribDivisor`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribDivisorARB(&self, index: GLuint, divisor: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribDivisorARB({:?}, {:?});",
-                    index,
-                    divisor
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glVertexAttribDivisorARB",
                 &self.glVertexAttribDivisorARB_p,
                 index,
                 divisor,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribDivisorARB");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34324,8 +27348,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribFormat](http://docs.gl/gl4/glVertexAttribFormat)(attribindex, size, type_, normalized, relativeoffset)
         /// * `type_` group: VertexAttribType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribFormat(
             &self,
             attribindex: GLuint,
@@ -34334,17 +27357,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             relativeoffset: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribFormat({:?}, {:?}, {:#X}, {:?}, {:?});",
-                    attribindex,
-                    size,
-                    type_,
-                    normalized,
-                    relativeoffset
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttribFormat",
                 &self.glVertexAttribFormat_p,
@@ -34354,10 +27367,7 @@ pub mod struct_commands {
                 normalized,
                 relativeoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34378,19 +27388,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI1i](http://docs.gl/gl4/glVertexAttribI)(index, x)
         /// * vector equivalent: [`glVertexAttribI1iv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI1i(&self, index: GLuint, x: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI1i({:?}, {:?});", index, x);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI1i", &self.glVertexAttribI1i_p, index, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI1i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34411,19 +27414,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI1iv](http://docs.gl/gl4/glVertexAttribI)(index, v)
         /// * `v` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI1iv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI1iv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI1iv", &self.glVertexAttribI1iv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI1iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34444,19 +27440,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI1ui](http://docs.gl/gl4/glVertexAttribI)(index, x)
         /// * vector equivalent: [`glVertexAttribI1uiv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI1ui(&self, index: GLuint, x: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI1ui({:?}, {:?});", index, x);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI1ui", &self.glVertexAttribI1ui_p, index, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI1ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34477,19 +27466,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI1uiv](http://docs.gl/gl4/glVertexAttribI)(index, v)
         /// * `v` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI1uiv(&self, index: GLuint, v: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI1uiv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI1uiv", &self.glVertexAttribI1uiv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI1uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34510,19 +27492,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI2i](http://docs.gl/gl4/glVertexAttribI)(index, x, y)
         /// * vector equivalent: [`glVertexAttribI2iv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI2i(&self, index: GLuint, x: GLint, y: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI2i({:?}, {:?}, {:?});", index, x, y);
-            }
+
             let out =
                 call_atomic_ptr_3arg("glVertexAttribI2i", &self.glVertexAttribI2i_p, index, x, y);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI2i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34543,19 +27518,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI2iv](http://docs.gl/gl4/glVertexAttribI)(index, v)
         /// * `v` len: 2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI2iv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI2iv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI2iv", &self.glVertexAttribI2iv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI2iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34576,18 +27544,9 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI2ui](http://docs.gl/gl4/glVertexAttribI)(index, x, y)
         /// * vector equivalent: [`glVertexAttribI2uiv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI2ui(&self, index: GLuint, x: GLuint, y: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribI2ui({:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glVertexAttribI2ui",
                 &self.glVertexAttribI2ui_p,
@@ -34595,10 +27554,7 @@ pub mod struct_commands {
                 x,
                 y,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI2ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34619,19 +27575,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI2uiv](http://docs.gl/gl4/glVertexAttribI)(index, v)
         /// * `v` len: 2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI2uiv(&self, index: GLuint, v: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI2uiv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI2uiv", &self.glVertexAttribI2uiv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI2uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34652,19 +27601,9 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI3i](http://docs.gl/gl4/glVertexAttribI)(index, x, y, z)
         /// * vector equivalent: [`glVertexAttribI3iv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI3i(&self, index: GLuint, x: GLint, y: GLint, z: GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribI3i({:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribI3i",
                 &self.glVertexAttribI3i_p,
@@ -34673,10 +27612,7 @@ pub mod struct_commands {
                 y,
                 z,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI3i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34697,19 +27633,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI3iv](http://docs.gl/gl4/glVertexAttribI)(index, v)
         /// * `v` len: 3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI3iv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI3iv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI3iv", &self.glVertexAttribI3iv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI3iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34730,19 +27659,9 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI3ui](http://docs.gl/gl4/glVertexAttribI)(index, x, y, z)
         /// * vector equivalent: [`glVertexAttribI3uiv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI3ui(&self, index: GLuint, x: GLuint, y: GLuint, z: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribI3ui({:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribI3ui",
                 &self.glVertexAttribI3ui_p,
@@ -34751,10 +27670,7 @@ pub mod struct_commands {
                 y,
                 z,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI3ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34775,19 +27691,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI3uiv](http://docs.gl/gl4/glVertexAttribI)(index, v)
         /// * `v` len: 3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI3uiv(&self, index: GLuint, v: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI3uiv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI3uiv", &self.glVertexAttribI3uiv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI3uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34808,19 +27717,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4bv](http://docs.gl/gl4/glVertexAttribI4bv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4bv(&self, index: GLuint, v: *const GLbyte) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI4bv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI4bv", &self.glVertexAttribI4bv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4bv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34841,8 +27743,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4i](http://docs.gl/gl4/glVertexAttribI)(index, x, y, z, w)
         /// * vector equivalent: [`glVertexAttribI4iv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4i(
             &self,
             index: GLuint,
@@ -34851,17 +27752,7 @@ pub mod struct_commands {
             z: GLint,
             w: GLint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribI4i({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttribI4i",
                 &self.glVertexAttribI4i_p,
@@ -34871,10 +27762,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4i");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34895,19 +27783,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4iv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4iv(&self, index: GLuint, v: *const GLint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI4iv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI4iv", &self.glVertexAttribI4iv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4iv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34928,19 +27809,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4sv](http://docs.gl/gl4/glVertexAttribI4sv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4sv(&self, index: GLuint, v: *const GLshort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI4sv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI4sv", &self.glVertexAttribI4sv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4sv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34961,19 +27835,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4ubv](http://docs.gl/gl4/glVertexAttribI4ubv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4ubv(&self, index: GLuint, v: *const GLubyte) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI4ubv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI4ubv", &self.glVertexAttribI4ubv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4ubv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -34994,8 +27861,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4ui](http://docs.gl/gl4/glVertexAttrib)(index, x, y, z, w)
         /// * vector equivalent: [`glVertexAttribI4uiv`]
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4ui(
             &self,
             index: GLuint,
@@ -35004,17 +27870,7 @@ pub mod struct_commands {
             z: GLuint,
             w: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribI4ui({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttribI4ui",
                 &self.glVertexAttribI4ui_p,
@@ -35024,10 +27880,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35048,19 +27901,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4uiv](http://docs.gl/gl4/glVertexAttrib)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4uiv(&self, index: GLuint, v: *const GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI4uiv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI4uiv", &self.glVertexAttribI4uiv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35081,19 +27927,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribI4usv](http://docs.gl/gl4/glVertexAttribI4usv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribI4usv(&self, index: GLuint, v: *const GLushort) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribI4usv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribI4usv", &self.glVertexAttribI4usv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribI4usv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35114,8 +27953,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribIFormat](http://docs.gl/gl4/glVertexAttribIFormat)(attribindex, size, type_, relativeoffset)
         /// * `type_` group: VertexAttribIType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribIFormat(
             &self,
             attribindex: GLuint,
@@ -35123,16 +27961,7 @@ pub mod struct_commands {
             type_: GLenum,
             relativeoffset: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribIFormat({:?}, {:?}, {:#X}, {:?});",
-                    attribindex,
-                    size,
-                    type_,
-                    relativeoffset
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribIFormat",
                 &self.glVertexAttribIFormat_p,
@@ -35141,10 +27970,7 @@ pub mod struct_commands {
                 type_,
                 relativeoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribIFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35166,8 +27992,7 @@ pub mod struct_commands {
         /// [glVertexAttribIPointer](http://docs.gl/gl4/glVertexAttribPointer)(index, size, type_, stride, pointer)
         /// * `type_` group: VertexAttribIType
         /// * `pointer` len: COMPSIZE(size,type,stride)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribIPointer(
             &self,
             index: GLuint,
@@ -35176,17 +28001,7 @@ pub mod struct_commands {
             stride: GLsizei,
             pointer: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribIPointer({:?}, {:?}, {:#X}, {:?}, {:p});",
-                    index,
-                    size,
-                    type_,
-                    stride,
-                    pointer
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttribIPointer",
                 &self.glVertexAttribIPointer_p,
@@ -35196,10 +28011,7 @@ pub mod struct_commands {
                 stride,
                 pointer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribIPointer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35219,19 +28031,12 @@ pub mod struct_commands {
             !self.glVertexAttribIPointer_p.load(RELAX).is_null()
         }
         /// [glVertexAttribL1d](http://docs.gl/gl4/glVertexAttribL1d)(index, x)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL1d(&self, index: GLuint, x: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribL1d({:?}, {:?});", index, x);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribL1d", &self.glVertexAttribL1d_p, index, x);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL1d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35252,19 +28057,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribL1dv](http://docs.gl/gl4/glVertexAttribL1dv)(index, v)
         /// * `v` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL1dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribL1dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribL1dv", &self.glVertexAttribL1dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL1dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35284,19 +28082,12 @@ pub mod struct_commands {
             !self.glVertexAttribL1dv_p.load(RELAX).is_null()
         }
         /// [glVertexAttribL2d](http://docs.gl/gl4/glVertexAttribL2d)(index, x, y)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL2d(&self, index: GLuint, x: GLdouble, y: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribL2d({:?}, {:?}, {:?});", index, x, y);
-            }
+
             let out =
                 call_atomic_ptr_3arg("glVertexAttribL2d", &self.glVertexAttribL2d_p, index, x, y);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL2d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35317,19 +28108,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribL2dv](http://docs.gl/gl4/glVertexAttribL2dv)(index, v)
         /// * `v` len: 2
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL2dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribL2dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribL2dv", &self.glVertexAttribL2dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL2dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35349,19 +28133,9 @@ pub mod struct_commands {
             !self.glVertexAttribL2dv_p.load(RELAX).is_null()
         }
         /// [glVertexAttribL3d](http://docs.gl/gl4/glVertexAttribL3d)(index, x, y, z)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL3d(&self, index: GLuint, x: GLdouble, y: GLdouble, z: GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribL3d({:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribL3d",
                 &self.glVertexAttribL3d_p,
@@ -35370,10 +28144,7 @@ pub mod struct_commands {
                 y,
                 z,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL3d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35394,19 +28165,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribL3dv](http://docs.gl/gl4/glVertexAttribL3dv)(index, v)
         /// * `v` len: 3
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL3dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribL3dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribL3dv", &self.glVertexAttribL3dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL3dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35426,8 +28190,7 @@ pub mod struct_commands {
             !self.glVertexAttribL3dv_p.load(RELAX).is_null()
         }
         /// [glVertexAttribL4d](http://docs.gl/gl4/glVertexAttribL4d)(index, x, y, z, w)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL4d(
             &self,
             index: GLuint,
@@ -35436,17 +28199,7 @@ pub mod struct_commands {
             z: GLdouble,
             w: GLdouble,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribL4d({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    z,
-                    w
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttribL4d",
                 &self.glVertexAttribL4d_p,
@@ -35456,10 +28209,7 @@ pub mod struct_commands {
                 z,
                 w,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL4d");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35480,19 +28230,12 @@ pub mod struct_commands {
         }
         /// [glVertexAttribL4dv](http://docs.gl/gl4/glVertexAttribL4dv)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribL4dv(&self, index: GLuint, v: *const GLdouble) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.VertexAttribL4dv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glVertexAttribL4dv", &self.glVertexAttribL4dv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribL4dv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35513,8 +28256,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribLFormat](http://docs.gl/gl4/glVertexAttribLFormat)(attribindex, size, type_, relativeoffset)
         /// * `type_` group: VertexAttribLType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribLFormat(
             &self,
             attribindex: GLuint,
@@ -35522,16 +28264,7 @@ pub mod struct_commands {
             type_: GLenum,
             relativeoffset: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribLFormat({:?}, {:?}, {:#X}, {:?});",
-                    attribindex,
-                    size,
-                    type_,
-                    relativeoffset
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribLFormat",
                 &self.glVertexAttribLFormat_p,
@@ -35540,10 +28273,7 @@ pub mod struct_commands {
                 type_,
                 relativeoffset,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribLFormat");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35565,8 +28295,7 @@ pub mod struct_commands {
         /// [glVertexAttribLPointer](http://docs.gl/gl4/glVertexAttribLPointer)(index, size, type_, stride, pointer)
         /// * `type_` group: VertexAttribLType
         /// * `pointer` len: size
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribLPointer(
             &self,
             index: GLuint,
@@ -35575,17 +28304,7 @@ pub mod struct_commands {
             stride: GLsizei,
             pointer: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribLPointer({:?}, {:?}, {:#X}, {:?}, {:p});",
-                    index,
-                    size,
-                    type_,
-                    stride,
-                    pointer
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glVertexAttribLPointer",
                 &self.glVertexAttribLPointer_p,
@@ -35595,10 +28314,7 @@ pub mod struct_commands {
                 stride,
                 pointer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribLPointer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35619,8 +28335,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribP1ui](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP1ui(
             &self,
             index: GLuint,
@@ -35628,16 +28343,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP1ui({:?}, {:#X}, {:?}, {:?});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP1ui",
                 &self.glVertexAttribP1ui_p,
@@ -35646,10 +28352,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP1ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35671,8 +28374,7 @@ pub mod struct_commands {
         /// [glVertexAttribP1uiv](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
         /// * `value` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP1uiv(
             &self,
             index: GLuint,
@@ -35680,16 +28382,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP1uiv({:?}, {:#X}, {:?}, {:p});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP1uiv",
                 &self.glVertexAttribP1uiv_p,
@@ -35698,10 +28391,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP1uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35722,8 +28412,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribP2ui](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP2ui(
             &self,
             index: GLuint,
@@ -35731,16 +28420,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP2ui({:?}, {:#X}, {:?}, {:?});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP2ui",
                 &self.glVertexAttribP2ui_p,
@@ -35749,10 +28429,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP2ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35774,8 +28451,7 @@ pub mod struct_commands {
         /// [glVertexAttribP2uiv](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
         /// * `value` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP2uiv(
             &self,
             index: GLuint,
@@ -35783,16 +28459,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP2uiv({:?}, {:#X}, {:?}, {:p});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP2uiv",
                 &self.glVertexAttribP2uiv_p,
@@ -35801,10 +28468,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP2uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35825,8 +28489,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribP3ui](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP3ui(
             &self,
             index: GLuint,
@@ -35834,16 +28497,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP3ui({:?}, {:#X}, {:?}, {:?});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP3ui",
                 &self.glVertexAttribP3ui_p,
@@ -35852,10 +28506,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP3ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35877,8 +28528,7 @@ pub mod struct_commands {
         /// [glVertexAttribP3uiv](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
         /// * `value` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP3uiv(
             &self,
             index: GLuint,
@@ -35886,16 +28536,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP3uiv({:?}, {:#X}, {:?}, {:p});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP3uiv",
                 &self.glVertexAttribP3uiv_p,
@@ -35904,10 +28545,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP3uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35928,8 +28566,7 @@ pub mod struct_commands {
         }
         /// [glVertexAttribP4ui](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP4ui(
             &self,
             index: GLuint,
@@ -35937,16 +28574,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP4ui({:?}, {:#X}, {:?}, {:?});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP4ui",
                 &self.glVertexAttribP4ui_p,
@@ -35955,10 +28583,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP4ui");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -35980,8 +28605,7 @@ pub mod struct_commands {
         /// [glVertexAttribP4uiv](http://docs.gl/gl4/glVertexAttribP)(index, type_, normalized, value)
         /// * `type_` group: VertexAttribPointerType
         /// * `value` len: 1
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribP4uiv(
             &self,
             index: GLuint,
@@ -35989,16 +28613,7 @@ pub mod struct_commands {
             normalized: GLboolean,
             value: *const GLuint,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribP4uiv({:?}, {:#X}, {:?}, {:p});",
-                    index,
-                    type_,
-                    normalized,
-                    value
-                );
-            }
+
             let out = call_atomic_ptr_4arg(
                 "glVertexAttribP4uiv",
                 &self.glVertexAttribP4uiv_p,
@@ -36007,10 +28622,7 @@ pub mod struct_commands {
                 normalized,
                 value,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribP4uiv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36032,8 +28644,7 @@ pub mod struct_commands {
         /// [glVertexAttribPointer](http://docs.gl/gl4/glVertexAttribPointer)(index, size, type_, normalized, stride, pointer)
         /// * `type_` group: VertexAttribPointerType
         /// * `pointer` len: COMPSIZE(size,type,stride)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexAttribPointer(
             &self,
             index: GLuint,
@@ -36043,18 +28654,7 @@ pub mod struct_commands {
             stride: GLsizei,
             pointer: *const c_void,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexAttribPointer({:?}, {:?}, {:#X}, {:?}, {:?}, {:p});",
-                    index,
-                    size,
-                    type_,
-                    normalized,
-                    stride,
-                    pointer
-                );
-            }
+
             let out = call_atomic_ptr_6arg(
                 "glVertexAttribPointer",
                 &self.glVertexAttribPointer_p,
@@ -36065,10 +28665,7 @@ pub mod struct_commands {
                 stride,
                 pointer,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexAttribPointer");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36088,27 +28685,16 @@ pub mod struct_commands {
             !self.glVertexAttribPointer_p.load(RELAX).is_null()
         }
         /// [glVertexBindingDivisor](http://docs.gl/gl4/glVertexBindingDivisor)(bindingindex, divisor)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn VertexBindingDivisor(&self, bindingindex: GLuint, divisor: GLuint) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.VertexBindingDivisor({:?}, {:?});",
-                    bindingindex,
-                    divisor
-                );
-            }
+
             let out = call_atomic_ptr_2arg(
                 "glVertexBindingDivisor",
                 &self.glVertexBindingDivisor_p,
                 bindingindex,
                 divisor,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glVertexBindingDivisor");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36130,24 +28716,11 @@ pub mod struct_commands {
         /// [glViewport](http://docs.gl/gl4/glViewport)(x, y, width, height)
         /// * `x` group: WinCoord
         /// * `y` group: WinCoord
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn Viewport(&self, x: GLint, y: GLint, width: GLsizei, height: GLsizei) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.Viewport({:?}, {:?}, {:?}, {:?});",
-                    x,
-                    y,
-                    width,
-                    height
-                );
-            }
+
             let out = call_atomic_ptr_4arg("glViewport", &self.glViewport_p, x, y, width, height);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glViewport");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36164,18 +28737,9 @@ pub mod struct_commands {
         }
         /// [glViewportArrayv](http://docs.gl/gl4/glViewportArrayv)(first, count, v)
         /// * `v` len: COMPSIZE(count)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ViewportArrayv(&self, first: GLuint, count: GLsizei, v: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ViewportArrayv({:?}, {:?}, {:p});",
-                    first,
-                    count,
-                    v
-                );
-            }
+
             let out = call_atomic_ptr_3arg(
                 "glViewportArrayv",
                 &self.glViewportArrayv_p,
@@ -36183,10 +28747,7 @@ pub mod struct_commands {
                 count,
                 v,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glViewportArrayv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36206,8 +28767,7 @@ pub mod struct_commands {
             !self.glViewportArrayv_p.load(RELAX).is_null()
         }
         /// [glViewportIndexedf](http://docs.gl/gl4/glViewportIndexed)(index, x, y, w, h)
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ViewportIndexedf(
             &self,
             index: GLuint,
@@ -36216,17 +28776,7 @@ pub mod struct_commands {
             w: GLfloat,
             h: GLfloat,
         ) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.ViewportIndexedf({:?}, {:?}, {:?}, {:?}, {:?});",
-                    index,
-                    x,
-                    y,
-                    w,
-                    h
-                );
-            }
+
             let out = call_atomic_ptr_5arg(
                 "glViewportIndexedf",
                 &self.glViewportIndexedf_p,
@@ -36236,10 +28786,7 @@ pub mod struct_commands {
                 w,
                 h,
             );
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glViewportIndexedf");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36260,19 +28807,12 @@ pub mod struct_commands {
         }
         /// [glViewportIndexedfv](http://docs.gl/gl4/glViewportIndexed)(index, v)
         /// * `v` len: 4
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn ViewportIndexedfv(&self, index: GLuint, v: *const GLfloat) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!("calling gl.ViewportIndexedfv({:?}, {:p});", index, v);
-            }
+
             let out =
                 call_atomic_ptr_2arg("glViewportIndexedfv", &self.glViewportIndexedfv_p, index, v);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glViewportIndexedfv");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -36294,23 +28834,11 @@ pub mod struct_commands {
         /// [glWaitSync](http://docs.gl/gl4/glWaitSync)(sync, flags, timeout)
         /// * `sync` group: sync
         /// * `flags` group: SyncBehaviorFlags
-        #[cfg_attr(feature = "inline", inline)]
-        #[cfg_attr(feature = "inline_always", inline(always))]
+        
         pub unsafe fn WaitSync(&self, sync: GLsync, flags: GLbitfield, timeout: GLuint64) {
-            #[cfg(all(debug_assertions, feature = "debug_trace_calls"))]
-            {
-                trace!(
-                    "calling gl.WaitSync({:p}, {:?}, {:?});",
-                    sync,
-                    flags,
-                    timeout
-                );
-            }
+
             let out = call_atomic_ptr_3arg("glWaitSync", &self.glWaitSync_p, sync, flags, timeout);
-            #[cfg(all(debug_assertions, feature = "debug_automatic_glGetError"))]
-            {
-                self.automatic_glGetError("glWaitSync");
-            }
+
             out
         }
         #[doc(hidden)]
@@ -37019,8 +29547,6 @@ pub mod struct_commands {
         glViewportIndexedfv_p: APcv,
         glWaitSync_p: APcv,
     }
-    #[cfg(feature = "bytemuck")]
-    unsafe impl bytemuck::Zeroable for GlFns {}
     impl core::fmt::Debug for GlFns {
         fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
             write!(f, "GlFns")

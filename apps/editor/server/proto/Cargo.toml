@@ -14,6 +14,6 @@ math = { path = "../../../../crates/math" }
 crypto = { path = "../../../../crates/crypto" }
 logging = { path = "../../../../crates/logging" }
 
-bevy_ecs = { version = "0.13", default-features=false}
+bevy_ecs = { version = "0.14", default-features=false}
 cfg-if = { version = "1.0" }
 
