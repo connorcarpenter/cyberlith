@@ -1,8 +1,8 @@
 use bevy_ecs::{
     event::{EventReader, EventWriter},
-    schedule::{NextState, State},
     system::{Res, ResMut},
 };
+use bevy_state::state::{NextState, State};
 
 use game_engine::{
     asset::{AssetLoadedEvent, AssetType},

@@ -1,8 +1,9 @@
 use bevy_app::{App, Plugin, Startup, Update};
 use bevy_ecs::{
-    prelude::{in_state, not},
+    prelude::not,
     schedule::IntoSystemConfigs,
 };
+use bevy_state::condition::in_state;
 
 use game_engine::render::Draw;
 

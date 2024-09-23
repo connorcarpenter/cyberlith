@@ -3,9 +3,9 @@ use std::time::Duration;
 use bevy_ecs::{
     change_detection::{Res, ResMut},
     event::{EventReader, EventWriter},
-    schedule::NextState,
     system::Query,
 };
+use bevy_state::state::NextState;
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},

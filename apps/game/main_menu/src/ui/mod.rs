@@ -14,9 +14,9 @@ pub use ui_catalog::UiCatalog;
 
 use bevy_ecs::{
     event::{EventReader, EventWriter},
-    prelude::NextState,
     system::{Res, ResMut},
 };
+use bevy_state::state::NextState;
 
 use game_engine::{
     asset::AssetId,
