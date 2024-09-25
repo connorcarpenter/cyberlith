@@ -62,7 +62,7 @@ pub fn insert_next_tile_position_events(
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderHelper::new(&mut meshes, &mut materials))
-            .insert(RenderPosition::new(next_tile_position, server_tick_instant))
+            .insert(RenderPosition::new(next_tile_position, server_tick, server_tick_instant))
             .insert(layer)
             .insert(Visibility::default())
             .insert(
@@ -154,22 +154,30 @@ pub fn update_next_tile_position_events(
         );
     };
 
+    let client_tick = client.client_tick().unwrap();
+
+    let prev_queue = client_render_position.queue_ref().clone();
+
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
-    let over_render_millis = client_render_position.recv_rollback(&server_render_position);
+    client_render_position.recv_rollback(&client, &server_render_position);
+
+    // info!("---");
+    info!("updated server tick: {:?}", server_tick);
+    info!("current client tick: {:?}", client_tick);
 
     // Replay all stored commands
 
     // TODO: why is it necessary to subtract 1 Tick here?
     // it's not like this in the Macroquad demo
-    let modified_server_tick = server_tick.wrapping_sub(1);
+    //let modified_server_tick = server_tick.wrapping_sub(1);
 
-    let replay_commands = global.command_history.replays(&modified_server_tick);
+    let replay_commands = global.command_history.replays(&server_tick);
 
     // PREDICTION ROLLBACK
-    let mut current_tick = server_tick;
-    // info!("---");
-    // info!("rollback::start: tick({:?})", current_tick);
+    let mut current_tick = server_tick.wrapping_add(1);
+
+    info!("rollback::start: tick({:?})", current_tick);
     for (command_tick, command) in replay_commands {
 
         while sequence_greater_than(command_tick, current_tick) {
@@ -179,25 +187,23 @@ pub fn update_next_tile_position_events(
             // process command (none)
 
             // process movement
-            // info!("1. rollback::movement: tick({:?})", current_tick);
-            process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
+            info!("1. rollback::movement: tick({:?})", current_tick);
+            process_tick(current_tick, &mut client_tile_movement, &mut client_render_position);
         }
 
         // process command
-        // info!("2. rollback::command: tick({:?})", command_tick);
+        info!("2. rollback::command: tick({:?})", command_tick);
         shared_behavior::process_command(
             &mut client_tile_movement,
             &command,
         );
 
         // process movement
-        // info!("3. rollback::movement: tick({:?})", command_tick);
-        process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
+        info!("3. rollback::movement: tick({:?})", command_tick);
+        process_tick(current_tick, &mut client_tile_movement, &mut client_render_position);
 
         current_tick = current_tick.wrapping_add(1);
     }
-
-    let client_tick = client.client_tick().unwrap();
 
     while sequence_greater_than(client_tick, current_tick) {
 
@@ -206,13 +212,19 @@ pub fn update_next_tile_position_events(
         // process command (none)
 
         // process movement
-        // info!("4. rollback::movement: tick({:?})", current_tick);
-        process_tick(&client, current_tick, &mut client_tile_movement, &mut client_render_position);
+        info!("4. rollback::movement: tick({:?})", current_tick);
+        process_tick(current_tick, &mut client_tile_movement, &mut client_render_position);
     }
 
-    client_render_position.advance_millis(true, over_render_millis);
+    client_render_position.advance_millis(&client, true, 0);
 
-    // info!("--- (client_tick: {:?}) ---", client_tick);
+    let now_queue = client_render_position.queue_ref().clone();
+
+    if prev_queue != now_queue {
+        warn!("rollback::queue mismatch!");
+        warn!("prev_queue: {:?}", prev_queue);
+        warn!("now_queue: {:?}", now_queue);
+    }
 }
 
 pub fn remove_next_tile_position_events(

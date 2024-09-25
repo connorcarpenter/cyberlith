@@ -91,7 +91,7 @@ impl PredictionEvents {
                 )
                 .insert(AnimationState::new())
                 .insert(RenderHelper::new(&mut meshes, &mut materials))
-                .insert(RenderPosition::new(next_tile_position, client_tick_instant))
+                .insert(RenderPosition::new(next_tile_position, client_tick, client_tick_instant))
                 .insert(unit_data_handle.clone())
                 // mark as predicted
                 .insert(Predicted);
