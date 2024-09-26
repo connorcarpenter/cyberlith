@@ -8,7 +8,7 @@ mod world_events;
 
 pub mod naia {
     pub use naia_bevy_client::{
-        sequence_greater_than, wrapping_diff, CommandHistory, CommandsExt, ReceiveEvents,
+        sequence_greater_than, sequence_less_than, wrapping_diff, CommandHistory, CommandsExt, ReceiveEvents,
         Replicate, Tick, GameInstant,
     };
 }

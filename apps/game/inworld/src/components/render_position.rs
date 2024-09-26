@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use bevy_ecs::component::Component;
 
 use game_engine::{logging::{warn, info}, world::{constants::TILE_SIZE, components::NextTilePosition}, time::Instant, naia::{GameInstant, Tick}};
+use game_engine::naia::{sequence_greater_than, sequence_less_than};
 use game_engine::world::WorldClient;
 
 #[derive(Component, Clone)]
@@ -37,8 +38,32 @@ impl RenderPosition {
         &self.queue
     }
 
-    pub fn recv_position(&mut self, position: (f32, f32), tick: Tick) {
+    pub fn recv_position(
+        &mut self,
+        is_server: bool,
+        is_rollback: bool,
+        position: (f32, f32),
+        tick: Tick
+    ) {
+        // make sure ticks are in order
+        loop {
+            if let Some((_, _, back_tick)) = self.queue.back() {
+                if sequence_less_than(tick, *back_tick) || tick == *back_tick {
+                    warn!("recv_position() - received out of order tick: {:?}", tick);
+                    self.queue.pop_back();
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
         self.queue.push_back((position.0, position.1, tick));
+
+        let host = if is_server { "Server" } else { "Client" };
+        let rollback = if is_rollback { "Rollback" } else { "" };
+        info!("{:?}({:?}), Tick: {:?}, Pos: ({:?}, {:?})", host, rollback, tick, position.0, position.1);
     }
 
     // returns number of milliseconds after tick

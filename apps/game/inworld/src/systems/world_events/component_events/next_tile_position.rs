@@ -89,7 +89,7 @@ pub fn update_next_tile_position_events(
     let mut updated_entities = HashMap::new();
     let mut events = Vec::new();
     for event in event_reader.read() {
-        let server_tick = event.tick;
+        let server_tick = event.tick.wrapping_sub(1); // TODO: this shouldn't be necessary to sync!
         let updated_entity = event.entity;
 
         if updated_entities.contains_key(&updated_entity) {
@@ -145,8 +145,14 @@ pub fn update_next_tile_position_events(
         return;
     };
 
-    let Ok([(server_tile_movement, server_render_position), (mut client_tile_movement, mut client_render_position)])
-        = tile_movement_q.get_many_mut([server_entity, client_entity]) else
+    let Ok([(
+               mut server_tile_movement,
+               mut server_render_position
+           ), (
+                mut client_tile_movement,
+        mut client_render_position
+    )]
+    ) = tile_movement_q.get_many_mut([server_entity, client_entity]) else
     {
         panic!(
             "failed to get components for entities: {:?}, {:?}",
@@ -154,41 +160,51 @@ pub fn update_next_tile_position_events(
         );
     };
 
-    let client_tick = client.client_tick().unwrap();
+    // info!("---");
+    let old_server_tick = client.server_tick().unwrap();
+    info!("old server tick: {:?}", old_server_tick);
+    info!("updated server tick: {:?}", server_tick);
 
-    let prev_queue = client_render_position.queue_ref().clone();
+    let client_tick = client.client_tick().unwrap();
+    info!("current client tick: {:?}", client_tick);
+
+    let mut current_tick = server_tick;
+
+    // ROLLBACK SERVER
+
+    {
+        while sequence_greater_than(old_server_tick, current_tick) || old_server_tick == current_tick {
+            info!("rollback::server: tick({:?})", current_tick);
+            process_tick(true, true, current_tick, &mut server_tile_movement, &mut server_render_position);
+            current_tick = current_tick.wrapping_add(1);
+        }
+    }
+
+    // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
     client_render_position.recv_rollback(&client, &server_render_position);
 
-    // info!("---");
-    info!("updated server tick: {:?}", server_tick);
-    info!("current client tick: {:?}", client_tick);
+    // PREDICTION ROLLBACK
 
-    // Replay all stored commands
+    // info!("0. rollback::start", current_tick);
 
     // TODO: why is it necessary to subtract 1 Tick here?
     // it's not like this in the Macroquad demo
-    //let modified_server_tick = server_tick.wrapping_sub(1);
+    let replay_commands = global.command_history.replays(&current_tick);
 
-    let replay_commands = global.command_history.replays(&server_tick);
-
-    // PREDICTION ROLLBACK
-    let mut current_tick = server_tick.wrapping_add(1);
-
-    info!("rollback::start: tick({:?})", current_tick);
     for (command_tick, command) in replay_commands {
 
         while sequence_greater_than(command_tick, current_tick) {
-
-            current_tick = current_tick.wrapping_add(1);
 
             // process command (none)
 
             // process movement
             info!("1. rollback::movement: tick({:?})", current_tick);
-            process_tick(current_tick, &mut client_tile_movement, &mut client_render_position);
+            process_tick(false, true, current_tick, &mut client_tile_movement, &mut client_render_position);
+
+            current_tick = current_tick.wrapping_add(1);
         }
 
         // process command
@@ -200,31 +216,23 @@ pub fn update_next_tile_position_events(
 
         // process movement
         info!("3. rollback::movement: tick({:?})", command_tick);
-        process_tick(current_tick, &mut client_tile_movement, &mut client_render_position);
+        process_tick(false, true, current_tick, &mut client_tile_movement, &mut client_render_position);
 
         current_tick = current_tick.wrapping_add(1);
     }
 
     while sequence_greater_than(client_tick, current_tick) {
 
-        current_tick = current_tick.wrapping_add(1);
-
         // process command (none)
 
         // process movement
         info!("4. rollback::movement: tick({:?})", current_tick);
-        process_tick(current_tick, &mut client_tile_movement, &mut client_render_position);
+        process_tick(false, true, current_tick, &mut client_tile_movement, &mut client_render_position);
+
+        current_tick = current_tick.wrapping_add(1);
     }
 
     client_render_position.advance_millis(&client, true, 0);
-
-    let now_queue = client_render_position.queue_ref().clone();
-
-    if prev_queue != now_queue {
-        warn!("rollback::queue mismatch!");
-        warn!("prev_queue: {:?}", prev_queue);
-        warn!("now_queue: {:?}", now_queue);
-    }
 }
 
 pub fn remove_next_tile_position_events(

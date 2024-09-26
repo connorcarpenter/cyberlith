@@ -80,12 +80,18 @@ pub fn tick_events(world: &mut World) {
 
                 shared_behavior::process_movement(&mut tile_movement);
 
+                {
+                    // log for testing
+                    let current_pos = tile_movement.current_position();
+                    info!("Tick: {:?}, Pos: {:?}", server_tick, current_pos);
+                }
+
                 // send updates
                 let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
                     panic!("NextTilePosition not found for entity: {:?}", entity);
                 };
 
-                tile_movement.send_updated_next_tile_position(&mut next_tile_position);
+                tile_movement.send_updated_next_tile_position(*server_tick, &mut next_tile_position);
             }
         }
     }

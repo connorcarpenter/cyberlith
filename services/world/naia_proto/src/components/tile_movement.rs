@@ -1,7 +1,8 @@
-
+use bevy_ecs::change_detection::Mut;
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Instant, Tick};
+use logging::info;
 
 use crate::{components::NextTilePosition, messages::KeyCommand, constants::{MOVEMENT_SPEED, TILE_SIZE}};
 
@@ -165,6 +166,9 @@ impl TileMovement {
             if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
                 return;
             }
+
+            info!("Recv NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})", update_tick, next_tile_x, next_tile_y);
+
             self.state = TileMovementState::moving(
                 current_tile_x,
                 current_tile_y,
@@ -185,12 +189,14 @@ impl TileMovement {
 
     // on the client, never called
     // on the server, called by confirmed entities
-    pub fn send_updated_next_tile_position(&mut self, next_tile_position: &mut NextTilePosition) {
+    pub fn send_updated_next_tile_position(&mut self, tick: Tick, next_tile_position: &mut NextTilePosition) {
         if !self.is_server {
             panic!("Client entities do not send updates");
         }
         if let Some((next_tile_x, next_tile_y)) = self.outbound_next_tile.take() {
             next_tile_position.set(next_tile_x, next_tile_y);
+
+            info!("Send NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})", tick, next_tile_x, next_tile_y);
         }
     }
 

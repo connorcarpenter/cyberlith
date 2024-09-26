@@ -65,7 +65,7 @@ pub fn client_tick_events(
         );
 
         // process tick
-        process_tick(client_tick, &mut client_tile_movement, &mut client_render_position);
+        process_tick(false, false, client_tick, &mut client_tile_movement, &mut client_render_position);
 
         // send command
         client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
@@ -73,13 +73,15 @@ pub fn client_tick_events(
 }
 
 pub fn process_tick(
+    is_server: bool,
+    is_rollback: bool,
     tick: Tick,
     mut tile_movement: &mut TileMovement,
     render_position: &mut RenderPosition,
 ) {
     shared_behavior::process_movement(&mut tile_movement);
 
-    render_position.recv_position(tile_movement.current_position(), tick);
+    render_position.recv_position(is_server, is_rollback, tile_movement.current_position(), tick);
 }
 
 pub fn server_tick_events(
@@ -93,7 +95,7 @@ pub fn server_tick_events(
         // process movement
         for (mut server_tile_movement, mut server_render_position) in position_q.iter_mut()
         {
-            process_tick(server_tick, &mut server_tile_movement, &mut server_render_position);
+            process_tick(true, false, server_tick, &mut server_tile_movement, &mut server_render_position);
         }
     }
 }
