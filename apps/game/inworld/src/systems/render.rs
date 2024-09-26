@@ -120,12 +120,12 @@ pub fn draw_units(
                 );
             }
         } else {
-            // check if this is ours, if so, we don't need to render it
-            if let Some(owned_entity) = &global.owned_entity {
-                if owned_entity.confirmed == entity {
-                    continue;
-                }
-            }
+            // // check if this is ours, if so, we don't need to render it
+            // if let Some(owned_entity) = &global.owned_entity {
+            //     if owned_entity.confirmed == entity {
+            //         continue;
+            //     }
+            // }
 
             // {
             //     // draw confirmed future queue

@@ -1,8 +1,10 @@
+use std::collections::VecDeque;
+
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::Tick;
 
-use logging::info;
+use logging::{info, warn};
 
 use crate::{
     components::NextTilePosition,
@@ -100,7 +102,7 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, key_command: &KeyCommand) {
+    pub fn recv_command(&mut self, key_command: &KeyCommand, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
@@ -140,6 +142,7 @@ impl TileMovement {
             current_tile_y,
             next_tile_x,
             next_tile_y,
+            prediction,
         );
 
         if self.is_server {
@@ -153,6 +156,7 @@ impl TileMovement {
         &mut self,
         update_tick: Tick,
         next_tile_position: &NextTilePosition,
+        prediction: bool,
     ) {
         if self.is_server {
             panic!("Server entities do not receive updates");
@@ -183,6 +187,7 @@ impl TileMovement {
                 current_tile_y,
                 next_tile_x,
                 next_tile_y,
+                prediction,
             );
         } else {
             // is moving
@@ -194,6 +199,7 @@ impl TileMovement {
                 update_tick,
                 next_tile_position.x(),
                 next_tile_position.y(),
+                self.is_predicted,
             );
         }
     }
@@ -241,7 +247,7 @@ impl TileMovement {
     pub fn process_tick(&mut self) {
         let result = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
-            TileMovementState::Moving(state) => state.process_tick(),
+            TileMovementState::Moving(state) => state.process_tick(self.is_predicted),
         };
 
         match result {
@@ -265,8 +271,8 @@ impl TileMovementState {
         Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
     }
 
-    fn moving(ax: i16, ay: i16, bx: i16, by: i16) -> Self {
-        Self::Moving(TileMovementMovingState::new(ax, ay, bx, by))
+    fn moving(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) -> Self {
+        Self::Moving(TileMovementMovingState::new(ax, ay, bx, by, prediction))
     }
 
     fn is_stopped(&self) -> bool {
@@ -320,28 +326,17 @@ struct TileMovementMovingState {
     distance: f32,
     distance_max: f32,
     done: bool,
+    buffered_future_tiles_opt: Option<VecDeque<(Tick, i16, i16)>>,
 }
 
 impl TileMovementMovingState {
-    fn new(ax: i16, ay: i16, bx: i16, by: i16) -> Self {
+    fn new(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) -> Self {
+
         if ax == bx && ay == by {
             panic!("from_tile and to_tile are the same");
         }
-        if (ax - bx).abs() + (ay - by).abs() > 2 {
-            panic!(
-                "from_tile and to_tile are not adjacent. ({:?}, {:?}) -> ({:?}, {:?})",
-                ax, ay, bx, by
-            );
-        }
-        let x_axis_changed: bool = ax != bx;
-        let y_axis_changed: bool = ay != by;
 
-        let distance_max = if x_axis_changed && y_axis_changed {
-            std::f32::consts::SQRT_2
-        } else {
-            1.0
-        };
-        let distance_max = distance_max * TILE_SIZE;
+        assert_valid_tile_transition(ax, ay, bx, by, prediction);
 
         Self {
             from_tile_x: ax,
@@ -349,8 +344,9 @@ impl TileMovementMovingState {
             to_tile_x: bx,
             to_tile_y: by,
             distance: 0.0,
-            distance_max,
+            distance_max: get_tile_distance(ax, ay, bx, by),
             done: false,
+            buffered_future_tiles_opt: None,
         }
     }
 
@@ -370,7 +366,7 @@ impl TileMovementMovingState {
     }
 
     // call on each tick
-    fn process_tick(&mut self) -> ProcessTickResult {
+    fn process_tick(&mut self, prediction: bool,) -> ProcessTickResult {
         if self.done {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         }
@@ -378,9 +374,32 @@ impl TileMovementMovingState {
         self.distance += MOVEMENT_SPEED;
 
         if self.distance >= self.distance_max {
-            self.distance = self.distance_max;
-            self.done = true;
-            return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
+
+            if self.buffered_future_tiles_opt.is_none() {
+                self.distance = self.distance_max;
+                self.done = true;
+                return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
+            } else {
+                // we have buffered future tiles
+                self.distance -= self.distance_max;
+
+                let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
+                let (next_tick, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
+
+                warn!("Prediction({:?}), Processing Buffered Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, next_tick, next_x, next_y);
+
+                if buffered_future_tiles.is_empty() {
+                    self.buffered_future_tiles_opt = None;
+                }
+
+                self.from_tile_x = self.to_tile_x;
+                self.from_tile_y = self.to_tile_y;
+                self.to_tile_x = next_x;
+                self.to_tile_y = next_y;
+
+                self.distance_max = get_tile_distance(self.from_tile_x, self.from_tile_y, self.to_tile_x, self.to_tile_y);
+                return ProcessTickResult::DoNothing;
+            }
         } else {
             return ProcessTickResult::DoNothing;
         }
@@ -389,18 +408,53 @@ impl TileMovementMovingState {
     pub(crate) fn recv_updated_next_tile_position(
         &mut self,
         updated_tick: Tick,
-        _next_x: i16,
-        _next_y: i16,
+        next_x: i16,
+        next_y: i16,
+        prediction: bool,
     ) {
-        // TODO: still need to implement this!
-        panic!(
-            "recv_updated_next_tile_position(). updated tick: {:?}",
-            updated_tick
-        );
+        if self.buffered_future_tiles_opt.is_none() {
+            self.buffered_future_tiles_opt = Some(VecDeque::new());
+        }
+
+        let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
+
+        if let Some((_, last_x, last_y)) = buffered_future_tiles.back() {
+            if *last_x == next_x && *last_y == next_y {
+                warn!("Prediction({:?}), Ignoring Duplicate Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
+                return;
+            }
+
+            assert_valid_tile_transition(*last_x, *last_y, next_x, next_y, prediction);
+        }
+
+        buffered_future_tiles.push_back((updated_tick, next_x, next_y));
+        warn!("Prediction({:?}), Buffering Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
     }
 }
 
 enum ProcessTickResult {
     ShouldStop(i16, i16),
     DoNothing,
+}
+
+fn get_tile_distance(ax: i16, ay: i16, bx: i16, by: i16) -> f32 {
+    let x_axis_changed: bool = ax != bx;
+    let y_axis_changed: bool = ay != by;
+
+    let distance_max = if x_axis_changed && y_axis_changed {
+        std::f32::consts::SQRT_2
+    } else {
+        1.0
+    };
+    let distance_max = distance_max * TILE_SIZE;
+    distance_max
+}
+
+fn assert_valid_tile_transition(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) {
+    if (ax - bx).abs() + (ay - by).abs() > 2 {
+        warn!(
+            "from_tile and to_tile are not adjacent. ({:?}, {:?}) -> ({:?}, {:?}). Prediction: {:?}",
+            ax, ay, bx, by, prediction,
+        );
+    }
 }

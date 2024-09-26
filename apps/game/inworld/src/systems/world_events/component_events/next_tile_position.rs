@@ -19,7 +19,7 @@ use game_engine::{
         WorldUpdateComponentEvent,
     },
 };
-
+use game_engine::logging::warn;
 use crate::{
     components::{AnimationState, Confirmed, RenderPosition},
     resources::Global,
@@ -86,16 +86,11 @@ pub fn update_next_tile_position_events(
     // So we roll the Prediction back to the authoritative Server state
     // and then execute all Player Commands since that tick, using the CommandHistory helper struct
 
-    let mut updated_entities = HashMap::new();
     let mut events = Vec::new();
     for event in event_reader.read() {
         let server_tick = event.tick.wrapping_sub(1); // TODO: this shouldn't be necessary to sync!
         let updated_entity = event.entity;
 
-        if updated_entities.contains_key(&updated_entity) {
-            panic!("entity already updated: {:?}", updated_entity);
-        }
-        updated_entities.insert(updated_entity, server_tick);
         events.push((server_tick, updated_entity));
     }
 
@@ -103,20 +98,20 @@ pub fn update_next_tile_position_events(
         return;
     }
 
-    for (updated_entity, update_tick) in updated_entities {
-        let Ok(next_tile_position) = next_tile_position_q.get(updated_entity) else {
+    for (update_tick, updated_entity) in &events {
+        let Ok(next_tile_position) = next_tile_position_q.get(*updated_entity) else {
             panic!(
                 "failed to get updated components for entity: {:?}",
                 updated_entity
             );
         };
-        let Ok((mut tile_movement, _)) = tile_movement_q.get_mut(updated_entity) else {
+        let Ok((mut tile_movement, _)) = tile_movement_q.get_mut(*updated_entity) else {
             panic!(
                 "failed to get tile movement q for entity: {:?}",
                 updated_entity
             );
         };
-        tile_movement.recv_updated_next_tile_position(update_tick, &next_tile_position);
+        tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position, false);
     }
 
     let Some(owned_entity) = &global.owned_entity else {
@@ -155,11 +150,11 @@ pub fn update_next_tile_position_events(
 
     // info!("---");
     let old_server_tick = client.server_tick().unwrap();
-    info!("old server tick: {:?}", old_server_tick);
-    info!("updated server tick: {:?}", server_tick);
+    // info!("old server tick: {:?}", old_server_tick);
+    // info!("updated server tick: {:?}", server_tick);
 
     let client_tick = client.client_tick().unwrap();
-    info!("current client tick: {:?}", client_tick);
+    // info!("current client tick: {:?}", client_tick);
 
     let mut current_tick = server_tick;
 
@@ -169,7 +164,7 @@ pub fn update_next_tile_position_events(
         while sequence_greater_than(old_server_tick, current_tick)
             || old_server_tick == current_tick
         {
-            info!("rollback::server: tick({:?})", current_tick);
+            // info!("rollback::server: tick({:?})", current_tick);
             process_tick(
                 true,
                 true,
@@ -201,7 +196,7 @@ pub fn update_next_tile_position_events(
             // process command (none)
 
             // process movement
-            info!("1. rollback::movement: tick({:?})", current_tick);
+            // info!("1. rollback::movement: tick({:?})", current_tick);
             process_tick(
                 false,
                 true,
@@ -214,11 +209,11 @@ pub fn update_next_tile_position_events(
         }
 
         // process command
-        info!("2. rollback::command: tick({:?})", command_tick);
-        shared_behavior::process_command(&mut client_tile_movement, &command);
+        // info!("2. rollback::command: tick({:?})", command_tick);
+        shared_behavior::process_command(&mut client_tile_movement, &command, true);
 
         // process movement
-        info!("3. rollback::movement: tick({:?})", command_tick);
+        // info!("3. rollback::movement: tick({:?})", command_tick);
         process_tick(
             false,
             true,
@@ -234,7 +229,7 @@ pub fn update_next_tile_position_events(
         // process command (none)
 
         // process movement
-        info!("4. rollback::movement: tick({:?})", current_tick);
+        // info!("4. rollback::movement: tick({:?})", current_tick);
         process_tick(
             false,
             true,

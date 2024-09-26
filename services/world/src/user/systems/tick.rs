@@ -67,7 +67,7 @@ pub fn tick_events(world: &mut World) {
                 let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(*entity) else {
                     continue;
                 };
-                shared_behavior::process_command(&mut tile_movement, &command);
+                shared_behavior::process_command(&mut tile_movement, &command, false);
             }
 
             // All game logic should happen here, on a tick event
@@ -76,11 +76,11 @@ pub fn tick_events(world: &mut World) {
             for (entity, mut tile_movement) in tile_movement_q.iter_mut() {
                 shared_behavior::process_movement(&mut tile_movement);
 
-                {
-                    // log for testing
-                    let current_pos = tile_movement.current_position();
-                    info!("Tick: {:?}, Pos: {:?}", server_tick, current_pos);
-                }
+                // {
+                //     // log for testing
+                //     let current_pos = tile_movement.current_position();
+                //     info!("Tick: {:?}, Pos: {:?}", server_tick, current_pos);
+                // }
 
                 // send updates
                 let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {

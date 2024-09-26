@@ -43,7 +43,7 @@ pub(crate) fn handle_world_connection(
     let lobby_room_key = social_manager
         .lobby_manager
         .get_lobby_room_key(&lobby_id)
-        .unwrap();
+        .unwrap(); // hit this once on startup!
     naia_server
         .room_mut(&lobby_room_key)
         .add_entity(&user_entity);

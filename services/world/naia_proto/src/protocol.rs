@@ -26,7 +26,7 @@ pub fn protocol() -> Protocol {
 
             // builder.link_condition(LinkConditionerConfig::new(100, 0, 0.0));
 
-            builder.link_condition(LinkConditionerConfig::very_good_condition());
+            builder.link_condition(LinkConditionerConfig::very_poor_condition());
         }
         else {}
     }

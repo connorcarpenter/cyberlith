@@ -54,7 +54,7 @@ pub fn client_tick_events(
             global.command_history.insert(client_tick, command.clone());
         }
 
-        shared_behavior::process_command(&mut client_tile_movement, command);
+        shared_behavior::process_command(&mut client_tile_movement, command, true);
 
         // process tick
         process_tick(

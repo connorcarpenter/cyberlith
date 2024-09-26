@@ -38,8 +38,8 @@ impl RenderPosition {
 
     pub fn recv_position(
         &mut self,
-        is_server: bool,
-        is_rollback: bool,
+        _is_server: bool,
+        _is_rollback: bool,
         position: (f32, f32),
         tick: Tick,
     ) {
@@ -47,7 +47,7 @@ impl RenderPosition {
         loop {
             if let Some((_, _, back_tick)) = self.queue.back() {
                 if sequence_less_than(tick, *back_tick) || tick == *back_tick {
-                    warn!("recv_position() - received out of order tick: {:?}", tick);
+                    // warn!("recv_position() - received out of order tick: {:?}", tick);
                     self.queue.pop_back();
                 } else {
                     break;
@@ -59,12 +59,12 @@ impl RenderPosition {
 
         self.queue.push_back((position.0, position.1, tick));
 
-        let host = if is_server { "Server" } else { "Client" };
-        let rollback = if is_rollback { "Rollback" } else { "" };
-        info!(
-            "{:?}({:?}), Tick: {:?}, Pos: ({:?}, {:?})",
-            host, rollback, tick, position.0, position.1
-        );
+        // let host = if is_server { "Server" } else { "Client" };
+        // let rollback = if is_rollback { "Rollback" } else { "" };
+        // info!(
+        //     "{:?}({:?}), Tick: {:?}, Pos: ({:?}, {:?})",
+        //     host, rollback, tick, position.0, position.1
+        // );
     }
 
     // returns number of milliseconds after tick
