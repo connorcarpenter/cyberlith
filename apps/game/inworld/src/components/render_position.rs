@@ -2,9 +2,7 @@ use std::collections::VecDeque;
 
 use bevy_ecs::component::Component;
 
-use game_engine::{logging::{warn, info}, world::{constants::TILE_SIZE, components::NextTilePosition}, time::Instant, naia::{GameInstant, Tick}};
-use game_engine::naia::{sequence_greater_than, sequence_less_than};
-use game_engine::world::WorldClient;
+use game_engine::{logging::{warn, info}, world::{constants::TILE_SIZE, WorldClient, components::NextTilePosition}, time::Instant, naia::{sequence_greater_than, sequence_less_than, GameInstant, Tick}};
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {
@@ -182,22 +180,41 @@ impl RenderPosition {
             }
         }
 
-        // if prediction {
-        // // this pops any future positions that are the same as the current position (no interpolation needed)
-        //     loop {
-        //         if self.queue.len() < 2 {
-        //             break;
-        //         }
-        //
-        //         let (prev_x, prev_y, prev_instant) = self.queue.get(0).unwrap();
-        //         let (next_x, next_y, next_instant) = self.queue.get(1).unwrap();
-        //
-        //         if prev_x == next_x && prev_y == next_y {
-        //             self.queue.pop_front();
-        //         } else {
-        //             break;
-        //         }
-        //     }
-        // }
+        {
+            // this pops any future positions that are the same as the current position (no interpolation needed)
+            if self.queue.len() >= 2 {
+                if eventually_differs(&self.queue) {
+                    let (front_x, front_y, _) = self.queue.front().unwrap();
+                    let front_x = *front_x;
+                    let front_y = *front_y;
+                    while let Some((x, y, tick)) = self.queue.get(1) {
+                        let x = *x;
+                        let y = *y;
+                        let tick = *tick;
+
+                        if x == front_x && y == front_y {
+                            self.queue.pop_front();
+                            self.interp_instant = client.tick_to_instant(tick).expect("client not initialized?");
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
+}
+
+fn eventually_differs(queue: &VecDeque<(f32, f32, Tick)>) -> bool {
+    let (front_x, front_y, _) = queue.front().unwrap();
+    let front_x = *front_x;
+    let front_y = *front_y;
+    let mut index = 1;
+    while let Some((x, y, _)) = queue.get(index) {
+        if *x != front_x || *y != front_y {
+            return true;
+        }
+        index += 1;
+    }
+    return false;
 }
