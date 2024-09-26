@@ -316,7 +316,7 @@ impl TileMovementMovingState {
             panic!("interp must be between 0.0 and 1.0");
         }
         if (ax - bx).abs() + (ay - by).abs() > 2 {
-            panic!("from_tile and to_tile are not adjacent");
+            panic!("from_tile and to_tile are not adjacent. ({:?}, {:?}) -> ({:?}, {:?})", ax, ay, bx, by);
         }
         let x_axis_changed: bool = ax != bx;
         let y_axis_changed: bool = ay != by;
