@@ -140,7 +140,6 @@ impl TileMovement {
             current_tile_y,
             next_tile_x,
             next_tile_y,
-            0.0,
         );
 
         if self.is_server {
@@ -184,7 +183,6 @@ impl TileMovement {
                 current_tile_y,
                 next_tile_x,
                 next_tile_y,
-                0.0,
             );
         } else {
             // is moving
@@ -267,8 +265,8 @@ impl TileMovementState {
         Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
     }
 
-    fn moving(ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
-        Self::Moving(TileMovementMovingState::new(ax, ay, bx, by, interp))
+    fn moving(ax: i16, ay: i16, bx: i16, by: i16) -> Self {
+        Self::Moving(TileMovementMovingState::new(ax, ay, bx, by))
     }
 
     fn is_stopped(&self) -> bool {
@@ -325,12 +323,9 @@ struct TileMovementMovingState {
 }
 
 impl TileMovementMovingState {
-    fn new(ax: i16, ay: i16, bx: i16, by: i16, interp: f32) -> Self {
+    fn new(ax: i16, ay: i16, bx: i16, by: i16) -> Self {
         if ax == bx && ay == by {
             panic!("from_tile and to_tile are the same");
-        }
-        if interp < 0.0 || interp > 1.0 {
-            panic!("interp must be between 0.0 and 1.0");
         }
         if (ax - bx).abs() + (ay - by).abs() > 2 {
             panic!(
@@ -347,18 +342,15 @@ impl TileMovementMovingState {
             1.0
         };
         let distance_max = distance_max * TILE_SIZE;
-        let distance = distance_max * interp;
-
-        let done = interp == 1.0;
 
         Self {
             from_tile_x: ax,
             from_tile_y: ay,
             to_tile_x: bx,
             to_tile_y: by,
-            distance,
+            distance: 0.0,
             distance_max,
-            done,
+            done: false,
         }
     }
 
