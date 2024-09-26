@@ -25,9 +25,8 @@ use game_engine::{
 use crate::{
     components::{AnimationState, RenderPosition, RenderHelper, Confirmed},
     resources::Global,
-    systems::world_events::PredictionEvents,
+    systems::world_events::{PredictionEvents, process_tick},
 };
-use crate::systems::world_events::process_tick;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -192,7 +191,8 @@ pub fn update_next_tile_position_events(
 
     // TODO: why is it necessary to subtract 1 Tick here?
     // it's not like this in the Macroquad demo
-    let replay_commands = global.command_history.replays(&current_tick);
+    let modified_server_tick = current_tick.wrapping_sub(1);
+    let replay_commands = global.command_history.replays(&modified_server_tick);
 
     for (command_tick, command) in replay_commands {
 

@@ -182,7 +182,7 @@ impl RenderPosition {
 
         {
             // this pops any future positions that are the same as the current position (no interpolation needed)
-            if self.queue.len() >= 2 {
+            if self.queue.len() >= 3 {
                 if eventually_differs(&self.queue) {
                     let (front_x, front_y, _) = self.queue.front().unwrap();
                     let front_x = *front_x;

@@ -11,7 +11,7 @@ pub struct OwnedEntity {
 
 impl OwnedEntity {
     pub fn new(confirmed_entity: Entity, predicted_entity: Entity) -> Self {
-        OwnedEntity {
+        Self {
             confirmed: confirmed_entity,
             predicted: predicted_entity,
         }
