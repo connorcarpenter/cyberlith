@@ -22,9 +22,9 @@ pub mod asset {
     pub use crate::asset_cache::AssetLoadedEvent;
     pub use asset_id::{AssetId, AssetType, ETag};
     pub use asset_loader::{
-        embedded_asset_event, AnimationData, AssetHandle, AssetManager, AssetMetadataSerde,
-        EmbeddedAssetEvent, IconData, MeshData, ModelData, PaletteData, SceneData, SkeletonData,
-        SkinData, UnitData, AnimatedModelData,
+        embedded_asset_event, AnimatedModelData, AnimationData, AssetHandle, AssetManager,
+        AssetMetadataSerde, EmbeddedAssetEvent, IconData, MeshData, ModelData, PaletteData,
+        SceneData, SkeletonData, SkinData, UnitData,
     };
     pub use asset_render::AssetRender;
 }

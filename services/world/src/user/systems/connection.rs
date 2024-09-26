@@ -13,7 +13,7 @@ use logging::{info, warn};
 use world_server_naia_proto::{
     channels::EntityAssignmentChannel,
     components::{Main, NextTilePosition, TileMovement},
-    constants::{MOVEMENT_SPEED, TILE_COUNT},
+    constants::TILE_COUNT,
     messages::{Auth, EntityAssignment},
 };
 
@@ -61,8 +61,6 @@ pub fn connect_events(
 ) {
     for ConnectEvent(user_key) in event_reader.read() {
         let address = server.user(user_key).address();
-
-        let server_tick = server.current_tick();
 
         info!("Server connected to: {}", address);
 

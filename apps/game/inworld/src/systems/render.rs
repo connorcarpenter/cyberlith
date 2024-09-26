@@ -1,18 +1,23 @@
-
-use bevy_ecs::{entity::Entity, system::{Query, Res, ResMut}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, Res, ResMut},
+};
 
 use game_engine::{
-    asset::{AssetRender, AssetHandle, AssetManager, UnitData},
+    asset::{AssetHandle, AssetManager, AssetRender, UnitData},
+    math::{Quat, Vec3},
     render::{
         components::{RenderLayer, Transform, Visibility},
         resources::RenderFrame,
     },
-    world::WorldClient,
     time::Instant,
-    math::{Vec3, Quat},
+    world::WorldClient,
 };
 
-use crate::{resources::Global, components::{AnimationState, Confirmed, Predicted, RenderPosition}};
+use crate::{
+    components::{AnimationState, Confirmed, Predicted, RenderPosition},
+    resources::Global,
+};
 
 pub fn draw_units(
     client: WorldClient,
@@ -65,7 +70,6 @@ pub fn draw_units(
         // let (current_position_x, current_position_y) = tile_movement.current_position();
 
         if predicted_opt.is_some() {
-
             // // draw predicted future queue
             // {
             //     for (future_tile_x, future_tile_y, _future_instant) in render_position.queue_ref().iter() {
@@ -97,17 +101,12 @@ pub fn draw_units(
 
             // draw predicted model // working!!!
             {
-                let (interp_x, interp_y) = render_position.render(&client, &now, true);
+                let (interp_x, interp_y) = render_position.render(&client, &now);
                 transform.translation.x = interp_x;
                 transform.translation.y = interp_y;
 
                 // TODO: put this in a system
-                anim_state.update(
-                    &now,
-                    &asset_manager,
-                    animated_model_handle,
-                    &transform,
-                );
+                anim_state.update(&now, &asset_manager, animated_model_handle, &transform);
 
                 transform.set_scale(Vec3::new(1.0, 1.0, 1.0));
                 transform.set_rotation(Quat::from_rotation_z(anim_state.rotation));
@@ -121,7 +120,6 @@ pub fn draw_units(
                 );
             }
         } else {
-
             // check if this is ours, if so, we don't need to render it
             if let Some(owned_entity) = &global.owned_entity {
                 if owned_entity.confirmed == entity {
@@ -161,17 +159,12 @@ pub fn draw_units(
 
             // draw confirmed model // working!!!
             {
-                let (interp_x, interp_y) = render_position.render(&client, &now, false);
+                let (interp_x, interp_y) = render_position.render(&client, &now);
                 transform.translation.x = interp_x;
                 transform.translation.y = interp_y;
 
                 // TODO: put this in a system
-                anim_state.update(
-                    &now,
-                    &asset_manager,
-                    animated_model_handle,
-                    &transform,
-                );
+                anim_state.update(&now, &asset_manager, animated_model_handle, &transform);
 
                 transform.set_scale(Vec3::new(1.0, 1.0, 1.0));
                 transform.set_rotation(Quat::from_rotation_z(anim_state.rotation));

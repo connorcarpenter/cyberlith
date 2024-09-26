@@ -1,9 +1,10 @@
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::{
+    prelude::not,
     schedule::{IntoSystemConfigs, IntoSystemSetConfigs},
 };
-use bevy_ecs::prelude::not;
 use bevy_state::condition::in_state;
+
 use game_engine::naia::ReceiveEvents;
 
 use game_app_common::AppState;
@@ -59,9 +60,7 @@ impl Plugin for InWorldPlugin {
             .configure_sets(Update, systems::MainLoop.after(systems::Tick))
             .add_systems(
                 Update,
-                (
-                    systems::input::key_input,
-                )
+                (systems::input::key_input,)
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::MainLoop),
             )

@@ -1,9 +1,10 @@
-
 use bevy_ecs::component::Component;
 
-use game_engine::asset::{AnimatedModelData, AssetHandle, AssetManager};
-use game_engine::render::components::Transform;
-use game_engine::time::Instant;
+use game_engine::{
+    asset::{AnimatedModelData, AssetHandle, AssetManager},
+    render::components::Transform,
+    time::Instant,
+};
 
 #[derive(Component, Clone)]
 pub struct AnimationState {
@@ -60,7 +61,8 @@ impl AnimationState {
         let delta_ms = self.last_now.elapsed(now).as_millis();
         self.last_now = now.clone();
 
-        let max_duration_ms = asset_manager.get_animated_model_animation_duration_ms(model_data, &self.animation_name);
+        let max_duration_ms = asset_manager
+            .get_animated_model_animation_duration_ms(model_data, &self.animation_name);
 
         self.animation_index_ms += (delta_ms as f32) * 0.25;
 

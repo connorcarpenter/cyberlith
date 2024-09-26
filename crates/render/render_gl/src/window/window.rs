@@ -70,7 +70,10 @@ impl Window {
         app.update();
 
         // Remove FrameInput
-        let old_frame_input = app.world_mut().remove_non_send_resource::<FrameInput>().unwrap();
+        let old_frame_input = app
+            .world_mut()
+            .remove_non_send_resource::<FrameInput>()
+            .unwrap();
 
         // Returns default frame output to end the frame
         FrameOutput::from(old_frame_input)

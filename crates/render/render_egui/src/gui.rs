@@ -7,10 +7,7 @@ use logging::info;
 
 use input::{IncomingEvent, Modifiers};
 use render_api::components::Viewport;
-use render_gl::{
-    Context,
-    FrameInput, OutgoingEvent,
-};
+use render_gl::{Context, FrameInput, OutgoingEvent};
 
 use crate::{gl_to_egui_key, gl_to_egui_modifiers, gl_to_egui_mouse_button};
 

@@ -10,22 +10,18 @@ use game_engine::{
     asset::{AssetHandle, UnitData},
     logging::info,
     math::Quat,
-    naia::Replicate,
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
         components::{NextTilePosition, TileMovement},
-        constants::MOVEMENT_SPEED,
         WorldClient,
     },
 };
-use game_engine::render::base::{CpuMaterial, CpuMesh};
-use game_engine::storage::Storage;
+
 use crate::{
-    components::{AnimationState, Predicted},
+    components::{AnimationState, Predicted, RenderPosition},
     resources::{Global, OwnedEntity},
 };
-use crate::components::{RenderHelper, RenderPosition};
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -56,8 +52,6 @@ impl PredictionEvents {
         client: WorldClient,
         mut commands: Commands,
         mut global: ResMut<Global>,
-        mut meshes: ResMut<Storage<CpuMesh>>,
-        mut materials: ResMut<Storage<CpuMaterial>>,
         mut prediction_events: ResMut<PredictionEvents>,
         position_q: Query<&NextTilePosition>,
     ) {
@@ -71,7 +65,9 @@ impl PredictionEvents {
             );
 
             let client_tick = client.client_tick().unwrap();
-            let client_tick_instant = client.tick_to_instant(client_tick).expect("client uninitialized?");
+            let client_tick_instant = client
+                .tick_to_instant(client_tick)
+                .expect("client uninitialized?");
 
             // Here we create a local copy of the Player entity, to use for client-side prediction
             let next_tile_position = position_q.get(future_prediction_entity).unwrap();
@@ -90,8 +86,11 @@ impl PredictionEvents {
                         .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
                 )
                 .insert(AnimationState::new())
-                .insert(RenderHelper::new(&mut meshes, &mut materials))
-                .insert(RenderPosition::new(next_tile_position, client_tick, client_tick_instant))
+                .insert(RenderPosition::new(
+                    next_tile_position,
+                    client_tick,
+                    client_tick_instant,
+                ))
                 .insert(unit_data_handle.clone())
                 // mark as predicted
                 .insert(Predicted);
