@@ -4,6 +4,7 @@ use game_engine::{
     asset::{AnimatedModelData, AssetHandle, AssetManager},
     render::components::Transform,
     time::Instant,
+    world::constants::MOVEMENT_SPEED,
 };
 
 #[derive(Component, Clone)]
@@ -33,40 +34,36 @@ impl AnimationState {
         model_data: &AssetHandle<AnimatedModelData>,
         transform: &Transform,
     ) {
-        // dx
         let (x, y) = (transform.translation.x, transform.translation.y);
         let (last_x, last_y) = self.last_pos;
+        self.last_pos = (x, y);
 
         let dx = x - last_x;
         let dy = y - last_y;
-
-        let rotation = dy.atan2(dx);
-
-        self.last_pos = (x, y);
 
         // change animation if needed
         let is_moving = dx != 0.0 || dy != 0.0;
         let new_animation_name = if is_moving { "walk" } else { "idle" };
         if new_animation_name != self.animation_name {
             self.animation_name = new_animation_name.to_string();
-            self.animation_index_ms = 0.0;
         }
 
         // change direction if needed
         if is_moving {
+            let rotation = dy.atan2(dx);
             self.rotation = rotation;
         }
 
         // animate
-        let delta_ms = self.last_now.elapsed(now).as_millis();
+        let delta_ms = self.last_now.elapsed(now).as_millis(); // TODO: should be some global ...
         self.last_now = now.clone();
+
+        self.animation_index_ms += (delta_ms as f32) * (MOVEMENT_SPEED / 15.0);
 
         let max_duration_ms = asset_manager
             .get_animated_model_animation_duration_ms(model_data, &self.animation_name);
 
-        self.animation_index_ms += (delta_ms as f32) * 0.25;
-
-        while self.animation_index_ms > max_duration_ms {
+        while self.animation_index_ms >= max_duration_ms {
             self.animation_index_ms -= max_duration_ms;
         }
     }

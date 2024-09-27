@@ -107,7 +107,23 @@ impl TileMovement {
             panic!("Only predicted entities can receive commands");
         }
 
-        if !key_command.a && !key_command.d && !key_command.w && !key_command.s {
+        let mut dx = 0;
+        let mut dy = 0;
+
+        if key_command.w {
+            dy -= 1;
+        }
+        if key_command.s {
+            dy += 1;
+        }
+        if key_command.a {
+            dx -= 1;
+        }
+        if key_command.d {
+            dx += 1;
+        }
+
+        if dx == 0 && dy == 0 {
             return;
         }
 
@@ -121,21 +137,8 @@ impl TileMovement {
 
         let current_tile_x = state.tile_x;
         let current_tile_y = state.tile_y;
-        let mut next_tile_x = state.tile_x;
-        let mut next_tile_y = state.tile_y;
-
-        if key_command.w {
-            next_tile_y -= 1;
-        }
-        if key_command.s {
-            next_tile_y += 1;
-        }
-        if key_command.a {
-            next_tile_x -= 1;
-        }
-        if key_command.d {
-            next_tile_x += 1;
-        }
+        let next_tile_x = state.tile_x + dx;
+        let next_tile_y = state.tile_y + dy;
 
         self.state = TileMovementState::moving(
             current_tile_x,
@@ -336,17 +339,29 @@ impl TileMovementMovingState {
             panic!("from_tile and to_tile are the same");
         }
 
-        assert_valid_tile_transition(ax, ay, bx, by, prediction);
+        let mut to_tile_x = bx;
+        let mut to_tile_y = by;
+
+        let mut buffered_future_tiles_opt: Option<VecDeque<(Tick, i16, i16)>> = None;
+        if !is_valid_tile_transition(ax, ay, bx, by, prediction) {
+            buffered_future_tiles_opt = Some(VecDeque::new());
+            let mut buffered_future_tiles = buffered_future_tiles_opt.as_mut().unwrap();
+            buffer_pathfind_tiles(ax, ay, bx, by, &mut buffered_future_tiles);
+            buffered_future_tiles.push_back((0, bx, by));
+            let (_, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
+            to_tile_x = next_x;
+            to_tile_y = next_y;
+        }
 
         Self {
             from_tile_x: ax,
             from_tile_y: ay,
-            to_tile_x: bx,
-            to_tile_y: by,
+            to_tile_x,
+            to_tile_y,
             distance: 0.0,
-            distance_max: get_tile_distance(ax, ay, bx, by),
+            distance_max: get_tile_distance(ax, ay, to_tile_x, to_tile_y),
             done: false,
-            buffered_future_tiles_opt: None,
+            buffered_future_tiles_opt,
         }
     }
 
@@ -419,16 +434,44 @@ impl TileMovementMovingState {
         let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
 
         if let Some((_, last_x, last_y)) = buffered_future_tiles.back() {
-            if *last_x == next_x && *last_y == next_y {
+            let last_x = *last_x;
+            let last_y = *last_y;
+
+            if last_x == next_x && last_y == next_y {
                 warn!("Prediction({:?}), Ignoring Duplicate Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
                 return;
             }
 
-            assert_valid_tile_transition(*last_x, *last_y, next_x, next_y, prediction);
+            if !is_valid_tile_transition(last_x, last_y, next_x, next_y, prediction) {
+                buffer_pathfind_tiles(last_x, last_y, next_x, next_y, buffered_future_tiles);
+            }
         }
 
         buffered_future_tiles.push_back((updated_tick, next_x, next_y));
         warn!("Prediction({:?}), Buffering Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
+    }
+}
+
+// does not add (ax, ay) or (bx, by) to the buffer
+fn buffer_pathfind_tiles(
+    ax: i16, ay: i16,
+    bx: i16, by: i16,
+    buffer: &mut VecDeque<(Tick, i16, i16)>
+) {
+    info!("Pathfinding from ({:?}, {:?}) to ({:?}, {:?})", ax, ay, bx, by);
+
+    let mut cx = ax;
+    let mut cy = ay;
+
+    while cx != bx || cy != by {
+        let dx = (bx - cx).min(1).max(-1);
+        let dy = (by - cy).min(1).max(-1);
+
+        cx += dx;
+        cy += dy;
+
+        info!("Pathfinding: ({:?}, {:?})", cx, cy);
+        buffer.push_back((0, cx, cy));
     }
 }
 
@@ -450,11 +493,14 @@ fn get_tile_distance(ax: i16, ay: i16, bx: i16, by: i16) -> f32 {
     distance_max
 }
 
-fn assert_valid_tile_transition(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) {
+fn is_valid_tile_transition(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) -> bool {
     if (ax - bx).abs() + (ay - by).abs() > 2 {
         warn!(
             "from_tile and to_tile are not adjacent. ({:?}, {:?}) -> ({:?}, {:?}). Prediction: {:?}",
             ax, ay, bx, by, prediction,
         );
+        return false;
+    } else {
+        return true;
     }
 }
