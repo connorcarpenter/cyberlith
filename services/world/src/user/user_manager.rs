@@ -74,6 +74,11 @@ impl UserManager {
         self.users.clear();
     }
 
+    pub(crate) fn get_user_entity(&self, user_key: &UserKey) -> Option<Entity> {
+        let user_data = self.users.get(user_key)?;
+        user_data.user_entity()
+    }
+
     pub(crate) fn set_user_entity(&mut self, user_key: &UserKey, user_entity: &Entity) {
         let user_data = self.users.get_mut(user_key).unwrap();
         user_data.set_user_entity(user_entity);

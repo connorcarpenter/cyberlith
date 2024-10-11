@@ -5,7 +5,7 @@ use bevy_ecs::{
     entity::Entity,
     event::EventReader,
     prelude::{Query, Resource, World},
-    system::SystemState,
+    system::{SystemState, Res},
 };
 
 use naia_bevy_server::{events::TickEvent, Server, UserKey};
@@ -19,7 +19,7 @@ use world_server_naia_proto::{
     messages::KeyCommand,
 };
 
-use crate::asset::AssetManager;
+use crate::{user::UserManager, asset::AssetManager};
 
 #[derive(Resource)]
 struct CachedTickEventsState {
@@ -50,21 +50,25 @@ pub fn tick_events(world: &mut World) {
     {
         let mut system_state: SystemState<(
             Server,
+            Res<UserManager>,
             Query<(Entity, &mut TileMovement)>,
             Query<&mut NextTilePosition>,
         )> = SystemState::new(world);
-        let (mut server, mut tile_movement_q, mut next_tile_position_q) =
-            system_state.get_mut(world);
+        let (
+            mut server,
+            user_manager,
+            mut tile_movement_q,
+            mut next_tile_position_q
+        ) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
             // receive & process commands
             let mut messages = server.receive_tick_buffer_messages(server_tick);
-            for (_user_key, command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
-                // TODO: check that the user has authority over the entity!
-                let Some(entity) = &command.entity.get(&server) else {
+            for (user_key, command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
+                let Some(entity) = user_manager.get_user_entity(&user_key) else {
                     continue;
                 };
-                let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(*entity) else {
+                let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(entity) else {
                     continue;
                 };
                 shared_behavior::process_command(&mut tile_movement, &command, false);
