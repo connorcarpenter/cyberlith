@@ -11,6 +11,7 @@ use crate::{
     constants::{MOVEMENT_SPEED, TILE_SIZE},
     messages::KeyCommand,
 };
+use crate::messages::CommandReadState;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -102,56 +103,56 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, key_command: &KeyCommand, prediction: bool) {
+    pub fn recv_command(&mut self, key_commands: Vec<CommandReadState>, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
 
-        let key_state = key_command.get_read_state();
+        for key_command in key_commands {
+            let mut dx = 0;
+            let mut dy = 0;
 
-        let mut dx = 0;
-        let mut dy = 0;
+            if key_command.w {
+                dy -= 1;
+            }
+            if key_command.s {
+                dy += 1;
+            }
+            if key_command.a {
+                dx -= 1;
+            }
+            if key_command.d {
+                dx += 1;
+            }
 
-        if key_state.w {
-            dy -= 1;
-        }
-        if key_state.s {
-            dy += 1;
-        }
-        if key_state.a {
-            dx -= 1;
-        }
-        if key_state.d {
-            dx += 1;
-        }
+            if dx == 0 && dy == 0 {
+                return;
+            }
 
-        if dx == 0 && dy == 0 {
-            return;
-        }
+            if self.state.is_moving() {
+                return;
+            }
 
-        if self.state.is_moving() {
-            return;
-        }
+            let TileMovementState::Stopped(state) = &self.state else {
+                panic!("Expected Stopped state");
+            };
 
-        let TileMovementState::Stopped(state) = &self.state else {
-            panic!("Expected Stopped state");
-        };
+            let current_tile_x = state.tile_x;
+            let current_tile_y = state.tile_y;
+            let next_tile_x = state.tile_x + dx;
+            let next_tile_y = state.tile_y + dy;
 
-        let current_tile_x = state.tile_x;
-        let current_tile_y = state.tile_y;
-        let next_tile_x = state.tile_x + dx;
-        let next_tile_y = state.tile_y + dy;
+            self.state = TileMovementState::moving(
+                current_tile_x,
+                current_tile_y,
+                next_tile_x,
+                next_tile_y,
+                prediction,
+            );
 
-        self.state = TileMovementState::moving(
-            current_tile_x,
-            current_tile_y,
-            next_tile_x,
-            next_tile_y,
-            prediction,
-        );
-
-        if self.is_server {
-            self.outbound_next_tile = Some((next_tile_x, next_tile_y));
+            if self.is_server {
+                self.outbound_next_tile = Some((next_tile_x, next_tile_y));
+            }
         }
     }
 

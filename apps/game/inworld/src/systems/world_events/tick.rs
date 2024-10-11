@@ -10,12 +10,13 @@ use game_engine::{
 
 use crate::{
     components::{Confirmed, Predicted, RenderPosition},
-    resources::{Global, InputManager},
+    resources::{Global, CommandManager, InputManager},
 };
 
 pub fn client_tick_events(
     mut client: WorldClient,
     global: Res<Global>,
+    mut command_manager: ResMut<CommandManager>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Predicted>>,
@@ -46,11 +47,16 @@ pub fn client_tick_events(
             // save to command history
             input_manager.save_to_command_history(client_tick, &command);
 
-            shared_behavior::process_command(&mut client_tile_movement, &command, true);
-
             // send command
             client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &command);
+
+            command_manager.recv_command(Some(command));
+        } else {
+            command_manager.recv_command(None);
         }
+
+        let commands = command_manager.take_commands();
+        shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
         // process tick
         process_tick(

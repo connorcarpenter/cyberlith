@@ -25,6 +25,7 @@ use crate::{
     resources::{Global, InputManager},
     systems::world_events::{process_tick, PredictionEvents},
 };
+use crate::resources::CommandManager;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -78,6 +79,7 @@ pub fn update_next_tile_position_events(
     client: WorldClient,
     global: Res<Global>,
     mut input_manager: ResMut<InputManager>,
+    mut command_manager: ResMut<CommandManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
     mut tile_movement_q: Query<(&mut TileMovement, &mut RenderPosition)>,
@@ -194,6 +196,9 @@ pub fn update_next_tile_position_events(
     for (command_tick, command) in replay_commands {
         while sequence_greater_than(command_tick, current_tick) {
             // process command (none)
+            command_manager.recv_command(None);
+            let commands = command_manager.take_commands();
+            shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
             // process movement
             // info!("1. rollback::movement: tick({:?})", current_tick);
@@ -210,7 +215,9 @@ pub fn update_next_tile_position_events(
 
         // process command
         // info!("2. rollback::command: tick({:?})", command_tick);
-        shared_behavior::process_command(&mut client_tile_movement, &command, true);
+        command_manager.recv_command(Some(command.clone()));
+        let commands = command_manager.take_commands();
+        shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
         // process movement
         // info!("3. rollback::movement: tick({:?})", command_tick);
@@ -227,6 +234,9 @@ pub fn update_next_tile_position_events(
 
     while sequence_greater_than(client_tick, current_tick) {
         // process command (none)
+        command_manager.recv_command(None);
+        let commands = command_manager.take_commands();
+        shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
         // process movement
         // info!("4. rollback::movement: tick({:?})", current_tick);

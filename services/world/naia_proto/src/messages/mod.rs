@@ -4,7 +4,7 @@ mod key_command;
 
 pub use auth::Auth;
 pub use entity_assignment::EntityAssignment;
-pub use key_command::{KeyCommand, KeyStream};
+pub use key_command::{KeyCommand, KeyStream, CommandReadState};
 
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 

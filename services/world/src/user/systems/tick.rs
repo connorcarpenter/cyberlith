@@ -7,7 +7,7 @@ use bevy_ecs::{
     prelude::{Query, Resource, World},
     system::{SystemState, Res},
 };
-
+use bevy_ecs::system::ResMut;
 use naia_bevy_server::{events::TickEvent, Server, UserKey};
 
 use logging::info;
@@ -50,29 +50,54 @@ pub fn tick_events(world: &mut World) {
     {
         let mut system_state: SystemState<(
             Server,
-            Res<UserManager>,
+            ResMut<UserManager>,
             Query<(Entity, &mut TileMovement)>,
             Query<&mut NextTilePosition>,
         )> = SystemState::new(world);
         let (
             mut server,
-            user_manager,
+            mut user_manager,
             mut tile_movement_q,
             mut next_tile_position_q
         ) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
-            // receive & process commands
+
+            let mut users_without_command = user_manager.user_key_set();
+
+            // receive & process command messages
             let mut messages = server.receive_tick_buffer_messages(server_tick);
             for (user_key, command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
+
+                users_without_command.remove(&user_key);
+
+                let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
+                    continue;
+                };
+                command_manager.recv_command(Some(command));
+            }
+
+            // process null commands
+            for user_key in users_without_command {
+                let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
+                    continue;
+                };
+                command_manager.recv_command(None);
+            }
+
+            // process command events
+            for user_key in user_manager.user_keys() {
+
                 let Some(entity) = user_manager.get_user_entity(&user_key) else {
                     continue;
                 };
                 let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(entity) else {
                     continue;
                 };
-                // command.log(*server_tick);
-                shared_behavior::process_command(&mut tile_movement, &command, false);
+
+                let command_manager = user_manager.get_user_command_manager_mut(&user_key).unwrap();
+                let commands = command_manager.take_commands();
+                shared_behavior::process_commands(&mut tile_movement, commands, false);
             }
 
             // All game logic should happen here, on a tick event
