@@ -189,8 +189,7 @@ pub fn update_next_tile_position_events(
 
     // TODO: why is it necessary to subtract 1 Tick here?
     // it's not like this in the Macroquad demo
-    let modified_server_tick = current_tick.wrapping_sub(1);
-    let replay_commands = input_manager.command_history.replays(&modified_server_tick);
+    let replay_commands = input_manager.take_command_replays(current_tick);
 
     for (command_tick, command) in replay_commands {
         while sequence_greater_than(command_tick, current_tick) {

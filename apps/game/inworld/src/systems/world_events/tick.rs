@@ -20,7 +20,7 @@ pub fn client_tick_events(
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Predicted>>,
 ) {
-    let command_opt = input_manager.queued_command.take();
+    let command_opt = input_manager.take_queued_command();
 
     let Some(predicted_entity) = global
         .owned_entity
@@ -42,18 +42,7 @@ pub fn client_tick_events(
         };
 
         // save to command history
-        {
-            if !input_manager.command_history.can_insert(&client_tick) {
-                // History is full, should this be possible??
-                panic!(
-                    "Command History is full, cannot insert command for tick: {:?}",
-                    client_tick
-                );
-            }
-
-            // Record command
-            input_manager.command_history.insert(client_tick, command.clone());
-        }
+        input_manager.save_to_command_history(client_tick, command);
 
         shared_behavior::process_command(&mut client_tile_movement, command, true);
 
