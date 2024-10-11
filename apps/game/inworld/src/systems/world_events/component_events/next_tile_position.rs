@@ -4,7 +4,7 @@ use bevy_ecs::{
     event::EventReader,
     prelude::{Commands, Query},
 };
-
+use bevy_ecs::system::Res;
 use game_engine::{
     logging::info,
     math::{Quat, Vec3},
@@ -24,6 +24,7 @@ use crate::{
     resources::Global,
     systems::world_events::{process_tick, PredictionEvents},
 };
+use crate::resources::InputManager;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -75,7 +76,8 @@ pub fn insert_next_tile_position_events(
 
 pub fn update_next_tile_position_events(
     client: WorldClient,
-    mut global: ResMut<Global>,
+    global: Res<Global>,
+    mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
     mut tile_movement_q: Query<(&mut TileMovement, &mut RenderPosition)>,
@@ -188,7 +190,7 @@ pub fn update_next_tile_position_events(
     // TODO: why is it necessary to subtract 1 Tick here?
     // it's not like this in the Macroquad demo
     let modified_server_tick = current_tick.wrapping_sub(1);
-    let replay_commands = global.command_history.replays(&modified_server_tick);
+    let replay_commands = input_manager.command_history.replays(&modified_server_tick);
 
     for (command_tick, command) in replay_commands {
         while sequence_greater_than(command_tick, current_tick) {

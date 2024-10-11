@@ -1,4 +1,4 @@
-use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Query, query::With};
+use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader, prelude::Query, query::With};
 
 use game_engine::{
     naia::Tick,
@@ -10,16 +10,17 @@ use game_engine::{
 
 use crate::{
     components::{Confirmed, Predicted, RenderPosition},
-    resources::Global,
+    resources::{Global, InputManager},
 };
 
 pub fn client_tick_events(
     mut client: WorldClient,
-    mut global: ResMut<Global>,
+    global: Res<Global>,
+    mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Predicted>>,
 ) {
-    let command_opt = global.queued_command.take();
+    let command_opt = input_manager.queued_command.take();
 
     let Some(predicted_entity) = global
         .owned_entity
@@ -42,7 +43,7 @@ pub fn client_tick_events(
 
         // save to command history
         {
-            if !global.command_history.can_insert(&client_tick) {
+            if !input_manager.command_history.can_insert(&client_tick) {
                 // History is full, should this be possible??
                 panic!(
                     "Command History is full, cannot insert command for tick: {:?}",
@@ -51,7 +52,7 @@ pub fn client_tick_events(
             }
 
             // Record command
-            global.command_history.insert(client_tick, command.clone());
+            input_manager.command_history.insert(client_tick, command.clone());
         }
 
         shared_behavior::process_command(&mut client_tile_movement, command, true);
