@@ -196,8 +196,8 @@ pub fn update_next_tile_position_events(
     for (command_tick, command) in replay_commands {
         while sequence_greater_than(command_tick, current_tick) {
             // process command (none)
-            command_manager.recv_command(None);
-            let commands = command_manager.take_commands();
+            command_manager.recv_command(current_tick, None);
+            let commands = command_manager.take_commands(current_tick);
             shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
             // process movement
@@ -215,8 +215,8 @@ pub fn update_next_tile_position_events(
 
         // process command
         // info!("2. rollback::command: tick({:?})", command_tick);
-        command_manager.recv_command(Some(command.clone()));
-        let commands = command_manager.take_commands();
+        command_manager.recv_command(current_tick, Some(command.clone()));
+        let commands = command_manager.take_commands(current_tick);
         shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
         // process movement
@@ -234,8 +234,8 @@ pub fn update_next_tile_position_events(
 
     while sequence_greater_than(client_tick, current_tick) {
         // process command (none)
-        command_manager.recv_command(None);
-        let commands = command_manager.take_commands();
+        command_manager.recv_command(current_tick, None);
+        let commands = command_manager.take_commands(current_tick);
         shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
         // process movement

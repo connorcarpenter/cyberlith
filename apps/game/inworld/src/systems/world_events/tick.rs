@@ -50,12 +50,12 @@ pub fn client_tick_events(
             // send command
             client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &command);
 
-            command_manager.recv_command(Some(command));
+            command_manager.recv_command(client_tick, Some(command));
         } else {
-            command_manager.recv_command(None);
+            command_manager.recv_command(client_tick, None);
         }
 
-        let commands = command_manager.take_commands();
+        let commands = command_manager.take_commands(client_tick);
         shared_behavior::process_commands(&mut client_tile_movement, commands, true);
 
         // process tick

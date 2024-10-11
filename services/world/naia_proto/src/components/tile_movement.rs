@@ -3,15 +3,15 @@ use std::collections::VecDeque;
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::Tick;
-
+use input::Key;
 use logging::{info, warn};
 
 use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
-    messages::KeyCommand,
+    messages::CommandReadState,
 };
-use crate::messages::CommandReadState;
+use crate::resources::KeyEvent;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -103,56 +103,128 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, key_commands: Vec<CommandReadState>, prediction: bool) {
+    pub fn recv_command(&mut self, key_events: Vec<KeyEvent>, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
 
-        for key_command in key_commands {
-            let mut dx = 0;
-            let mut dy = 0;
+        let mut dx = 0;
+        let mut dy = 0;
 
-            if key_command.w {
+        let mut w = 0;
+        let mut s = 0;
+        let mut a = 0;
+        let mut d = 0;
+
+        for key_event in key_events {
+
+            match key_event {
+                KeyEvent::Pressed(key, duration) => {
+                    if duration > 150 {
+                        // hold
+                        match key {
+                            Key::W => w = 2,
+                            Key::S => s = 2,
+                            Key::A => a = 2,
+                            Key::D => d = 2,
+                            _ => {}
+                        }
+                    } else {
+                        // tap
+                        match key {
+                            Key::W => if w == 0 { w = 1},
+                            Key::S => if s == 0 { s = 1},
+                            Key::A => if a == 0 { a = 1},
+                            Key::D => if d == 0 { d = 1},
+                            _ => {}
+                        }
+                    }
+                }
+                KeyEvent::Held(key, duration) => {
+                    if duration > 150 {
+                        // hold
+                        match key {
+                            Key::W => w = 2,
+                            Key::S => s = 2,
+                            Key::A => a = 2,
+                            Key::D => d = 2,
+                            _ => {}
+                        }
+                    } else {
+                        // tap
+                        match key {
+                            Key::W => if w == 0 { w = 1},
+                            Key::S => if s == 0 { s = 1},
+                            Key::A => if a == 0 { a = 1},
+                            Key::D => if d == 0 { d = 1},
+                            _ => {}
+                        }
+                    }
+                }
+                KeyEvent::Released(key) => {
+
+                }
+            }
+        }
+
+        if w == 2 {
+            dy -= 1;
+        }
+        if s == 2 {
+            dy += 1;
+        }
+        if a == 2 {
+            dx -= 1;
+        }
+        if d == 2 {
+            dx += 1;
+        }
+
+        // diagonals
+        if dx != 0 && dy == 0 {
+            if w == 1 {
                 dy -= 1;
             }
-            if key_command.s {
+            if s == 1 {
                 dy += 1;
             }
-            if key_command.a {
+        }
+        if dy != 0 && dx == 0 {
+            if a == 1 {
                 dx -= 1;
             }
-            if key_command.d {
+            if d == 1 {
                 dx += 1;
             }
+        }
 
-            if dx == 0 && dy == 0 {
-                return;
-            }
+        if dx == 0 && dy == 0 {
+            return;
+        }
 
-            if self.state.is_moving() {
-                return;
-            }
+        if self.state.is_moving() {
+            return;
+        }
 
-            let TileMovementState::Stopped(state) = &self.state else {
-                panic!("Expected Stopped state");
-            };
+        let TileMovementState::Stopped(state) = &self.state else {
+            panic!("Expected Stopped state");
+        };
 
-            let current_tile_x = state.tile_x;
-            let current_tile_y = state.tile_y;
-            let next_tile_x = state.tile_x + dx;
-            let next_tile_y = state.tile_y + dy;
+        let current_tile_x = state.tile_x;
+        let current_tile_y = state.tile_y;
+        let next_tile_x = state.tile_x + dx;
+        let next_tile_y = state.tile_y + dy;
 
-            self.state = TileMovementState::moving(
-                current_tile_x,
-                current_tile_y,
-                next_tile_x,
-                next_tile_y,
-                prediction,
-            );
+        self.state = TileMovementState::moving(
+            current_tile_x,
+            current_tile_y,
+            next_tile_x,
+            next_tile_y,
+            prediction,
+        );
 
-            if self.is_server {
-                self.outbound_next_tile = Some((next_tile_x, next_tile_y));
-            }
+        if self.is_server {
+            self.outbound_next_tile = Some((next_tile_x, next_tile_y));
         }
     }
 

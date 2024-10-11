@@ -74,7 +74,7 @@ pub fn tick_events(world: &mut World) {
                 let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
                     continue;
                 };
-                command_manager.recv_command(Some(command));
+                command_manager.recv_command(*server_tick, Some(command));
             }
 
             // process null commands
@@ -82,7 +82,7 @@ pub fn tick_events(world: &mut World) {
                 let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
                     continue;
                 };
-                command_manager.recv_command(None);
+                command_manager.recv_command(*server_tick, None);
             }
 
             // process command events
@@ -96,7 +96,7 @@ pub fn tick_events(world: &mut World) {
                 };
 
                 let command_manager = user_manager.get_user_command_manager_mut(&user_key).unwrap();
-                let commands = command_manager.take_commands();
+                let commands = command_manager.take_commands(*server_tick);
                 shared_behavior::process_commands(&mut tile_movement, commands, false);
             }
 

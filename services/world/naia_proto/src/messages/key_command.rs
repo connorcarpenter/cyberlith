@@ -69,6 +69,14 @@ impl KeyStream {
         self.durations.push(UnsignedInteger::new(duration));
     }
 
+    pub fn start_pressed(&self) -> bool {
+        self.start_pressed
+    }
+
+    pub fn durations(&self) -> &Vec<UnsignedInteger<6>> {
+        &self.durations
+    }
+
     fn log(&self, key: &str) {
         let mut pressed = self.start_pressed;
         for duration in &self.durations {

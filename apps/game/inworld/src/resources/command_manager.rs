@@ -1,7 +1,7 @@
 use bevy_ecs::system::Resource;
 
-use game_engine::world;
-use game_engine::world::messages::{CommandReadState, KeyCommand};
+use game_engine::{world, world::messages::{CommandReadState, KeyCommand}, naia::Tick};
+use game_engine::world::resources::KeyEvent;
 
 #[derive(Resource)]
 pub struct CommandManager {
@@ -17,11 +17,11 @@ impl Default for CommandManager {
 }
 
 impl CommandManager {
-    pub fn recv_command(&mut self, key_command_opt: Option<KeyCommand>) {
-        self.internal.recv_command(key_command_opt);
+    pub fn recv_command(&mut self, tick: Tick, key_command_opt: Option<KeyCommand>) {
+        self.internal.recv_command(tick, key_command_opt);
     }
 
-    pub fn take_commands(&mut self) -> Vec<CommandReadState> {
-        self.internal.take_commands()
+    pub fn take_commands(&mut self, tick: Tick) -> Vec<KeyEvent> {
+        self.internal.take_commands(tick)
     }
 }
