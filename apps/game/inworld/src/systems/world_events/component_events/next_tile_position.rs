@@ -3,8 +3,9 @@ use bevy_ecs::{
     change_detection::ResMut,
     event::EventReader,
     prelude::{Commands, Query},
+    system::Res,
 };
-use bevy_ecs::system::Res;
+
 use game_engine::{
     logging::info,
     math::{Quat, Vec3},
@@ -21,10 +22,9 @@ use game_engine::{
 
 use crate::{
     components::{AnimationState, Confirmed, RenderPosition},
-    resources::Global,
+    resources::{Global, InputManager},
     systems::world_events::{process_tick, PredictionEvents},
 };
-use crate::resources::InputManager;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,

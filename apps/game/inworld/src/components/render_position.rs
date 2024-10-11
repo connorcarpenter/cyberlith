@@ -69,7 +69,7 @@ impl RenderPosition {
 
     // returns number of milliseconds after tick
     pub fn recv_rollback(&mut self, server_render_pos: &RenderPosition) {
-        info!("recv_rollback()");
+        //info!("recv_rollback()");
 
         self.queue = server_render_pos.queue.clone();
     }

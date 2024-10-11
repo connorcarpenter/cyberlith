@@ -107,19 +107,21 @@ impl TileMovement {
             panic!("Only predicted entities can receive commands");
         }
 
+        let key_state = key_command.get_read_state();
+
         let mut dx = 0;
         let mut dy = 0;
 
-        if key_command.w {
+        if key_state.w {
             dy -= 1;
         }
-        if key_command.s {
+        if key_state.s {
             dy += 1;
         }
-        if key_command.a {
+        if key_state.a {
             dx -= 1;
         }
-        if key_command.d {
+        if key_state.d {
             dx += 1;
         }
 
@@ -180,10 +182,10 @@ impl TileMovement {
                 return;
             }
 
-            info!(
-                "Recv NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
-                update_tick, next_tile_x, next_tile_y
-            );
+            // info!(
+            //     "Recv NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
+            //     update_tick, next_tile_x, next_tile_y
+            // );
 
             self.state = TileMovementState::moving(
                 current_tile_x,

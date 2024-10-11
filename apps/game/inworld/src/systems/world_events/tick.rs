@@ -20,13 +20,15 @@ pub fn client_tick_events(
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Predicted>>,
 ) {
-    let command_opt = input_manager.take_queued_command();
-
     let Some(predicted_entity) = global
         .owned_entity
         .as_ref()
         .map(|owned_entity| owned_entity.predicted)
     else {
+        return;
+    };
+
+    let Some(client_instant) = client.client_instant() else {
         return;
     };
 
@@ -37,14 +39,18 @@ pub fn client_tick_events(
             position_q.get_mut(predicted_entity).unwrap();
 
         // process commands
-        let Some(command) = command_opt.as_ref() else {
-            continue;
-        };
+        if let Some(command) = input_manager.take_command(client_instant) {
 
-        // save to command history
-        input_manager.save_to_command_history(client_tick, command);
+            // command.log(client_tick);
 
-        shared_behavior::process_command(&mut client_tile_movement, command, true);
+            // save to command history
+            input_manager.save_to_command_history(client_tick, &command);
+
+            shared_behavior::process_command(&mut client_tile_movement, &command, true);
+
+            // send command
+            client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &command);
+        }
 
         // process tick
         process_tick(
@@ -54,9 +60,6 @@ pub fn client_tick_events(
             &mut client_tile_movement,
             &mut client_render_position,
         );
-
-        // send command
-        client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, command);
     }
 }
 

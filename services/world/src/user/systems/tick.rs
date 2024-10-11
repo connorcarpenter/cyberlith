@@ -71,6 +71,7 @@ pub fn tick_events(world: &mut World) {
                 let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(entity) else {
                     continue;
                 };
+                // command.log(*server_tick);
                 shared_behavior::process_command(&mut tile_movement, &command, false);
             }
 
