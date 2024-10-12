@@ -60,10 +60,10 @@ impl IncomingCommands {
 
         let mut output = Vec::new();
 
-        self.w.take_commands(tick, &mut output);
-        self.s.take_commands(tick, &mut output);
-        self.a.take_commands(tick, &mut output);
-        self.d.take_commands(tick, &mut output);
+        self.w.pop_commands(tick, &mut output);
+        self.s.pop_commands(tick, &mut output);
+        self.a.pop_commands(tick, &mut output);
+        self.d.pop_commands(tick, &mut output);
 
         output
     }
@@ -169,7 +169,7 @@ impl IncomingCommandStream {
         self.durations.push_back((false, TICK_DURATION_MS, false));
     }
 
-    pub(crate) fn take_commands(&mut self, tick: Tick, output: &mut Vec<KeyEvent>) {
+    pub(crate) fn pop_commands(&mut self, tick: Tick, output: &mut Vec<KeyEvent>) {
         if self.current_tick_opt != Some(tick) {
             panic!("take_commands called with incorrect tick!");
         }
@@ -225,11 +225,11 @@ mod tests {
 
         let key_stream = KeyStream::new(true);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
 
-        assert_eq!(key_state.durations.len(), 1);
-        assert_eq!(key_state.durations[0], (true, 40, false));
+        assert_eq!(command_stream.durations.len(), 1);
+        assert_eq!(command_stream.durations[0], (true, 40, false));
     }
 
     #[test]
@@ -237,11 +237,11 @@ mod tests {
 
         let key_stream = KeyStream::new(false);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
 
-        assert_eq!(key_state.durations.len(), 1);
-        assert_eq!(key_state.durations[0], (false, 40, false));
+        assert_eq!(command_stream.durations.len(), 1);
+        assert_eq!(command_stream.durations[0], (false, 40, false));
     }
 
     #[test]
@@ -250,21 +250,21 @@ mod tests {
         let mut key_stream = KeyStream::new(true);
         key_stream.add_duration(28);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
 
-        assert_eq!(key_state.durations.len(), 2);
-        assert_eq!(key_state.durations, [(true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
+        assert_eq!(command_stream.durations.len(), 2);
+        assert_eq!(command_stream.durations, [(true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
     }
 
     #[test]
     fn test_4() {
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_none(0);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_none(0);
 
-        assert_eq!(key_state.durations.len(), 1);
-        assert_eq!(key_state.durations, [(false, TICK_DURATION_MS, false)]);
+        assert_eq!(command_stream.durations.len(), 1);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, false)]);
     }
 
     #[test]
@@ -273,12 +273,12 @@ mod tests {
         let mut key_stream = KeyStream::new(true);
         key_stream.add_duration(28);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
-        key_state.recv_none(1);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
+        command_stream.recv_none(1);
 
-        assert_eq!(key_state.durations.len(), 2);
-        assert_eq!(key_state.durations, [(true, 28, true), (false, (TICK_DURATION_MS + TICK_DURATION_MS - 28), false)]);
+        assert_eq!(command_stream.durations.len(), 2);
+        assert_eq!(command_stream.durations, [(true, 28, true), (false, (TICK_DURATION_MS + TICK_DURATION_MS - 28), false)]);
     }
 
     #[test]
@@ -287,13 +287,13 @@ mod tests {
         let mut key_stream = KeyStream::new(true);
         key_stream.add_duration(28);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_none(0);
-        key_state.recv_stream(1, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_none(0);
+        command_stream.recv_stream(1, key_stream);
 
 
-        assert_eq!(key_state.durations.len(), 3);
-        assert_eq!(key_state.durations, [(false, TICK_DURATION_MS, true), (true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
+        assert_eq!(command_stream.durations.len(), 3);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, true), (true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
     }
 
     #[test]
@@ -302,13 +302,13 @@ mod tests {
         let mut key_stream = KeyStream::new(false);
         key_stream.add_duration(28);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_none(0);
-        key_state.recv_stream(1, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_none(0);
+        command_stream.recv_stream(1, key_stream);
 
 
-        assert_eq!(key_state.durations.len(), 2);
-        assert_eq!(key_state.durations, [(false, TICK_DURATION_MS + 28, true), (true, TICK_DURATION_MS - 28, false)]);
+        assert_eq!(command_stream.durations.len(), 2);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS + 28, true), (true, TICK_DURATION_MS - 28, false)]);
     }
 
     #[test]
@@ -317,12 +317,12 @@ mod tests {
         let mut key_stream = KeyStream::new(false);
         key_stream.add_duration(28);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
-        key_state.recv_none(1);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
+        command_stream.recv_none(1);
 
-        assert_eq!(key_state.durations.len(), 3);
-        assert_eq!(key_state.durations, [(false, 28, true), (true, TICK_DURATION_MS - 28, true), (false, TICK_DURATION_MS, false)]);
+        assert_eq!(command_stream.durations.len(), 3);
+        assert_eq!(command_stream.durations, [(false, 28, true), (true, TICK_DURATION_MS - 28, true), (false, TICK_DURATION_MS, false)]);
     }
 
     #[test]
@@ -333,12 +333,12 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
-        key_state.recv_none(1);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
+        command_stream.recv_none(1);
 
-        assert_eq!(key_state.durations.len(), 4);
-        assert_eq!(key_state.durations, [(true, 21, true), (false, 13, true), (true, 5, true), (false, (TICK_DURATION_MS + TICK_DURATION_MS - 21 - 13 - 5), false)]);
+        assert_eq!(command_stream.durations.len(), 4);
+        assert_eq!(command_stream.durations, [(true, 21, true), (false, 13, true), (true, 5, true), (false, (TICK_DURATION_MS + TICK_DURATION_MS - 21 - 13 - 5), false)]);
     }
 
     #[test]
@@ -349,12 +349,12 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_none(0);
-        key_state.recv_stream(1, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_none(0);
+        command_stream.recv_stream(1, key_stream);
 
-        assert_eq!(key_state.durations.len(), 5);
-        assert_eq!(key_state.durations, [(false, TICK_DURATION_MS, true), (true, 21, true), (false, 13, true), (true, 5, true), (false, TICK_DURATION_MS - 21 - 13 - 5, false)]);
+        assert_eq!(command_stream.durations.len(), 5);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, true), (true, 21, true), (false, 13, true), (true, 5, true), (false, TICK_DURATION_MS - 21 - 13 - 5, false)]);
     }
 
     #[test]
@@ -365,12 +365,12 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_none(0);
-        key_state.recv_stream(1, key_stream);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_none(0);
+        command_stream.recv_stream(1, key_stream);
 
-        assert_eq!(key_state.durations.len(), 4);
-        assert_eq!(key_state.durations, [(false, TICK_DURATION_MS + 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, false)]);
+        assert_eq!(command_stream.durations.len(), 4);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS + 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, false)]);
     }
 
     #[test]
@@ -381,11 +381,75 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = IncomingCommandStream::new(Key::A);
-        key_state.recv_stream(0, key_stream);
-        key_state.recv_none(1);
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream);
+        command_stream.recv_none(1);
 
-        assert_eq!(key_state.durations.len(), 5);
-        assert_eq!(key_state.durations, [(false, 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, true), (false, TICK_DURATION_MS, false)]);
+        assert_eq!(command_stream.durations.len(), 5);
+        assert_eq!(command_stream.durations, [(false, 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, true), (false, TICK_DURATION_MS, false)]);
+    }
+
+    #[test]
+    fn test_13() {
+
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_none(0);
+        command_stream.recv_none(1);
+        command_stream.recv_none(2);
+
+        assert_eq!(command_stream.durations.len(), 1);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS * 3, false)]);
+    }
+
+    #[test]
+    fn test_14() {
+
+        let mut key_stream = KeyStream::new(false);
+
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream.clone());
+        command_stream.recv_stream(1, key_stream.clone());
+        command_stream.recv_stream(2, key_stream.clone());
+
+        assert_eq!(command_stream.durations.len(), 1);
+        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS * 3, false)]);
+    }
+
+    #[test]
+    fn test_15() {
+
+        let mut key_stream = KeyStream::new(true);
+
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream.clone());
+        command_stream.recv_stream(1, key_stream.clone());
+        command_stream.recv_stream(2, key_stream.clone());
+
+        assert_eq!(command_stream.durations.len(), 1);
+        assert_eq!(command_stream.durations, [(true, TICK_DURATION_MS * 3, false)]);
+    }
+
+    #[test]
+    fn test_16() {
+
+        let mut key_stream = KeyStream::new(true);
+        key_stream.add_duration(21);
+        key_stream.add_duration(5);
+
+        let mut command_stream = IncomingCommandStream::new(Key::A);
+        command_stream.recv_stream(0, key_stream.clone());
+        command_stream.recv_stream(1, key_stream.clone());
+        command_stream.recv_stream(2, key_stream);
+
+        assert_eq!(command_stream.durations.len(), 7);
+        assert_eq!(command_stream.durations, [
+            (true, 21, true),
+            (false, 5, true),
+            (true, TICK_DURATION_MS - 21 - 5 + 21, true),
+            (false, 5, true),
+            (true, TICK_DURATION_MS - 21 - 5 + 21, true),
+            (false, 5, true),
+            (true, TICK_DURATION_MS - 21 - 5, false)
+        ]);
     }
 }
