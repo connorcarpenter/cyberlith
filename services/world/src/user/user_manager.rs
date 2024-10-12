@@ -1,11 +1,13 @@
-use bevy_ecs::entity::Entity;
-use bevy_ecs::system::Resource;
 use std::collections::{HashMap, HashSet};
 
-use auth_server_types::UserId;
+use bevy_ecs::{system::Resource, entity::Entity};
+
 use naia_bevy_server::UserKey;
+
+use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::resources::CommandManager;
+use world_server_naia_proto::resources::IncomingCommands;
+
 use crate::user::{user_data::UserData, user_login_token_store::UserLoginTokenStore};
 
 #[derive(Resource)]
@@ -98,7 +100,7 @@ impl UserManager {
         self.users.keys().cloned().collect()
     }
 
-    pub(crate) fn get_user_command_manager_mut(&mut self, user_key: &UserKey) -> Option<&mut CommandManager> {
+    pub(crate) fn get_user_command_manager_mut(&mut self, user_key: &UserKey) -> Option<&mut IncomingCommands> {
         let user_data = self.users.get_mut(user_key)?;
         Some(user_data.get_command_manager_mut())
     }

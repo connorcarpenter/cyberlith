@@ -1,6 +1,6 @@
 use crate::{components::TileMovement, resources::KeyEvent};
 
-pub fn process_commands(
+pub fn process_incoming_commands(
     tile_movement: &mut TileMovement,
     key_commands: Vec<KeyEvent>,
     prediction: bool,

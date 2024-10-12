@@ -9,7 +9,7 @@ use game_engine::naia::ReceiveEvents;
 
 use game_app_common::AppState;
 
-use crate::{resources::{CommandManager, Global, InputManager}, systems, systems::world_events::PredictionEvents};
+use crate::{resources::{Global, InputManager}, systems, systems::world_events::PredictionEvents};
 
 pub struct InWorldPlugin;
 
@@ -19,7 +19,6 @@ impl Plugin for InWorldPlugin {
             // resources
             .init_resource::<Global>()
             .init_resource::<InputManager>()
-            .init_resource::<CommandManager>()
             .init_resource::<PredictionEvents>()
             // systems
             .add_systems(
@@ -62,7 +61,7 @@ impl Plugin for InWorldPlugin {
             .configure_sets(Update, systems::MainLoop.after(systems::Tick))
             .add_systems(
                 Update,
-                (InputManager::key_input)
+                (InputManager::recv_key_input)
                     .run_if(in_state(AppState::InGame))
                     .in_set(systems::MainLoop),
             )

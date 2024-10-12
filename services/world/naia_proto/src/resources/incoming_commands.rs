@@ -1,51 +1,32 @@
 use std::collections::VecDeque;
 
 use naia_bevy_shared::Tick;
+
 use input::Key;
-use crate::messages::{CommandReadState, KeyCommand, KeyStream};
+
+use crate::messages::{KeyCommand, KeyStream};
 
 const TICK_DURATION_MS: u16 = 40; // TODO: move to config
 
 // Intended to be encapsulated within a Client or Server specific Resource!
-pub struct CommandManager {
-    keys_state: KeysState,
+pub struct IncomingCommands {
+    w: IncomingCommandStream,
+    s: IncomingCommandStream,
+    a: IncomingCommandStream,
+    d: IncomingCommandStream,
 }
 
-impl CommandManager {
+impl IncomingCommands {
     pub fn new() -> Self {
         Self {
-            keys_state: KeysState::new(),
+            w: IncomingCommandStream::new(Key::W),
+            s: IncomingCommandStream::new(Key::S),
+            a: IncomingCommandStream::new(Key::A),
+            d: IncomingCommandStream::new(Key::D),
         }
     }
 
-    pub fn recv_command(&mut self, tick: Tick, key_command_opt: Option<KeyCommand>) {
-        self.keys_state.recv_command(tick, key_command_opt);
-    }
-
-    pub fn take_commands(&mut self, tick: Tick) -> Vec<KeyEvent> {
-        self.keys_state.take_commands(tick)
-    }
-}
-
-// KeysState
-struct KeysState {
-    w: KeyState,
-    s: KeyState,
-    a: KeyState,
-    d: KeyState,
-}
-
-impl KeysState {
-    fn new() -> Self {
-        Self {
-            w: KeyState::new(Key::W),
-            s: KeyState::new(Key::S),
-            a: KeyState::new(Key::A),
-            d: KeyState::new(Key::D),
-        }
-    }
-
-    fn recv_command(&mut self, tick: Tick, key_command_opt: Option<KeyCommand>) {
+    pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<KeyCommand>) {
         if let Some(key_command) = key_command_opt {
             if let Some(w) = key_command.w {
                 self.w.recv_stream(tick, w);
@@ -75,7 +56,7 @@ impl KeysState {
         }
     }
 
-    fn take_commands(&mut self, tick: Tick) -> Vec<KeyEvent> {
+    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<KeyEvent> {
 
         let mut output = Vec::new();
 
@@ -88,16 +69,16 @@ impl KeysState {
     }
 }
 
-// KeyState
+// IncomingCommandStream
 
-struct KeyState {
+struct IncomingCommandStream {
     key: Key,
     current_tick_opt: Option<Tick>,
     // VecDeque<(pressed, duration (ms), is_finished)>))
     durations: VecDeque<(bool, u16, bool)>,
 }
 
-impl KeyState {
+impl IncomingCommandStream {
     fn new(key: Key) -> Self {
         Self {
             key,
@@ -228,8 +209,11 @@ impl KeyState {
 
 // KeyEvent
 pub enum KeyEvent {
+    // key, duration
     Pressed(Key, u16),
+    // key, duration
     Held(Key, u16),
+    // key
     Released(Key),
 }
 
@@ -241,7 +225,7 @@ mod tests {
 
         let key_stream = KeyStream::new(true);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
 
         assert_eq!(key_state.durations.len(), 1);
@@ -253,7 +237,7 @@ mod tests {
 
         let key_stream = KeyStream::new(false);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
 
         assert_eq!(key_state.durations.len(), 1);
@@ -266,7 +250,7 @@ mod tests {
         let mut key_stream = KeyStream::new(true);
         key_stream.add_duration(28);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
 
         assert_eq!(key_state.durations.len(), 2);
@@ -276,7 +260,7 @@ mod tests {
     #[test]
     fn test_4() {
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_none(0);
 
         assert_eq!(key_state.durations.len(), 1);
@@ -289,7 +273,7 @@ mod tests {
         let mut key_stream = KeyStream::new(true);
         key_stream.add_duration(28);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
         key_state.recv_none(1);
 
@@ -303,7 +287,7 @@ mod tests {
         let mut key_stream = KeyStream::new(true);
         key_stream.add_duration(28);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_none(0);
         key_state.recv_stream(1, key_stream);
 
@@ -318,7 +302,7 @@ mod tests {
         let mut key_stream = KeyStream::new(false);
         key_stream.add_duration(28);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_none(0);
         key_state.recv_stream(1, key_stream);
 
@@ -333,7 +317,7 @@ mod tests {
         let mut key_stream = KeyStream::new(false);
         key_stream.add_duration(28);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
         key_state.recv_none(1);
 
@@ -349,7 +333,7 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
         key_state.recv_none(1);
 
@@ -365,7 +349,7 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_none(0);
         key_state.recv_stream(1, key_stream);
 
@@ -381,7 +365,7 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_none(0);
         key_state.recv_stream(1, key_stream);
 
@@ -397,7 +381,7 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut key_state = KeyState::new(Key::A);
+        let mut key_state = IncomingCommandStream::new(Key::A);
         key_state.recv_stream(0, key_stream);
         key_state.recv_none(1);
 

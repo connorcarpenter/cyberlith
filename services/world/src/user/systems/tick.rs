@@ -5,9 +5,9 @@ use bevy_ecs::{
     entity::Entity,
     event::EventReader,
     prelude::{Query, Resource, World},
-    system::{SystemState, Res},
+    system::{SystemState, ResMut},
 };
-use bevy_ecs::system::ResMut;
+
 use naia_bevy_server::{events::TickEvent, Server, UserKey};
 
 use logging::info;
@@ -67,14 +67,14 @@ pub fn tick_events(world: &mut World) {
 
             // receive & process command messages
             let mut messages = server.receive_tick_buffer_messages(server_tick);
-            for (user_key, command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
+            for (user_key, incoming_command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
 
                 users_without_command.remove(&user_key);
 
                 let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
                     continue;
                 };
-                command_manager.recv_command(*server_tick, Some(command));
+                command_manager.recv_incoming_command(*server_tick, Some(incoming_command));
             }
 
             // process null commands
@@ -82,7 +82,7 @@ pub fn tick_events(world: &mut World) {
                 let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
                     continue;
                 };
-                command_manager.recv_command(*server_tick, None);
+                command_manager.recv_incoming_command(*server_tick, None);
             }
 
             // process command events
@@ -96,8 +96,8 @@ pub fn tick_events(world: &mut World) {
                 };
 
                 let command_manager = user_manager.get_user_command_manager_mut(&user_key).unwrap();
-                let commands = command_manager.take_commands(*server_tick);
-                shared_behavior::process_commands(&mut tile_movement, commands, false);
+                let incoming_commands = command_manager.pop_incoming_commands(*server_tick);
+                shared_behavior::process_incoming_commands(&mut tile_movement, incoming_commands, false);
             }
 
             // All game logic should happen here, on a tick event

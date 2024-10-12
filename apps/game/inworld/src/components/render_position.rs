@@ -3,7 +3,6 @@ use std::collections::VecDeque;
 use bevy_ecs::component::Component;
 
 use game_engine::{
-    logging::info,
     naia::{sequence_less_than, GameInstant, Tick},
     time::Instant,
     world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},

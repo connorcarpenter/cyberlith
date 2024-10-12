@@ -9,9 +9,8 @@ use logging::{info, warn};
 use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
-    messages::CommandReadState,
+    resources::KeyEvent,
 };
-use crate::resources::KeyEvent;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -70,35 +69,17 @@ impl TileMovement {
         let to_x = state.to_tile_x;
         let to_y = state.to_tile_y;
 
-        let dis_x = to_x - from_x;
-        let dis_y = to_y - from_y;
+        let dis_x = (to_x - from_x).min(1).max(-1);
+        let dis_y = (to_y - from_y).min(1).max(-1);
 
-        if dis_x == 0 && dis_y == -1 {
-            return Some(0.0 + 90.0);
-        }
-        if dis_x == 1 && dis_y == -1 {
-            return Some(45.0 + 90.0);
-        }
-        if dis_x == 1 && dis_y == 0 {
-            return Some(90.0 + 90.0);
-        }
-        if dis_x == 1 && dis_y == 1 {
-            return Some(135.0 + 90.0);
-        }
-        if dis_x == 0 && dis_y == 1 {
-            return Some(180.0 + 90.0);
-        }
-        if dis_x == -1 && dis_y == 1 {
-            return Some(225.0 + 90.0);
-        }
-        if dis_x == -1 && dis_y == 0 {
-            return Some(270.0 + 90.0);
-        }
-        if dis_x == -1 && dis_y == -1 {
-            return Some(315.0 + 90.0);
+        if dis_x == 0 && dis_y == 0 {
+            return None;
         }
 
-        None
+        let angle_radians = (dis_y as f32).atan2(dis_x as f32);
+        let angle_degrees = angle_radians.to_degrees();
+        let angle_degrees = (angle_degrees + 90.0) % 360.0;
+        Some(angle_degrees)
     }
 
     // on the client, called by predicted entities

@@ -10,13 +10,12 @@ use game_engine::{
 
 use crate::{
     components::{Confirmed, Predicted, RenderPosition},
-    resources::{Global, CommandManager, InputManager},
+    resources::{Global, InputManager},
 };
 
 pub fn client_tick_events(
     mut client: WorldClient,
     global: Res<Global>,
-    mut command_manager: ResMut<CommandManager>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
     mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Predicted>>,
@@ -40,23 +39,23 @@ pub fn client_tick_events(
             position_q.get_mut(predicted_entity).unwrap();
 
         // process commands
-        if let Some(command) = input_manager.take_command(client_instant) {
+        if let Some(outgoing_command) = input_manager.pop_outgoing_command(client_instant) {
 
             // command.log(client_tick);
 
             // save to command history
-            input_manager.save_to_command_history(client_tick, &command);
+            input_manager.save_to_command_history(client_tick, &outgoing_command);
 
             // send command
-            client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &command);
+            client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &outgoing_command);
 
-            command_manager.recv_command(client_tick, Some(command));
+            input_manager.recv_incoming_command(client_tick, Some(outgoing_command));
         } else {
-            command_manager.recv_command(client_tick, None);
+            input_manager.recv_incoming_command(client_tick, None);
         }
 
-        let commands = command_manager.take_commands(client_tick);
-        shared_behavior::process_commands(&mut client_tile_movement, commands, true);
+        let incoming_commands = input_manager.pop_incoming_commands(client_tick);
+        shared_behavior::process_incoming_commands(&mut client_tile_movement, incoming_commands, true);
 
         // process tick
         process_tick(

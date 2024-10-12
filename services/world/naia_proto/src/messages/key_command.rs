@@ -20,15 +20,6 @@ impl KeyCommand {
         }
     }
 
-    pub fn get_read_state(&self) -> CommandReadState {
-        CommandReadState::new(
-            self.w.is_some(),
-            self.s.is_some(),
-            self.a.is_some(),
-            self.d.is_some(),
-        )
-    }
-
     pub fn log(&self, tick: Tick) {
         info!("Processing KeyCommand for Tick({:?})", tick);
         if let Some(w) = &self.w {
@@ -92,26 +83,6 @@ impl KeyStream {
             info!("'{}' pressed for remainder of tick", key);
         } else {
             info!("'{}' released  for remainder of tick", key);
-        }
-    }
-}
-
-//
-
-pub struct CommandReadState {
-    pub w: bool,
-    pub s: bool,
-    pub a: bool,
-    pub d: bool,
-}
-
-impl CommandReadState {
-    pub fn new(w: bool, s: bool, a: bool, d: bool) -> Self {
-        Self {
-            w,
-            s,
-            a,
-            d,
         }
     }
 }

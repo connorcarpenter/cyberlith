@@ -1,7 +1,8 @@
-use auth_server_types::UserId;
 use bevy_ecs::entity::Entity;
+
+use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::resources::CommandManager;
+use world_server_naia_proto::resources::IncomingCommands;
 
 pub struct UserData {
     session_server_addr: String,
@@ -9,7 +10,7 @@ pub struct UserData {
     user_id: UserId,
     lobby_id: LobbyId,
     user_entity_opt: Option<Entity>,
-    command_manager: CommandManager,
+    command_manager: IncomingCommands,
 }
 
 impl UserData {
@@ -25,7 +26,7 @@ impl UserData {
             user_id,
             lobby_id,
             user_entity_opt: None,
-            command_manager: CommandManager::new(),
+            command_manager: IncomingCommands::new(),
         }
     }
 
@@ -52,7 +53,7 @@ impl UserData {
         self.user_entity_opt = Some(*user_entity);
     }
 
-    pub(crate) fn get_command_manager_mut(&mut self) -> &mut CommandManager {
+    pub(crate) fn get_command_manager_mut(&mut self) -> &mut IncomingCommands {
         &mut self.command_manager
     }
 }
