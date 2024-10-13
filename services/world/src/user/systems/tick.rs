@@ -71,18 +71,12 @@ pub fn tick_events(world: &mut World) {
 
                 users_without_command.remove(&user_key);
 
-                let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
-                    continue;
-                };
-                command_manager.recv_incoming_command(*server_tick, Some(incoming_command));
+                user_manager.recv_incoming_command(&user_key, *server_tick, Some(incoming_command));
             }
 
             // process null commands
             for user_key in users_without_command {
-                let Some(command_manager) = user_manager.get_user_command_manager_mut(&user_key) else {
-                    continue;
-                };
-                command_manager.recv_incoming_command(*server_tick, None);
+                user_manager.recv_incoming_command(&user_key, *server_tick, None);
             }
 
             // process command events
@@ -94,10 +88,10 @@ pub fn tick_events(world: &mut World) {
                 let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(entity) else {
                     continue;
                 };
-
-                let command_manager = user_manager.get_user_command_manager_mut(&user_key).unwrap();
-                let incoming_commands = command_manager.pop_incoming_commands(*server_tick);
-                shared_behavior::process_incoming_commands(&mut tile_movement, incoming_commands, false);
+                let Some(command_events) = user_manager.pop_incoming_command_events(&user_key, *server_tick) else {
+                    continue;
+                };
+                shared_behavior::process_incoming_commands(&mut tile_movement, command_events, false);
             }
 
             // All game logic should happen here, on a tick event
@@ -106,19 +100,12 @@ pub fn tick_events(world: &mut World) {
             for (entity, mut tile_movement) in tile_movement_q.iter_mut() {
                 shared_behavior::process_movement(&mut tile_movement);
 
-                // {
-                //     // log for testing
-                //     let current_pos = tile_movement.current_position();
-                //     info!("Tick: {:?}, Pos: {:?}", server_tick, current_pos);
-                // }
-
                 // send updates
                 let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
                     panic!("NextTilePosition not found for entity: {:?}", entity);
                 };
 
-                tile_movement
-                    .send_updated_next_tile_position(*server_tick, &mut next_tile_position);
+                tile_movement.send_updated_next_tile_position(*server_tick, &mut next_tile_position);
             }
         }
     }

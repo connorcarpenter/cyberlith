@@ -41,7 +41,7 @@ impl IncomingCommands {
         }
     }
 
-    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
+    pub fn pop_incoming_command_events(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
 
         let mut output = Vec::new();
 

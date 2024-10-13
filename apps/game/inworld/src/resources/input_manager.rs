@@ -83,6 +83,6 @@ impl InputManager {
     }
 
     pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
-        self.incoming_commands.pop_incoming_commands(tick)
+        self.incoming_commands.pop_incoming_command_events(tick)
     }
 }

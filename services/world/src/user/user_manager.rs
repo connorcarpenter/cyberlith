@@ -2,11 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{system::Resource, entity::Entity};
 
-use naia_bevy_server::UserKey;
+use naia_bevy_server::{Tick, UserKey};
 
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::resources::IncomingCommands;
+use world_server_naia_proto::messages::PlayerCommands;
+use world_server_naia_proto::resources::{IncomingCommands, PlayerCommandEvent};
 
 use crate::user::{user_data::UserData, user_login_token_store::UserLoginTokenStore};
 
@@ -100,8 +101,18 @@ impl UserManager {
         self.users.keys().cloned().collect()
     }
 
-    pub(crate) fn get_user_command_manager_mut(&mut self, user_key: &UserKey) -> Option<&mut IncomingCommands> {
-        let user_data = self.users.get_mut(user_key)?;
-        Some(user_data.get_command_manager_mut())
+    pub(crate) fn recv_incoming_command(&mut self, user_key: &UserKey, tick: Tick, player_commands_opt: Option<PlayerCommands>) {
+        let Some(user_data) = self.users.get_mut(user_key) else {
+            return;
+        };
+        user_data.get_command_manager_mut().recv_incoming_command(tick, player_commands_opt);
+    }
+
+    pub(crate) fn pop_incoming_command_events(&mut self, user_key: &UserKey, tick: Tick) -> Option<Vec<PlayerCommandEvent>> {
+        let Some(user_data) = self.users.get_mut(user_key) else {
+            return None;
+        };
+        let events = user_data.get_command_manager_mut().pop_incoming_command_events(tick);
+        Some(events)
     }
 }
