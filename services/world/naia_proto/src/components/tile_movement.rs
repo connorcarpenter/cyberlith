@@ -101,7 +101,7 @@ impl TileMovement {
         for key_event in key_events {
 
             match key_event {
-                PlayerCommandEvent::Pressed(key, duration) => {
+                PlayerCommandEvent::Pressed(key, duration) | PlayerCommandEvent::Held(key, duration) => {
                     if duration > 150 {
                         // hold
                         match key {
@@ -109,7 +109,6 @@ impl TileMovement {
                             PlayerCommand::Backward => s = 2,
                             PlayerCommand::Left => a = 2,
                             PlayerCommand::Right => d = 2,
-                            _ => {}
                         }
                     } else {
                         // tap
@@ -118,28 +117,6 @@ impl TileMovement {
                             PlayerCommand::Backward => if s == 0 { s = 1},
                             PlayerCommand::Left => if a == 0 { a = 1},
                             PlayerCommand::Right => if d == 0 { d = 1},
-                            _ => {}
-                        }
-                    }
-                }
-                PlayerCommandEvent::Held(key, duration) => {
-                    if duration > 150 {
-                        // hold
-                        match key {
-                            PlayerCommand::Forward => w = 2,
-                            PlayerCommand::Backward => s = 2,
-                            PlayerCommand::Left => a = 2,
-                            PlayerCommand::Right => d = 2,
-                            _ => {}
-                        }
-                    } else {
-                        // tap
-                        match key {
-                            PlayerCommand::Forward => if w == 0 { w = 1},
-                            PlayerCommand::Backward => if s == 0 { s = 1},
-                            PlayerCommand::Left => if a == 0 { a = 1},
-                            PlayerCommand::Right => if d == 0 { d = 1},
-                            _ => {}
                         }
                     }
                 }

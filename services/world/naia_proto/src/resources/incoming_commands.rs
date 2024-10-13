@@ -158,7 +158,7 @@ impl IncomingCommandStream {
 
     pub(crate) fn pop_commands(&mut self, command: &PlayerCommand, tick: Tick, output: &mut Vec<PlayerCommandEvent>) {
         if self.current_tick_opt != Some(tick) {
-            panic!("take_commands called with incorrect tick!");
+            panic!("pop_commands called with incorrect tick! current_tick_opt: {:?}, tick: {:?}", self.current_tick_opt, tick);
         }
 
         let mut last_pressed = false;

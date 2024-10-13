@@ -149,14 +149,8 @@ pub fn update_next_tile_position_events(
         );
     };
 
-    // info!("---");
     let old_server_tick = client.server_tick().unwrap();
-    // info!("old server tick: {:?}", old_server_tick);
-    // info!("updated server tick: {:?}", server_tick);
-
     let client_tick = client.client_tick().unwrap();
-    // info!("current client tick: {:?}", client_tick);
-
     let mut current_tick = server_tick;
 
     // ROLLBACK SERVER
@@ -165,7 +159,6 @@ pub fn update_next_tile_position_events(
         while sequence_greater_than(old_server_tick, current_tick)
             || old_server_tick == current_tick
         {
-            // info!("rollback::server: tick({:?})", current_tick);
             process_tick(
                 true,
                 true,
@@ -185,68 +178,39 @@ pub fn update_next_tile_position_events(
 
     // PREDICTION ROLLBACK
 
-    // info!("0. rollback::start", current_tick);
+    let mut replay_commands = input_manager.pop_command_replays(current_tick);
 
-    // TODO: why is it necessary to subtract 1 Tick here?
-    // it's not like this in the Macroquad demo
-    let replay_commands = input_manager.pop_command_replays(current_tick);
-
-    for (command_tick, outgoing_command) in replay_commands {
-        while sequence_greater_than(command_tick, current_tick) {
-            // process command (none)
-            input_manager.recv_incoming_command(current_tick, None);
-            let incoming_commands = input_manager.pop_incoming_commands(current_tick);
-            shared_behavior::process_incoming_commands(&mut client_tile_movement, incoming_commands, true);
-
-            // process movement
-            // info!("1. rollback::movement: tick({:?})", current_tick);
-            process_tick(
-                false,
-                true,
-                current_tick,
-                &mut client_tile_movement,
-                &mut client_render_position,
-            );
-
+    // fill in gaps in history
+    let mut seq_replay_commands = Vec::new();
+    for (tick, command) in replay_commands {
+        while sequence_greater_than(tick, current_tick) {
+            seq_replay_commands.push((current_tick, None));
             current_tick = current_tick.wrapping_add(1);
         }
-
-        // process command
-        // info!("2. rollback::command: tick({:?})", command_tick);
-        input_manager.recv_incoming_command(current_tick, Some(outgoing_command.clone()));
-        let incoming_commands = input_manager.pop_incoming_commands(current_tick);
-        shared_behavior::process_incoming_commands(&mut client_tile_movement, incoming_commands, true);
-
-        // process movement
-        // info!("3. rollback::movement: tick({:?})", command_tick);
-        process_tick(
-            false,
-            true,
-            current_tick,
-            &mut client_tile_movement,
-            &mut client_render_position,
-        );
-
+        seq_replay_commands.push((tick, Some(command)));
+        current_tick = current_tick.wrapping_add(1);
+    }
+    while sequence_greater_than(client_tick, current_tick) {
+        seq_replay_commands.push((current_tick, None));
         current_tick = current_tick.wrapping_add(1);
     }
 
-    while sequence_greater_than(client_tick, current_tick) {
-        // process command (none)
-        input_manager.recv_incoming_command(current_tick, None);
-        let incoming_commands = input_manager.pop_incoming_commands(current_tick);
+    // process commands
+    for (command_tick, outgoing_command_opt) in seq_replay_commands {
+
+        // process command
+        input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
+        let incoming_commands = input_manager.pop_incoming_commands(command_tick);
         shared_behavior::process_incoming_commands(&mut client_tile_movement, incoming_commands, true);
 
         // process movement
-        // info!("4. rollback::movement: tick({:?})", current_tick);
         process_tick(
             false,
             true,
-            current_tick,
+            command_tick,
             &mut client_tile_movement,
             &mut client_render_position,
         );
-
-        current_tick = current_tick.wrapping_add(1);
     }
 
     client_render_position.advance_millis(&client, 0);
