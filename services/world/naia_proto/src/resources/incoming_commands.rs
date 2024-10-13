@@ -2,8 +2,6 @@ use std::collections::{HashMap, VecDeque};
 
 use naia_bevy_shared::Tick;
 
-use input::Key;
-
 use crate::messages::{PlayerCommands, PlayerCommandStream, PlayerCommand};
 
 const TICK_DURATION_MS: u16 = 40; // TODO: move to config
@@ -146,8 +144,8 @@ impl IncomingCommandStream {
                     panic!("obviously not finished!");
                 }
 
-                if u16::MAX_VALUE - *back_duration < TICK_DURATION_MS {
-                    *back_duration = u16::MAX_VALUE;
+                if u16::MAX - *back_duration < TICK_DURATION_MS {
+                    *back_duration = u16::MAX;
                 } else {
                     *back_duration = *back_duration + TICK_DURATION_MS;
                 }
