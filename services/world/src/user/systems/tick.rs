@@ -16,7 +16,7 @@ use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
     components::{NextTilePosition, TileMovement},
-    messages::KeyCommand,
+    messages::PlayerCommands,
 };
 
 use crate::{user::UserManager, asset::AssetManager};
@@ -67,7 +67,7 @@ pub fn tick_events(world: &mut World) {
 
             // receive & process command messages
             let mut messages = server.receive_tick_buffer_messages(server_tick);
-            for (user_key, incoming_command) in messages.read::<PlayerCommandChannel, KeyCommand>() {
+            for (user_key, incoming_command) in messages.read::<PlayerCommandChannel, PlayerCommands>() {
 
                 users_without_command.remove(&user_key);
 

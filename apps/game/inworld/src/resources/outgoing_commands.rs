@@ -1,53 +1,48 @@
-use game_engine::{world::messages::{KeyCommand, KeyStream}, naia::GameInstant, logging::warn, input::{Input, Key}};
+use std::collections::HashMap;
+
+use game_engine::{world::messages::{PlayerCommand, PlayerCommands, PlayerCommandStream}, naia::GameInstant, logging::warn, input::{Input, Key}};
 
 // Outgoing Commands
 pub struct OutgoingCommands {
-    w: OutgoingCommandStream,
-    s: OutgoingCommandStream,
-    a: OutgoingCommandStream,
-    d: OutgoingCommandStream,
+    map: HashMap<PlayerCommand, (Key, OutgoingCommandStream)>,
 }
 
 impl OutgoingCommands {
     pub fn new(now: GameInstant) -> Self {
+
+        let mut map = HashMap::new();
+        map.insert(PlayerCommand::Forward, (Key::W, OutgoingCommandStream::new(now)));
+        map.insert(PlayerCommand::Backward, (Key::S, OutgoingCommandStream::new(now)));
+        map.insert(PlayerCommand::Left, (Key::A, OutgoingCommandStream::new(now)));
+        map.insert(PlayerCommand::Right, (Key::D, OutgoingCommandStream::new(now)));
+
         Self {
-            w: OutgoingCommandStream::new(now),
-            s: OutgoingCommandStream::new(now),
-            a: OutgoingCommandStream::new(now),
-            d: OutgoingCommandStream::new(now),
+            map,
         }
     }
 
     fn is_empty(&self) -> bool {
-        self.w.is_empty() && self.s.is_empty() && self.a.is_empty() && self.d.is_empty()
+        self.map.values().all(|(_, stream)| stream.is_empty())
     }
 
     pub fn recv_key_input(&mut self, client_instant: GameInstant, input: &Input) {
-        self.w.recv_input(client_instant, input.is_pressed(Key::W));
-        self.s.recv_input(client_instant, input.is_pressed(Key::S));
-        self.a.recv_input(client_instant, input.is_pressed(Key::A));
-        self.d.recv_input(client_instant, input.is_pressed(Key::D));
+        for (_command, (key, stream)) in self.map.iter_mut() {
+            stream.recv_input(client_instant, input.is_pressed(*key));
+        }
     }
 
-    pub fn pop_outgoing_command(&mut self, client_instant: GameInstant) -> Option<KeyCommand> {
+    pub fn pop_outgoing_command(&mut self, client_instant: GameInstant) -> Option<PlayerCommands> {
 
         if self.is_empty() {
             self.flush_all(client_instant);
             return None;
         }
 
-        let mut output = KeyCommand::new();
-        if !self.w.is_empty() {
-            output.w = Some(self.w.to_key_stream());
-        }
-        if !self.s.is_empty() {
-            output.s = Some(self.s.to_key_stream());
-        }
-        if !self.a.is_empty() {
-            output.a = Some(self.a.to_key_stream());
-        }
-        if !self.d.is_empty() {
-            output.d = Some(self.d.to_key_stream());
+        let mut output = PlayerCommands::new();
+        for (command, (_key, stream)) in self.map.iter_mut() {
+            if !stream.is_empty() {
+                output.set(*command, stream.to_key_stream());
+            }
         }
 
         self.flush_all(client_instant);
@@ -56,10 +51,9 @@ impl OutgoingCommands {
     }
 
     fn flush_all(&mut self, client_instant: GameInstant) {
-        self.w.flush(client_instant);
-        self.s.flush(client_instant);
-        self.a.flush(client_instant);
-        self.d.flush(client_instant);
+        for (_command, (_key, stream)) in self.map.iter_mut() {
+            stream.flush(client_instant);
+        }
     }
 }
 
@@ -106,8 +100,8 @@ impl OutgoingCommandStream {
         }
     }
 
-    fn to_key_stream(&mut self) -> KeyStream {
-        let mut output = KeyStream::new(self.start_pressed);
+    fn to_key_stream(&mut self) -> PlayerCommandStream {
+        let mut output = PlayerCommandStream::new(self.start_pressed);
         for duration in &self.durations {
             output.add_duration(*duration);
         }

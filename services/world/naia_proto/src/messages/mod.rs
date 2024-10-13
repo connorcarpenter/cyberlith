@@ -1,10 +1,10 @@
 mod auth;
 mod entity_assignment;
-mod key_command;
+mod player_command;
 
 pub use auth::Auth;
 pub use entity_assignment::EntityAssignment;
-pub use key_command::{KeyCommand, KeyStream};
+pub use player_command::{PlayerCommands, PlayerCommand, PlayerCommandStream};
 
 use naia_bevy_shared::{Protocol, ProtocolPlugin};
 
@@ -18,6 +18,6 @@ impl ProtocolPlugin for MessagesPlugin {
         protocol
             .add_message::<Auth>()
             .add_message::<EntityAssignment>()
-            .add_message::<KeyCommand>();
+            .add_message::<PlayerCommands>();
     }
 }

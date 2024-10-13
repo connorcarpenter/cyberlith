@@ -10,6 +10,7 @@ use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
     resources::KeyEvent,
+    messages::PlayerCommand,
 };
 
 #[derive(Component)]
@@ -104,19 +105,19 @@ impl TileMovement {
                     if duration > 150 {
                         // hold
                         match key {
-                            Key::W => w = 2,
-                            Key::S => s = 2,
-                            Key::A => a = 2,
-                            Key::D => d = 2,
+                            PlayerCommand::Forward => w = 2,
+                            PlayerCommand::Backward => s = 2,
+                            PlayerCommand::Left => a = 2,
+                            PlayerCommand::Right => d = 2,
                             _ => {}
                         }
                     } else {
                         // tap
                         match key {
-                            Key::W => if w == 0 { w = 1},
-                            Key::S => if s == 0 { s = 1},
-                            Key::A => if a == 0 { a = 1},
-                            Key::D => if d == 0 { d = 1},
+                            PlayerCommand::Forward => if w == 0 { w = 1},
+                            PlayerCommand::Backward => if s == 0 { s = 1},
+                            PlayerCommand::Left => if a == 0 { a = 1},
+                            PlayerCommand::Right => if d == 0 { d = 1},
                             _ => {}
                         }
                     }
@@ -125,19 +126,19 @@ impl TileMovement {
                     if duration > 150 {
                         // hold
                         match key {
-                            Key::W => w = 2,
-                            Key::S => s = 2,
-                            Key::A => a = 2,
-                            Key::D => d = 2,
+                            PlayerCommand::Forward => w = 2,
+                            PlayerCommand::Backward => s = 2,
+                            PlayerCommand::Left => a = 2,
+                            PlayerCommand::Right => d = 2,
                             _ => {}
                         }
                     } else {
                         // tap
                         match key {
-                            Key::W => if w == 0 { w = 1},
-                            Key::S => if s == 0 { s = 1},
-                            Key::A => if a == 0 { a = 1},
-                            Key::D => if d == 0 { d = 1},
+                            PlayerCommand::Forward => if w == 0 { w = 1},
+                            PlayerCommand::Backward => if s == 0 { s = 1},
+                            PlayerCommand::Left => if a == 0 { a = 1},
+                            PlayerCommand::Right => if d == 0 { d = 1},
                             _ => {}
                         }
                     }

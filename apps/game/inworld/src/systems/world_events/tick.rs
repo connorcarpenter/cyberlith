@@ -4,7 +4,7 @@ use game_engine::{
     naia::Tick,
     world::{
         behavior as shared_behavior, channels::PlayerCommandChannel, components::TileMovement,
-        messages::KeyCommand, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
+        messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
 
@@ -47,7 +47,7 @@ pub fn client_tick_events(
             input_manager.save_to_command_history(client_tick, &outgoing_command);
 
             // send command
-            client.send_tick_buffer_message::<PlayerCommandChannel, KeyCommand>(&client_tick, &outgoing_command);
+            client.send_tick_buffer_message::<PlayerCommandChannel, PlayerCommands>(&client_tick, &outgoing_command);
 
             input_manager.recv_incoming_command(client_tick, Some(outgoing_command));
         } else {

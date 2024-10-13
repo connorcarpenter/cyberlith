@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::{system::{Res, ResMut}, prelude::Resource};
 
-use game_engine::{input::{Input}, naia::{GameInstant, CommandHistory, Tick}, world::{resources::{IncomingCommands, KeyEvent}, messages::{KeyCommand}, WorldClient}};
+use game_engine::{input::{Input}, naia::{GameInstant, CommandHistory, Tick}, world::{resources::{IncomingCommands, KeyEvent}, messages::{PlayerCommands}, WorldClient}};
 
 use crate::resources::{Global, OutgoingCommands};
 
@@ -13,7 +13,7 @@ pub struct InputManager {
     incoming_commands: IncomingCommands,
     outgoing_commands_opt: Option<OutgoingCommands>,
 
-    command_history: CommandHistory<KeyCommand>,
+    command_history: CommandHistory<PlayerCommands>,
 }
 
 impl Default for InputManager {
@@ -51,11 +51,11 @@ impl InputManager {
         outgoing_commands.recv_key_input(client_instant, &input);
     }
 
-    pub fn pop_outgoing_command(&mut self, client_instant: GameInstant) -> Option<KeyCommand> {
+    pub fn pop_outgoing_command(&mut self, client_instant: GameInstant) -> Option<PlayerCommands> {
         self.outgoing_commands_opt.as_mut()?.pop_outgoing_command(client_instant)
     }
 
-    pub fn save_to_command_history(&mut self, client_tick: Tick, command: &KeyCommand) {
+    pub fn save_to_command_history(&mut self, client_tick: Tick, command: &PlayerCommands) {
         {
             if !self.command_history.can_insert(&client_tick) {
                 // History is full, should this be possible??
@@ -70,7 +70,7 @@ impl InputManager {
         }
     }
 
-    pub fn pop_command_replays(&mut self, server_tick: Tick) -> Vec<(Tick, KeyCommand)> {
+    pub fn pop_command_replays(&mut self, server_tick: Tick) -> Vec<(Tick, PlayerCommands)> {
 
         // TODO: fix this?
         let modified_server_tick = server_tick.wrapping_sub(1);
@@ -78,7 +78,7 @@ impl InputManager {
         self.command_history.replays(&modified_server_tick)
     }
 
-    pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<KeyCommand>) {
+    pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<PlayerCommands>) {
         self.incoming_commands.recv_incoming_command(tick, key_command_opt);
     }
 

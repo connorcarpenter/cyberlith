@@ -1,58 +1,45 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 use naia_bevy_shared::Tick;
 
 use input::Key;
 
-use crate::messages::{KeyCommand, KeyStream};
+use crate::messages::{PlayerCommands, PlayerCommandStream, PlayerCommand};
 
 const TICK_DURATION_MS: u16 = 40; // TODO: move to config
 
 // Intended to be encapsulated within a Client or Server specific Resource!
 pub struct IncomingCommands {
-    w: IncomingCommandStream,
-    s: IncomingCommandStream,
-    a: IncomingCommandStream,
-    d: IncomingCommandStream,
+    map: HashMap<PlayerCommand, IncomingCommandStream>,
 }
 
 impl IncomingCommands {
     pub fn new() -> Self {
+
+        let mut map = HashMap::new();
+        map.insert(PlayerCommand::Forward, IncomingCommandStream::new());
+        map.insert(PlayerCommand::Backward, IncomingCommandStream::new());
+        map.insert(PlayerCommand::Left, IncomingCommandStream::new());
+        map.insert(PlayerCommand::Right, IncomingCommandStream::new());
+
         Self {
-            w: IncomingCommandStream::new(Key::W),
-            s: IncomingCommandStream::new(Key::S),
-            a: IncomingCommandStream::new(Key::A),
-            d: IncomingCommandStream::new(Key::D),
+            map
         }
     }
 
-    pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<KeyCommand>) {
-        if let Some(key_command) = key_command_opt {
-            if let Some(w) = key_command.w {
-                self.w.recv_stream(tick, w);
-            } else {
-                self.w.recv_none(tick);
-            }
-            if let Some(s) = key_command.s {
-                self.s.recv_stream(tick, s);
-            } else {
-                self.s.recv_none(tick);
-            }
-            if let Some(a) = key_command.a {
-                self.a.recv_stream(tick, a);
-            } else {
-                self.a.recv_none(tick);
-            }
-            if let Some(d) = key_command.d {
-                self.d.recv_stream(tick, d);
-            } else {
-                self.d.recv_none(tick);
-            }
-        } else {
-            self.w.recv_none(tick);
-            self.s.recv_none(tick);
-            self.a.recv_none(tick);
-            self.d.recv_none(tick);
+    pub fn recv_incoming_command(&mut self, tick: Tick, player_commands_opt: Option<PlayerCommands>) {
+
+        for (command, stream) in self.map.iter_mut() {
+            let Some(player_commands) = player_commands_opt.as_ref() else {
+                stream.recv_none(tick);
+                continue;
+            };
+            let Some(command_stream) = player_commands.get(command) else {
+                stream.recv_none(tick);
+                continue;
+            };
+
+            stream.recv_stream(tick, command_stream);
         }
     }
 
@@ -60,10 +47,9 @@ impl IncomingCommands {
 
         let mut output = Vec::new();
 
-        self.w.pop_commands(tick, &mut output);
-        self.s.pop_commands(tick, &mut output);
-        self.a.pop_commands(tick, &mut output);
-        self.d.pop_commands(tick, &mut output);
+        for (command, stream) in self.map.iter_mut() {
+            stream.pop_commands(command, tick, &mut output);
+        }
 
         output
     }
@@ -72,22 +58,20 @@ impl IncomingCommands {
 // IncomingCommandStream
 
 struct IncomingCommandStream {
-    key: Key,
     current_tick_opt: Option<Tick>,
     // VecDeque<(pressed, duration (ms), is_finished)>))
     durations: VecDeque<(bool, u16, bool)>,
 }
 
 impl IncomingCommandStream {
-    fn new(key: Key) -> Self {
+    fn new() -> Self {
         Self {
-            key,
             current_tick_opt: None,
             durations: VecDeque::new()
         }
     }
 
-    fn recv_stream(&mut self, tick: Tick, key_stream: KeyStream) {
+    fn recv_stream(&mut self, tick: Tick, key_stream: &PlayerCommandStream) {
         self.current_tick_opt = Some(tick);
 
         let mut pressed = key_stream.start_pressed();
@@ -161,7 +145,12 @@ impl IncomingCommandStream {
                 if *back_finished {
                     panic!("obviously not finished!");
                 }
-                *back_duration += TICK_DURATION_MS;
+
+                if u16::MAX_VALUE - *back_duration < TICK_DURATION_MS {
+                    *back_duration = u16::MAX_VALUE;
+                } else {
+                    *back_duration = *back_duration + TICK_DURATION_MS;
+                }
                 return;
             }
         }
@@ -169,7 +158,7 @@ impl IncomingCommandStream {
         self.durations.push_back((false, TICK_DURATION_MS, false));
     }
 
-    pub(crate) fn pop_commands(&mut self, tick: Tick, output: &mut Vec<KeyEvent>) {
+    pub(crate) fn pop_commands(&mut self, command: &PlayerCommand, tick: Tick, output: &mut Vec<KeyEvent>) {
         if self.current_tick_opt != Some(tick) {
             panic!("take_commands called with incorrect tick!");
         }
@@ -183,10 +172,10 @@ impl IncomingCommandStream {
             }
 
             if pressed {
-                output.push(KeyEvent::Pressed(self.key, duration));
+                output.push(KeyEvent::Pressed(*command, duration));
                 last_pressed = true;
             } else {
-                output.push(KeyEvent::Released(self.key));
+                output.push(KeyEvent::Released(*command));
                 last_pressed = false;
             }
         }
@@ -197,10 +186,10 @@ impl IncomingCommandStream {
             }
 
             if *pressed {
-                output.push(KeyEvent::Held(self.key, *duration));
+                output.push(KeyEvent::Held(*command, *duration));
             } else {
                 if last_pressed {
-                    output.push(KeyEvent::Released(self.key));
+                    output.push(KeyEvent::Released(*command));
                 }
             }
         }
@@ -210,11 +199,11 @@ impl IncomingCommandStream {
 // KeyEvent
 pub enum KeyEvent {
     // key, duration
-    Pressed(Key, u16),
+    Pressed(PlayerCommand, u16),
     // key, duration
-    Held(Key, u16),
+    Held(PlayerCommand, u16),
     // key
-    Released(Key),
+    Released(PlayerCommand),
 }
 
 mod tests {
@@ -223,10 +212,10 @@ mod tests {
     #[test]
     fn test_1() {
 
-        let key_stream = KeyStream::new(true);
+        let key_stream = PlayerCommandStream::new(true);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 1);
         assert_eq!(command_stream.durations[0], (true, 40, false));
@@ -235,10 +224,10 @@ mod tests {
     #[test]
     fn test_2() {
 
-        let key_stream = KeyStream::new(false);
+        let key_stream = PlayerCommandStream::new(false);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 1);
         assert_eq!(command_stream.durations[0], (false, 40, false));
@@ -247,11 +236,11 @@ mod tests {
     #[test]
     fn test_3() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 2);
         assert_eq!(command_stream.durations, [(true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
@@ -260,7 +249,7 @@ mod tests {
     #[test]
     fn test_4() {
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
+        let mut command_stream = IncomingCommandStream::new();
         command_stream.recv_none(0);
 
         assert_eq!(command_stream.durations.len(), 1);
@@ -270,11 +259,11 @@ mod tests {
     #[test]
     fn test_5() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
         assert_eq!(command_stream.durations.len(), 2);
@@ -284,12 +273,12 @@ mod tests {
     #[test]
     fn test_6() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
+        let mut command_stream = IncomingCommandStream::new();
         command_stream.recv_none(0);
-        command_stream.recv_stream(1, key_stream);
+        command_stream.recv_stream(1, &key_stream);
 
 
         assert_eq!(command_stream.durations.len(), 3);
@@ -299,12 +288,12 @@ mod tests {
     #[test]
     fn test_7() {
 
-        let mut key_stream = KeyStream::new(false);
+        let mut key_stream = PlayerCommandStream::new(false);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
+        let mut command_stream = IncomingCommandStream::new();
         command_stream.recv_none(0);
-        command_stream.recv_stream(1, key_stream);
+        command_stream.recv_stream(1, &key_stream);
 
 
         assert_eq!(command_stream.durations.len(), 2);
@@ -314,11 +303,11 @@ mod tests {
     #[test]
     fn test_8() {
 
-        let mut key_stream = KeyStream::new(false);
+        let mut key_stream = PlayerCommandStream::new(false);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
         assert_eq!(command_stream.durations.len(), 3);
@@ -328,13 +317,13 @@ mod tests {
     #[test]
     fn test_9() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(21);
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
         assert_eq!(command_stream.durations.len(), 4);
@@ -344,14 +333,14 @@ mod tests {
     #[test]
     fn test_10() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(21);
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
+        let mut command_stream = IncomingCommandStream::new();
         command_stream.recv_none(0);
-        command_stream.recv_stream(1, key_stream);
+        command_stream.recv_stream(1, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 5);
         assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, true), (true, 21, true), (false, 13, true), (true, 5, true), (false, TICK_DURATION_MS - 21 - 13 - 5, false)]);
@@ -360,14 +349,14 @@ mod tests {
     #[test]
     fn test_11() {
 
-        let mut key_stream = KeyStream::new(false);
+        let mut key_stream = PlayerCommandStream::new(false);
         key_stream.add_duration(21);
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
+        let mut command_stream = IncomingCommandStream::new();
         command_stream.recv_none(0);
-        command_stream.recv_stream(1, key_stream);
+        command_stream.recv_stream(1, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 4);
         assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS + 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, false)]);
@@ -376,13 +365,13 @@ mod tests {
     #[test]
     fn test_12() {
 
-        let mut key_stream = KeyStream::new(false);
+        let mut key_stream = PlayerCommandStream::new(false);
         key_stream.add_duration(21);
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
         assert_eq!(command_stream.durations.len(), 5);
@@ -392,7 +381,7 @@ mod tests {
     #[test]
     fn test_13() {
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
+        let mut command_stream = IncomingCommandStream::new();
         command_stream.recv_none(0);
         command_stream.recv_none(1);
         command_stream.recv_none(2);
@@ -404,12 +393,12 @@ mod tests {
     #[test]
     fn test_14() {
 
-        let mut key_stream = KeyStream::new(false);
+        let mut key_stream = PlayerCommandStream::new(false);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream.clone());
-        command_stream.recv_stream(1, key_stream.clone());
-        command_stream.recv_stream(2, key_stream.clone());
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
+        command_stream.recv_stream(1, &key_stream);
+        command_stream.recv_stream(2, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 1);
         assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS * 3, false)]);
@@ -418,12 +407,12 @@ mod tests {
     #[test]
     fn test_15() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream.clone());
-        command_stream.recv_stream(1, key_stream.clone());
-        command_stream.recv_stream(2, key_stream.clone());
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
+        command_stream.recv_stream(1, &key_stream);
+        command_stream.recv_stream(2, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 1);
         assert_eq!(command_stream.durations, [(true, TICK_DURATION_MS * 3, false)]);
@@ -432,14 +421,14 @@ mod tests {
     #[test]
     fn test_16() {
 
-        let mut key_stream = KeyStream::new(true);
+        let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(21);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new(Key::A);
-        command_stream.recv_stream(0, key_stream.clone());
-        command_stream.recv_stream(1, key_stream.clone());
-        command_stream.recv_stream(2, key_stream);
+        let mut command_stream = IncomingCommandStream::new();
+        command_stream.recv_stream(0, &key_stream);
+        command_stream.recv_stream(1, &key_stream);
+        command_stream.recv_stream(2, &key_stream);
 
         assert_eq!(command_stream.durations.len(), 7);
         assert_eq!(command_stream.durations, [
