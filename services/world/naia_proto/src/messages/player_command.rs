@@ -6,8 +6,8 @@ use logging::{info, warn};
 
 #[derive(Serde, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum PlayerCommand {
-    Forward,
-    Backward,
+    Up,
+    Down,
     Left,
     Right,
 }
@@ -15,8 +15,8 @@ pub enum PlayerCommand {
 impl PlayerCommand {
     pub fn as_str(&self) -> &str {
         match self {
-            PlayerCommand::Forward => "Forward",
-            PlayerCommand::Backward => "Backward",
+            PlayerCommand::Up => "Forward",
+            PlayerCommand::Down => "Backward",
             PlayerCommand::Left => "Left",
             PlayerCommand::Right => "Right",
         }

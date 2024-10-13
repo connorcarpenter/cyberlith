@@ -7,7 +7,7 @@ use game_engine::{
         messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
-
+use game_engine::world::resources::ActionManager;
 use crate::{
     components::{Confirmed, Predicted, RenderPosition},
     resources::{Global, InputManager},
@@ -54,14 +54,12 @@ pub fn client_tick_events(
             input_manager.recv_incoming_command(client_tick, None);
         }
 
-        let incoming_commands = input_manager.pop_incoming_commands(client_tick);
-        shared_behavior::process_incoming_commands(&mut client_tile_movement, incoming_commands, true);
-
         // process tick
         process_tick(
             false,
             false,
             client_tick,
+            Some(input_manager.action_manager_mut()),
             &mut client_tile_movement,
             &mut client_render_position,
         );
@@ -72,10 +70,14 @@ pub fn process_tick(
     is_server: bool,
     is_rollback: bool,
     tick: Tick,
-    mut tile_movement: &mut TileMovement,
+    action_manager_opt: Option<&mut ActionManager>,
+    tile_movement: &mut TileMovement,
     render_position: &mut RenderPosition,
 ) {
-    shared_behavior::process_movement(&mut tile_movement);
+    if is_server && action_manager_opt.is_some() {
+        panic!("Server should not have an action manager");
+    }
+    shared_behavior::process_tick(action_manager_opt, tile_movement, tick);
 
     render_position.recv_position(
         is_server,
@@ -98,6 +100,7 @@ pub fn server_tick_events(
                 true,
                 false,
                 server_tick,
+                None,
                 &mut server_tile_movement,
                 &mut server_render_position,
             );

@@ -9,8 +9,7 @@ use logging::{info, warn};
 use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
-    resources::PlayerCommandEvent,
-    messages::PlayerCommand,
+    resources::ActionManager,
 };
 
 #[derive(Component)]
@@ -85,85 +84,21 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, key_events: Vec<PlayerCommandEvent>, prediction: bool) {
+    fn recv_command(&mut self, action_manager: &mut ActionManager, tick: Tick, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
 
-        let mut dx = 0;
-        let mut dy = 0;
-
-        let mut w = 0;
-        let mut s = 0;
-        let mut a = 0;
-        let mut d = 0;
-
-        for key_event in key_events {
-
-            match key_event {
-                PlayerCommandEvent::Pressed(key, duration) | PlayerCommandEvent::Held(key, duration) => {
-                    if duration > 150 {
-                        // hold
-                        match key {
-                            PlayerCommand::Forward => w = 2,
-                            PlayerCommand::Backward => s = 2,
-                            PlayerCommand::Left => a = 2,
-                            PlayerCommand::Right => d = 2,
-                        }
-                    } else {
-                        // tap
-                        match key {
-                            PlayerCommand::Forward => if w == 0 { w = 1},
-                            PlayerCommand::Backward => if s == 0 { s = 1},
-                            PlayerCommand::Left => if a == 0 { a = 1},
-                            PlayerCommand::Right => if d == 0 { d = 1},
-                        }
-                    }
-                }
-                PlayerCommandEvent::Released(key) => {
-
-                }
-            }
-        }
-
-        if w == 2 {
-            dy -= 1;
-        }
-        if s == 2 {
-            dy += 1;
-        }
-        if a == 2 {
-            dx -= 1;
-        }
-        if d == 2 {
-            dx += 1;
-        }
-
-        // diagonals
-        if dx != 0 && dy == 0 {
-            if w == 1 {
-                dy -= 1;
-            }
-            if s == 1 {
-                dy += 1;
-            }
-        }
-        if dy != 0 && dx == 0 {
-            if a == 1 {
-                dx -= 1;
-            }
-            if d == 1 {
-                dx += 1;
-            }
-        }
-
-        if dx == 0 && dy == 0 {
+        // important to take movement every tick.. whether or not movement is happening
+        let Some(direction) = action_manager.take_movement(tick) else {
             return;
-        }
+        };
 
         if self.state.is_moving() {
             return;
         }
+
+        let (dx, dy) = direction.to_delta();
 
         let TileMovementState::Stopped(state) = &self.state else {
             panic!("Expected Stopped state");
@@ -281,7 +216,15 @@ impl TileMovement {
     }
 
     // call on each tick
-    pub fn process_tick(&mut self) {
+    pub fn process_tick(
+        &mut self,
+        action_manager_opt: Option<&mut ActionManager>,
+        tick: Tick,
+    ) {
+        if let Some(action_manager) = action_manager_opt {
+            self.recv_command(action_manager, tick, self.is_predicted);
+        }
+
         let result = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
             TileMovementState::Moving(state) => state.process_tick(self.is_predicted),

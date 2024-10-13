@@ -79,26 +79,23 @@ pub fn tick_events(world: &mut World) {
                 user_manager.recv_incoming_command(&user_key, *server_tick, None);
             }
 
-            // process command events
-            for user_key in user_manager.user_keys() {
-
-                let Some(entity) = user_manager.get_user_entity(&user_key) else {
-                    continue;
-                };
-                let Ok((_, mut tile_movement)) = tile_movement_q.get_mut(entity) else {
-                    continue;
-                };
-                let Some(command_events) = user_manager.pop_incoming_command_events(&user_key, *server_tick) else {
-                    continue;
-                };
-                shared_behavior::process_incoming_commands(&mut tile_movement, command_events, false);
-            }
-
             // All game logic should happen here, on a tick event
 
             // process movement
             for (entity, mut tile_movement) in tile_movement_q.iter_mut() {
-                shared_behavior::process_movement(&mut tile_movement);
+
+                let Some(user_key) = user_manager.get_user_key_from_entity(&entity) else {
+                    continue;
+                };
+                let Some(action_manager) = user_manager.action_manager_mut(&user_key) else {
+                    continue;
+                };
+
+                shared_behavior::process_tick(
+                    Some(action_manager),
+                    &mut tile_movement,
+                    *server_tick
+                );
 
                 // send updates
                 let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {

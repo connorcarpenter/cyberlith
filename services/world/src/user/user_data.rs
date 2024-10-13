@@ -1,8 +1,10 @@
 use bevy_ecs::entity::Entity;
 
+use naia_bevy_server::Tick;
+
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::resources::IncomingCommands;
+use world_server_naia_proto::{resources::{IncomingCommands, ActionManager}, messages::PlayerCommands};
 
 pub struct UserData {
     session_server_addr: String,
@@ -10,7 +12,8 @@ pub struct UserData {
     user_id: UserId,
     lobby_id: LobbyId,
     user_entity_opt: Option<Entity>,
-    command_manager: IncomingCommands,
+    incoming_commands: IncomingCommands,
+    action_manager: ActionManager,
 }
 
 impl UserData {
@@ -26,7 +29,8 @@ impl UserData {
             user_id,
             lobby_id,
             user_entity_opt: None,
-            command_manager: IncomingCommands::new(),
+            incoming_commands: IncomingCommands::new(),
+            action_manager: ActionManager::new(),
         }
     }
 
@@ -53,7 +57,13 @@ impl UserData {
         self.user_entity_opt = Some(*user_entity);
     }
 
-    pub(crate) fn get_command_manager_mut(&mut self) -> &mut IncomingCommands {
-        &mut self.command_manager
+    pub(crate) fn recv_incoming_command(&mut self, tick: Tick, command: Option<PlayerCommands>) {
+        self.incoming_commands.recv_incoming_command(tick, command);
+        let command_events = self.incoming_commands.pop_incoming_command_events(tick);
+        self.action_manager.recv_command_events(tick, command_events);
+    }
+
+    pub(crate) fn action_manager_mut(&mut self) -> &mut ActionManager {
+        &mut self.action_manager
     }
 }

@@ -11,8 +11,8 @@ impl OutgoingCommands {
     pub fn new(now: GameInstant) -> Self {
 
         let mut map = HashMap::new();
-        map.insert(PlayerCommand::Forward, (Key::W, OutgoingCommandStream::new(now)));
-        map.insert(PlayerCommand::Backward, (Key::S, OutgoingCommandStream::new(now)));
+        map.insert(PlayerCommand::Up, (Key::W, OutgoingCommandStream::new(now)));
+        map.insert(PlayerCommand::Down, (Key::S, OutgoingCommandStream::new(now)));
         map.insert(PlayerCommand::Left, (Key::A, OutgoingCommandStream::new(now)));
         map.insert(PlayerCommand::Right, (Key::D, OutgoingCommandStream::new(now)));
 

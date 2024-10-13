@@ -15,8 +15,8 @@ impl IncomingCommands {
     pub fn new() -> Self {
 
         let mut map = HashMap::new();
-        map.insert(PlayerCommand::Forward, IncomingCommandStream::new());
-        map.insert(PlayerCommand::Backward, IncomingCommandStream::new());
+        map.insert(PlayerCommand::Up, IncomingCommandStream::new());
+        map.insert(PlayerCommand::Down, IncomingCommandStream::new());
         map.insert(PlayerCommand::Left, IncomingCommandStream::new());
         map.insert(PlayerCommand::Right, IncomingCommandStream::new());
 
@@ -116,7 +116,11 @@ impl IncomingCommandStream {
                     *back_finished = true;
 
                     if *back_pressed == pressed {
-                        *back_duration = *back_duration + duration_ms;
+                        if u16::MAX - *back_duration < duration_ms {
+                            *back_duration = u16::MAX;
+                        } else {
+                            *back_duration = *back_duration + duration_ms;
+                        }
                     } else {
                         self.durations.push_back((pressed, duration_ms, true));
                     }
@@ -173,7 +177,7 @@ impl IncomingCommandStream {
                 output.push(PlayerCommandEvent::Pressed(*command, duration));
                 last_pressed = true;
             } else {
-                output.push(PlayerCommandEvent::Released(*command));
+                output.push(PlayerCommandEvent::Released(*command, duration));
                 last_pressed = false;
             }
         }
@@ -187,7 +191,7 @@ impl IncomingCommandStream {
                 output.push(PlayerCommandEvent::Held(*command, *duration));
             } else {
                 if last_pressed {
-                    output.push(PlayerCommandEvent::Released(*command));
+                    output.push(PlayerCommandEvent::Released(*command, *duration));
                 }
             }
         }
@@ -200,8 +204,8 @@ pub enum PlayerCommandEvent {
     Pressed(PlayerCommand, u16),
     // key, duration (ms)
     Held(PlayerCommand, u16),
-    // key
-    Released(PlayerCommand),
+    // key, duration (ms)
+    Released(PlayerCommand, u16),
 }
 
 mod tests {

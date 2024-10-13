@@ -6,8 +6,7 @@ use naia_bevy_server::{Tick, UserKey};
 
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::messages::PlayerCommands;
-use world_server_naia_proto::resources::{IncomingCommands, PlayerCommandEvent};
+use world_server_naia_proto::{resources::{ActionManager}, messages::PlayerCommands};
 
 use crate::user::{user_data::UserData, user_login_token_store::UserLoginTokenStore};
 
@@ -77,11 +76,6 @@ impl UserManager {
         self.users.clear();
     }
 
-    pub(crate) fn get_user_entity(&self, user_key: &UserKey) -> Option<Entity> {
-        let user_data = self.users.get(user_key)?;
-        user_data.user_entity()
-    }
-
     pub(crate) fn set_user_entity(&mut self, user_key: &UserKey, user_entity: &Entity) {
         let user_data = self.users.get_mut(user_key).unwrap();
         user_data.set_user_entity(user_entity);
@@ -93,11 +87,11 @@ impl UserManager {
             .insert(*user_entity, user_key.clone());
     }
 
-    pub(crate) fn user_key_set(&self) -> HashSet<UserKey> {
-        self.users.keys().cloned().collect()
+    pub(crate) fn get_user_key_from_entity(&self, user_entity: &Entity) -> Option<UserKey> {
+        self.user_entity_to_key.get(user_entity).cloned()
     }
 
-    pub(crate) fn user_keys(&self) -> Vec<UserKey> {
+    pub(crate) fn user_key_set(&self) -> HashSet<UserKey> {
         self.users.keys().cloned().collect()
     }
 
@@ -105,14 +99,13 @@ impl UserManager {
         let Some(user_data) = self.users.get_mut(user_key) else {
             return;
         };
-        user_data.get_command_manager_mut().recv_incoming_command(tick, player_commands_opt);
+        user_data.recv_incoming_command(tick, player_commands_opt);
     }
 
-    pub(crate) fn pop_incoming_command_events(&mut self, user_key: &UserKey, tick: Tick) -> Option<Vec<PlayerCommandEvent>> {
+    pub(crate) fn action_manager_mut(&mut self, user_key: &UserKey) -> Option<&mut ActionManager> {
         let Some(user_data) = self.users.get_mut(user_key) else {
             return None;
         };
-        let events = user_data.get_command_manager_mut().pop_incoming_command_events(tick);
-        Some(events)
+        Some(user_data.action_manager_mut())
     }
 }

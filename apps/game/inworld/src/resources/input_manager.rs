@@ -2,27 +2,26 @@ use std::default::Default;
 
 use bevy_ecs::{system::{Res, ResMut}, prelude::Resource};
 
-use game_engine::{input::{Input}, naia::{GameInstant, CommandHistory, Tick}, world::{resources::{IncomingCommands, PlayerCommandEvent}, messages::{PlayerCommands}, WorldClient}};
+use game_engine::{input::{Input}, naia::{GameInstant, CommandHistory, Tick}, world::{resources::{ActionManager, IncomingCommands}, messages::{PlayerCommands}, WorldClient}};
 
 use crate::resources::{Global, OutgoingCommands};
 
 #[derive(Resource)]
 pub struct InputManager {
-    current_tick_opt: Option<Tick>,
-
     incoming_commands: IncomingCommands,
     outgoing_commands_opt: Option<OutgoingCommands>,
 
     command_history: CommandHistory<PlayerCommands>,
+    action_manager: ActionManager,
 }
 
 impl Default for InputManager {
     fn default() -> Self {
         Self {
-            current_tick_opt: None,
             incoming_commands: IncomingCommands::new(),
             outgoing_commands_opt: None,
             command_history: CommandHistory::default(),
+            action_manager: ActionManager::new(),
         }
     }
 }
@@ -80,9 +79,11 @@ impl InputManager {
 
     pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<PlayerCommands>) {
         self.incoming_commands.recv_incoming_command(tick, key_command_opt);
+        let player_command_events = self.incoming_commands.pop_incoming_command_events(tick);
+        self.action_manager.recv_command_events(tick, player_command_events);
     }
 
-    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
-        self.incoming_commands.pop_incoming_command_events(tick)
+    pub fn action_manager_mut(&mut self) -> &mut ActionManager {
+        &mut self.action_manager
     }
 }

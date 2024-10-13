@@ -163,6 +163,7 @@ pub fn update_next_tile_position_events(
                 true,
                 true,
                 current_tick,
+                None,
                 &mut server_tile_movement,
                 &mut server_render_position,
             );
@@ -175,10 +176,11 @@ pub fn update_next_tile_position_events(
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
     client_render_position.recv_rollback(&server_render_position);
+    input_manager.action_manager_mut().recv_rollback(); // note that this RESETS action_manager completely, idk if we can reset to a specific tick
 
     // PREDICTION ROLLBACK
 
-    let mut replay_commands = input_manager.pop_command_replays(current_tick);
+    let replay_commands = input_manager.pop_command_replays(current_tick);
 
     // fill in gaps in history
     let mut seq_replay_commands = Vec::new();
@@ -200,14 +202,13 @@ pub fn update_next_tile_position_events(
 
         // process command
         input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
-        let incoming_commands = input_manager.pop_incoming_commands(command_tick);
-        shared_behavior::process_incoming_commands(&mut client_tile_movement, incoming_commands, true);
 
         // process movement
         process_tick(
             false,
             true,
             command_tick,
+            Some(input_manager.action_manager_mut()),
             &mut client_tile_movement,
             &mut client_render_position,
         );
