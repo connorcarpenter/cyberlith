@@ -1,9 +1,9 @@
-use crate::{components::TileMovement, resources::KeyEvent};
+use crate::{components::TileMovement, resources::PlayerCommandEvent};
 
 pub fn process_incoming_commands(
     tile_movement: &mut TileMovement,
-    key_commands: Vec<KeyEvent>,
+    player_command_events: Vec<PlayerCommandEvent>,
     prediction: bool,
 ) {
-    tile_movement.recv_command(key_commands, prediction);
+    tile_movement.recv_command(player_command_events, prediction);
 }

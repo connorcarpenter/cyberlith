@@ -9,7 +9,7 @@ use logging::{info, warn};
 use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
-    resources::KeyEvent,
+    resources::PlayerCommandEvent,
     messages::PlayerCommand,
 };
 
@@ -85,7 +85,7 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    pub fn recv_command(&mut self, key_events: Vec<KeyEvent>, prediction: bool) {
+    pub fn recv_command(&mut self, key_events: Vec<PlayerCommandEvent>, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
@@ -101,7 +101,7 @@ impl TileMovement {
         for key_event in key_events {
 
             match key_event {
-                KeyEvent::Pressed(key, duration) => {
+                PlayerCommandEvent::Pressed(key, duration) => {
                     if duration > 150 {
                         // hold
                         match key {
@@ -122,7 +122,7 @@ impl TileMovement {
                         }
                     }
                 }
-                KeyEvent::Held(key, duration) => {
+                PlayerCommandEvent::Held(key, duration) => {
                     if duration > 150 {
                         // hold
                         match key {
@@ -143,7 +143,7 @@ impl TileMovement {
                         }
                     }
                 }
-                KeyEvent::Released(key) => {
+                PlayerCommandEvent::Released(key) => {
 
                 }
             }

@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::{system::{Res, ResMut}, prelude::Resource};
 
-use game_engine::{input::{Input}, naia::{GameInstant, CommandHistory, Tick}, world::{resources::{IncomingCommands, KeyEvent}, messages::{PlayerCommands}, WorldClient}};
+use game_engine::{input::{Input}, naia::{GameInstant, CommandHistory, Tick}, world::{resources::{IncomingCommands, PlayerCommandEvent}, messages::{PlayerCommands}, WorldClient}};
 
 use crate::resources::{Global, OutgoingCommands};
 
@@ -82,7 +82,7 @@ impl InputManager {
         self.incoming_commands.recv_incoming_command(tick, key_command_opt);
     }
 
-    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<KeyEvent> {
+    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
         self.incoming_commands.pop_incoming_commands(tick)
     }
 }

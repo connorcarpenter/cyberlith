@@ -41,7 +41,7 @@ impl IncomingCommands {
         }
     }
 
-    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<KeyEvent> {
+    pub fn pop_incoming_commands(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
 
         let mut output = Vec::new();
 
@@ -156,7 +156,7 @@ impl IncomingCommandStream {
         self.durations.push_back((false, TICK_DURATION_MS, false));
     }
 
-    pub(crate) fn pop_commands(&mut self, command: &PlayerCommand, tick: Tick, output: &mut Vec<KeyEvent>) {
+    pub(crate) fn pop_commands(&mut self, command: &PlayerCommand, tick: Tick, output: &mut Vec<PlayerCommandEvent>) {
         if self.current_tick_opt != Some(tick) {
             panic!("take_commands called with incorrect tick!");
         }
@@ -170,10 +170,10 @@ impl IncomingCommandStream {
             }
 
             if pressed {
-                output.push(KeyEvent::Pressed(*command, duration));
+                output.push(PlayerCommandEvent::Pressed(*command, duration));
                 last_pressed = true;
             } else {
-                output.push(KeyEvent::Released(*command));
+                output.push(PlayerCommandEvent::Released(*command));
                 last_pressed = false;
             }
         }
@@ -184,10 +184,10 @@ impl IncomingCommandStream {
             }
 
             if *pressed {
-                output.push(KeyEvent::Held(*command, *duration));
+                output.push(PlayerCommandEvent::Held(*command, *duration));
             } else {
                 if last_pressed {
-                    output.push(KeyEvent::Released(*command));
+                    output.push(PlayerCommandEvent::Released(*command));
                 }
             }
         }
@@ -195,10 +195,10 @@ impl IncomingCommandStream {
 }
 
 // KeyEvent
-pub enum KeyEvent {
-    // key, duration
+pub enum PlayerCommandEvent {
+    // key, duration (ms)
     Pressed(PlayerCommand, u16),
-    // key, duration
+    // key, duration (ms)
     Held(PlayerCommand, u16),
     // key
     Released(PlayerCommand),
