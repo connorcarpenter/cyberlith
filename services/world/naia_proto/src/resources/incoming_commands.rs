@@ -2,6 +2,8 @@ use std::collections::{HashMap, VecDeque};
 
 use naia_bevy_shared::Tick;
 
+use logging::info;
+
 use crate::messages::{PlayerCommands, PlayerCommandStream, PlayerCommand};
 
 const TICK_DURATION_MS: u16 = 40; // TODO: move to config
@@ -15,10 +17,10 @@ impl IncomingCommands {
     pub fn new() -> Self {
 
         let mut map = HashMap::new();
-        map.insert(PlayerCommand::Up, IncomingCommandStream::new());
-        map.insert(PlayerCommand::Down, IncomingCommandStream::new());
-        map.insert(PlayerCommand::Left, IncomingCommandStream::new());
-        map.insert(PlayerCommand::Right, IncomingCommandStream::new());
+        map.insert(PlayerCommand::Up, IncomingCommandStream::new(PlayerCommand::Up));
+        map.insert(PlayerCommand::Down, IncomingCommandStream::new(PlayerCommand::Down));
+        map.insert(PlayerCommand::Left, IncomingCommandStream::new(PlayerCommand::Left));
+        map.insert(PlayerCommand::Right, IncomingCommandStream::new(PlayerCommand::Right));
 
         Self {
             map
@@ -26,6 +28,8 @@ impl IncomingCommands {
     }
 
     pub fn recv_incoming_command(&mut self, tick: Tick, player_commands_opt: Option<PlayerCommands>) {
+
+        info!("PlayerCommands -> IncomingCommands for Tick({:?})", tick);
 
         for (command, stream) in self.map.iter_mut() {
             let Some(player_commands) = player_commands_opt.as_ref() else {
@@ -43,10 +47,13 @@ impl IncomingCommands {
 
     pub fn pop_incoming_command_events(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
 
+        info!("IncomingCommands -> PlayerCommandEvents for Tick({:?})", tick);
+
         let mut output = Vec::new();
 
-        for (command, stream) in self.map.iter_mut() {
-            stream.pop_commands(command, tick, &mut output);
+        for (_command, stream) in self.map.iter_mut() {
+            let commands = stream.pop_commands(tick);
+            output.extend(commands);
         }
 
         output
@@ -56,156 +63,82 @@ impl IncomingCommands {
 // IncomingCommandStream
 
 struct IncomingCommandStream {
-    current_tick_opt: Option<Tick>,
-    // VecDeque<(pressed, duration (ms), is_finished)>))
-    durations: VecDeque<(bool, u16, bool)>,
+    command: PlayerCommand,
+
+    // front is the oldest
+    // back is the newest
+    // (pressed, duration_milliseconds)
+    durations: VecDeque<(Tick, Vec<(bool, u8)>)>,
 }
 
 impl IncomingCommandStream {
-    fn new() -> Self {
+    fn new(command: PlayerCommand) -> Self {
         Self {
-            current_tick_opt: None,
+            command,
             durations: VecDeque::new()
         }
     }
 
     fn recv_stream(&mut self, tick: Tick, key_stream: &PlayerCommandStream) {
-        self.current_tick_opt = Some(tick);
 
         let mut pressed = key_stream.start_pressed();
-        let durations = key_stream.durations();
-        let mut remaining_duration = TICK_DURATION_MS;
+        let incoming_durations = key_stream.durations();
+        let mut remaining_duration = TICK_DURATION_MS as u8;
+        let mut outgoing_durations = Vec::new();
 
-        if durations.is_empty() {
-
-            if let Some((back_pressed, back_duration, back_finished)) = self.durations.back_mut() {
-                if *back_pressed == pressed {
-                    *back_duration = *back_duration + remaining_duration;
-                    if *back_finished {
-                        panic!("obviously not finished!");
-                    }
-                } else {
-
-                    if *back_finished {
-                        panic!("obviously not finished!");
-                    }
-                    *back_finished = true;
-                    self.durations.push_back((pressed, remaining_duration, false));
-                }
+        for duration in incoming_durations {
+            let duration = duration.get() as u8;
+            if duration > remaining_duration {
+                panic!("duration > remaining_duration!");
             } else {
-                self.durations.push_back((pressed, remaining_duration, false));
-            }
-
-        } else {
-            for (index, duration) in durations.iter().enumerate() {
-
-                let duration_ms: u16 = duration.to();
-
-                if duration_ms <= remaining_duration {
-                    remaining_duration -= duration_ms;
-                } else {
-                    remaining_duration = 0;
-                }
-
-                if index == 0 && !self.durations.is_empty() {
-                    let (back_pressed, back_duration, back_finished) = self.durations.back_mut().unwrap();
-
-                    if *back_finished {
-                        panic!("obviously not finished!");
-                    }
-                    *back_finished = true;
-
-                    if *back_pressed == pressed {
-                        if u16::MAX - *back_duration < duration_ms {
-                            *back_duration = u16::MAX;
-                        } else {
-                            *back_duration = *back_duration + duration_ms;
-                        }
-                    } else {
-                        self.durations.push_back((pressed, duration_ms, true));
-                    }
-
-                    pressed = !pressed;
-                    continue;
-                }
-
-                self.durations.push_back((pressed, duration_ms, true));
+                outgoing_durations.push((pressed, duration));
                 pressed = !pressed;
+                remaining_duration -= duration;
             }
-
-            self.durations.push_back((pressed, remaining_duration, false));
         }
+
+        if remaining_duration > 0 {
+            outgoing_durations.push((pressed, remaining_duration));
+        }
+
+        self.durations.push_back((tick, outgoing_durations));
     }
 
     fn recv_none(&mut self, tick: Tick) {
-        self.current_tick_opt = Some(tick);
-
-        if let Some((back_pressed, back_duration, back_finished)) = self.durations.back_mut() {
-            if *back_pressed {
-                *back_finished = true;
-            } else {
-                if *back_finished {
-                    panic!("obviously not finished!");
-                }
-
-                if u16::MAX - *back_duration < TICK_DURATION_MS {
-                    *back_duration = u16::MAX;
-                } else {
-                    *back_duration = *back_duration + TICK_DURATION_MS;
-                }
-                return;
-            }
-        }
-
-        self.durations.push_back((false, TICK_DURATION_MS, false));
+        let outgoing_durations = vec![(false, TICK_DURATION_MS as u8)];
+        self.durations.push_back((tick, outgoing_durations));
     }
 
-    pub(crate) fn pop_commands(&mut self, command: &PlayerCommand, tick: Tick, output: &mut Vec<PlayerCommandEvent>) {
-        if self.current_tick_opt != Some(tick) {
-            panic!("pop_commands called with incorrect tick! current_tick_opt: {:?}, tick: {:?}", self.current_tick_opt, tick);
+    pub(crate) fn pop_commands(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
+
+        let mut output = Vec::new();
+
+        let Some((front_tick, front_durations)) = self.durations.pop_front() else {
+            panic!("IncomingCommandStream::pop_commands called with a Tick({:?}) that doesn't match any Tick in the history.", tick);
+        };
+        if front_tick != tick {
+            panic!("IncomingCommandStream::pop_commands called with a Tick({:?}) that doesn't match the FrontTick({:?}.", tick, front_tick);
         }
 
-        let mut last_pressed = false;
-
-        while self.durations.len() > 1 { // leave the last one for the next tick
-            let (pressed, duration, finished) = self.durations.pop_front().unwrap();
-            if !finished {
-                panic!("obviously not finished!");
-            }
-
+        for (pressed, duration) in front_durations {
             if pressed {
-                output.push(PlayerCommandEvent::Pressed(*command, duration));
-                last_pressed = true;
+                output.push(PlayerCommandEvent::Pressed(self.command, duration));
             } else {
-                output.push(PlayerCommandEvent::Released(*command, duration));
-                last_pressed = false;
+                output.push(PlayerCommandEvent::Released(self.command, duration));
             }
         }
 
-        if let Some((pressed, duration, finished)) = self.durations.front() {
-            if *finished {
-                panic!("last one should not be finished!");
-            }
-
-            if *pressed {
-                output.push(PlayerCommandEvent::Held(*command, *duration));
-            } else {
-                if last_pressed {
-                    output.push(PlayerCommandEvent::Released(*command, *duration));
-                }
-            }
-        }
+        output
     }
 }
 
 // KeyEvent
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum PlayerCommandEvent {
     // key, duration (ms)
-    Pressed(PlayerCommand, u16),
+    Pressed(PlayerCommand, u8),
     // key, duration (ms)
-    Held(PlayerCommand, u16),
-    // key, duration (ms)
-    Released(PlayerCommand, u16),
+    Released(PlayerCommand, u8),
 }
 
 mod tests {
@@ -216,11 +149,13 @@ mod tests {
 
         let key_stream = PlayerCommandStream::new(true);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
 
-        assert_eq!(command_stream.durations.len(), 1);
-        assert_eq!(command_stream.durations[0], (true, 40, false));
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
@@ -228,11 +163,13 @@ mod tests {
 
         let key_stream = PlayerCommandStream::new(false);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
+        
+        let command_events = command_stream.pop_commands(0);
 
-        assert_eq!(command_stream.durations.len(), 1);
-        assert_eq!(command_stream.durations[0], (false, 40, false));
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
@@ -241,21 +178,26 @@ mod tests {
         let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
+        
+        let command_events = command_stream.pop_commands(0);
 
-        assert_eq!(command_stream.durations.len(), 2);
-        assert_eq!(command_stream.durations, [(true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
+        assert_eq!(command_events.len(), 2);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 28));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8 - 28));
     }
 
     #[test]
     fn test_4() {
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_none(0);
 
-        assert_eq!(command_stream.durations.len(), 1);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
@@ -264,12 +206,20 @@ mod tests {
         let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
-        assert_eq!(command_stream.durations.len(), 2);
-        assert_eq!(command_stream.durations, [(true, 28, true), (false, (TICK_DURATION_MS + TICK_DURATION_MS - 28), false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 2);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 28));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8 - 28));
+
+        let command_events = command_stream.pop_commands(1);
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
     }
 
     #[test]
@@ -278,13 +228,20 @@ mod tests {
         let mut key_stream = PlayerCommandStream::new(true);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_none(0);
         command_stream.recv_stream(1, &key_stream);
 
+        let command_events = command_stream.pop_commands(0);
 
-        assert_eq!(command_stream.durations.len(), 3);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, true), (true, 28, true), (false, TICK_DURATION_MS - 28, false)]);
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 2);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 28));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8 - 28));
     }
 
     #[test]
@@ -293,13 +250,20 @@ mod tests {
         let mut key_stream = PlayerCommandStream::new(false);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_none(0);
         command_stream.recv_stream(1, &key_stream);
 
+        let command_events = command_stream.pop_commands(0);
 
-        assert_eq!(command_stream.durations.len(), 2);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS + 28, true), (true, TICK_DURATION_MS - 28, false)]);
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 2);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, 28));
+        assert_eq!(command_events[1], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8 - 28));
     }
 
     #[test]
@@ -308,12 +272,20 @@ mod tests {
         let mut key_stream = PlayerCommandStream::new(false);
         key_stream.add_duration(28);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
-        assert_eq!(command_stream.durations.len(), 3);
-        assert_eq!(command_stream.durations, [(false, 28, true), (true, TICK_DURATION_MS - 28, true), (false, TICK_DURATION_MS, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 2);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, 28));
+        assert_eq!(command_events[1], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8 - 28));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
@@ -324,12 +296,22 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
-        assert_eq!(command_stream.durations.len(), 4);
-        assert_eq!(command_stream.durations, [(true, 21, true), (false, 13, true), (true, 5, true), (false, (TICK_DURATION_MS + TICK_DURATION_MS - 21 - 13 - 5), false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 4);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, 13));
+        assert_eq!(command_events[2], PlayerCommandEvent::Pressed(PlayerCommand::Up, 5));
+        assert_eq!(command_events[3], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8 - 21 - 13 - 5));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
@@ -340,12 +322,22 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_none(0);
         command_stream.recv_stream(1, &key_stream);
 
-        assert_eq!(command_stream.durations.len(), 5);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS, true), (true, 21, true), (false, 13, true), (true, 5, true), (false, TICK_DURATION_MS - 21 - 13 - 5, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 4);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, 13));
+        assert_eq!(command_events[2], PlayerCommandEvent::Pressed(PlayerCommand::Up, 5));
+        assert_eq!(command_events[3], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8 - 21 - 13 - 5));
     }
 
     #[test]
@@ -356,12 +348,22 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_none(0);
         command_stream.recv_stream(1, &key_stream);
 
-        assert_eq!(command_stream.durations.len(), 4);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS + 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 4);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Pressed(PlayerCommand::Up, 13));
+        assert_eq!(command_events[2], PlayerCommandEvent::Released(PlayerCommand::Up, 5));
+        assert_eq!(command_events[3], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8 - 21 - 13 - 5));
     }
 
     #[test]
@@ -372,52 +374,98 @@ mod tests {
         key_stream.add_duration(13);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_none(1);
 
-        assert_eq!(command_stream.durations.len(), 5);
-        assert_eq!(command_stream.durations, [(false, 21, true), (true, 13, true), (false, 5, true), (true, TICK_DURATION_MS - 21 - 13 - 5, true), (false, TICK_DURATION_MS, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 4);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Pressed(PlayerCommand::Up, 13));
+        assert_eq!(command_events[2], PlayerCommandEvent::Released(PlayerCommand::Up, 5));
+        assert_eq!(command_events[3], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8 - 21 - 13 - 5));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
     fn test_13() {
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_none(0);
         command_stream.recv_none(1);
         command_stream.recv_none(2);
 
-        assert_eq!(command_stream.durations.len(), 1);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS * 3, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(2);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
     fn test_14() {
 
-        let mut key_stream = PlayerCommandStream::new(false);
+        let key_stream = PlayerCommandStream::new(false);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_stream(1, &key_stream);
         command_stream.recv_stream(2, &key_stream);
 
-        assert_eq!(command_stream.durations.len(), 1);
-        assert_eq!(command_stream.durations, [(false, TICK_DURATION_MS * 3, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(2);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Released(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
     fn test_15() {
 
-        let mut key_stream = PlayerCommandStream::new(true);
+        let key_stream = PlayerCommandStream::new(true);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_stream(1, &key_stream);
         command_stream.recv_stream(2, &key_stream);
 
-        assert_eq!(command_stream.durations.len(), 1);
-        assert_eq!(command_stream.durations, [(true, TICK_DURATION_MS * 3, false)]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8));
+
+        let command_events = command_stream.pop_commands(2);
+
+        assert_eq!(command_events.len(), 1);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8));
     }
 
     #[test]
@@ -427,20 +475,29 @@ mod tests {
         key_stream.add_duration(21);
         key_stream.add_duration(5);
 
-        let mut command_stream = IncomingCommandStream::new();
+        let mut command_stream = IncomingCommandStream::new(PlayerCommand::Up);
         command_stream.recv_stream(0, &key_stream);
         command_stream.recv_stream(1, &key_stream);
         command_stream.recv_stream(2, &key_stream);
 
-        assert_eq!(command_stream.durations.len(), 7);
-        assert_eq!(command_stream.durations, [
-            (true, 21, true),
-            (false, 5, true),
-            (true, TICK_DURATION_MS - 21 - 5 + 21, true),
-            (false, 5, true),
-            (true, TICK_DURATION_MS - 21 - 5 + 21, true),
-            (false, 5, true),
-            (true, TICK_DURATION_MS - 21 - 5, false)
-        ]);
+        let command_events = command_stream.pop_commands(0);
+
+        assert_eq!(command_events.len(), 3);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, 5));
+        assert_eq!(command_events[2], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8 - 21 - 5));
+
+        let command_events = command_stream.pop_commands(1);
+
+        assert_eq!(command_events.len(), 3);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, 5));
+        assert_eq!(command_events[2], PlayerCommandEvent::Pressed(PlayerCommand::Up, TICK_DURATION_MS as u8 - 21 - 5));
+
+        let command_events = command_stream.pop_commands(2);
+
+        assert_eq!(command_events.len(), 3);
+        assert_eq!(command_events[0], PlayerCommandEvent::Pressed(PlayerCommand::Up, 21));
+        assert_eq!(command_events[1], PlayerCommandEvent::Released(PlayerCommand::Up, 5));
     }
 }

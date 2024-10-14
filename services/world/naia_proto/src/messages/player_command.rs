@@ -4,7 +4,7 @@ use naia_bevy_shared::{Message, Serde, Tick, UnsignedInteger};
 
 use logging::{info, warn};
 
-#[derive(Serde, Clone, PartialEq, Eq, Hash, Copy)]
+#[derive(Serde, Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub enum PlayerCommand {
     Up,
     Down,

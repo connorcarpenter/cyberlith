@@ -43,14 +43,13 @@ pub fn client_tick_events(
 
             // command.log(client_tick);
 
-            // save to command history
-            input_manager.save_to_command_history(client_tick, &outgoing_command);
-
             // send command
             client.send_tick_buffer_message::<PlayerCommandChannel, PlayerCommands>(&client_tick, &outgoing_command);
 
+            input_manager.save_to_command_history(client_tick, Some(outgoing_command.clone()));
             input_manager.recv_incoming_command(client_tick, Some(outgoing_command));
         } else {
+            input_manager.save_to_command_history(client_tick, None);
             input_manager.recv_incoming_command(client_tick, None);
         }
 

@@ -11,7 +11,7 @@ pub struct InputManager {
     incoming_commands: IncomingCommands,
     outgoing_commands_opt: Option<OutgoingCommands>,
 
-    command_history: CommandHistory<PlayerCommands>,
+    command_history: CommandHistory<Option<PlayerCommands>>,
     action_manager: ActionManager,
 }
 
@@ -54,22 +54,26 @@ impl InputManager {
         self.outgoing_commands_opt.as_mut()?.pop_outgoing_command(client_instant)
     }
 
-    pub fn save_to_command_history(&mut self, client_tick: Tick, command: &PlayerCommands) {
+    pub fn save_to_command_history(&mut self, client_tick: Tick, command_opt: Option<PlayerCommands>) {
         {
             if !self.command_history.can_insert(&client_tick) {
+
+                let most_recent_command_tick = self.command_history.most_recent_tick().unwrap();
+
                 // History is full, should this be possible??
                 panic!(
-                    "Command History is full, cannot insert command for tick: {:?}",
-                    client_tick
+                    "Command History is full, cannot insert command for tick: {:?}, (most recent tick is {:?})",
+                    client_tick,
+                    most_recent_command_tick,
                 );
             }
 
             // Record command
-            self.command_history.insert(client_tick, command.clone());
+            self.command_history.insert(client_tick, command_opt.clone());
         }
     }
 
-    pub fn pop_command_replays(&mut self, server_tick: Tick) -> Vec<(Tick, PlayerCommands)> {
+    pub fn pop_command_replays(&mut self, server_tick: Tick) -> Vec<(Tick, Option<PlayerCommands>)> {
 
         // TODO: fix this?
         let modified_server_tick = server_tick.wrapping_sub(1);

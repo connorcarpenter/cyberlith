@@ -19,6 +19,7 @@ use game_engine::{
         WorldUpdateComponentEvent,
     },
 };
+use game_engine::logging::warn;
 
 use crate::{
     components::{AnimationState, Confirmed, RenderPosition},
@@ -139,6 +140,8 @@ pub fn update_next_tile_position_events(
         return;
     };
 
+    info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
+
     let Ok(
         [(mut server_tile_movement, mut server_render_position), (mut client_tile_movement, mut client_render_position)],
     ) = tile_movement_q.get_many_mut([server_entity, client_entity])
@@ -150,10 +153,9 @@ pub fn update_next_tile_position_events(
     };
 
     let old_server_tick = client.server_tick().unwrap();
-    let client_tick = client.client_tick().unwrap();
     let mut current_tick = server_tick;
 
-    // ROLLBACK SERVER
+    // ROLL FORWARD SERVER
 
     {
         while sequence_greater_than(old_server_tick, current_tick)
@@ -171,34 +173,22 @@ pub fn update_next_tile_position_events(
         }
     }
 
+    info!("Updated Server Tick to {:?}", current_tick);
+
     // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
     client_render_position.recv_rollback(&server_render_position);
-    input_manager.action_manager_mut().recv_rollback(); // note that this RESETS action_manager completely, idk if we can reset to a specific tick
+    input_manager.action_manager_mut().recv_rollback(current_tick);
 
     // PREDICTION ROLLBACK
 
     let replay_commands = input_manager.pop_command_replays(current_tick);
 
-    // fill in gaps in history
-    let mut seq_replay_commands = Vec::new();
-    for (tick, command) in replay_commands {
-        while sequence_greater_than(tick, current_tick) {
-            seq_replay_commands.push((current_tick, None));
-            current_tick = current_tick.wrapping_add(1);
-        }
-        seq_replay_commands.push((tick, Some(command)));
-        current_tick = current_tick.wrapping_add(1);
-    }
-    while sequence_greater_than(client_tick, current_tick) {
-        seq_replay_commands.push((current_tick, None));
-        current_tick = current_tick.wrapping_add(1);
-    }
-
     // process commands
-    for (command_tick, outgoing_command_opt) in seq_replay_commands {
+    warn!("ROLLBACK!");
+    for (command_tick, outgoing_command_opt) in replay_commands {
 
         // process command
         input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
@@ -213,6 +203,7 @@ pub fn update_next_tile_position_events(
             &mut client_render_position,
         );
     }
+    warn!("---");
 
     client_render_position.advance_millis(&client, 0);
 }

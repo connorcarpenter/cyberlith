@@ -89,14 +89,18 @@ impl TileMovement {
             panic!("Only predicted entities can receive commands");
         }
 
-        // important to take movement every tick.. whether or not movement is happening
+        if self.state.is_moving() {
+            return;
+        }
+
         let Some(direction) = action_manager.take_movement(tick) else {
             return;
         };
 
-        if self.state.is_moving() {
-            return;
-        }
+        info!(
+            "Recv Command. Tick: {:?}, Direction: {:?}",
+            tick, direction
+        );
 
         let (dx, dy) = direction.to_delta();
 
