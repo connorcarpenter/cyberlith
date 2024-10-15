@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use game_engine::{world::messages::{PlayerCommand, PlayerCommands, PlayerCommandStream}, naia::GameInstant, logging::warn, input::{Input, Key}};
+use game_engine::logging::info;
 
 // Outgoing Commands
 pub struct OutgoingCommands {
@@ -26,8 +27,8 @@ impl OutgoingCommands {
     }
 
     pub fn recv_key_input(&mut self, client_instant: GameInstant, input: &Input) {
-        for (_command, (key, stream)) in self.map.iter_mut() {
-            stream.recv_input(client_instant, input.is_pressed(*key));
+        for (command, (key, stream)) in self.map.iter_mut() {
+            stream.recv_input(command, client_instant, input.is_pressed(*key));
         }
     }
 
@@ -84,11 +85,17 @@ impl OutgoingCommandStream {
         self.start_pressed.is_none() && self.durations.is_empty()
     }
 
-    fn recv_input(&mut self, client_instant: GameInstant, pressed: bool) {
+    fn recv_input(&mut self, command: &PlayerCommand, client_instant: GameInstant, pressed: bool) {
         if self.pressed != pressed {
-            self.pressed = pressed;
 
             let mut duration = self.last_toggle.offset_from(&client_instant);
+            if duration == 0 {
+                return;
+            }
+
+            self.pressed = pressed;
+
+            info!("command: {:?}, pressed: {:?}, duration: {}", command, pressed, duration);
 
             self.last_toggle = client_instant;
 
@@ -96,9 +103,8 @@ impl OutgoingCommandStream {
                 warn!("Attempted to add duration > 63ms! ({}ms)", duration);
                 duration = 63;
             }
+
             self.durations.push(duration as u8);
-
-
         }
     }
 
@@ -115,8 +121,14 @@ impl OutgoingCommandStream {
         if self.pressed {
             let duration_ms = self.last_toggle.offset_from(&client_instant);
             if self.durations.is_empty() {
-                if let Some(hold_duration_ms) = self.start_pressed {
-                    self.start_pressed = Some(hold_duration_ms + duration_ms as u16);
+                if let Some(mut hold_duration_ms) = self.start_pressed {
+                    if 1000 - hold_duration_ms < duration_ms as u16 {
+                        warn!("hold_duration_ms + duration_ms > 1000 ms (not necessary)");
+                        hold_duration_ms = 1000;
+                    } else {
+                        hold_duration_ms += duration_ms as u16;
+                    }
+                    self.start_pressed = Some(hold_duration_ms);
                 } else {
                     panic!("pressed but no start_pressed!");
                 }

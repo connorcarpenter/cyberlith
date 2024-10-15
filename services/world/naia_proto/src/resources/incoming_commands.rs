@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use naia_bevy_shared::Tick;
-
+use logging::info;
 use crate::{resources::CommandTimeline, messages::{PlayerCommands, PlayerCommandStream, PlayerCommand}};
 
 const TICK_DURATION_MS: u16 = 40; // TODO: move to config
@@ -44,7 +44,7 @@ impl IncomingCommands {
     }
 
     fn recv_stream(key_stream: &PlayerCommandStream) -> (Option<u16>, Vec<(bool, u8)>) {
-
+        info!("recv_stream: {:?}", key_stream);
         let start_pressed: Option<u16> = key_stream.start_pressed().map(|x| x.get() as u16);
         let mut pressed = start_pressed.is_some();
         let incoming_durations = key_stream.durations();

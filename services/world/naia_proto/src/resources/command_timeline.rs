@@ -1,8 +1,10 @@
+use std::collections::btree_map::{IntoIter, Iter};
 use std::collections::BTreeMap;
 
 use naia_bevy_shared::Tick;
-
+use logging::{info, warn};
 use crate::messages::PlayerCommand;
+use crate::types::Direction;
 
 pub struct CommandTimeline {
     tick: Tick,
@@ -24,6 +26,14 @@ impl CommandTimeline {
         let inner = self.inner_opt.as_mut().unwrap();
         inner.recv_stream(command, stream_output);
     }
+
+    pub fn get_movement_vector(&self, dx: i8, dy: i8) -> (i8, i8) {
+        if self.inner_opt.is_none() {
+            return (dx, dy);
+        }
+        let inner = self.inner_opt.as_ref().unwrap();
+        inner.get_movement_vector(dx, dy)
+    }
 }
 
 struct CommandTimelineInner {
@@ -38,6 +48,8 @@ impl CommandTimelineInner {
     }
 
     fn recv_stream(&mut self, command: PlayerCommand, stream_output: (Option<u16>, Vec<(bool, u8)>) ) {
+        info!("recv_stream: {:?}, {:?}", command, stream_output);
+
         let (start_pressed, durations) = stream_output;
         let mut t = 0;
         for (pressed, duration) in durations {
@@ -69,6 +81,142 @@ impl CommandTimelineInner {
         }
         let events = self.events.get_mut(&t).unwrap();
         events.list.push((command, event));
+    }
+
+    fn get_movement_vector(&self, dx: i8, dy: i8) -> (i8, i8) {
+        let mut kx: i8 = dx; // -1, 0, 1
+        let mut ky: i8 = dy; // -1, 0, 1
+        let mut mx: u16 = if dx != 0 { 150 } else { 0 }; // time in ms
+        let mut my: u16 = if dy != 0 { 150 } else { 0 }; // time in ms
+
+        let mut l = false;
+        let mut r = false;
+        let mut u = false;
+        let mut d = false;
+
+        let mut lsp = 0;
+        let mut rsp = 0;
+        let mut usp = 0;
+        let mut dsp = 0;
+
+        let mut last_t = 0;
+
+        for (t, events) in self.events.iter() {
+
+            let t = *t;
+            let since_last = t - last_t;
+            last_t = t;
+
+            if since_last != 0 {
+                if l != r {
+                    if l {
+                        mx += lsp;
+                        lsp = 0;
+                        if kx == 1 {
+                            mx = 0;
+                        }
+                        kx = -1;
+                    }
+                    if r {
+                        mx += rsp;
+                        rsp = 0;
+                        if kx == -1 {
+                            mx = 0;
+                        }
+                        kx = 1;
+                    }
+                    mx += since_last as u16;
+                } else {
+                    if l && r {
+                        kx = 0;
+                        mx = 0;
+                        lsp = 0;
+                        rsp = 0;
+                    }
+                }
+
+                if u != d {
+                    if u {
+                        my += usp;
+                        usp = 0;
+                        if ky == 1 {
+                            my = 0;
+                        }
+                        ky = -1;
+                    }
+                    if d {
+                        my += dsp;
+                        dsp = 0;
+                        if ky == -1 {
+                            my = 0;
+                        }
+                        ky = 1;
+                    }
+                    my += since_last as u16;
+                } else {
+                    if u && d {
+                        ky = 0;
+                        my = 0;
+                        usp = 0;
+                        dsp = 0;
+                    }
+                }
+            }
+
+            for (command, event) in events.list.iter() {
+                match command {
+                    PlayerCommand::Up => match event {
+                        CommandTimelineEvent::PressStart(start_pressed_opt) => {
+                            if let Some(start_pressed) = start_pressed_opt {
+                                usp = *start_pressed;
+                            }
+                            u = true;
+                        }
+                        CommandTimelineEvent::PressEnd => u = false,
+                    }
+
+                    PlayerCommand::Down => match event {
+                        CommandTimelineEvent::PressStart(start_pressed_opt) => {
+                            if let Some(start_pressed) = start_pressed_opt {
+                                dsp = *start_pressed;
+                            }
+                            d = true;
+                        }
+                        CommandTimelineEvent::PressEnd => d = false,
+                    }
+                    PlayerCommand::Left => match event {
+                        CommandTimelineEvent::PressStart(start_pressed_opt) => {
+                            if let Some(start_pressed) = start_pressed_opt {
+                                lsp = *start_pressed;
+                            }
+                            l = true;
+                        }
+                        CommandTimelineEvent::PressEnd => l = false,
+                    }
+                    PlayerCommand::Right => match event {
+                        CommandTimelineEvent::PressStart(start_pressed_opt) => {
+                            if let Some(start_pressed) = start_pressed_opt {
+                                rsp = *start_pressed;
+                            }
+                            r = true;
+                        }
+                        CommandTimelineEvent::PressEnd => r = false,
+                    }
+                }
+            }
+        }
+
+        if kx == 0 && ky == 0 {
+            // not moving
+            return (0, 0);
+        }
+        if mx < 150 && my < 150 {
+            // not enough to initiate a tile move,
+            // but later will be enough to initiate a looking direction change
+            return (0, 0);
+        }
+
+        return (kx, ky);
     }
 }
 

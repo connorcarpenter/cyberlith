@@ -52,7 +52,7 @@ impl PlayerCommands {
     }
 }
 
-#[derive(Serde, Clone, PartialEq)]
+#[derive(Serde, Clone, Debug, PartialEq)]
 pub struct PlayerCommandStream {
     start_pressed: Option<UnsignedInteger<10>>,
     durations: Vec<UnsignedInteger<6>>,
@@ -83,8 +83,11 @@ impl PlayerCommandStream {
         &self.durations
     }
 
-    fn log(&self, key: &PlayerCommand) {
+    pub fn log(&self, key: &PlayerCommand) {
         let mut pressed = self.start_pressed.is_some();
+        info!("---");
+        info!("PlayerCommandStream for '{}'", key.as_str());
+        info!("StartPressed: {:?}", self.start_pressed);
         for duration in &self.durations {
             if pressed {
                 info!("'{}' pressed for {}ms", key.as_str(), duration.get());
@@ -99,5 +102,6 @@ impl PlayerCommandStream {
         } else {
             info!("'{}' released  for remainder of tick", key.as_str());
         }
+        info!("---");
     }
 }

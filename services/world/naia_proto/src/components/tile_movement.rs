@@ -110,8 +110,8 @@ impl TileMovement {
 
         let current_tile_x = state.tile_x;
         let current_tile_y = state.tile_y;
-        let next_tile_x = state.tile_x + dx;
-        let next_tile_y = state.tile_y + dy;
+        let next_tile_x = state.tile_x + dx as i16;
+        let next_tile_y = state.tile_y + dy as i16;
 
         self.state = TileMovementState::moving(
             current_tile_x,

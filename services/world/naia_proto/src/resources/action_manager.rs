@@ -34,11 +34,18 @@ impl ActionRecord {
 
    fn recv_command_timeline(&mut self, tick: Tick, command: CommandTimeline) {
        self.tick_opt = Some(tick);
-       todo!();
+
+       let (dx, dy) = self.buffered_movement.as_ref().map(|direction| direction.to_delta()).unwrap_or((0, 0));
+       let (dx, dy) = command.get_movement_vector(dx, dy);
+       if dx == 0 && dy == 0 {
+           self.buffered_movement = None;
+       } else {
+           self.buffered_movement = Direction::from_delta(dx, dy);
+       }
    }
 
-   fn take_movement(&mut self) -> Option<Direction> {
-       todo!();
+    fn take_movement(&mut self) -> Option<Direction> {
+        self.buffered_movement.take()
    }
 }
 
@@ -87,6 +94,19 @@ impl ActionManager {
         if self.current_record.tick() != tick {
             panic!("Current Record Tick({:?}) doesn't match the Rollback Tick({:?}).", self.current_record.tick(), tick);
         }
+
+
+        // this is KEY, and it's not really about rollback ...
+        // rollback happens right now, whenever a NextTilePosition is received
+        // when that happens, we don't want to buffer anything
+        // and this helps to eventually converge on a synchronized state
+        //
+        // if we didn't do this right here, we'd need to transmit
+        // the buffered movement from server to client every tick! to keep them in sync!
+        //
+        // it's possible that we should be clearing this at the same time
+        // as we call `tile_movement.recv_updated_next_tile_position`...
+        //
         info!("Resetting Buffered Movement");
         self.current_record.buffered_movement = None;
     }

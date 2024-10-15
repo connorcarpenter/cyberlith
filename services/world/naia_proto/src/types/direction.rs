@@ -39,7 +39,7 @@ impl Direction {
         Self::from_angle(angle)
     }
 
-    pub(crate) fn to_delta(&self) -> (i16, i16) {
+    pub(crate) fn to_delta(&self) -> (i8, i8) {
         match self {
             Direction::North => (0, -1),
             Direction::Northeast => (1, -1),
@@ -49,6 +49,20 @@ impl Direction {
             Direction::Southwest => (-1, 1),
             Direction::West => (-1, 0),
             Direction::Northwest => (-1, -1),
+        }
+    }
+
+    pub(crate) fn from_delta(dx: i8, dy: i8) -> Option<Self> {
+        match (dx, dy) {
+            (0, -1) => Some(Direction::North),
+            (1, -1) => Some(Direction::Northeast),
+            (1, 0) => Some(Direction::East),
+            (1, 1) => Some(Direction::Southeast),
+            (0, 1) => Some(Direction::South),
+            (-1, 1) => Some(Direction::Southwest),
+            (-1, 0) => Some(Direction::West),
+            (-1, -1) => Some(Direction::Northwest),
+            _ => None,
         }
     }
 }
