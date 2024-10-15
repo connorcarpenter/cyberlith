@@ -29,7 +29,7 @@ impl IncomingCommands {
 
     pub fn recv_incoming_command(&mut self, tick: Tick, player_commands_opt: Option<PlayerCommands>) {
 
-        info!("PlayerCommands -> IncomingCommands for Tick({:?})", tick);
+        //info!("PlayerCommands -> IncomingCommands for Tick({:?})", tick);
 
         for (command, stream) in self.map.iter_mut() {
             let Some(player_commands) = player_commands_opt.as_ref() else {
@@ -47,7 +47,7 @@ impl IncomingCommands {
 
     pub fn pop_incoming_command_events(&mut self, tick: Tick) -> Vec<PlayerCommandEvent> {
 
-        info!("IncomingCommands -> PlayerCommandEvents for Tick({:?})", tick);
+        //info!("IncomingCommands -> PlayerCommandEvents for Tick({:?})", tick);
 
         let mut output = Vec::new();
 

@@ -140,7 +140,7 @@ pub fn update_next_tile_position_events(
         return;
     };
 
-    info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
+    //info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
 
     let Ok(
         [(mut server_tile_movement, mut server_render_position), (mut client_tile_movement, mut client_render_position)],
@@ -173,7 +173,7 @@ pub fn update_next_tile_position_events(
         }
     }
 
-    info!("Updated Server Tick to {:?}", current_tick);
+    //info!("Updated Server Tick to {:?}", current_tick);
 
     // ROLLBACK CLIENT: Replay all stored commands
 
@@ -187,7 +187,7 @@ pub fn update_next_tile_position_events(
     let replay_commands = input_manager.pop_command_replays(current_tick);
 
     // process commands
-    warn!("ROLLBACK!");
+    //warn!("ROLLBACK!");
     for (command_tick, outgoing_command_opt) in replay_commands {
 
         // process command
@@ -203,7 +203,7 @@ pub fn update_next_tile_position_events(
             &mut client_render_position,
         );
     }
-    warn!("---");
+    //warn!("---");
 
     client_render_position.advance_millis(&client, 0);
 }
