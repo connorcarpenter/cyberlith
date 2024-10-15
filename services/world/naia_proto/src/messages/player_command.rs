@@ -54,12 +54,13 @@ impl PlayerCommands {
 
 #[derive(Serde, Clone, PartialEq)]
 pub struct PlayerCommandStream {
-    start_pressed: bool,
+    start_pressed: Option<UnsignedInteger<10>>,
     durations: Vec<UnsignedInteger<6>>,
 }
 
 impl PlayerCommandStream {
-    pub fn new(start_pressed: bool) -> Self {
+    pub fn new(start_pressed: Option<u16>) -> Self {
+        let start_pressed = start_pressed.map(UnsignedInteger::new);
         Self {
             start_pressed,
             durations: Vec::new(),
@@ -74,7 +75,7 @@ impl PlayerCommandStream {
         self.durations.push(UnsignedInteger::new(duration));
     }
 
-    pub fn start_pressed(&self) -> bool {
+    pub fn start_pressed(&self) -> Option<UnsignedInteger<10>> {
         self.start_pressed
     }
 
@@ -83,7 +84,7 @@ impl PlayerCommandStream {
     }
 
     fn log(&self, key: &PlayerCommand) {
-        let mut pressed = self.start_pressed;
+        let mut pressed = self.start_pressed.is_some();
         for duration in &self.durations {
             if pressed {
                 info!("'{}' pressed for {}ms", key.as_str(), duration.get());

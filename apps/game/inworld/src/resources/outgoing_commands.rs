@@ -60,8 +60,10 @@ impl OutgoingCommands {
 // Stream State
 
 struct OutgoingCommandStream {
-    start_pressed: bool,
+    // if start_pressed is Some, the value is the accumulated duration of the key being held down, in milliseconds
+    start_pressed: Option<u16>,
     pressed: bool,
+    // durations are in milliseconds
     durations: Vec<u8>,
     last_toggle: GameInstant,
 }
@@ -70,7 +72,7 @@ impl OutgoingCommandStream {
 
     fn new(now: GameInstant) -> Self {
         Self {
-            start_pressed: false,
+            start_pressed: None,
             durations: Vec::new(),
 
             pressed: false,
@@ -79,7 +81,7 @@ impl OutgoingCommandStream {
     }
 
     fn is_empty(&self) -> bool {
-        !self.start_pressed && self.durations.is_empty()
+        self.start_pressed.is_none() && self.durations.is_empty()
     }
 
     fn recv_input(&mut self, client_instant: GameInstant, pressed: bool) {
@@ -110,7 +112,20 @@ impl OutgoingCommandStream {
     }
 
     fn flush(&mut self, client_instant: GameInstant) {
-        self.start_pressed = self.pressed;
+        if self.pressed {
+            let duration_ms = self.last_toggle.offset_from(&client_instant);
+            if self.durations.is_empty() {
+                if let Some(hold_duration_ms) = self.start_pressed {
+                    self.start_pressed = Some(hold_duration_ms + duration_ms as u16);
+                } else {
+                    panic!("pressed but no start_pressed!");
+                }
+            } else {
+                self.start_pressed = Some(duration_ms as u16);
+            }
+        } else {
+            self.start_pressed = None;
+        }
         self.durations.clear();
         self.last_toggle = client_instant;
     }
