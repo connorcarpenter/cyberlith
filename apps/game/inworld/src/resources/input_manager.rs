@@ -82,9 +82,8 @@ impl InputManager {
     }
 
     pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<PlayerCommands>) {
-        self.incoming_commands.recv_incoming_command(tick, key_command_opt);
-        let player_command_events = self.incoming_commands.pop_incoming_command_events(tick);
-        self.action_manager.recv_command_events(tick, player_command_events);
+        let command_timeline = self.incoming_commands.recv_incoming_command(tick, key_command_opt);
+        self.action_manager.recv_command_timeline(tick, command_timeline);
     }
 
     pub fn action_manager_mut(&mut self) -> &mut ActionManager {

@@ -58,9 +58,8 @@ impl UserData {
     }
 
     pub(crate) fn recv_incoming_command(&mut self, tick: Tick, command: Option<PlayerCommands>) {
-        self.incoming_commands.recv_incoming_command(tick, command);
-        let command_events = self.incoming_commands.pop_incoming_command_events(tick);
-        self.action_manager.recv_command_events(tick, command_events);
+        let command_timeline = self.incoming_commands.recv_incoming_command(tick, command);
+        self.action_manager.recv_command_timeline(tick, command_timeline);
     }
 
     pub(crate) fn action_manager_mut(&mut self) -> &mut ActionManager {
