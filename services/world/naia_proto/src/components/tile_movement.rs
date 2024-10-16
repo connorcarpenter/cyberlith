@@ -11,6 +11,7 @@ use crate::{
     constants::{MOVEMENT_SPEED, TILE_SIZE},
     resources::ActionManager,
 };
+use crate::types::Direction;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -84,7 +85,7 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    fn recv_command(&mut self, action_manager: &mut ActionManager, tick: Tick, prediction: bool) {
+    fn recv_command(&mut self, direction: Direction, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
@@ -92,15 +93,6 @@ impl TileMovement {
         if self.state.is_moving() {
             return;
         }
-
-        let Some(direction) = action_manager.take_movement(tick) else {
-            return;
-        };
-
-        info!(
-            "Recv Command. Tick: {:?}, Direction: {:?}",
-            tick, direction
-        );
 
         let (dx, dy) = direction.to_delta();
 
@@ -226,7 +218,13 @@ impl TileMovement {
         tick: Tick,
     ) {
         if let Some(action_manager) = action_manager_opt {
-            self.recv_command(action_manager, tick, self.is_predicted);
+            if let Some(direction) = action_manager.take_movement(tick) {
+                info!(
+                    "Recv Command. Tick: {:?}, Direction: {:?}",
+                    tick, direction
+                );
+                self.recv_command(direction, self.is_predicted);
+            }
         }
 
         let result = match &mut self.state {

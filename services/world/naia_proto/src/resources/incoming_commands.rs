@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use naia_bevy_shared::Tick;
-use logging::info;
+use logging::{info, warn};
 use crate::{resources::CommandTimeline, messages::{PlayerCommands, PlayerCommandStream, PlayerCommand}};
 
 const TICK_DURATION_MS: u16 = 40; // TODO: move to config
@@ -54,7 +54,8 @@ impl IncomingCommands {
         for duration in incoming_durations {
             let duration = duration.get() as u8;
             if duration > remaining_duration {
-                panic!("duration > remaining_duration!");
+                warn!("duration > remaining_duration!");
+                break;
             } else {
                 outgoing_durations.push((pressed, duration));
                 pressed = !pressed;
