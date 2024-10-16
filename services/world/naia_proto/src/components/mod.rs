@@ -3,8 +3,8 @@ use naia_bevy_shared::{Protocol, ProtocolPlugin};
 mod asset_refs;
 pub use asset_refs::*;
 
-mod position;
-pub use position::*;
+mod next_tile_position;
+pub use next_tile_position::*;
 
 mod tile_movement;
 pub use tile_movement::*;
