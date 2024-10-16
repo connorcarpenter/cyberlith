@@ -1,10 +1,10 @@
-use std::collections::btree_map::{IntoIter, Iter};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, btree_map::{IntoIter, Iter}};
 
 use naia_bevy_shared::Tick;
+
 use logging::{info, warn};
-use crate::messages::PlayerCommand;
-use crate::types::Direction;
+
+use crate::{types::Direction, messages::PlayerCommand};
 
 pub struct CommandTimeline {
     tick: Tick,
@@ -94,6 +94,11 @@ impl CommandTimelineInner {
         let mut u = false;
         let mut d = false;
 
+        let mut ne = dx == 1 && dy == -1;
+        let mut nw = dx == -1 && dy == -1;
+        let mut se = dx == 1 && dy == 1;
+        let mut sw = dx == -1 && dy == 1;
+
         let mut lsp = 0;
         let mut rsp = 0;
         let mut usp = 0;
@@ -108,6 +113,19 @@ impl CommandTimelineInner {
             last_t = t;
 
             if since_last != 0 {
+                if u && r {
+                    ne = true;
+                }
+                if u && l {
+                    nw = true;
+                }
+                if d && r {
+                    se = true;
+                }
+                if d && l {
+                    sw = true;
+                }
+
                 if l != r {
                     if l {
                         mx += lsp;
@@ -115,7 +133,15 @@ impl CommandTimelineInner {
                         if kx == 1 {
                             mx = 0;
                         }
-                        kx = -1;
+                        if kx != -1 {
+                            kx = -1;
+                            if ky == 1 && !sw {
+                                ky = 0;
+                            }
+                            if ky == -1 && !nw {
+                                ky = 0;
+                            }
+                        }
                     }
                     if r {
                         mx += rsp;
@@ -123,7 +149,15 @@ impl CommandTimelineInner {
                         if kx == -1 {
                             mx = 0;
                         }
-                        kx = 1;
+                        if kx != 1 {
+                            kx = 1;
+                            if ky == 1 && !se {
+                                ky = 0;
+                            }
+                            if ky == -1 && !ne {
+                                ky = 0;
+                            }
+                        }
                     }
                     mx += since_last as u16;
                 } else {
@@ -132,6 +166,15 @@ impl CommandTimelineInner {
                         mx = 0;
                         lsp = 0;
                         rsp = 0;
+                    } else {
+                        if mx > 0 {
+                            if mx > since_last as u16 {
+                                mx = (mx - since_last as u16);
+                            } else {
+                                mx = 0;
+                                kx = 0;
+                            }
+                        }
                     }
                 }
 
@@ -142,7 +185,15 @@ impl CommandTimelineInner {
                         if ky == 1 {
                             my = 0;
                         }
-                        ky = -1;
+                        if ky != -1 {
+                            ky = -1;
+                            if kx == 1 && !ne {
+                                kx = 0;
+                            }
+                            if kx == -1 && !nw {
+                                kx = 0;
+                            }
+                        }
                     }
                     if d {
                         my += dsp;
@@ -150,7 +201,15 @@ impl CommandTimelineInner {
                         if ky == -1 {
                             my = 0;
                         }
-                        ky = 1;
+                        if ky != 1 {
+                            ky = 1;
+                            if kx == 1 && !se {
+                                kx = 0;
+                            }
+                            if kx == -1 && !sw {
+                                kx = 0;
+                            }
+                        }
                     }
                     my += since_last as u16;
                 } else {
@@ -159,6 +218,15 @@ impl CommandTimelineInner {
                         my = 0;
                         usp = 0;
                         dsp = 0;
+                    } else {
+                        if my > 0 {
+                            if my > since_last as u16 {
+                                my = (my - since_last as u16);
+                            } else {
+                                my = 0;
+                                ky = 0;
+                            }
+                        }
                     }
                 }
             }
