@@ -180,7 +180,6 @@ pub fn update_next_tile_position_events(
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
     client_render_position.recv_rollback(&server_render_position);
-    input_manager.action_manager_mut().recv_rollback(current_tick);
 
     // PREDICTION ROLLBACK
 
@@ -194,11 +193,12 @@ pub fn update_next_tile_position_events(
         input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
 
         // process movement
+        let player_command = input_manager.pop_incoming_command(command_tick);
         process_tick(
             false,
             true,
             command_tick,
-            Some(input_manager.action_manager_mut()),
+            player_command,
             &mut client_tile_movement,
             &mut client_render_position,
         );

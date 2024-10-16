@@ -5,9 +5,9 @@ use bevy_ecs::{
     entity::Entity,
     event::EventReader,
     prelude::{Query, Resource, World},
-    system::{SystemState, ResMut},
+    system::{SystemState},
 };
-
+use bevy_ecs::system::Res;
 use naia_bevy_server::{events::TickEvent, Server, UserKey};
 
 use logging::info;
@@ -50,13 +50,13 @@ pub fn tick_events(world: &mut World) {
     {
         let mut system_state: SystemState<(
             Server,
-            ResMut<UserManager>,
+            Res<UserManager>,
             Query<(Entity, &mut TileMovement)>,
             Query<&mut NextTilePosition>,
         )> = SystemState::new(world);
         let (
             mut server,
-            mut user_manager,
+            user_manager,
             mut tile_movement_q,
             mut next_tile_position_q
         ) = system_state.get_mut(world);
@@ -66,17 +66,30 @@ pub fn tick_events(world: &mut World) {
             let mut users_without_command = user_manager.user_key_set();
 
             // receive & process command messages
+            let mut user_commands: HashMap<UserKey, Option<PlayerCommands>> = HashMap::new();
             let mut messages = server.receive_tick_buffer_messages(server_tick);
             for (user_key, incoming_command) in messages.read::<PlayerCommandChannel, PlayerCommands>() {
 
                 users_without_command.remove(&user_key);
 
-                user_manager.recv_incoming_command(&user_key, *server_tick, Some(incoming_command));
+                if let Some(prev_command) = user_commands.get_mut(&user_key) {
+                    if let Some(prev_command_2) = prev_command.as_mut() {
+                        prev_command_2.merge_newer(&incoming_command);
+                    } else {
+                        *prev_command = Some(incoming_command);
+                    }
+                } else {
+                    user_commands.insert(user_key, Some(incoming_command));
+                }
             }
 
             // process null commands
             for user_key in users_without_command {
-                user_manager.recv_incoming_command(&user_key, *server_tick, None);
+                if user_commands.contains_key(&user_key) {
+                    panic!("User should not have a command");
+                } else {
+                    user_commands.insert(user_key, None);
+                }
             }
 
             // All game logic should happen here, on a tick event
@@ -87,14 +100,15 @@ pub fn tick_events(world: &mut World) {
                 let Some(user_key) = user_manager.get_user_key_from_entity(&entity) else {
                     continue;
                 };
-                let Some(action_manager) = user_manager.action_manager_mut(&user_key) else {
-                    continue;
-                };
 
+                let Some(player_command) = user_commands.remove(&user_key) else {
+                    panic!("No command found for user: {:?}", user_key);
+                    // multiple commands per entity??
+                };
                 shared_behavior::process_tick(
-                    Some(action_manager),
-                    &mut tile_movement,
-                    *server_tick
+                    *server_tick,
+                    player_command,
+                    &mut tile_movement
                 );
 
                 // send updates

@@ -9,9 +9,8 @@ use logging::{info, warn};
 use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
-    resources::ActionManager,
+    messages::PlayerCommands,
 };
-use crate::types::Direction;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -85,7 +84,7 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    fn recv_command(&mut self, direction: Direction, prediction: bool) {
+    fn process_command(&mut self, _tick: Tick, command: Option<PlayerCommands>, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
@@ -93,6 +92,13 @@ impl TileMovement {
         if self.state.is_moving() {
             return;
         }
+
+        let Some(command) = command else {
+            return;
+        };
+        let Some(direction) = command.get_move() else {
+            return;
+        };
 
         let (dx, dy) = direction.to_delta();
 
@@ -214,17 +220,11 @@ impl TileMovement {
     // call on each tick
     pub fn process_tick(
         &mut self,
-        action_manager_opt: Option<&mut ActionManager>,
         tick: Tick,
+        player_command: Option<PlayerCommands>,
     ) {
-        if let Some(action_manager) = action_manager_opt {
-            if let Some(direction) = action_manager.take_movement(tick) {
-                info!(
-                    "Recv Command. Tick: {:?}, Direction: {:?}",
-                    tick, direction
-                );
-                self.recv_command(direction, self.is_predicted);
-            }
+        if self.is_predicted || self.is_server {
+            self.process_command(tick, player_command, self.is_predicted);
         }
 
         let result = match &mut self.state {

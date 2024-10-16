@@ -1,5 +1,6 @@
+use naia_bevy_shared::Serde;
 
-#[derive(Clone, Debug, Copy, Eq, PartialEq)]
+#[derive(Serde, Clone, Debug, Copy, Eq, PartialEq)]
 pub enum Direction {
     North,
     Northeast,

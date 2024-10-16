@@ -2,11 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use bevy_ecs::{system::Resource, entity::Entity};
 
-use naia_bevy_server::{Tick, UserKey};
+use naia_bevy_server::UserKey;
 
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::{resources::{ActionManager}, messages::PlayerCommands};
 
 use crate::user::{user_data::UserData, user_login_token_store::UserLoginTokenStore};
 
@@ -93,19 +92,5 @@ impl UserManager {
 
     pub(crate) fn user_key_set(&self) -> HashSet<UserKey> {
         self.users.keys().cloned().collect()
-    }
-
-    pub(crate) fn recv_incoming_command(&mut self, user_key: &UserKey, tick: Tick, player_commands_opt: Option<PlayerCommands>) {
-        let Some(user_data) = self.users.get_mut(user_key) else {
-            return;
-        };
-        user_data.recv_incoming_command(tick, player_commands_opt);
-    }
-
-    pub(crate) fn action_manager_mut(&mut self, user_key: &UserKey) -> Option<&mut ActionManager> {
-        let Some(user_data) = self.users.get_mut(user_key) else {
-            return None;
-        };
-        Some(user_data.action_manager_mut())
     }
 }

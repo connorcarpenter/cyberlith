@@ -1,10 +1,8 @@
-use bevy_ecs::entity::Entity;
 
-use naia_bevy_server::Tick;
+use bevy_ecs::entity::Entity;
 
 use auth_server_types::UserId;
 use social_server_types::LobbyId;
-use world_server_naia_proto::{resources::{IncomingCommands, ActionManager}, messages::PlayerCommands};
 
 pub struct UserData {
     session_server_addr: String,
@@ -12,8 +10,6 @@ pub struct UserData {
     user_id: UserId,
     lobby_id: LobbyId,
     user_entity_opt: Option<Entity>,
-    incoming_commands: IncomingCommands,
-    action_manager: ActionManager,
 }
 
 impl UserData {
@@ -29,8 +25,6 @@ impl UserData {
             user_id,
             lobby_id,
             user_entity_opt: None,
-            incoming_commands: IncomingCommands::new(),
-            action_manager: ActionManager::new(),
         }
     }
 
@@ -55,14 +49,5 @@ impl UserData {
             panic!("User entity already set");
         }
         self.user_entity_opt = Some(*user_entity);
-    }
-
-    pub(crate) fn recv_incoming_command(&mut self, tick: Tick, command: Option<PlayerCommands>) {
-        let command_timeline = self.incoming_commands.recv_incoming_command(tick, command);
-        self.action_manager.recv_command_timeline(tick, command_timeline);
-    }
-
-    pub(crate) fn action_manager_mut(&mut self) -> &mut ActionManager {
-        &mut self.action_manager
     }
 }
