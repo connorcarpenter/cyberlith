@@ -12,13 +12,14 @@ use crate::{
     components::{Confirmed, Predicted, RenderPosition},
     resources::{Global, InputManager},
 };
+use crate::components::AnimationState;
 
 pub fn client_tick_events(
     mut client: WorldClient,
     global: Res<Global>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Predicted>>,
+    mut position_q: Query<(&mut TileMovement, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
 ) {
     let Some(predicted_entity) = global
         .owned_entity
@@ -31,8 +32,11 @@ pub fn client_tick_events(
     for event in tick_reader.read() {
         let client_tick = event.tick;
 
-        let (mut client_tile_movement, mut client_render_position) =
-            position_q.get_mut(predicted_entity).unwrap();
+        let (
+            mut client_tile_movement,
+            mut client_render_position,
+            mut animation_state
+        ) = position_q.get_mut(predicted_entity).unwrap();
 
         // process commands
         if let Some(outgoing_command) = input_manager.pop_outgoing_command() {
@@ -58,6 +62,7 @@ pub fn client_tick_events(
             player_command,
             &mut client_tile_movement,
             &mut client_render_position,
+            &mut animation_state,
         );
     }
 }
@@ -69,8 +74,15 @@ pub fn process_tick(
     player_command: Option<PlayerCommands>,
     tile_movement: &mut TileMovement,
     render_position: &mut RenderPosition,
+    animation_state: &mut AnimationState,
 ) {
-    shared_behavior::process_tick(tick, player_command, tile_movement);
+    let lookdir_opt = if let Some(player_command) = player_command.as_ref() {
+        player_command.get_look()
+    } else {
+        None
+    };
+
+    shared_behavior::process_tick(tick, player_command, tile_movement, None);
 
     render_position.recv_position(
         is_server,
@@ -78,17 +90,21 @@ pub fn process_tick(
         tile_movement.current_position(),
         tick,
     );
+
+    if let Some(lookdir) = lookdir_opt {
+        animation_state.recv_lookdir_update(&lookdir);
+    }
 }
 
 pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut TileMovement, &mut RenderPosition), With<Confirmed>>,
+    mut position_q: Query<(&mut TileMovement, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
 
         // process movement
-        for (mut server_tile_movement, mut server_render_position) in position_q.iter_mut() {
+        for (mut server_tile_movement, mut server_render_position, mut animation_state) in position_q.iter_mut() {
             process_tick(
                 true,
                 false,
@@ -96,6 +112,7 @@ pub fn server_tick_events(
                 None,
                 &mut server_tile_movement,
                 &mut server_render_position,
+                &mut animation_state,
             );
         }
     }

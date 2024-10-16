@@ -81,7 +81,7 @@ pub fn update_next_tile_position_events(
     mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
-    mut tile_movement_q: Query<(&mut TileMovement, &mut RenderPosition)>,
+    mut tile_movement_q: Query<(&mut TileMovement, &mut RenderPosition, &mut AnimationState)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -107,7 +107,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        let Ok((mut tile_movement, _)) = tile_movement_q.get_mut(*updated_entity) else {
+        let Ok((mut tile_movement, _, _)) = tile_movement_q.get_mut(*updated_entity) else {
             panic!(
                 "failed to get tile movement q for entity: {:?}",
                 updated_entity
@@ -143,7 +143,15 @@ pub fn update_next_tile_position_events(
     //info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
 
     let Ok(
-        [(mut server_tile_movement, mut server_render_position), (mut client_tile_movement, mut client_render_position)],
+        [(
+            mut server_tile_movement,
+            mut server_render_position,
+            mut server_animation_state,
+        ), (
+            mut client_tile_movement,
+            mut client_render_position,
+            mut client_animation_state,
+        )],
     ) = tile_movement_q.get_many_mut([server_entity, client_entity])
     else {
         panic!(
@@ -168,6 +176,7 @@ pub fn update_next_tile_position_events(
                 None,
                 &mut server_tile_movement,
                 &mut server_render_position,
+                &mut server_animation_state,
             );
             current_tick = current_tick.wrapping_add(1);
         }
@@ -180,6 +189,7 @@ pub fn update_next_tile_position_events(
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
     client_render_position.recv_rollback(&server_render_position);
+    client_animation_state.recv_rollback(&server_animation_state);
 
     // PREDICTION ROLLBACK
 
@@ -201,6 +211,7 @@ pub fn update_next_tile_position_events(
             player_command,
             &mut client_tile_movement,
             &mut client_render_position,
+            &mut client_animation_state,
         );
     }
     //warn!("---");

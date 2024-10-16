@@ -6,6 +6,7 @@ use game_engine::{
     time::Instant,
     world::constants::MOVEMENT_SPEED,
 };
+use game_engine::world::types::Direction;
 
 #[derive(Component, Clone)]
 pub struct AnimationState {
@@ -65,6 +66,17 @@ impl AnimationState {
 
         while self.animation_index_ms >= max_duration_ms {
             self.animation_index_ms -= max_duration_ms;
+        }
+    }
+
+    pub fn recv_rollback(&mut self, other: &AnimationState) {
+        self.rotation = other.rotation;
+        // TODO: should we rollback other props?
+    }
+
+    pub fn recv_lookdir_update(&mut self, lookdir: &Direction) {
+        if self.animation_name == "idle" {
+            self.rotation = lookdir.to_radians();
         }
     }
 }

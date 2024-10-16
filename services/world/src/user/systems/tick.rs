@@ -18,6 +18,7 @@ use world_server_naia_proto::{
     components::{NextTilePosition, TileMovement},
     messages::PlayerCommands,
 };
+use world_server_naia_proto::components::LookDirection;
 
 use crate::{user::UserManager, asset::AssetManager};
 
@@ -53,12 +54,14 @@ pub fn tick_events(world: &mut World) {
             Res<UserManager>,
             Query<(Entity, &mut TileMovement)>,
             Query<&mut NextTilePosition>,
+            Query<&mut LookDirection>,
         )> = SystemState::new(world);
         let (
             mut server,
             user_manager,
             mut tile_movement_q,
-            mut next_tile_position_q
+            mut next_tile_position_q,
+            mut lookdir_q,
         ) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
@@ -105,17 +108,20 @@ pub fn tick_events(world: &mut World) {
                     panic!("No command found for user: {:?}", user_key);
                     // multiple commands per entity??
                 };
+                let Ok(mut look_dir) = lookdir_q.get_mut(entity) else {
+                    panic!("LookDirection not found for entity: {:?}", entity);
+                };
                 shared_behavior::process_tick(
                     *server_tick,
                     player_command,
-                    &mut tile_movement
+                    &mut tile_movement,
+                    Some(&mut look_dir),
                 );
 
                 // send updates
                 let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
                     panic!("NextTilePosition not found for entity: {:?}", entity);
                 };
-
                 tile_movement.send_updated_next_tile_position(*server_tick, &mut next_tile_position);
             }
         }

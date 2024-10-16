@@ -40,6 +40,9 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::insert_next_tile_position_events,
                     systems::world_events::update_next_tile_position_events,
                     systems::world_events::remove_next_tile_position_events,
+                    systems::world_events::insert_look_direction_events,
+                    systems::world_events::update_look_direction_events,
+                    systems::world_events::remove_look_direction_events,
                     systems::world_events::insert_asset_ref_events,
                     PredictionEvents::process,
                 )

@@ -2,7 +2,7 @@ use std::{default::Default, collections::{HashMap, VecDeque}};
 
 use bevy_ecs::{system::{Res, ResMut}, prelude::Resource};
 
-use game_engine::{input::{Key, Input}, naia::{GameInstant, CommandHistory, Tick}, world::{messages::PlayerCommands, types::Direction, WorldClient}};
+use game_engine::{logging::info, input::{Key, Input}, naia::{GameInstant, CommandHistory, Tick}, world::{messages::PlayerCommands, types::Direction, WorldClient}};
 
 use crate::resources::Global;
 
@@ -10,6 +10,8 @@ use crate::resources::Global;
 pub struct InputManager {
     tracked_keys: Vec<Key>,
     pressed_keys: HashMap<Key, (GameInstant, u16)>,
+    // up, down, left, right
+    last_tap: Option<(GameInstant, bool, bool, bool, bool)>,
 
     next_command: Option<PlayerCommands>,
     incoming_commands: VecDeque<(Tick, Option<PlayerCommands>)>,
@@ -24,6 +26,7 @@ impl Default for InputManager {
             ],
             pressed_keys: HashMap::new(),
             next_command: None,
+            last_tap: None,
             incoming_commands: VecDeque::new(),
             command_history: CommandHistory::default(),
         }
@@ -48,31 +51,31 @@ impl InputManager {
         };
 
         // keep track of pressed keys & durations
-        let releases = me.update_pressed_keys(client_instant, &input);
+        let releases = me.update_pressed_keys(&client_instant, &input);
 
         // modify playercommand as needed
-        me.update_player_command(releases);
+        me.update_player_command(&client_instant, releases);
     }
 
-    fn update_pressed_keys(&mut self, client_instant: GameInstant, input: &Input) -> Vec<(Key, u16)> {
+    fn update_pressed_keys(&mut self, client_instant: &GameInstant, input: &Input) -> Vec<(Key, u16)> {
         let mut output = Vec::new();
 
         for key in &self.tracked_keys {
             if input.is_pressed(*key) {
                 if let Some((prev_instant, prev_duration)) = self.pressed_keys.get_mut(key) {
-                    let duration = prev_instant.offset_from(&client_instant);
-                    *prev_instant = client_instant;
+                    let duration = prev_instant.offset_from(client_instant);
+                    *prev_instant = *client_instant;
                     if *prev_duration + duration as u16 > 1000 {
                         *prev_duration = 1000;
                     } else {
                         *prev_duration += duration as u16;
                     }
                 } else {
-                    self.pressed_keys.insert(*key, (client_instant, 1));
+                    self.pressed_keys.insert(*key, (*client_instant, 1));
                 }
             } else {
                 if let Some((prev_instant, prev_duration)) = self.pressed_keys.remove(key) {
-                    let duration = prev_instant.offset_from(&client_instant);
+                    let duration = prev_instant.offset_from(client_instant);
                     if prev_duration + duration as u16 > 1000 {
                         output.push((*key, 1000));
                     } else {
@@ -85,7 +88,7 @@ impl InputManager {
         output
     }
 
-    fn update_player_command(&mut self, releases: Vec<(Key, u16)>) {
+    fn update_player_command(&mut self, client_instant: &GameInstant, releases: Vec<(Key, u16)>) {
         if self.pressed_keys.is_empty() && releases.is_empty() {
             return;
         }
@@ -100,6 +103,13 @@ impl InputManager {
 
         // Looks
         {
+            if let Some((last_instant, _, _, _, _)) = &self.last_tap {
+                let duration = last_instant.offset_from(client_instant);
+                if duration > 300 {
+                    self.last_tap = None;
+                }
+            }
+
             let mut tap_u = false;
             let mut tap_d = false;
             let mut tap_l = false;
@@ -126,17 +136,49 @@ impl InputManager {
                 tap_r = false;
             }
 
-            match (tap_u, tap_d, tap_l, tap_r) {
-                (false, false, false, true ) => next_command.set_look(Direction::East),
-                (true , false, false, true ) => next_command.set_look(Direction::Northeast),
-                (true , false, false, false) => next_command.set_look(Direction::North),
-                (true , false, true , false) => next_command.set_look(Direction::Northwest),
-                (false, false, true , false) => next_command.set_look(Direction::West),
-                (false, true , true , false) => next_command.set_look(Direction::Southwest),
-                (false, true , false, false) => next_command.set_look(Direction::South),
-                (false, true , false, true ) => next_command.set_look(Direction::Southeast),
-                (false, false, false, false) => {},
-                _ => panic!("Invalid look command"),
+            if tap_u || tap_d || tap_l || tap_r {
+                let mut did_tap = false;
+                if let Some((_, last_tap_u, last_tap_d, last_tap_l, last_tap_r)) = self.last_tap.take() {
+
+                    // this is a hack to make it simpler to handle all the conditions
+                    if (last_tap_u && last_tap_l) || (last_tap_u && last_tap_r) || (last_tap_d && last_tap_l) || (last_tap_d && last_tap_r) ||
+                       (tap_u && tap_l) || (tap_u && tap_r) || (tap_d && tap_l) || (tap_d && tap_r)
+                    {
+                        // skip
+                    } else {
+                        if (last_tap_u && tap_l) || (last_tap_l && tap_u) {
+                            did_tap = true;
+                            next_command.set_look(Direction::Northwest);
+                        } else if (last_tap_u && tap_r) || (last_tap_r && tap_u) {
+                            did_tap = true;
+                            next_command.set_look(Direction::Northeast);
+                        } else if (last_tap_d && tap_l) || (last_tap_l && tap_d) {
+                            did_tap = true;
+                            next_command.set_look(Direction::Southwest);
+                        } else if (last_tap_d && tap_r) || (last_tap_r && tap_d) {
+                            did_tap = true;
+                            next_command.set_look(Direction::Southeast);
+                        }
+                    }
+                }
+
+                if !did_tap {
+                    info!("tap_u: {}, tap_d: {}, tap_l: {}, tap_r: {}", tap_u, tap_d, tap_l, tap_r);
+                    match (tap_u, tap_d, tap_l, tap_r) {
+                        (false, false, false, true) => next_command.set_look(Direction::East),
+                        (true, false, false, true) => next_command.set_look(Direction::Northeast),
+                        (true, false, false, false) => next_command.set_look(Direction::North),
+                        (true, false, true, false) => next_command.set_look(Direction::Northwest),
+                        (false, false, true, false) => next_command.set_look(Direction::West),
+                        (false, true, true, false) => next_command.set_look(Direction::Southwest),
+                        (false, true, false, false) => next_command.set_look(Direction::South),
+                        (false, true, false, true) => next_command.set_look(Direction::Southeast),
+                        (false, false, false, false) => {},
+                        _ => panic!("Invalid look command"),
+                    }
+                }
+
+                self.last_tap = Some((*client_instant, tap_u, tap_d, tap_l, tap_r));
             }
         }
 

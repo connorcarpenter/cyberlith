@@ -19,7 +19,7 @@ use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
 use logging::info;
 
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main, NextTilePosition};
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, LookDirection, Main, NextTilePosition};
 
 use crate::{
     asset_cache::AssetCache,
@@ -49,6 +49,7 @@ impl Plugin for WorldEventsPlugin {
             .add_systems(Startup, component_events_startup::<World>)
             .add_systems(Update, component_events_update)
             .add_component_events::<World, NextTilePosition>()
+            .add_component_events::<World, LookDirection>()
             // asset events
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>();
@@ -71,6 +72,7 @@ fn component_events_update(world: &mut BevyWorld) {
 
         // component events
         events.process::<NextTilePosition>(world);
+        events.process::<LookDirection>(world);
 
         // info!("]");
     }

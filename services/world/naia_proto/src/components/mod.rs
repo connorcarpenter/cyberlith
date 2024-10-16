@@ -6,6 +6,9 @@ pub use asset_refs::*;
 mod next_tile_position;
 pub use next_tile_position::*;
 
+mod look_direction;
+pub use look_direction::*;
+
 mod tile_movement;
 pub use tile_movement::*;
 
@@ -16,6 +19,7 @@ impl ProtocolPlugin for ComponentsPlugin {
     fn build(&self, protocol: &mut Protocol) {
         protocol
             .add_plugin(AssetRefsPlugin)
-            .add_component::<NextTilePosition>();
+            .add_component::<NextTilePosition>()
+            .add_component::<LookDirection>();
     }
 }
