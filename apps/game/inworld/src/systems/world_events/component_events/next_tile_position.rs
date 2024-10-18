@@ -30,7 +30,7 @@ use crate::{
 pub fn insert_next_tile_position_events(
     client: WorldClient,
     mut commands: Commands,
-    position_q: Query<&NextTilePosition>,
+    next_tile_position_q: Query<&NextTilePosition>,
     mut prediction_events: ResMut<PredictionEvents>,
     mut event_reader: EventReader<WorldInsertComponentEvent<NextTilePosition>>,
 ) {
@@ -47,7 +47,7 @@ pub fn insert_next_tile_position_events(
             entity
         );
 
-        let next_tile_position = position_q.get(entity).unwrap();
+        let next_tile_position = next_tile_position_q.get(entity).unwrap();
 
         prediction_events.read_insert_position_event(&now, &entity);
 

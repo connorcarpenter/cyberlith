@@ -375,7 +375,8 @@ impl TileMovementMovingState {
                 return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
             } else {
                 // we have buffered future tiles
-                self.distance -= self.distance_max;
+                self.distance -= self.distance_max; // open question whether this approach is better?
+                //self.distance = 0.0; // open question whether this approach is better?
 
                 let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
                 let (next_tick, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
