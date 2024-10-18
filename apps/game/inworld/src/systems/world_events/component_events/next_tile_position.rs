@@ -189,7 +189,6 @@ pub fn update_next_tile_position_events(
     // Set to authoritative state
     client_tile_movement.recv_rollback(&server_tile_movement);
     client_render_position.recv_rollback(&server_render_position);
-    client_animation_state.recv_rollback(&server_animation_state);
 
     // PREDICTION ROLLBACK
 
