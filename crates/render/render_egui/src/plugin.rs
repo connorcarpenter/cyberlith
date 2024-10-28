@@ -22,7 +22,7 @@ impl Plugin for EguiPlugin {
             .add_systems(EguiSync, systems::sync)
             .add_systems(EguiDraw, systems::draw);
 
-        let mut order = app.world.resource_mut::<MainScheduleOrder>();
+        let mut order = app.world_mut().resource_mut::<MainScheduleOrder>();
         order.insert_after(First, EguiPreUpdate);
         order.insert_after(PostUpdate, EguiPostUpdate);
         order.insert_after(RenderSync, EguiSync);

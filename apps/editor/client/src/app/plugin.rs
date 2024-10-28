@@ -44,7 +44,7 @@ impl Plugin for VortexPlugin {
     fn build(&self, app: &mut App) {
         // setup FileManager
         let project_root_entity = app
-            .world
+            .world_mut()
             .spawn_empty()
             .insert(FileSystemParent::new())
             .insert(FileSystemUiState::new_root())
