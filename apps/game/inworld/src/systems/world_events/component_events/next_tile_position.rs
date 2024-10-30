@@ -13,19 +13,19 @@ use game_engine::{
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
-        behavior as shared_behavior,
-        components::{NextTilePosition, TileMovement},
+        // behavior as shared_behavior,
+        components::{NextTilePosition},
         WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
 };
-use game_engine::logging::warn;
 
 use crate::{
     components::{AnimationState, Confirmed, RenderPosition},
     resources::{Global, InputManager},
     systems::world_events::{process_tick, PredictionEvents},
 };
+use crate::components::ClientTileMovement;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -56,7 +56,7 @@ pub fn insert_next_tile_position_events(
         commands
             .entity(entity)
             // Insert Position stuff
-            .insert(TileMovement::new_stopped(false, false, next_tile_position))
+            .insert(ClientTileMovement::new_stopped(false, next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderPosition::new(
@@ -81,7 +81,7 @@ pub fn update_next_tile_position_events(
     mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
-    mut tile_movement_q: Query<(&mut TileMovement, &mut RenderPosition, &mut AnimationState)>,
+    mut tile_movement_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -187,7 +187,7 @@ pub fn update_next_tile_position_events(
     // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
-    client_tile_movement.recv_rollback(&server_tile_movement);
+    client_tile_movement.recv_rollback(server_tile_movement.inner());
     client_render_position.recv_rollback(&server_render_position);
 
     // PREDICTION ROLLBACK

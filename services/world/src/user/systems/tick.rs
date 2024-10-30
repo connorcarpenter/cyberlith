@@ -15,12 +15,13 @@ use logging::info;
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
-    components::{NextTilePosition, TileMovement},
+    components::{NextTilePosition},
     messages::PlayerCommands,
 };
 use world_server_naia_proto::components::LookDirection;
 
 use crate::{user::UserManager, asset::AssetManager};
+use crate::user::components::ServerTileMovement;
 
 #[derive(Resource)]
 struct CachedTickEventsState {
@@ -52,7 +53,7 @@ pub fn tick_events(world: &mut World) {
         let mut system_state: SystemState<(
             Server,
             Res<UserManager>,
-            Query<(Entity, &mut TileMovement)>,
+            Query<(Entity, &mut ServerTileMovement)>,
             Query<&mut NextTilePosition>,
             Query<&mut LookDirection>,
         )> = SystemState::new(world);
@@ -114,7 +115,7 @@ pub fn tick_events(world: &mut World) {
                 shared_behavior::process_tick(
                     *server_tick,
                     player_command,
-                    &mut tile_movement,
+                    tile_movement.inner_mut(),
                     Some(&mut look_dir),
                 );
 

@@ -11,6 +11,7 @@ use crate::{
     constants::{MOVEMENT_SPEED, TILE_SIZE},
     messages::PlayerCommands,
 };
+use crate::types::Direction;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -84,13 +85,9 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    fn process_command(&mut self, _tick: Tick, command: Option<PlayerCommands>, prediction: bool) {
+    fn process_command(&mut self, tick: Tick, command: Option<PlayerCommands>, prediction: bool) {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
-        }
-
-        if self.state.is_moving() {
-            return;
         }
 
         let Some(command) = command else {
@@ -100,27 +97,37 @@ impl TileMovement {
             return;
         };
 
-        let (dx, dy) = direction.to_delta();
+        if self.state.is_moving() {
 
-        let TileMovementState::Stopped(state) = &self.state else {
-            panic!("Expected Stopped state");
-        };
+            if self.state.can_buffer_movement() {
 
-        let current_tile_x = state.tile_x;
-        let current_tile_y = state.tile_y;
-        let next_tile_x = state.tile_x + dx as i16;
-        let next_tile_y = state.tile_y + dy as i16;
+                self.state.buffer_movement(tick, direction);
+            }
 
-        self.state = TileMovementState::moving(
-            current_tile_x,
-            current_tile_y,
-            next_tile_x,
-            next_tile_y,
-            prediction,
-        );
+        } else {
 
-        if self.is_server {
-            self.outbound_next_tile = Some((next_tile_x, next_tile_y));
+            let (dx, dy) = direction.to_delta();
+
+            let TileMovementState::Stopped(state) = &self.state else {
+                panic!("Expected Stopped state");
+            };
+
+            let current_tile_x = state.tile_x;
+            let current_tile_y = state.tile_y;
+            let next_tile_x = state.tile_x + dx as i16;
+            let next_tile_y = state.tile_y + dy as i16;
+
+            self.state = TileMovementState::moving(
+                current_tile_x,
+                current_tile_y,
+                next_tile_x,
+                next_tile_y,
+                prediction,
+            );
+
+            if self.is_server {
+                self.outbound_next_tile = Some((next_tile_x, next_tile_y));
+            }
         }
     }
 
@@ -268,6 +275,20 @@ impl TileMovementState {
         match self {
             Self::Stopped(_) => false,
             Self::Moving(_) => true,
+        }
+    }
+
+    fn can_buffer_movement(&self) -> bool {
+        match self {
+            Self::Stopped(_) => false,
+            Self::Moving(state) => state.can_buffer_movement(),
+        }
+    }
+
+    pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
+        match self {
+            Self::Stopped(_) => {},
+            Self::Moving(state) => state.buffer_movement(tick, move_dir),
         }
     }
 }
@@ -429,6 +450,25 @@ impl TileMovementMovingState {
 
         buffered_future_tiles.push_back((updated_tick, next_x, next_y));
         warn!("Prediction({:?}), Buffering Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
+    }
+
+    pub(crate) fn can_buffer_movement(&self) -> bool {
+        return (self.distance / self.distance_max) > 0.75;
+    }
+
+    pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
+
+        self.buffered_future_tiles_opt = Some(VecDeque::new());
+
+        let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
+
+        let (dx, dy) = move_dir.to_delta();
+        let next_x = self.to_tile_x + dx as i16;
+        let next_y = self.to_tile_y + dy as i16;
+
+        buffered_future_tiles.push_back((tick, next_x, next_y));
+
+        warn!("buffering command for tick: {:?}", tick);
     }
 }
 

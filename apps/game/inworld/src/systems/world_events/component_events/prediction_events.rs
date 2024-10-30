@@ -13,7 +13,7 @@ use game_engine::{
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
-        components::{NextTilePosition, TileMovement},
+        components::{NextTilePosition},
         WorldClient,
     },
 };
@@ -22,6 +22,7 @@ use crate::{
     components::{AnimationState, Predicted, RenderPosition},
     resources::{Global, OwnedEntity},
 };
+use crate::components::ClientTileMovement;
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -77,7 +78,7 @@ impl PredictionEvents {
             commands
                 .entity(prediction_entity)
                 // Position stuff
-                .insert(TileMovement::new_stopped(false, true, next_tile_position))
+                .insert(ClientTileMovement::new_stopped(true, next_tile_position))
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())

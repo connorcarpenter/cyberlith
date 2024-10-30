@@ -1,4 +1,6 @@
 mod systems;
+mod components;
+
 pub(crate) mod user_data;
 
 mod plugin;

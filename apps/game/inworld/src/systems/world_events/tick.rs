@@ -3,7 +3,7 @@ use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader, prelud
 use game_engine::{
     naia::Tick,
     world::{
-        behavior as shared_behavior, channels::PlayerCommandChannel, components::TileMovement,
+        behavior as shared_behavior, channels::PlayerCommandChannel,
         messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
@@ -12,14 +12,14 @@ use crate::{
     components::{Confirmed, Predicted, RenderPosition},
     resources::{Global, InputManager},
 };
-use crate::components::AnimationState;
+use crate::components::{AnimationState, ClientTileMovement};
 
 pub fn client_tick_events(
     mut client: WorldClient,
     global: Res<Global>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    mut position_q: Query<(&mut TileMovement, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
+    mut position_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
 ) {
     let Some(predicted_entity) = global
         .owned_entity
@@ -72,7 +72,7 @@ pub fn process_tick(
     is_rollback: bool,
     tick: Tick,
     player_command: Option<PlayerCommands>,
-    tile_movement: &mut TileMovement,
+    tile_movement: &mut ClientTileMovement,
     render_position: &mut RenderPosition,
     animation_state: &mut AnimationState,
 ) {
@@ -82,7 +82,7 @@ pub fn process_tick(
         None
     };
 
-    shared_behavior::process_tick(tick, player_command, tile_movement, None);
+    shared_behavior::process_tick(tick, player_command, tile_movement.inner_mut(), None);
 
     render_position.recv_position(
         is_server,
@@ -98,7 +98,7 @@ pub fn process_tick(
 
 pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut TileMovement, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
+    mut position_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
