@@ -1,13 +1,13 @@
 use naia_bevy_shared::Tick;
 
-use crate::{messages::PlayerCommands, components::{TileMovement, LookDirection}};
+use crate::{messages::PlayerCommands, components::{TileMovement, ProcessTickResult, LookDirection}};
 
 pub fn process_tick(
     tick: Tick,
     player_command: Option<PlayerCommands>,
     tile_movement: &mut TileMovement,
     look_direction_opt: Option<&mut LookDirection>,
-) -> Option<(i16, i16)> {
+) -> (ProcessTickResult, Option<(i16, i16)>) {
 
     let new_look_direction = {
         if look_direction_opt.is_none() {
@@ -21,7 +21,7 @@ pub fn process_tick(
         }
     };
 
-    let output = tile_movement.process_tick(tick, player_command);
+    let (result, output) = tile_movement.process_tick(tick, player_command);
 
     if let Some(look_direction) = look_direction_opt {
         if let Some(new_look_direction) = new_look_direction {
@@ -31,5 +31,5 @@ pub fn process_tick(
         }
     }
 
-    return output;
+    return (result, output);
 }

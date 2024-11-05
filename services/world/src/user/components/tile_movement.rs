@@ -6,11 +6,11 @@ use naia_bevy_server::Tick;
 use logging::info;
 
 use world_server_naia_proto::{components::{NextTilePosition, TileMovement}};
+use world_server_naia_proto::components::ProcessTickResult;
 
 #[derive(Component)]
 pub struct ServerTileMovement {
     tile_movement: TileMovement,
-    outbound_next_tile: Option<(i16, i16)>,
 }
 
 impl ServerTileMovement {
@@ -20,7 +20,6 @@ impl ServerTileMovement {
 
         let me = Self {
             tile_movement: TileMovement::new_stopped(true, false, next_tile_position),
-            outbound_next_tile: None,
         };
 
         me
@@ -30,8 +29,20 @@ impl ServerTileMovement {
         return &mut self.tile_movement;
     }
 
-    pub fn set_outbound_next_tile(&mut self, outbound_tile_x: i16, outbound_tile_y: i16) {
-        self.outbound_next_tile = Some((outbound_tile_x, outbound_tile_y));
+    pub fn get_dis(&self) -> f32 {
+        return self.tile_movement.get_dis();
+    }
+
+    pub fn process_result(&mut self, result: ProcessTickResult) {
+        match result {
+            ProcessTickResult::ShouldStop(tile_x, tile_y) => {
+                self.tile_movement.set_stopped(tile_x, tile_y);
+            }
+            ProcessTickResult::DoNothing => {},
+            ProcessTickResult::ShouldMove(_, _, _) => {
+                panic!("ShouldMove not expected");
+            }
+        }
     }
 
     // on the client, never called
@@ -40,14 +51,14 @@ impl ServerTileMovement {
         &mut self,
         tick: Tick,
         next_tile_position: &mut NextTilePosition,
+        next_tile_x: i16,
+        next_tile_y: i16,
     ) {
-        if let Some((next_tile_x, next_tile_y)) = self.outbound_next_tile.take() {
-            next_tile_position.set(next_tile_x, next_tile_y);
+        next_tile_position.set(next_tile_x, next_tile_y);
 
-            info!(
-                "Send NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
-                tick, next_tile_x, next_tile_y
-            );
-        }
+        info!(
+            "Send NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
+            tick, next_tile_x, next_tile_y
+        );
     }
 }

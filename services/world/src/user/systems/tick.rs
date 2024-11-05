@@ -110,20 +110,31 @@ pub fn tick_events(world: &mut World) {
                 let Ok(mut look_dir) = lookdir_q.get_mut(entity) else {
                     panic!("LookDirection not found for entity: {:?}", entity);
                 };
-                if let Some((outbound_tile_x, outbound_tile_y)) = shared_behavior::process_tick(
+
+                if let Some(player_commands) = player_command.as_ref() {
+                    if let Some(move_dir) = player_commands.get_move() {
+                        let distance = tile_movement.get_dis();
+                        info!("Recv Move Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", server_tick, move_dir, distance);
+                    } else {
+                        info!("Recv Move Command. Tick: {:?}. MoveDir: None", server_tick);
+                    }
+                }
+
+                let (result, output) = shared_behavior::process_tick(
                     *server_tick,
                     player_command,
                     tile_movement.inner_mut(),
                     Some(&mut look_dir),
-                ) {
-                    tile_movement.set_outbound_next_tile(outbound_tile_x, outbound_tile_y);
-                }
+                );
+                tile_movement.process_result(result);
 
-                // send updates
-                let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
-                    panic!("NextTilePosition not found for entity: {:?}", entity);
-                };
-                tile_movement.send_updated_next_tile_position(*server_tick, &mut next_tile_position);
+                if let Some((outbound_tile_x, outbound_tile_y)) = output {
+                    // send updates
+                    let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
+                        panic!("NextTilePosition not found for entity: {:?}", entity);
+                    };
+                    tile_movement.send_updated_next_tile_position(*server_tick, &mut next_tile_position, outbound_tile_x, outbound_tile_y);
+                }
             }
         }
     }

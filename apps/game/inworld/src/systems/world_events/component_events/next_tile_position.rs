@@ -19,6 +19,7 @@ use game_engine::{
         WorldUpdateComponentEvent,
     },
 };
+use game_engine::logging::warn;
 
 use crate::{
     components::{AnimationState, Confirmed, RenderPosition},
@@ -113,19 +114,19 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position, false);
+        tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position);
     }
 
     let Some(owned_entity) = &global.owned_entity else {
         return;
     };
     let mut latest_tick: Option<Tick> = None;
-    let server_entity = owned_entity.confirmed;
-    let client_entity = owned_entity.predicted;
+    let confirmed_entity = owned_entity.confirmed;
+    let predicted_entity = owned_entity.predicted;
 
     for (server_tick, updated_entity) in events {
         // If entity is owned
-        if updated_entity == server_entity {
+        if updated_entity == confirmed_entity {
             if let Some(last_tick) = &mut latest_tick {
                 if sequence_greater_than(server_tick, *last_tick) {
                     *last_tick = server_tick;
@@ -144,19 +145,19 @@ pub fn update_next_tile_position_events(
 
     let Ok(
         [(
-            mut server_tile_movement,
-            mut server_render_position,
-            mut server_animation_state,
+            mut confirmed_tile_movement,
+            mut confirmed_render_position,
+            mut confirmed_animation_state,
         ), (
-            mut client_tile_movement,
-            mut client_render_position,
-            mut client_animation_state,
+            mut predicted_tile_movement,
+            mut predicted_render_position,
+            mut predicted_animation_state,
         )],
-    ) = tile_movement_q.get_many_mut([server_entity, client_entity])
+    ) = tile_movement_q.get_many_mut([confirmed_entity, predicted_entity])
     else {
         panic!(
             "failed to get components for entities: {:?}, {:?}",
-            server_entity, client_entity
+            confirmed_entity, predicted_entity
         );
     };
 
@@ -174,9 +175,9 @@ pub fn update_next_tile_position_events(
                 true,
                 current_tick,
                 None,
-                &mut server_tile_movement,
-                &mut server_render_position,
-                &mut server_animation_state,
+                &mut confirmed_tile_movement,
+                &mut confirmed_render_position,
+                &mut confirmed_animation_state,
             );
             current_tick = current_tick.wrapping_add(1);
         }
@@ -184,19 +185,22 @@ pub fn update_next_tile_position_events(
 
     //info!("Updated Server Tick to {:?}", current_tick);
 
+    warn!("ROLLBACK!");
+
     // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
-    client_tile_movement.recv_rollback(server_tile_movement.inner());
-    client_render_position.recv_rollback(&server_render_position);
+    predicted_tile_movement.recv_rollback(&confirmed_tile_movement);
+    predicted_render_position.recv_rollback(&confirmed_render_position);
 
     // PREDICTION ROLLBACK
 
     let replay_commands = input_manager.pop_command_replays(current_tick);
 
     // process commands
-    //warn!("ROLLBACK!");
     for (command_tick, outgoing_command_opt) in replay_commands {
+
+        info!("Replay Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", command_tick, outgoing_command_opt.as_ref().map(|c| c.get_move()), predicted_tile_movement.get_dis());
 
         // process command
         input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
@@ -208,14 +212,15 @@ pub fn update_next_tile_position_events(
             true,
             command_tick,
             player_command,
-            &mut client_tile_movement,
-            &mut client_render_position,
-            &mut client_animation_state,
+            &mut predicted_tile_movement,
+            &mut predicted_render_position,
+            &mut predicted_animation_state,
         );
     }
-    //warn!("---");
+    warn!("---");
 
-    client_render_position.advance_millis(&client, 0);
+    predicted_render_position.advance_millis(&client, 0);
+    predicted_tile_movement.finish_rollback();
 }
 
 pub fn remove_next_tile_position_events(

@@ -1,10 +1,9 @@
-use std::collections::VecDeque;
 
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::Tick;
 
-use logging::{info, warn};
+use logging::{warn};
 
 use crate::{
     components::NextTilePosition,
@@ -40,6 +39,13 @@ impl TileMovement {
         me
     }
 
+    pub fn get_dis(&self) -> f32 {
+        match &self.state {
+            TileMovementState::Stopped(state) => 0.0,
+            TileMovementState::Moving(state) => (state.distance/state.distance_max),
+        }
+    }
+
     // retrieve the current position of the entity
     pub fn current_position(&self) -> (f32, f32) {
         match &self.state {
@@ -48,42 +54,86 @@ impl TileMovement {
         }
     }
 
+    // retrieve the current tile position of the entity
+    pub fn current_tile_position(&self) -> (i16, i16) {
+        match &self.state {
+            TileMovementState::Stopped(state) => state.current_tile_position(),
+            TileMovementState::Moving(_state) => panic!("Expected Stopped state"),
+        }
+    }
+
+    pub fn to_tile_position(&self) -> (i16, i16) {
+        match &self.state {
+            TileMovementState::Stopped(_state) => panic!("Expected Moving state"),
+            TileMovementState::Moving(state) => (state.to_tile_x, state.to_tile_y),
+        }
+    }
+
     // return whether the entity is moving
     pub fn is_moving(&self) -> bool {
         self.state.is_moving()
     }
 
-    // return rotation of the entity if moving
-    pub fn get_direction(&self) -> Option<f32> {
-        if !self.state.is_moving() {
-            return None;
+    // return whether the entity is stopped
+    pub fn is_stopped(&self) -> bool {
+        self.state.is_stopped()
+    }
+
+    pub fn set_stopped(&mut self, tile_x: i16, tile_y: i16) {
+        if !self.is_moving() {
+            panic!("Cannot set stopped state when not moving");
+        }
+        self.state = TileMovementState::stopped(tile_x, tile_y);
+    }
+
+    pub fn set_moving(&mut self, move_dir: Direction) {
+        if !self.is_stopped() {
+            panic!("Cannot set moving state when not stopped");
+        }
+        let (current_tile_x, current_tile_y) = self.current_tile_position();
+        self.state = TileMovementState::moving(current_tile_x, current_tile_y, move_dir);
+    }
+
+    // call on each tick
+    pub fn process_tick(
+        &mut self,
+        tick: Tick,
+        player_command: Option<PlayerCommands>,
+    ) -> (ProcessTickResult, Option<(i16, i16)>) {
+        let mut output = None;
+
+        if self.is_predicted || self.is_server {
+            output = self.process_command(tick, player_command);
         }
 
-        let TileMovementState::Moving(state) = &self.state else {
-            panic!("Expected Moving state");
+        let mut result = match &mut self.state {
+            TileMovementState::Stopped(state) => state.process_tick(),
+            TileMovementState::Moving(state) => state.process_tick(),
         };
 
-        let from_x = state.from_tile_x;
-        let from_y = state.from_tile_y;
-        let to_x = state.to_tile_x;
-        let to_y = state.to_tile_y;
+        if let ProcessTickResult::ShouldMove(stopped_x, stopped_y, buffered_move_dir) = result {
+            self.set_stopped(stopped_x, stopped_y);
+            // TODO: get and add leftover progress?
+            self.set_moving(buffered_move_dir);
+            if self.is_server {
+                let (dx, dy) = buffered_move_dir.to_delta();
 
-        let dis_x = (to_x - from_x).min(1).max(-1);
-        let dis_y = (to_y - from_y).min(1).max(-1);
+                let next_tile_x = stopped_x + dx as i16;
+                let next_tile_y = stopped_y + dy as i16;
 
-        if dis_x == 0 && dis_y == 0 {
-            return None;
+                output = Some((next_tile_x, next_tile_y));
+            }
+
+            result = ProcessTickResult::DoNothing;
+
         }
 
-        let angle_radians = (dis_y as f32).atan2(dis_x as f32);
-        let angle_degrees = angle_radians.to_degrees();
-        let angle_degrees = (angle_degrees + 90.0) % 360.0;
-        Some(angle_degrees)
+        return (result, output);
     }
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    fn process_command(&mut self, tick: Tick, command: Option<PlayerCommands>, prediction: bool) -> Option<(i16, i16)> {
+    fn process_command(&mut self, tick: Tick, command: Option<PlayerCommands>) -> Option<(i16, i16)> {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
@@ -98,30 +148,21 @@ impl TileMovement {
         if self.state.is_moving() {
 
             if self.state.can_buffer_movement() {
-
                 self.state.buffer_movement(tick, direction);
             }
 
         } else {
 
-            let (dx, dy) = direction.to_delta();
-
             let TileMovementState::Stopped(state) = &self.state else {
                 panic!("Expected Stopped state");
             };
 
-            let current_tile_x = state.tile_x;
-            let current_tile_y = state.tile_y;
+            let (dx, dy) = direction.to_delta();
+
             let next_tile_x = state.tile_x + dx as i16;
             let next_tile_y = state.tile_y + dy as i16;
 
-            self.state = TileMovementState::moving(
-                current_tile_x,
-                current_tile_y,
-                next_tile_x,
-                next_tile_y,
-                prediction,
-            );
+            self.set_moving(direction);
 
             if self.is_server {
                 return Some((next_tile_x, next_tile_y));
@@ -131,104 +172,8 @@ impl TileMovement {
         return None;
     }
 
-    // on the client, called by confirmed entities
-    // on the server, never called
-    pub fn recv_updated_next_tile_position(
-        &mut self,
-        update_tick: Tick,
-        next_tile_position: &NextTilePosition,
-        prediction: bool,
-    ) {
-        if self.is_server {
-            panic!("Server entities do not receive updates");
-        }
-        if self.is_predicted {
-            panic!("Predicted entities do not receive updates");
-        }
-
-        if self.state.is_stopped() {
-            // is stopped
-            let TileMovementState::Stopped(state) = &self.state else {
-                panic!("Expected Stopped state");
-            };
-
-            let (current_tile_x, current_tile_y) = (state.tile_x, state.tile_y);
-            let (next_tile_x, next_tile_y) = (next_tile_position.x(), next_tile_position.y());
-            if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
-                return;
-            }
-
-            // info!(
-            //     "Recv NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
-            //     update_tick, next_tile_x, next_tile_y
-            // );
-
-            self.state = TileMovementState::moving(
-                current_tile_x,
-                current_tile_y,
-                next_tile_x,
-                next_tile_y,
-                prediction,
-            );
-        } else {
-            // is moving
-            let TileMovementState::Moving(state) = &mut self.state else {
-                panic!("Expected Moving state");
-            };
-
-            state.recv_updated_next_tile_position(
-                update_tick,
-                next_tile_position.x(),
-                next_tile_position.y(),
-                self.is_predicted,
-            );
-        }
-    }
-
-    // on the client, called by predicted entities
-    // on the server, never called
-    pub fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
-        if self.is_server {
-            panic!("Server entities do not receive rollbacks");
-        }
-        if !self.is_predicted {
-            panic!("Only predicted entities can receive rollbacks");
-        }
-        if server_tile_movement.is_server {
-            panic!("Server entities cannot send rollbacks");
-        }
-        if server_tile_movement.is_predicted {
-            panic!("Predicted entities cannot send rollbacks");
-        }
-
-        self.state = server_tile_movement.state.clone();
-    }
-
-    // call on each tick
-    pub fn process_tick(
-        &mut self,
-        tick: Tick,
-        player_command: Option<PlayerCommands>,
-    ) -> Option<(i16, i16)> {
-        let mut output = None;
-
-        if self.is_predicted || self.is_server {
-            output = self.process_command(tick, player_command, self.is_predicted);
-        }
-
-        let result = match &mut self.state {
-            TileMovementState::Stopped(state) => state.process_tick(),
-            TileMovementState::Moving(state) => state.process_tick(self.is_predicted),
-        };
-
-        match result {
-            ProcessTickResult::ShouldStop(tile_x, tile_y) => {
-                self.state = TileMovementState::stopped(tile_x, tile_y);
-            }
-            ProcessTickResult::DoNothing => {}
-        }
-
-        return output;
+    pub fn mirror(&mut self, other: &TileMovement) {
+        self.state = other.state.clone();
     }
 }
 
@@ -244,8 +189,8 @@ impl TileMovementState {
         Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
     }
 
-    fn moving(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) -> Self {
-        Self::Moving(TileMovementMovingState::new(ax, ay, bx, by, prediction))
+    fn moving(tile_x: i16, tile_y: i16, move_dir: Direction) -> Self {
+        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir))
     }
 
     fn is_stopped(&self) -> bool {
@@ -263,7 +208,6 @@ impl TileMovementState {
     }
 
     fn can_buffer_movement(&self) -> bool {
-        return false; // UNDO?
         match self {
             Self::Stopped(_) => false,
             Self::Moving(state) => state.can_buffer_movement(),
@@ -298,6 +242,14 @@ impl TileMovementStoppedState {
         )
     }
 
+    // retrieve the current tile position of the entity
+    fn current_tile_position(&self) -> (i16, i16) {
+        (
+            self.tile_x,
+            self.tile_y,
+        )
+    }
+
     // call on each tick
     fn process_tick(&mut self) -> ProcessTickResult {
         return ProcessTickResult::DoNothing;
@@ -314,39 +266,25 @@ struct TileMovementMovingState {
     distance: f32,
     distance_max: f32,
     done: bool,
-    buffered_future_tiles_opt: Option<VecDeque<(Tick, i16, i16)>>,
+    buffered_move_dir: Option<Direction>,
 }
 
 impl TileMovementMovingState {
-    fn new(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) -> Self {
+    fn new(from_tile_x: i16, from_tile_y: i16, move_dir: Direction) -> Self {
 
-        if ax == bx && ay == by {
-            panic!("from_tile and to_tile are the same");
-        }
-
-        let mut to_tile_x = bx;
-        let mut to_tile_y = by;
-
-        let mut buffered_future_tiles_opt: Option<VecDeque<(Tick, i16, i16)>> = None;
-        if !is_valid_tile_transition(ax, ay, bx, by, prediction) {
-            buffered_future_tiles_opt = Some(VecDeque::new());
-            let mut buffered_future_tiles = buffered_future_tiles_opt.as_mut().unwrap();
-            buffer_pathfind_tiles(ax, ay, bx, by, &mut buffered_future_tiles);
-            buffered_future_tiles.push_back((0, bx, by));
-            let (_, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
-            to_tile_x = next_x;
-            to_tile_y = next_y;
-        }
+        let (dx, dy) = move_dir.to_delta();
+        let to_tile_x = from_tile_x + dx as i16;
+        let to_tile_y = from_tile_y + dy as i16;
 
         Self {
-            from_tile_x: ax,
-            from_tile_y: ay,
+            from_tile_x,
+            from_tile_y,
             to_tile_x,
             to_tile_y,
             distance: 0.0,
-            distance_max: get_tile_distance(ax, ay, to_tile_x, to_tile_y),
+            distance_max: get_tile_distance(from_tile_x, from_tile_y, to_tile_x, to_tile_y),
             done: false,
-            buffered_future_tiles_opt,
+            buffered_move_dir: None,
         }
     }
 
@@ -366,7 +304,7 @@ impl TileMovementMovingState {
     }
 
     // call on each tick
-    fn process_tick(&mut self, prediction: bool,) -> ProcessTickResult {
+    fn process_tick(&mut self) -> ProcessTickResult {
         if self.done {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         }
@@ -374,114 +312,33 @@ impl TileMovementMovingState {
         self.distance += MOVEMENT_SPEED;
 
         if self.distance >= self.distance_max {
-
-            if self.buffered_future_tiles_opt.is_none() {
-                self.distance = self.distance_max;
-                self.done = true;
+            self.done = true;
+            if self.buffered_move_dir.is_none() {
                 return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
             } else {
-                // we have buffered future tiles
-                self.distance -= self.distance_max; // open question whether this approach is better?
-                //self.distance = 0.0; // open question whether this approach is better?
-
-                let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
-                let (next_tick, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
-
-                warn!("Prediction({:?}), Processing Buffered Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, next_tick, next_x, next_y);
-
-                if buffered_future_tiles.is_empty() {
-                    self.buffered_future_tiles_opt = None;
-                }
-
-                self.from_tile_x = self.to_tile_x;
-                self.from_tile_y = self.to_tile_y;
-                self.to_tile_x = next_x;
-                self.to_tile_y = next_y;
-
-                self.distance_max = get_tile_distance(self.from_tile_x, self.from_tile_y, self.to_tile_x, self.to_tile_y);
-                return ProcessTickResult::DoNothing;
+                let buffered_move_dir = self.buffered_move_dir.take().unwrap();
+                return ProcessTickResult::ShouldMove(self.to_tile_x, self.to_tile_y, buffered_move_dir);
             }
         } else {
             return ProcessTickResult::DoNothing;
         }
     }
 
-    pub(crate) fn recv_updated_next_tile_position(
-        &mut self,
-        updated_tick: Tick,
-        next_x: i16,
-        next_y: i16,
-        prediction: bool,
-    ) {
-        if self.buffered_future_tiles_opt.is_none() {
-            self.buffered_future_tiles_opt = Some(VecDeque::new());
-        }
-
-        let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
-
-        if let Some((_, last_x, last_y)) = buffered_future_tiles.back() {
-            let last_x = *last_x;
-            let last_y = *last_y;
-
-            if last_x == next_x && last_y == next_y {
-                warn!("Prediction({:?}), Ignoring Duplicate Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
-                return;
-            }
-
-            if !is_valid_tile_transition(last_x, last_y, next_x, next_y, prediction) {
-                buffer_pathfind_tiles(last_x, last_y, next_x, next_y, buffered_future_tiles);
-            }
-        }
-
-        buffered_future_tiles.push_back((updated_tick, next_x, next_y));
-        warn!("Prediction({:?}), Buffering Next Tile Position! Tick: {:?}, Tile: ({:?}, {:?})", prediction, updated_tick, next_x, next_y);
-    }
-
     pub(crate) fn can_buffer_movement(&self) -> bool {
+        // return false;
         return (self.distance / self.distance_max) > 0.75;
     }
 
     pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
+        warn!("buffering command for Tick: {:?}, MoveDir: {:?}", tick, move_dir);
 
-        self.buffered_future_tiles_opt = Some(VecDeque::new());
-
-        let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
-
-        let (dx, dy) = move_dir.to_delta();
-        let next_x = self.to_tile_x + dx as i16;
-        let next_y = self.to_tile_y + dy as i16;
-
-        buffered_future_tiles.push_back((tick, next_x, next_y));
-
-        warn!("buffering command for tick: {:?}", tick);
+        self.buffered_move_dir = Some(move_dir);
     }
 }
 
-// does not add (ax, ay) or (bx, by) to the buffer
-fn buffer_pathfind_tiles(
-    ax: i16, ay: i16,
-    bx: i16, by: i16,
-    buffer: &mut VecDeque<(Tick, i16, i16)>
-) {
-    info!("Pathfinding from ({:?}, {:?}) to ({:?}, {:?})", ax, ay, bx, by);
-
-    let mut cx = ax;
-    let mut cy = ay;
-
-    while cx != bx || cy != by {
-        let dx = (bx - cx).min(1).max(-1);
-        let dy = (by - cy).min(1).max(-1);
-
-        cx += dx;
-        cy += dy;
-
-        info!("Pathfinding: ({:?}, {:?})", cx, cy);
-        buffer.push_back((0, cx, cy));
-    }
-}
-
-enum ProcessTickResult {
+pub enum ProcessTickResult {
     ShouldStop(i16, i16),
+    ShouldMove(i16, i16, Direction),
     DoNothing,
 }
 
@@ -496,16 +353,4 @@ fn get_tile_distance(ax: i16, ay: i16, bx: i16, by: i16) -> f32 {
     };
     let distance_max = distance_max * TILE_SIZE;
     distance_max
-}
-
-fn is_valid_tile_transition(ax: i16, ay: i16, bx: i16, by: i16, prediction: bool) -> bool {
-    if (ax - bx).abs() + (ay - by).abs() > 2 {
-        warn!(
-            "from_tile and to_tile are not adjacent. ({:?}, {:?}) -> ({:?}, {:?}). Prediction: {:?}",
-            ax, ay, bx, by, prediction,
-        );
-        return false;
-    } else {
-        return true;
-    }
 }

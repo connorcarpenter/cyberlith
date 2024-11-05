@@ -7,6 +7,7 @@ use game_engine::{
         messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
+use game_engine::logging::info;
 
 use crate::{
     components::{Confirmed, Predicted, RenderPosition},
@@ -41,9 +42,11 @@ pub fn client_tick_events(
         // process commands
         if let Some(outgoing_command) = input_manager.pop_outgoing_command() {
 
-            // command.log(client_tick);
+            // outgoing_command.log(client_tick);
 
             // send command
+            let distance = client_tile_movement.get_dis();
+            info!("Send Command. Tick: {:?}. MoveDir: {:?}, Dis: {:?}", client_tick, outgoing_command.get_move(), distance);
             client.send_tick_buffer_message::<PlayerCommandChannel, PlayerCommands>(&client_tick, &outgoing_command);
 
             input_manager.save_to_command_history(client_tick, Some(outgoing_command.clone()));
@@ -82,7 +85,8 @@ pub fn process_tick(
         None
     };
 
-    shared_behavior::process_tick(tick, player_command, tile_movement.inner_mut(), None);
+    let (result, _) = shared_behavior::process_tick(tick, player_command, tile_movement.inner_mut(), None);
+    tile_movement.process_result(result);
 
     render_position.recv_position(
         is_server,
