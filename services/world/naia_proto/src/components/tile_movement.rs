@@ -94,6 +94,16 @@ impl TileMovement {
         self.state = TileMovementState::moving(current_tile_x, current_tile_y, move_dir);
     }
 
+    pub fn set_continue(&mut self, tile_x: i16, tile_y: i16, move_dir: Direction) {
+        if !self.is_moving() {
+            panic!("Cannot set continue state when not moving");
+        }
+
+        let leftover = self.state.leftover_distance();
+
+        self.state = TileMovementState::continuing(tile_x, tile_y, move_dir, leftover);
+    }
+
     // call on each tick
     pub fn process_tick(
         &mut self,
@@ -111,15 +121,14 @@ impl TileMovement {
             TileMovementState::Moving(state) => state.process_tick(),
         };
 
-        if let ProcessTickResult::ShouldMove(stopped_x, stopped_y, buffered_move_dir) = result {
-            self.set_stopped(stopped_x, stopped_y);
-            // TODO: get and add leftover progress?
-            self.set_moving(buffered_move_dir);
+        if let ProcessTickResult::ShouldContinue(tile_x, tile_y, buffered_move_dir) = result {
+            self.set_continue(tile_x, tile_y, buffered_move_dir);
+
             if self.is_server {
                 let (dx, dy) = buffered_move_dir.to_delta();
 
-                let next_tile_x = stopped_x + dx as i16;
-                let next_tile_y = stopped_y + dy as i16;
+                let next_tile_x = tile_x + dx as i16;
+                let next_tile_y = tile_y + dy as i16;
 
                 output = Some((next_tile_x, next_tile_y));
             }
@@ -190,7 +199,11 @@ impl TileMovementState {
     }
 
     fn moving(tile_x: i16, tile_y: i16, move_dir: Direction) -> Self {
-        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir))
+        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir, 0.0))
+    }
+
+    fn continuing(tile_x: i16, tile_y: i16, move_dir: Direction, leftover: f32) -> Self {
+        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir, leftover))
     }
 
     fn is_stopped(&self) -> bool {
@@ -218,6 +231,13 @@ impl TileMovementState {
         match self {
             Self::Stopped(_) => {},
             Self::Moving(state) => state.buffer_movement(tick, move_dir),
+        }
+    }
+
+    pub fn leftover_distance(&self) -> f32 {
+        match self {
+            Self::Stopped(_) => panic!("Expected Moving state"),
+            Self::Moving(state) => state.leftover_distance(),
         }
     }
 }
@@ -270,7 +290,8 @@ struct TileMovementMovingState {
 }
 
 impl TileMovementMovingState {
-    fn new(from_tile_x: i16, from_tile_y: i16, move_dir: Direction) -> Self {
+
+    fn new(from_tile_x: i16, from_tile_y: i16, move_dir: Direction, leftover: f32) -> Self {
 
         let (dx, dy) = move_dir.to_delta();
         let to_tile_x = from_tile_x + dx as i16;
@@ -281,7 +302,7 @@ impl TileMovementMovingState {
             from_tile_y,
             to_tile_x,
             to_tile_y,
-            distance: 0.0,
+            distance: leftover,
             distance_max: get_tile_distance(from_tile_x, from_tile_y, to_tile_x, to_tile_y),
             done: false,
             buffered_move_dir: None,
@@ -317,7 +338,7 @@ impl TileMovementMovingState {
                 return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
             } else {
                 let buffered_move_dir = self.buffered_move_dir.take().unwrap();
-                return ProcessTickResult::ShouldMove(self.to_tile_x, self.to_tile_y, buffered_move_dir);
+                return ProcessTickResult::ShouldContinue(self.to_tile_x, self.to_tile_y, buffered_move_dir);
             }
         } else {
             return ProcessTickResult::DoNothing;
@@ -334,11 +355,18 @@ impl TileMovementMovingState {
 
         self.buffered_move_dir = Some(move_dir);
     }
+
+    pub(crate) fn leftover_distance(&self) -> f32 {
+        if !self.done {
+            panic!("Expected done state");
+        }
+        return self.distance - self.distance_max;
+    }
 }
 
 pub enum ProcessTickResult {
     ShouldStop(i16, i16),
-    ShouldMove(i16, i16, Direction),
+    ShouldContinue(i16, i16, Direction),
     DoNothing,
 }
 

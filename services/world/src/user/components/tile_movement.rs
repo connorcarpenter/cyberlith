@@ -39,7 +39,7 @@ impl ServerTileMovement {
                 self.tile_movement.set_stopped(tile_x, tile_y);
             }
             ProcessTickResult::DoNothing => {},
-            ProcessTickResult::ShouldMove(_, _, _) => {
+            ProcessTickResult::ShouldContinue(_, _, _) => {
                 panic!("ShouldMove not expected");
             }
         }

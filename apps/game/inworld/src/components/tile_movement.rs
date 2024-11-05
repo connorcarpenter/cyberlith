@@ -78,7 +78,7 @@ impl ClientTileMovement {
                 self.buffer_updated_next_tile_position(update_tick, next_tile_position.x(), next_tile_position.y());
 
                 // pop buffer
-                self.pop_and_use_buffered_future_tiles();
+                self.pop_and_use_buffered_future_tiles(current_tile_x, current_tile_y);
             }
         } else {
             // is moving
@@ -86,16 +86,15 @@ impl ClientTileMovement {
         }
     }
 
-    fn pop_and_use_buffered_future_tiles(&mut self) {
+    fn pop_and_use_buffered_future_tiles(&mut self, tile_x: i16, tile_y: i16) {
 
-        if !self.tile_movement.is_stopped() {
-            panic!("Cannot pop buffered future tiles when not stopped");
+        if self.tile_movement.is_stopped() {
+            panic!("Buffered Future Tiles should already be used before stopping");
         }
         if !self.buffered_future_tiles_opt.is_some() {
             panic!("No buffered future tiles to pop");
         }
 
-        let (tile_x, tile_y) = self.tile_movement.current_tile_position();
         let buffered_future_tiles = self.buffered_future_tiles_opt.as_mut().unwrap();
 
         let (next_tick, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
@@ -110,7 +109,7 @@ impl ClientTileMovement {
         let dy = (next_y - tile_y) as i8;
 
         if let Some(move_dir) = Direction::from_delta(dx, dy) {
-            self.tile_movement.set_moving(move_dir);
+            self.tile_movement.set_continue(tile_x, tile_y, move_dir);
         } else {
             panic!("Invalid move direction. From: ({:?}, {:?}), To: ({:?}, {:?})", tile_x, tile_y, next_x, next_y);
         }
@@ -192,14 +191,15 @@ impl ClientTileMovement {
     pub fn process_result(&mut self, result: ProcessTickResult) {
         match result {
             ProcessTickResult::ShouldStop(tile_x, tile_y) => {
-                self.tile_movement.set_stopped(tile_x, tile_y);
 
                 if self.buffered_future_tiles_opt.is_some() {
-                    self.pop_and_use_buffered_future_tiles();
+                    self.pop_and_use_buffered_future_tiles(tile_x, tile_y);
+                } else {
+                    self.tile_movement.set_stopped(tile_x, tile_y);
                 }
             }
             ProcessTickResult::DoNothing => {},
-            ProcessTickResult::ShouldMove(_, _, _) => {
+            ProcessTickResult::ShouldContinue(_, _, _) => {
                 panic!("ShouldMove not expected");
             }
         }
