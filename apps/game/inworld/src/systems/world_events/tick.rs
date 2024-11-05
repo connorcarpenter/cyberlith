@@ -6,14 +6,13 @@ use game_engine::{
         behavior as shared_behavior, channels::PlayerCommandChannel,
         messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
+    logging::info,
 };
-use game_engine::logging::info;
 
 use crate::{
-    components::{Confirmed, Predicted, RenderPosition},
-    resources::{Global, InputManager},
+    components::{AnimationState, ClientTileMovement, Confirmed, Predicted, RenderPosition},
+    resources::{Global, TickTracker, InputManager},
 };
-use crate::components::{AnimationState, ClientTileMovement};
 
 pub fn client_tick_events(
     mut client: WorldClient,
@@ -101,6 +100,7 @@ pub fn process_tick(
 }
 
 pub fn server_tick_events(
+    mut tick_tracker: ResMut<TickTracker>,
     mut tick_reader: EventReader<WorldServerTickEvent>,
     mut position_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
 ) {
@@ -119,5 +119,7 @@ pub fn server_tick_events(
                 &mut animation_state,
             );
         }
+
+        tick_tracker.set_last_processed_server_tick(server_tick);
     }
 }

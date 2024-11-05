@@ -41,8 +41,8 @@ impl TileMovement {
 
     pub fn get_dis(&self) -> f32 {
         match &self.state {
-            TileMovementState::Stopped(state) => 0.0,
-            TileMovementState::Moving(state) => (state.distance/state.distance_max),
+            TileMovementState::Stopped(_state) => 0.0,
+            TileMovementState::Moving(state) => state.distance / state.distance_max,
         }
     }
 

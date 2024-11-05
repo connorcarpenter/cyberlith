@@ -22,11 +22,10 @@ use game_engine::{
 use game_engine::logging::warn;
 
 use crate::{
-    components::{AnimationState, Confirmed, RenderPosition},
-    resources::{Global, InputManager},
+    components::{AnimationState, ClientTileMovement, Confirmed, RenderPosition},
+    resources::{Global, InputManager, TickTracker},
     systems::world_events::{process_tick, PredictionEvents},
 };
-use crate::components::ClientTileMovement;
 
 pub fn insert_next_tile_position_events(
     client: WorldClient,
@@ -79,6 +78,7 @@ pub fn insert_next_tile_position_events(
 pub fn update_next_tile_position_events(
     client: WorldClient,
     global: Res<Global>,
+    tick_tracker: Res<TickTracker>,
     mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
@@ -101,6 +101,8 @@ pub fn update_next_tile_position_events(
         return;
     }
 
+    warn!("ROLLBACK!");
+
     for (update_tick, updated_entity) in &events {
         let Ok(next_tile_position) = next_tile_position_q.get(*updated_entity) else {
             panic!(
@@ -118,6 +120,7 @@ pub fn update_next_tile_position_events(
     }
 
     let Some(owned_entity) = &global.owned_entity else {
+        warn!("---");
         return;
     };
     let mut latest_tick: Option<Tick> = None;
@@ -138,16 +141,17 @@ pub fn update_next_tile_position_events(
     }
 
     let Some(server_tick) = latest_tick else {
+        warn!("---");
         return;
     };
 
-    //info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
+    info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
 
     let Ok(
         [(
-            mut confirmed_tile_movement,
-            mut confirmed_render_position,
-            mut confirmed_animation_state,
+            confirmed_tile_movement,
+            confirmed_render_position,
+            _,
         ), (
             mut predicted_tile_movement,
             mut predicted_render_position,
@@ -161,31 +165,12 @@ pub fn update_next_tile_position_events(
         );
     };
 
-    let old_server_tick = client.server_tick().unwrap();
-    let mut current_tick = server_tick;
+    let current_tick = server_tick;
 
-    // ROLL FORWARD SERVER
-
-    {
-        while sequence_greater_than(old_server_tick, current_tick)
-            || old_server_tick == current_tick
-        {
-            process_tick(
-                true,
-                true,
-                current_tick,
-                None,
-                &mut confirmed_tile_movement,
-                &mut confirmed_render_position,
-                &mut confirmed_animation_state,
-            );
-            current_tick = current_tick.wrapping_add(1);
-        }
+    let last_processed_server_tick = tick_tracker.last_processed_server_tick();
+    if last_processed_server_tick != current_tick {
+        warn!("Discrepancy! Last Processed Server Tick: {:?}. Server Update Tick: {:?}", last_processed_server_tick, current_tick);
     }
-
-    //info!("Updated Server Tick to {:?}", current_tick);
-
-    warn!("ROLLBACK!");
 
     // ROLLBACK CLIENT: Replay all stored commands
 
