@@ -5,9 +5,9 @@ use bevy_ecs::{
     entity::Entity,
     event::EventReader,
     prelude::{Query, Resource, World},
-    system::{SystemState},
+    system::{Res, SystemState},
 };
-use bevy_ecs::system::Res;
+
 use naia_bevy_server::{events::TickEvent, Server, UserKey};
 
 use logging::info;
@@ -15,13 +15,11 @@ use logging::info;
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
-    components::{NextTilePosition},
+    components::{LookDirection, NextTilePosition},
     messages::PlayerCommands,
 };
-use world_server_naia_proto::components::LookDirection;
 
-use crate::{user::UserManager, asset::AssetManager};
-use crate::user::components::ServerTileMovement;
+use crate::{user::{components::ServerTileMovement, UserManager}, asset::AssetManager};
 
 #[derive(Resource)]
 struct CachedTickEventsState {
@@ -112,12 +110,14 @@ pub fn tick_events(world: &mut World) {
                 let Ok(mut look_dir) = lookdir_q.get_mut(entity) else {
                     panic!("LookDirection not found for entity: {:?}", entity);
                 };
-                shared_behavior::process_tick(
+                if let Some((outbound_tile_x, outbound_tile_y)) = shared_behavior::process_tick(
                     *server_tick,
                     player_command,
                     tile_movement.inner_mut(),
                     Some(&mut look_dir),
-                );
+                ) {
+                    tile_movement.set_outbound_next_tile(outbound_tile_x, outbound_tile_y);
+                }
 
                 // send updates
                 let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {

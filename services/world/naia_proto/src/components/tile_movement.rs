@@ -10,8 +10,8 @@ use crate::{
     components::NextTilePosition,
     constants::{MOVEMENT_SPEED, TILE_SIZE},
     messages::PlayerCommands,
+    types::Direction,
 };
-use crate::types::Direction;
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -19,7 +19,6 @@ pub struct TileMovement {
     is_predicted: bool,
 
     state: TileMovementState,
-    outbound_next_tile: Option<(i16, i16)>,
 }
 
 impl TileMovement {
@@ -36,7 +35,6 @@ impl TileMovement {
             is_predicted: predicted,
 
             state: TileMovementState::stopped(next_tile_position.x(), next_tile_position.y()),
-            outbound_next_tile: None,
         };
 
         me
@@ -85,16 +83,16 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    fn process_command(&mut self, tick: Tick, command: Option<PlayerCommands>, prediction: bool) {
+    fn process_command(&mut self, tick: Tick, command: Option<PlayerCommands>, prediction: bool) -> Option<(i16, i16)> {
         if !self.is_server && !self.is_predicted {
             panic!("Only predicted entities can receive commands");
         }
 
         let Some(command) = command else {
-            return;
+            return None;
         };
         let Some(direction) = command.get_move() else {
-            return;
+            return None;
         };
 
         if self.state.is_moving() {
@@ -126,9 +124,11 @@ impl TileMovement {
             );
 
             if self.is_server {
-                self.outbound_next_tile = Some((next_tile_x, next_tile_y));
+                return Some((next_tile_x, next_tile_y));
             }
         }
+
+        return None;
     }
 
     // on the client, called by confirmed entities
@@ -185,26 +185,6 @@ impl TileMovement {
         }
     }
 
-    // on the client, never called
-    // on the server, called by confirmed entities
-    pub fn send_updated_next_tile_position(
-        &mut self,
-        tick: Tick,
-        next_tile_position: &mut NextTilePosition,
-    ) {
-        if !self.is_server {
-            panic!("Client entities do not send updates");
-        }
-        if let Some((next_tile_x, next_tile_y)) = self.outbound_next_tile.take() {
-            next_tile_position.set(next_tile_x, next_tile_y);
-
-            info!(
-                "Send NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
-                tick, next_tile_x, next_tile_y
-            );
-        }
-    }
-
     // on the client, called by predicted entities
     // on the server, never called
     pub fn recv_rollback(&mut self, server_tile_movement: &TileMovement) {
@@ -229,9 +209,11 @@ impl TileMovement {
         &mut self,
         tick: Tick,
         player_command: Option<PlayerCommands>,
-    ) {
+    ) -> Option<(i16, i16)> {
+        let mut output = None;
+
         if self.is_predicted || self.is_server {
-            self.process_command(tick, player_command, self.is_predicted);
+            output = self.process_command(tick, player_command, self.is_predicted);
         }
 
         let result = match &mut self.state {
@@ -245,6 +227,8 @@ impl TileMovement {
             }
             ProcessTickResult::DoNothing => {}
         }
+
+        return output;
     }
 }
 
@@ -279,6 +263,7 @@ impl TileMovementState {
     }
 
     fn can_buffer_movement(&self) -> bool {
+        return false; // UNDO?
         match self {
             Self::Stopped(_) => false,
             Self::Moving(state) => state.can_buffer_movement(),
