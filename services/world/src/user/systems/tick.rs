@@ -113,8 +113,8 @@ pub fn tick_events(world: &mut World) {
 
                 if let Some(player_commands) = player_command.as_ref() {
                     if let Some(move_dir) = player_commands.get_move() {
-                        let distance = tile_movement.get_dis();
-                        info!("Recv Move Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", server_tick, move_dir, distance);
+                        // let distance = tile_movement.get_dis();
+                        // info!("Recv Move Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", server_tick, move_dir, distance);
                     } else {
                         info!("Recv Move Command. Tick: {:?}. MoveDir: None", server_tick);
                     }

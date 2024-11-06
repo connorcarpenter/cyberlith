@@ -7,6 +7,8 @@ use game_engine::{
     time::Instant,
     world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},
 };
+use game_engine::logging::info;
+use game_engine::math::Vec2;
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {
@@ -39,7 +41,7 @@ impl RenderPosition {
         &mut self,
         _is_server: bool,
         _is_rollback: bool,
-        position: (f32, f32),
+        position: Vec2,
         tick: Tick,
     ) {
         // make sure ticks are in order
@@ -56,13 +58,13 @@ impl RenderPosition {
             }
         }
 
-        self.queue.push_back((position.0, position.1, tick));
+        self.queue.push_back((position.x, position.y, tick));
 
         // let host = if is_server { "Server" } else { "Client" };
         // let rollback = if is_rollback { "Rollback" } else { "" };
         // info!(
         //     "{:?}({:?}), Tick: {:?}, Pos: ({:?}, {:?})",
-        //     host, rollback, tick, position.0, position.1
+        //     host, rollback, tick, position.x, position.y
         // );
     }
 

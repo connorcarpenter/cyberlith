@@ -4,13 +4,15 @@ use bevy_ecs::prelude::Component;
 use naia_bevy_shared::Tick;
 
 use logging::{warn};
+use math::Vec2;
 
 use crate::{
     components::NextTilePosition,
-    constants::{MOVEMENT_SPEED, TILE_SIZE},
+    constants::{MOVEMENT_VELOCITY_MAX, TILE_SIZE},
     messages::PlayerCommands,
     types::Direction,
 };
+use crate::constants::{MOVEMENT_ACCELERATION, MOVEMENT_DECELERATION};
 
 #[derive(Component)]
 pub struct TileMovement {
@@ -39,15 +41,8 @@ impl TileMovement {
         me
     }
 
-    pub fn get_dis(&self) -> f32 {
-        match &self.state {
-            TileMovementState::Stopped(_state) => 0.0,
-            TileMovementState::Moving(state) => state.distance / state.distance_max,
-        }
-    }
-
     // retrieve the current position of the entity
-    pub fn current_position(&self) -> (f32, f32) {
+    pub fn current_position(&self) -> Vec2 {
         match &self.state {
             TileMovementState::Stopped(state) => state.current_position(),
             TileMovementState::Moving(state) => state.current_position(),
@@ -79,6 +74,11 @@ impl TileMovement {
         self.state.is_stopped()
     }
 
+    // return whether the entity is moving but done
+    pub fn is_done(&self) -> bool {
+        self.state.is_done()
+    }
+
     pub fn set_stopped(&mut self, tile_x: i16, tile_y: i16) {
         if !self.is_moving() {
             panic!("Cannot set stopped state when not moving");
@@ -99,9 +99,14 @@ impl TileMovement {
             panic!("Cannot set continue state when not moving");
         }
 
-        let leftover = self.state.leftover_distance();
+        if !self.is_done() {
+            panic!("Expected done state");
+        }
 
-        self.state = TileMovementState::continuing(tile_x, tile_y, move_dir, leftover);
+        let position = self.current_position();
+        let velocity = self.state.current_velocity();
+
+        self.state = TileMovementState::continuing(tile_x, tile_y, move_dir, position, velocity);
     }
 
     // call on each tick
@@ -199,11 +204,11 @@ impl TileMovementState {
     }
 
     fn moving(tile_x: i16, tile_y: i16, move_dir: Direction) -> Self {
-        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir, 0.0))
+        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir, None, None))
     }
 
-    fn continuing(tile_x: i16, tile_y: i16, move_dir: Direction, leftover: f32) -> Self {
-        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir, leftover))
+    fn continuing(tile_x: i16, tile_y: i16, move_dir: Direction, position: Vec2, velocity: Vec2) -> Self {
+        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir, Some(position), Some(velocity)))
     }
 
     fn is_stopped(&self) -> bool {
@@ -217,6 +222,13 @@ impl TileMovementState {
         match self {
             Self::Stopped(_) => false,
             Self::Moving(_) => true,
+        }
+    }
+
+    fn is_done(&self) -> bool {
+        match self {
+            Self::Stopped(state) => panic!("Expected Moving state"),
+            Self::Moving(state) => state.done,
         }
     }
 
@@ -234,10 +246,10 @@ impl TileMovementState {
         }
     }
 
-    pub fn leftover_distance(&self) -> f32 {
+    pub fn current_velocity(&self) -> Vec2 {
         match self {
             Self::Stopped(_) => panic!("Expected Moving state"),
-            Self::Moving(state) => state.leftover_distance(),
+            Self::Moving(state) => state.current_velocity(),
         }
     }
 }
@@ -255,8 +267,8 @@ impl TileMovementStoppedState {
     }
 
     // retrieve the current position of the entity
-    fn current_position(&self) -> (f32, f32) {
-        (
+    fn current_position(&self) -> Vec2 {
+        Vec2::new(
             self.tile_x as f32 * TILE_SIZE,
             self.tile_y as f32 * TILE_SIZE,
         )
@@ -283,45 +295,79 @@ struct TileMovementMovingState {
     from_tile_y: i16,
     to_tile_x: i16,
     to_tile_y: i16,
-    distance: f32,
-    distance_max: f32,
     done: bool,
+
+    position: Vec2,
+    velocity: Vec2,
+
     buffered_move_dir: Option<Direction>,
 }
 
 impl TileMovementMovingState {
 
-    fn new(from_tile_x: i16, from_tile_y: i16, move_dir: Direction, leftover: f32) -> Self {
+    fn new(from_tile_x: i16, from_tile_y: i16, move_dir: Direction, position_opt: Option<Vec2>, velocity_opt: Option<Vec2>) -> Self {
 
         let (dx, dy) = move_dir.to_delta();
         let to_tile_x = from_tile_x + dx as i16;
         let to_tile_y = from_tile_y + dy as i16;
+
+        let position = position_opt.unwrap_or_else(|| {
+            Vec2::new(
+                from_tile_x as f32 * TILE_SIZE,
+                from_tile_y as f32 * TILE_SIZE,
+            )
+        });
+        let velocity = velocity_opt.unwrap_or_else(|| {
+            Vec2::ZERO
+        });
 
         Self {
             from_tile_x,
             from_tile_y,
             to_tile_x,
             to_tile_y,
-            distance: leftover,
-            distance_max: get_tile_distance(from_tile_x, from_tile_y, to_tile_x, to_tile_y),
+            position,
+            velocity,
             done: false,
             buffered_move_dir: None,
         }
     }
 
     // retrieve the current position of the entity
-    fn current_position(&self) -> (f32, f32) {
-        let interp = self.distance / self.distance_max; // this is what is varying across frames
+    pub(crate) fn current_position(&self) -> Vec2 {
 
-        let from_x = self.from_tile_x as f32 * TILE_SIZE;
-        let from_y = self.from_tile_y as f32 * TILE_SIZE;
-        let to_x = self.to_tile_x as f32 * TILE_SIZE;
-        let to_y = self.to_tile_y as f32 * TILE_SIZE;
+        return self.position;
 
-        let dis_x = to_x - from_x;
-        let dis_y = to_y - from_y;
 
-        (from_x + (dis_x * interp), from_y + (dis_y * interp))
+
+        // let interp = self.distance / self.distance_max; // this is what is varying across frames
+        //
+        // let from_x = self.from_tile_x as f32 * TILE_SIZE;
+        // let from_y = self.from_tile_y as f32 * TILE_SIZE;
+        // let to_x = self.to_tile_x as f32 * TILE_SIZE;
+        // let to_y = self.to_tile_y as f32 * TILE_SIZE;
+        //
+        // let dis_x = to_x - from_x;
+        // let dis_y = to_y - from_y;
+        //
+        // (from_x + (dis_x * interp), from_y + (dis_y * interp))
+    }
+
+    pub(crate) fn current_velocity(&self) -> Vec2 {
+        return self.velocity;
+    }
+
+    pub(crate) fn target_position(&self) -> Vec2 {
+        return Vec2::new(
+            self.to_tile_x as f32 * TILE_SIZE,
+            self.to_tile_y as f32 * TILE_SIZE,
+        );
+    }
+
+    pub(crate) fn distance_to_target(&self) -> f32 {
+        let target_position = self.target_position();
+        let distance = self.position.distance(target_position);
+        return distance;
     }
 
     // call on each tick
@@ -330,10 +376,30 @@ impl TileMovementMovingState {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         }
 
-        self.distance += MOVEMENT_SPEED;
+        let target_distance = self.distance_to_target();
+        const STOPPING_DISTANCE: f32 = 0.5 * TILE_SIZE;
+        let target_position = self.target_position();
+        let target_direction = (target_position - self.position).normalize();
 
-        if self.distance >= self.distance_max {
+        if target_distance > STOPPING_DISTANCE {
+            // speed up
+            self.velocity += target_direction * MOVEMENT_ACCELERATION;
+            if self.velocity.length() > MOVEMENT_VELOCITY_MAX {
+                self.velocity = self.velocity.normalize() * MOVEMENT_VELOCITY_MAX;
+            }
+        } else {
+            // slow down
+            if self.velocity.length() > MOVEMENT_DECELERATION {
+                self.velocity -= target_direction * MOVEMENT_DECELERATION;
+            }
+        }
+
+        if target_distance <= self.velocity.length() {
+
+            // reached target!
+
             self.done = true;
+
             if self.buffered_move_dir.is_none() {
                 return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
             } else {
@@ -341,26 +407,22 @@ impl TileMovementMovingState {
                 return ProcessTickResult::ShouldContinue(self.to_tile_x, self.to_tile_y, buffered_move_dir);
             }
         } else {
+
+            self.position += self.velocity;
+
             return ProcessTickResult::DoNothing;
         }
     }
 
     pub(crate) fn can_buffer_movement(&self) -> bool {
         // return false;
-        return (self.distance / self.distance_max) > 0.75;
+        return self.distance_to_target() < TILE_SIZE * 0.5; // TODO: this should be better
     }
 
     pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
         warn!("buffering command for Tick: {:?}, MoveDir: {:?}", tick, move_dir);
 
         self.buffered_move_dir = Some(move_dir);
-    }
-
-    pub(crate) fn leftover_distance(&self) -> f32 {
-        if !self.done {
-            panic!("Expected done state");
-        }
-        return self.distance - self.distance_max;
     }
 }
 
@@ -371,6 +433,15 @@ pub enum ProcessTickResult {
 }
 
 fn get_tile_distance(ax: i16, ay: i16, bx: i16, by: i16) -> f32 {
+
+    let dx = (ax - bx).abs();
+    let dy = (ay - by).abs();
+    let d_dis = dx + dy;
+
+    if d_dis == 0 || d_dis > 2 || dx > 1 || dy > 1 {
+        panic!("invalid distance between tiles!");
+    }
+
     let x_axis_changed: bool = ax != bx;
     let y_axis_changed: bool = ay != by;
 

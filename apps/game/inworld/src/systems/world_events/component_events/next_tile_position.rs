@@ -185,7 +185,7 @@ pub fn update_next_tile_position_events(
     // process commands
     for (command_tick, outgoing_command_opt) in replay_commands {
 
-        info!("Replay Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", command_tick, outgoing_command_opt.as_ref().map(|c| c.get_move()), predicted_tile_movement.get_dis());
+        // info!("Replay Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", command_tick, outgoing_command_opt.as_ref().map(|c| c.get_move()), predicted_tile_movement.get_dis());
 
         // process command
         input_manager.recv_incoming_command(command_tick, outgoing_command_opt);

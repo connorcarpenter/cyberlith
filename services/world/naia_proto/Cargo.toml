@@ -16,6 +16,7 @@ crypto = { path = "../../../crates/crypto" }
 asset_id = { path = "../../../crates/asset/id" }
 logging = { path = "../../../crates/logging" }
 random = { path = "../../../crates/random" }
+math = { path = "../../../crates/math" }
 
 bevy_ecs = { version = "0.14", default-features=false }
 

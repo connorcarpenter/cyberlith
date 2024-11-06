@@ -29,9 +29,9 @@ impl ServerTileMovement {
         return &mut self.tile_movement;
     }
 
-    pub fn get_dis(&self) -> f32 {
-        return self.tile_movement.get_dis();
-    }
+    // pub fn get_dis(&self) -> f32 {
+    //     return self.tile_movement.get_dis();
+    // }
 
     pub fn process_result(&mut self, result: ProcessTickResult) {
         match result {

@@ -44,8 +44,8 @@ pub fn client_tick_events(
             // outgoing_command.log(client_tick);
 
             // send command
-            let distance = client_tile_movement.get_dis();
-            info!("Send Command. Tick: {:?}. MoveDir: {:?}, Dis: {:?}", client_tick, outgoing_command.get_move(), distance);
+            // let distance = client_tile_movement.get_dis();
+            // info!("Send Command. Tick: {:?}. MoveDir: {:?}, Dis: {:?}", client_tick, outgoing_command.get_move(), distance);
             client.send_tick_buffer_message::<PlayerCommandChannel, PlayerCommands>(&client_tick, &outgoing_command);
 
             input_manager.save_to_command_history(client_tick, Some(outgoing_command.clone()));
