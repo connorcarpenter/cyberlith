@@ -13,7 +13,7 @@ use logging::{info, warn};
 
 use world_server_naia_proto::{
     channels::EntityAssignmentChannel,
-    components::{Main, NextTilePosition, LookDirection},
+    components::{Main, NextTilePosition, PhysicsController, LookDirection},
     constants::TILE_COUNT,
     messages::{Auth, EntityAssignment},
     types::Direction,
@@ -22,9 +22,8 @@ use world_server_naia_proto::{
 use crate::{
     asset::{AssetCatalog, AssetCommandsExt, AssetManager},
     social::LobbyManager,
-    user::UserManager,
+    user::{UserManager, components::ServerTileMovement},
 };
-use crate::user::components::ServerTileMovement;
 
 pub fn auth_events(
     mut user_manager: ResMut<UserManager>,
@@ -81,6 +80,7 @@ pub fn connect_events(
         let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
         let look_direction = LookDirection::new(Direction::random());
         let tile_movement = ServerTileMovement::new_stopped(&next_tile_position);
+        let physics = PhysicsController::new(&next_tile_position);
 
         // give user an entity
         let user_entity = commands
@@ -98,6 +98,7 @@ pub fn connect_events(
             .insert(next_tile_position)
             .insert(look_direction)
             .insert(tile_movement)
+            .insert(physics)
             // return Entity id
             .id();
 

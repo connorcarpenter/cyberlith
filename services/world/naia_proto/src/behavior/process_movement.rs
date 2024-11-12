@@ -1,11 +1,12 @@
 use naia_bevy_shared::Tick;
 
-use crate::{messages::PlayerCommands, components::{TileMovement, ProcessTickResult, LookDirection}};
+use crate::{messages::PlayerCommands, components::{PhysicsController, TileMovement, ProcessTickResult, LookDirection}};
 
 pub fn process_tick(
     tick: Tick,
     player_command: Option<PlayerCommands>,
     tile_movement: &mut TileMovement,
+    physics: &mut PhysicsController,
     look_direction_opt: Option<&mut LookDirection>,
 ) -> (ProcessTickResult, Option<(i16, i16)>) {
 
@@ -21,7 +22,7 @@ pub fn process_tick(
         }
     };
 
-    let (result, output) = tile_movement.process_tick(tick, player_command);
+    let (result, output) = tile_movement.process_tick(physics, tick, player_command);
 
     if let Some(look_direction) = look_direction_opt {
         if let Some(new_look_direction) = new_look_direction {

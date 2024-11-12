@@ -15,7 +15,7 @@ use logging::info;
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
-    components::{LookDirection, NextTilePosition},
+    components::{PhysicsController, LookDirection, NextTilePosition},
     messages::PlayerCommands,
 };
 
@@ -51,7 +51,7 @@ pub fn tick_events(world: &mut World) {
         let mut system_state: SystemState<(
             Server,
             Res<UserManager>,
-            Query<(Entity, &mut ServerTileMovement)>,
+            Query<(Entity, &mut ServerTileMovement, &mut PhysicsController)>,
             Query<&mut NextTilePosition>,
             Query<&mut LookDirection>,
         )> = SystemState::new(world);
@@ -97,7 +97,7 @@ pub fn tick_events(world: &mut World) {
             // All game logic should happen here, on a tick event
 
             // process movement
-            for (entity, mut tile_movement) in tile_movement_q.iter_mut() {
+            for (entity, mut tile_movement, mut physics) in tile_movement_q.iter_mut() {
 
                 let Some(user_key) = user_manager.get_user_key_from_entity(&entity) else {
                     continue;
@@ -111,19 +111,20 @@ pub fn tick_events(world: &mut World) {
                     panic!("LookDirection not found for entity: {:?}", entity);
                 };
 
-                if let Some(player_commands) = player_command.as_ref() {
-                    if let Some(move_dir) = player_commands.get_move() {
-                        // let distance = tile_movement.get_dis();
-                        // info!("Recv Move Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", server_tick, move_dir, distance);
-                    } else {
-                        info!("Recv Move Command. Tick: {:?}. MoveDir: None", server_tick);
-                    }
-                }
+                // if let Some(player_commands) = player_command.as_ref() {
+                //     if let Some(move_dir) = player_commands.get_move() {
+                //         // let distance = tile_movement.get_dis();
+                //         // info!("Recv Move Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", server_tick, move_dir, distance);
+                //     } else {
+                //         info!("Recv Move Command. Tick: {:?}. MoveDir: None", server_tick);
+                //     }
+                // }
 
                 let (result, output) = shared_behavior::process_tick(
                     *server_tick,
                     player_command,
                     tile_movement.inner_mut(),
+                    &mut physics,
                     Some(&mut look_dir),
                 );
                 tile_movement.process_result(result);

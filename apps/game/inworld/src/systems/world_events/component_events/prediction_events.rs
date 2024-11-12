@@ -13,16 +13,15 @@ use game_engine::{
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
-        components::{NextTilePosition},
+        components::{PhysicsController, NextTilePosition},
         WorldClient,
     },
 };
 
 use crate::{
-    components::{AnimationState, Predicted, RenderPosition},
+    components::{ClientTileMovement, AnimationState, Predicted, RenderPosition},
     resources::{Global, OwnedEntity},
 };
-use crate::components::ClientTileMovement;
 
 #[derive(Resource)]
 pub(crate) struct PredictionEvents {
@@ -72,6 +71,7 @@ impl PredictionEvents {
 
             // Here we create a local copy of the Player entity, to use for client-side prediction
             let next_tile_position = position_q.get(future_prediction_entity).unwrap();
+            let physics = PhysicsController::new(next_tile_position);
 
             let prediction_entity = commands.spawn_empty().id();
 
@@ -79,6 +79,7 @@ impl PredictionEvents {
                 .entity(prediction_entity)
                 // Position stuff
                 .insert(ClientTileMovement::new_stopped(true, next_tile_position))
+                .insert(physics)
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
                 .insert(Visibility::default())

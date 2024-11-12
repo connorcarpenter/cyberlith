@@ -6,9 +6,8 @@ use game_engine::{
     naia::{sequence_less_than, GameInstant, Tick},
     time::Instant,
     world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},
+    math::Vec2,
 };
-use game_engine::logging::info;
-use game_engine::math::Vec2;
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {

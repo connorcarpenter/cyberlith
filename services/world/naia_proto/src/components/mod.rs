@@ -12,6 +12,9 @@ pub use look_direction::*;
 mod tile_movement;
 pub use tile_movement::*;
 
+mod physics_controller;
+pub use physics_controller::*;
+
 // Plugin
 pub(crate) struct ComponentsPlugin;
 

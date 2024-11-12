@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy_ecs::prelude::Component;
 
-use game_engine::{math::Vec2, logging::{info, warn}, naia::Tick, world::{types::Direction, components::{NextTilePosition, ProcessTickResult, TileMovement}}};
+use game_engine::{logging::{info, warn}, naia::Tick, world::{types::Direction, components::{NextTilePosition, ProcessTickResult, TileMovement}}};
 
 #[derive(Component)]
 pub struct ClientTileMovement {
@@ -28,11 +28,6 @@ impl ClientTileMovement {
 
     pub fn inner_mut(&mut self) -> &mut TileMovement {
         return &mut self.tile_movement;
-    }
-
-    // retrieve the current position of the entity
-    pub fn current_position(&self) -> Vec2 {
-        return self.tile_movement.current_position();
     }
 
     // called by confirmed entities

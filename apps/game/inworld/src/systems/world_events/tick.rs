@@ -3,10 +3,10 @@ use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader, prelud
 use game_engine::{
     naia::Tick,
     world::{
+        components::PhysicsController,
         behavior as shared_behavior, channels::PlayerCommandChannel,
         messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
-    logging::info,
 };
 
 use crate::{
@@ -19,7 +19,7 @@ pub fn client_tick_events(
     global: Res<Global>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    mut position_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
+    mut position_q: Query<(&mut ClientTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
 ) {
     let Some(predicted_entity) = global
         .owned_entity
@@ -34,6 +34,7 @@ pub fn client_tick_events(
 
         let (
             mut client_tile_movement,
+            mut client_physics,
             mut client_render_position,
             mut animation_state
         ) = position_q.get_mut(predicted_entity).unwrap();
@@ -63,6 +64,7 @@ pub fn client_tick_events(
             client_tick,
             player_command,
             &mut client_tile_movement,
+            &mut client_physics,
             &mut client_render_position,
             &mut animation_state,
         );
@@ -75,6 +77,7 @@ pub fn process_tick(
     tick: Tick,
     player_command: Option<PlayerCommands>,
     tile_movement: &mut ClientTileMovement,
+    physics: &mut PhysicsController,
     render_position: &mut RenderPosition,
     animation_state: &mut AnimationState,
 ) {
@@ -84,13 +87,13 @@ pub fn process_tick(
         None
     };
 
-    let (result, _) = shared_behavior::process_tick(tick, player_command, tile_movement.inner_mut(), None);
+    let (result, _) = shared_behavior::process_tick(tick, player_command, tile_movement.inner_mut(), physics, None);
     tile_movement.process_result(result);
 
     render_position.recv_position(
         is_server,
         is_rollback,
-        tile_movement.current_position(),
+        physics.position(),
         tick,
     );
 
@@ -102,19 +105,20 @@ pub fn process_tick(
 pub fn server_tick_events(
     mut tick_tracker: ResMut<TickTracker>,
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
+    mut position_q: Query<(&mut ClientTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
 
         // process movement
-        for (mut server_tile_movement, mut server_render_position, mut animation_state) in position_q.iter_mut() {
+        for (mut server_tile_movement, mut server_physics, mut server_render_position, mut animation_state) in position_q.iter_mut() {
             process_tick(
                 true,
                 false,
                 server_tick,
                 None,
                 &mut server_tile_movement,
+                &mut server_physics,
                 &mut server_render_position,
                 &mut animation_state,
             );

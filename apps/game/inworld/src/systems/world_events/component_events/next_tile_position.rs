@@ -7,19 +7,18 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    logging::info,
+    logging::{info, warn},
     math::{Quat, Vec3},
     naia::{sequence_greater_than, Tick},
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
         // behavior as shared_behavior,
-        components::{NextTilePosition},
+        components::{NextTilePosition, PhysicsController},
         WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
 };
-use game_engine::logging::warn;
 
 use crate::{
     components::{AnimationState, ClientTileMovement, Confirmed, RenderPosition},
@@ -57,6 +56,7 @@ pub fn insert_next_tile_position_events(
             .entity(entity)
             // Insert Position stuff
             .insert(ClientTileMovement::new_stopped(false, next_tile_position))
+            .insert(PhysicsController::new(next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderPosition::new(
@@ -82,7 +82,7 @@ pub fn update_next_tile_position_events(
     mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
-    mut tile_movement_q: Query<(&mut ClientTileMovement, &mut RenderPosition, &mut AnimationState)>,
+    mut tile_movement_q: Query<(&mut ClientTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -110,7 +110,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        let Ok((mut tile_movement, _, _)) = tile_movement_q.get_mut(*updated_entity) else {
+        let Ok((mut tile_movement, _, _, _)) = tile_movement_q.get_mut(*updated_entity) else {
             panic!(
                 "failed to get tile movement q for entity: {:?}",
                 updated_entity
@@ -150,10 +150,12 @@ pub fn update_next_tile_position_events(
     let Ok(
         [(
             confirmed_tile_movement,
+            confirmed_physics,
             confirmed_render_position,
             _,
         ), (
             mut predicted_tile_movement,
+            mut predicted_physics,
             mut predicted_render_position,
             mut predicted_animation_state,
         )],
@@ -176,6 +178,7 @@ pub fn update_next_tile_position_events(
 
     // Set to authoritative state
     predicted_tile_movement.recv_rollback(&confirmed_tile_movement);
+    predicted_physics.recv_rollback(&confirmed_physics);
     predicted_render_position.recv_rollback(&confirmed_render_position);
 
     // PREDICTION ROLLBACK
@@ -198,6 +201,7 @@ pub fn update_next_tile_position_events(
             command_tick,
             player_command,
             &mut predicted_tile_movement,
+            &mut predicted_physics,
             &mut predicted_render_position,
             &mut predicted_animation_state,
         );
