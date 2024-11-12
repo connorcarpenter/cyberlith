@@ -5,8 +5,7 @@ use naia_bevy_server::Tick;
 
 use logging::info;
 
-use world_server_naia_proto::{components::{NextTilePosition, TileMovement}};
-use world_server_naia_proto::components::ProcessTickResult;
+use world_server_naia_proto::{components::{ProcessTickResult, NextTilePosition, TileMovement}};
 
 #[derive(Component)]
 pub struct ServerTileMovement {
@@ -29,10 +28,6 @@ impl ServerTileMovement {
         return &mut self.tile_movement;
     }
 
-    // pub fn get_dis(&self) -> f32 {
-    //     return self.tile_movement.get_dis();
-    // }
-
     pub fn process_result(&mut self, result: ProcessTickResult) {
         match result {
             ProcessTickResult::ShouldStop(tile_x, tile_y) => {
@@ -45,8 +40,6 @@ impl ServerTileMovement {
         }
     }
 
-    // on the client, never called
-    // on the server, called by confirmed entities
     pub fn send_updated_next_tile_position(
         &mut self,
         tick: Tick,

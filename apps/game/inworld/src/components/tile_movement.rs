@@ -49,7 +49,7 @@ impl ClientTileMovement {
         if self.tile_movement.is_stopped() {
             // is stopped
 
-            let (current_tile_x, current_tile_y) = self.tile_movement.current_tile_position();
+            let (current_tile_x, current_tile_y) = self.tile_movement.tile_position();
             if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
                 return;
             }
@@ -136,11 +136,7 @@ impl ClientTileMovement {
             }
         } else {
 
-            let (last_x, last_y) = if self.tile_movement.is_stopped() {
-                self.tile_movement.current_tile_position()
-            } else {
-                self.tile_movement.to_tile_position()
-            };
+            let (last_x, last_y) = self.tile_movement.tile_position();
 
             if last_x == next_x && last_y == next_y {
                 warn!("2 Ignoring Duplicate Next Tile Position! Tick: {:?}, Last: ({:?}, {:?}), Next: ({:?}, {:?})", updated_tick, last_x, last_y, next_x, next_y);

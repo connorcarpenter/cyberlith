@@ -31,55 +31,57 @@ impl TileMovement {
             is_server,
             is_predicted: predicted,
 
-            state: TileMovementState::stopped(next_tile_position.x(), next_tile_position.y()),
+            state: TileMovementState::Stopped(TileMovementStoppedState::new(next_tile_position.x(), next_tile_position.y())),
         };
 
         me
     }
 
     // retrieve the current tile position of the entity
-    pub fn current_tile_position(&self) -> (i16, i16) {
+    pub fn tile_position(&self) -> (i16, i16) {
         match &self.state {
-            TileMovementState::Stopped(state) => state.current_tile_position(),
-            TileMovementState::Moving(_state) => panic!("Expected Stopped state"),
-        }
-    }
-
-    pub fn to_tile_position(&self) -> (i16, i16) {
-        match &self.state {
-            TileMovementState::Stopped(_state) => panic!("Expected Moving state"),
+            TileMovementState::Stopped(state) => (state.tile_x, state.tile_y),
             TileMovementState::Moving(state) => (state.to_tile_x, state.to_tile_y),
         }
     }
 
     // return whether the entity is moving
     pub fn is_moving(&self) -> bool {
-        self.state.is_moving()
+        match &self.state {
+            TileMovementState::Stopped(_) => false,
+            TileMovementState::Moving(_) => true,
+        }
     }
 
     // return whether the entity is stopped
     pub fn is_stopped(&self) -> bool {
-        self.state.is_stopped()
+        match &self.state {
+            TileMovementState::Stopped(_) => true,
+            TileMovementState::Moving(_) => false,
+        }
     }
 
     // return whether the entity is moving but done
     pub fn is_done(&self) -> bool {
-        self.state.is_done()
+        match &self.state {
+            TileMovementState::Stopped(_) => panic!("Expected Moving state"),
+            TileMovementState::Moving(state) => state.done,
+        }
     }
 
     pub fn set_stopped(&mut self, tile_x: i16, tile_y: i16) {
         if !self.is_moving() {
             panic!("Cannot set stopped state when not moving");
         }
-        self.state = TileMovementState::stopped(tile_x, tile_y);
+        self.state = TileMovementState::Stopped(TileMovementStoppedState::new(tile_x, tile_y));
     }
 
     pub fn set_moving(&mut self, move_dir: Direction) {
         if !self.is_stopped() {
             panic!("Cannot set moving state when not stopped");
         }
-        let (current_tile_x, current_tile_y) = self.current_tile_position();
-        self.state = TileMovementState::moving(current_tile_x, current_tile_y, move_dir);
+        let (current_tile_x, current_tile_y) = self.tile_position();
+        self.state = TileMovementState::Moving(TileMovementMovingState::new(current_tile_x, current_tile_y, move_dir));
     }
 
     pub fn set_continue(&mut self, tile_x: i16, tile_y: i16, move_dir: Direction) {
@@ -91,7 +93,7 @@ impl TileMovement {
             panic!("Expected done state");
         }
 
-        self.state = TileMovementState::continuing(tile_x, tile_y, move_dir);
+        self.state = TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
     }
 
     // call on each tick
@@ -145,28 +147,24 @@ impl TileMovement {
             return None;
         };
 
-        if self.state.is_moving() {
+        match &mut self.state {
+            TileMovementState::Stopped(state) => {
+                let (dx, dy) = direction.to_delta();
 
-            if self.state.can_buffer_movement(physics) {
-                self.state.buffer_movement(tick, direction);
-            }
+                let next_tile_x = state.tile_x + dx as i16;
+                let next_tile_y = state.tile_y + dy as i16;
 
-        } else {
+                self.set_moving(direction);
 
-            let TileMovementState::Stopped(state) = &self.state else {
-                panic!("Expected Stopped state");
-            };
-
-            let (dx, dy) = direction.to_delta();
-
-            let next_tile_x = state.tile_x + dx as i16;
-            let next_tile_y = state.tile_y + dy as i16;
-
-            self.set_moving(direction);
-
-            if self.is_server {
-                return Some((next_tile_x, next_tile_y));
-            }
+                if self.is_server {
+                    return Some((next_tile_x, next_tile_y));
+                }
+            },
+            TileMovementState::Moving(state) => {
+                if state.can_buffer_movement(physics) {
+                    state.buffer_movement(tick, direction);
+                }
+            },
         }
 
         return None;
@@ -184,55 +182,6 @@ enum TileMovementState {
     Moving(TileMovementMovingState),
 }
 
-impl TileMovementState {
-    fn stopped(tile_x: i16, tile_y: i16) -> Self {
-        Self::Stopped(TileMovementStoppedState::new(tile_x, tile_y))
-    }
-
-    fn moving(tile_x: i16, tile_y: i16, move_dir: Direction) -> Self {
-        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir))
-    }
-
-    fn continuing(tile_x: i16, tile_y: i16, move_dir: Direction) -> Self {
-        Self::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir))
-    }
-
-    fn is_stopped(&self) -> bool {
-        match self {
-            Self::Stopped(_) => true,
-            Self::Moving(_) => false,
-        }
-    }
-
-    fn is_moving(&self) -> bool {
-        match self {
-            Self::Stopped(_) => false,
-            Self::Moving(_) => true,
-        }
-    }
-
-    fn is_done(&self) -> bool {
-        match self {
-            Self::Stopped(_state) => panic!("Expected Moving state"),
-            Self::Moving(state) => state.done,
-        }
-    }
-
-    fn can_buffer_movement(&self, physics: &PhysicsController) -> bool {
-        match self {
-            Self::Stopped(_) => false,
-            Self::Moving(state) => state.can_buffer_movement(physics),
-        }
-    }
-
-    pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
-        match self {
-            Self::Stopped(_) => {},
-            Self::Moving(state) => state.buffer_movement(tick, move_dir),
-        }
-    }
-}
-
 // Tile Movement Stopped State
 #[derive(Clone)]
 struct TileMovementStoppedState {
@@ -243,14 +192,6 @@ struct TileMovementStoppedState {
 impl TileMovementStoppedState {
     fn new(tile_x: i16, tile_y: i16) -> Self {
         Self { tile_x, tile_y }
-    }
-
-    // retrieve the current tile position of the entity
-    fn current_tile_position(&self) -> (i16, i16) {
-        (
-            self.tile_x,
-            self.tile_y,
-        )
     }
 
     // call on each tick
