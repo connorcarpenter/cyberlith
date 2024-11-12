@@ -15,7 +15,7 @@ use logging::info;
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
-    components::{PhysicsController, LookDirection, NextTilePosition},
+    components::{TileMovementType, PhysicsController, LookDirection, NextTilePosition},
     messages::PlayerCommands,
 };
 
@@ -121,6 +121,7 @@ pub fn tick_events(world: &mut World) {
                 // }
 
                 let (result, output) = shared_behavior::process_tick(
+                    TileMovementType::Server,
                     *server_tick,
                     player_command,
                     tile_movement.inner_mut(),

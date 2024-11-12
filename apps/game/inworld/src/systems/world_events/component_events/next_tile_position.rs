@@ -14,14 +14,14 @@ use game_engine::{
     time::Instant,
     world::{
         // behavior as shared_behavior,
-        components::{NextTilePosition, PhysicsController},
+        components::{NextTilePosition, TileMovementType, PhysicsController},
         WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
 };
 
 use crate::{
-    components::{AnimationState, ClientTileMovement, Confirmed, RenderPosition},
+    components::{ConfirmedTileMovement, PredictedTileMovement, AnimationState, Confirmed, RenderPosition},
     resources::{Global, InputManager, TickTracker},
     systems::world_events::{process_tick, PredictionEvents},
 };
@@ -55,7 +55,7 @@ pub fn insert_next_tile_position_events(
         commands
             .entity(entity)
             // Insert Position stuff
-            .insert(ClientTileMovement::new_stopped(false, next_tile_position))
+            .insert(ConfirmedTileMovement::new_stopped(next_tile_position))
             .insert(PhysicsController::new(next_tile_position))
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
@@ -82,7 +82,9 @@ pub fn update_next_tile_position_events(
     mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
-    mut tile_movement_q: Query<(&mut ClientTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
+    mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
+    mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
+    mut tile_movement_q: Query<(&mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -110,7 +112,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        let Ok((mut tile_movement, _, _, _)) = tile_movement_q.get_mut(*updated_entity) else {
+        let Ok(mut tile_movement) = confirmed_tile_movement_q.get_mut(*updated_entity) else {
             panic!(
                 "failed to get tile movement q for entity: {:?}",
                 updated_entity
@@ -147,14 +149,24 @@ pub fn update_next_tile_position_events(
 
     info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
 
+    let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get(confirmed_entity) else {
+        panic!(
+            "failed to get confirmed tile movement for entity: {:?}",
+            confirmed_entity
+        );
+    };
+    let Ok(mut predicted_tile_movement) = predicted_tile_movement_q.get_mut(predicted_entity) else {
+        panic!(
+            "failed to get predicted tile movement for entity: {:?}",
+            predicted_entity
+        );
+    };
     let Ok(
         [(
-            confirmed_tile_movement,
             confirmed_physics,
             confirmed_render_position,
             _,
         ), (
-            mut predicted_tile_movement,
             mut predicted_physics,
             mut predicted_render_position,
             mut predicted_animation_state,
@@ -177,7 +189,8 @@ pub fn update_next_tile_position_events(
     // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
-    predicted_tile_movement.recv_rollback(&confirmed_tile_movement);
+    let mut confirmed_tile_movement_clone: ConfirmedTileMovement = confirmed_tile_movement.clone();
+    let confirmed_tile_movement_clone = &mut confirmed_tile_movement_clone;
     predicted_physics.recv_rollback(&confirmed_physics);
     predicted_render_position.recv_rollback(&confirmed_render_position);
 
@@ -196,11 +209,10 @@ pub fn update_next_tile_position_events(
         // process movement
         let player_command = input_manager.pop_incoming_command(command_tick);
         process_tick(
-            false,
-            true,
+            TileMovementType::ClientPredicted,
             command_tick,
             player_command,
-            &mut predicted_tile_movement,
+            confirmed_tile_movement_clone,
             &mut predicted_physics,
             &mut predicted_render_position,
             &mut predicted_animation_state,
@@ -208,8 +220,9 @@ pub fn update_next_tile_position_events(
     }
     warn!("---");
 
+    predicted_tile_movement.recv_rollback(&confirmed_tile_movement_clone);
+
     predicted_render_position.advance_millis(&client, 0);
-    predicted_tile_movement.finish_rollback();
 }
 
 pub fn remove_next_tile_position_events(

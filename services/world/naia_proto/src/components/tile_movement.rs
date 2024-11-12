@@ -1,7 +1,7 @@
 
 use naia_bevy_shared::Tick;
 
-use logging::{warn};
+use logging::{info, warn};
 use math::Vec2;
 
 use crate::{
@@ -11,26 +11,41 @@ use crate::{
     types::Direction,
 };
 
-pub struct TileMovement {
-    is_server: bool,
-    is_predicted: bool,
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum TileMovementType {
+    Server,
+    ClientConfirmed,
+    ClientPredicted,
+}
 
+impl TileMovementType {
+    pub fn processes_commands(&self) -> bool {
+        match self {
+            TileMovementType::Server => true,
+            TileMovementType::ClientConfirmed => false,
+            TileMovementType::ClientPredicted => true,
+        }
+    }
+
+    pub fn is_server(&self) -> bool {
+        match self {
+            TileMovementType::Server => true,
+            TileMovementType::ClientConfirmed => false,
+            TileMovementType::ClientPredicted => false,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct TileMovement {
     state: TileMovementState,
 }
 
 impl TileMovement {
     pub fn new_stopped(
-        is_server: bool,
-        predicted: bool,
         next_tile_position: &NextTilePosition,
     ) -> Self {
-        if is_server && predicted {
-            panic!("Server entities cannot be predicted");
-        }
         let me = Self {
-            is_server,
-            is_predicted: predicted,
-
             state: TileMovementState::Stopped(TileMovementStoppedState::new(next_tile_position.x(), next_tile_position.y())),
         };
 
@@ -100,14 +115,8 @@ impl TileMovement {
     pub fn process_tick(
         &mut self,
         physics: &mut PhysicsController,
-        tick: Tick,
-        player_command: Option<PlayerCommands>,
     ) -> (ProcessTickResult, Option<(i16, i16)>) {
         let mut output = None;
-
-        if self.is_predicted || self.is_server {
-            output = self.process_command(physics, tick, player_command);
-        }
 
         let mut result = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
@@ -117,14 +126,12 @@ impl TileMovement {
         if let ProcessTickResult::ShouldContinue(tile_x, tile_y, buffered_move_dir) = result {
             self.set_continue(tile_x, tile_y, buffered_move_dir);
 
-            if self.is_server {
-                let (dx, dy) = buffered_move_dir.to_delta();
+            let (dx, dy) = buffered_move_dir.to_delta();
 
-                let next_tile_x = tile_x + dx as i16;
-                let next_tile_y = tile_y + dy as i16;
+            let next_tile_x = tile_x + dx as i16;
+            let next_tile_y = tile_y + dy as i16;
 
-                output = Some((next_tile_x, next_tile_y));
-            }
+            output = Some((next_tile_x, next_tile_y));
 
             result = ProcessTickResult::DoNothing;
 
@@ -135,10 +142,12 @@ impl TileMovement {
 
     // on the client, called by predicted entities
     // on the server, called by confirmed entities
-    fn process_command(&mut self, physics: &PhysicsController, tick: Tick, command: Option<PlayerCommands>) -> Option<(i16, i16)> {
-        if !self.is_server && !self.is_predicted {
-            panic!("Only predicted entities can receive commands");
-        }
+    pub fn process_command(
+        &mut self,
+        physics: &PhysicsController,
+        tick: Tick,
+        command: Option<PlayerCommands>
+    ) -> Option<(i16, i16)> {
 
         let Some(command) = command else {
             return None;
@@ -146,6 +155,8 @@ impl TileMovement {
         let Some(direction) = command.get_move() else {
             return None;
         };
+
+        // info!("process_command: {:?} {:?}", tick, direction);
 
         match &mut self.state {
             TileMovementState::Stopped(state) => {
@@ -156,9 +167,7 @@ impl TileMovement {
 
                 self.set_moving(direction);
 
-                if self.is_server {
-                    return Some((next_tile_x, next_tile_y));
-                }
+                return Some((next_tile_x, next_tile_y));
             },
             TileMovementState::Moving(state) => {
                 if state.can_buffer_movement(physics) {

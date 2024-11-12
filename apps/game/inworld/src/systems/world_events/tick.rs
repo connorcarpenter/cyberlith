@@ -3,14 +3,14 @@ use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader, prelud
 use game_engine::{
     naia::Tick,
     world::{
-        components::PhysicsController,
+        components::{PhysicsController, TileMovementType},
         behavior as shared_behavior, channels::PlayerCommandChannel,
         messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
 
 use crate::{
-    components::{AnimationState, ClientTileMovement, Confirmed, Predicted, RenderPosition},
+    components::{ClientTileMovement, AnimationState, ConfirmedTileMovement, PredictedTileMovement, Confirmed, Predicted, RenderPosition},
     resources::{Global, TickTracker, InputManager},
 };
 
@@ -19,7 +19,7 @@ pub fn client_tick_events(
     global: Res<Global>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    mut position_q: Query<(&mut ClientTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
+    mut position_q: Query<(&mut PredictedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
 ) {
     let Some(predicted_entity) = global
         .owned_entity
@@ -58,12 +58,12 @@ pub fn client_tick_events(
 
         // process tick
         let player_command = input_manager.pop_incoming_command(client_tick);
+        let client_tile_movement_2: &mut PredictedTileMovement = &mut client_tile_movement;
         process_tick(
-            false,
-            false,
+            TileMovementType::ClientPredicted,
             client_tick,
             player_command,
-            &mut client_tile_movement,
+            client_tile_movement_2,
             &mut client_physics,
             &mut client_render_position,
             &mut animation_state,
@@ -72,11 +72,10 @@ pub fn client_tick_events(
 }
 
 pub fn process_tick(
-    is_server: bool,
-    is_rollback: bool,
+    tile_movement_type: TileMovementType,
     tick: Tick,
     player_command: Option<PlayerCommands>,
-    tile_movement: &mut ClientTileMovement,
+    tile_movement: &mut dyn ClientTileMovement,
     physics: &mut PhysicsController,
     render_position: &mut RenderPosition,
     animation_state: &mut AnimationState,
@@ -87,12 +86,17 @@ pub fn process_tick(
         None
     };
 
-    let (result, _) = shared_behavior::process_tick(tick, player_command, tile_movement.inner_mut(), physics, None);
+    let (result, _) = shared_behavior::process_tick(
+        tile_movement_type,
+        tick,
+        player_command,
+        tile_movement.inner_mut(),
+        physics,
+        None
+    );
     tile_movement.process_result(result);
 
     render_position.recv_position(
-        is_server,
-        is_rollback,
         physics.position(),
         tick,
     );
@@ -105,22 +109,27 @@ pub fn process_tick(
 pub fn server_tick_events(
     mut tick_tracker: ResMut<TickTracker>,
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut ClientTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
+    mut position_q: Query<(&mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
 
         // process movement
-        for (mut server_tile_movement, mut server_physics, mut server_render_position, mut animation_state) in position_q.iter_mut() {
+        for (
+            mut confirmed_tile_movement,
+            mut confirmed_physics,
+            mut confirmed_render_position,
+            mut confirmed_animation_state
+        ) in position_q.iter_mut() {
+            let confirmed_tile_movement_2: &mut ConfirmedTileMovement = &mut confirmed_tile_movement;
             process_tick(
-                true,
-                false,
+                TileMovementType::ClientConfirmed,
                 server_tick,
                 None,
-                &mut server_tile_movement,
-                &mut server_physics,
-                &mut server_render_position,
-                &mut animation_state,
+                confirmed_tile_movement_2,
+                &mut confirmed_physics,
+                &mut confirmed_render_position,
+                &mut confirmed_animation_state,
             );
         }
 

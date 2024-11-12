@@ -38,8 +38,6 @@ impl RenderPosition {
 
     pub fn recv_position(
         &mut self,
-        _is_server: bool,
-        _is_rollback: bool,
         position: Vec2,
         tick: Tick,
     ) {

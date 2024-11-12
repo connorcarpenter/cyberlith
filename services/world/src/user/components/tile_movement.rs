@@ -18,7 +18,7 @@ impl ServerTileMovement {
     ) -> Self {
 
         let me = Self {
-            tile_movement: TileMovement::new_stopped(true, false, next_tile_position),
+            tile_movement: TileMovement::new_stopped(next_tile_position),
         };
 
         me

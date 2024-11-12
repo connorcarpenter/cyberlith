@@ -4,30 +4,48 @@ use bevy_ecs::prelude::Component;
 
 use game_engine::{logging::{info, warn}, naia::Tick, world::{types::Direction, components::{NextTilePosition, ProcessTickResult, TileMovement}}};
 
-#[derive(Component)]
-pub struct ClientTileMovement {
-    is_predicted: bool,
-    tile_movement: TileMovement,
-    buffered_future_tiles_opt: Option<VecDeque<(Tick, i16, i16)>>,
+use crate::components::client_tile_movement::ClientTileMovement;
+
+#[derive(Component, Clone)]
+pub struct ConfirmedTileMovement {
+    pub(crate) tile_movement: TileMovement,
+    pub(crate) buffered_future_tiles_opt: Option<VecDeque<(Tick, i16, i16)>>,
 }
 
-impl ClientTileMovement {
+impl ClientTileMovement for ConfirmedTileMovement {
+    fn inner_mut(&mut self) -> &mut TileMovement {
+        return &mut self.tile_movement;
+    }
+
+    fn process_result(&mut self, result: ProcessTickResult) {
+        match result {
+            ProcessTickResult::ShouldStop(tile_x, tile_y) => {
+
+                if self.buffered_future_tiles_opt.is_some() {
+                    self.pop_and_use_buffered_future_tiles(tile_x, tile_y);
+                } else {
+                    self.tile_movement.set_stopped(tile_x, tile_y);
+                }
+            }
+            ProcessTickResult::DoNothing => {},
+            ProcessTickResult::ShouldContinue(_, _, _) => {
+                panic!("ShouldMove not expected");
+            }
+        }
+    }
+}
+
+impl ConfirmedTileMovement {
     pub fn new_stopped(
-        predicted: bool,
         next_tile_position: &NextTilePosition,
     ) -> Self {
 
         let me = Self {
-            is_predicted: predicted,
-            tile_movement: TileMovement::new_stopped(false, predicted, next_tile_position),
+            tile_movement: TileMovement::new_stopped(next_tile_position),
             buffered_future_tiles_opt: None,
         };
 
         me
-    }
-
-    pub fn inner_mut(&mut self) -> &mut TileMovement {
-        return &mut self.tile_movement;
     }
 
     // called by confirmed entities
@@ -36,10 +54,6 @@ impl ClientTileMovement {
         update_tick: Tick,
         next_tile_position: &NextTilePosition,
     ) {
-        if self.is_predicted {
-            panic!("Predicted entities do not receive updates");
-        }
-
         let (next_tile_x, next_tile_y) = (next_tile_position.x(), next_tile_position.y());
         info!(
             "Recv NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
@@ -76,9 +90,6 @@ impl ClientTileMovement {
 
     fn pop_and_use_buffered_future_tiles(&mut self, tile_x: i16, tile_y: i16) {
 
-        if self.tile_movement.is_stopped() {
-            panic!("Buffered Future Tiles should already be used before stopping");
-        }
         if !self.buffered_future_tiles_opt.is_some() {
             panic!("No buffered future tiles to pop");
         }
@@ -87,7 +98,7 @@ impl ClientTileMovement {
 
         let (next_tick, next_x, next_y) = buffered_future_tiles.pop_front().unwrap();
 
-        warn!("Prediction({:?}), Processing Buffered Next Tile Position! Tick: {:?}, Current: ({:?}, {:?}), Next: ({:?}, {:?})", self.is_predicted, next_tick, tile_x, tile_y, next_x, next_y);
+        warn!("Prediction({:?}), Processing Buffered Next Tile Position! Tick: {:?}, Current: ({:?}, {:?}), Next: ({:?}, {:?})", false, next_tick, tile_x, tile_y, next_x, next_y);
 
         if buffered_future_tiles.is_empty() {
             self.buffered_future_tiles_opt = None;
@@ -97,7 +108,11 @@ impl ClientTileMovement {
         let dy = (next_y - tile_y) as i8;
 
         if let Some(move_dir) = Direction::from_delta(dx, dy) {
-            self.tile_movement.set_continue(tile_x, tile_y, move_dir);
+            if self.tile_movement.is_stopped() {
+                self.tile_movement.set_moving(move_dir);
+            } else {
+                self.tile_movement.set_continue(tile_x, tile_y, move_dir);
+            }
         } else {
             panic!("Invalid move direction. From: ({:?}, {:?}), To: ({:?}, {:?})", tile_x, tile_y, next_x, next_y);
         }
@@ -109,10 +124,6 @@ impl ClientTileMovement {
         next_x: i16,
         next_y: i16,
     ) {
-        if self.is_predicted {
-            panic!("Predicted entities do not buffer future tiles");
-        }
-
         if self.buffered_future_tiles_opt.is_none() {
             self.buffered_future_tiles_opt = Some(VecDeque::new());
         }
@@ -148,43 +159,6 @@ impl ClientTileMovement {
             } else {
                 warn!("2 Buffering Next Tile Position! Tick: {:?}, Last: ({:?}, {:?}), Next: ({:?}, {:?})", updated_tick, last_x, last_y, next_x, next_y);
                 buffered_future_tiles.push_back((updated_tick, next_x, next_y));
-            }
-        }
-    }
-
-    // called by predicted entities
-    pub fn recv_rollback(&mut self, confirmed_tile_movement: &ClientTileMovement) {
-        if !self.is_predicted {
-            panic!("Only predicted entities can receive rollbacks");
-        }
-        if confirmed_tile_movement.is_predicted {
-            panic!("Predicted entities cannot send rollbacks");
-        }
-
-        self.tile_movement.mirror(&confirmed_tile_movement.tile_movement);
-        self.buffered_future_tiles_opt = confirmed_tile_movement.buffered_future_tiles_opt.clone();
-    }
-
-    pub fn finish_rollback(&mut self) {
-        if !self.is_predicted {
-            panic!("Only predicted entities can finish rollbacks");
-        }
-        self.buffered_future_tiles_opt = None;
-    }
-
-    pub fn process_result(&mut self, result: ProcessTickResult) {
-        match result {
-            ProcessTickResult::ShouldStop(tile_x, tile_y) => {
-
-                if self.buffered_future_tiles_opt.is_some() {
-                    self.pop_and_use_buffered_future_tiles(tile_x, tile_y);
-                } else {
-                    self.tile_movement.set_stopped(tile_x, tile_y);
-                }
-            }
-            ProcessTickResult::DoNothing => {},
-            ProcessTickResult::ShouldContinue(_, _, _) => {
-                panic!("ShouldMove not expected");
             }
         }
     }

@@ -19,7 +19,7 @@ use game_engine::{
 };
 
 use crate::{
-    components::{ClientTileMovement, AnimationState, Predicted, RenderPosition},
+    components::{PredictedTileMovement, AnimationState, Predicted, RenderPosition},
     resources::{Global, OwnedEntity},
 };
 
@@ -78,7 +78,7 @@ impl PredictionEvents {
             commands
                 .entity(prediction_entity)
                 // Position stuff
-                .insert(ClientTileMovement::new_stopped(true, next_tile_position))
+                .insert(PredictedTileMovement::new_stopped(next_tile_position))
                 .insert(physics)
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
