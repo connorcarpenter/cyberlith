@@ -1,17 +1,24 @@
-use bevy_ecs::{system::Res, change_detection::ResMut, event::EventReader, prelude::Query, query::With};
+use bevy_ecs::{
+    change_detection::ResMut, event::EventReader, prelude::Query, query::With, system::Res,
+};
 
 use game_engine::{
     naia::Tick,
     world::{
+        behavior as shared_behavior,
+        channels::PlayerCommandChannel,
         components::{PhysicsController, TileMovementType},
-        behavior as shared_behavior, channels::PlayerCommandChannel,
-        messages::PlayerCommands, WorldClient, WorldClientTickEvent, WorldServerTickEvent,
+        messages::PlayerCommands,
+        WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
 };
 
 use crate::{
-    components::{ClientTileMovement, AnimationState, ConfirmedTileMovement, PredictedTileMovement, Confirmed, Predicted, RenderPosition},
-    resources::{Global, TickTracker, InputManager},
+    components::{
+        AnimationState, ClientTileMovement, Confirmed, ConfirmedTileMovement, Predicted,
+        PredictedTileMovement, RenderPosition,
+    },
+    resources::{Global, InputManager, TickTracker},
 };
 
 pub fn client_tick_events(
@@ -19,7 +26,15 @@ pub fn client_tick_events(
     global: Res<Global>,
     mut input_manager: ResMut<InputManager>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    mut position_q: Query<(&mut PredictedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Predicted>>,
+    mut position_q: Query<
+        (
+            &mut PredictedTileMovement,
+            &mut PhysicsController,
+            &mut RenderPosition,
+            &mut AnimationState,
+        ),
+        With<Predicted>,
+    >,
 ) {
     let Some(predicted_entity) = global
         .owned_entity
@@ -36,18 +51,20 @@ pub fn client_tick_events(
             mut client_tile_movement,
             mut client_physics,
             mut client_render_position,
-            mut animation_state
+            mut animation_state,
         ) = position_q.get_mut(predicted_entity).unwrap();
 
         // process commands
         if let Some(outgoing_command) = input_manager.pop_outgoing_command() {
-
             // outgoing_command.log(client_tick);
 
             // send command
             // let distance = client_tile_movement.get_dis();
             // info!("Send Command. Tick: {:?}. MoveDir: {:?}, Dis: {:?}", client_tick, outgoing_command.get_move(), distance);
-            client.send_tick_buffer_message::<PlayerCommandChannel, PlayerCommands>(&client_tick, &outgoing_command);
+            client.send_tick_buffer_message::<PlayerCommandChannel, PlayerCommands>(
+                &client_tick,
+                &outgoing_command,
+            );
 
             input_manager.save_to_command_history(client_tick, Some(outgoing_command.clone()));
             input_manager.recv_incoming_command(client_tick, Some(outgoing_command));
@@ -92,14 +109,11 @@ pub fn process_tick(
         player_command,
         tile_movement.inner_mut(),
         physics,
-        None
+        None,
     );
     tile_movement.process_result(result);
 
-    render_position.recv_position(
-        physics.position(),
-        tick,
-    );
+    render_position.recv_position(physics.position(), tick);
 
     if let Some(lookdir) = lookdir_opt {
         animation_state.recv_lookdir_update(&lookdir);
@@ -109,7 +123,15 @@ pub fn process_tick(
 pub fn server_tick_events(
     mut tick_tracker: ResMut<TickTracker>,
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut position_q: Query<(&mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState), With<Confirmed>>,
+    mut position_q: Query<
+        (
+            &mut ConfirmedTileMovement,
+            &mut PhysicsController,
+            &mut RenderPosition,
+            &mut AnimationState,
+        ),
+        With<Confirmed>,
+    >,
 ) {
     for event in tick_reader.read() {
         let server_tick = event.tick;
@@ -119,9 +141,11 @@ pub fn server_tick_events(
             mut confirmed_tile_movement,
             mut confirmed_physics,
             mut confirmed_render_position,
-            mut confirmed_animation_state
-        ) in position_q.iter_mut() {
-            let confirmed_tile_movement_2: &mut ConfirmedTileMovement = &mut confirmed_tile_movement;
+            mut confirmed_animation_state,
+        ) in position_q.iter_mut()
+        {
+            let confirmed_tile_movement_2: &mut ConfirmedTileMovement =
+                &mut confirmed_tile_movement;
             process_tick(
                 TileMovementType::ClientConfirmed,
                 server_tick,

@@ -3,10 +3,10 @@ use std::collections::VecDeque;
 use bevy_ecs::component::Component;
 
 use game_engine::{
+    math::Vec2,
     naia::{sequence_less_than, GameInstant, Tick},
     time::Instant,
     world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},
-    math::Vec2,
 };
 
 #[derive(Component, Clone)]
@@ -36,11 +36,7 @@ impl RenderPosition {
         me
     }
 
-    pub fn recv_position(
-        &mut self,
-        position: Vec2,
-        tick: Tick,
-    ) {
+    pub fn recv_position(&mut self, position: Vec2, tick: Tick) {
         // make sure ticks are in order
         loop {
             if let Some((_, _, back_tick)) = self.queue.back() {

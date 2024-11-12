@@ -1,5 +1,7 @@
-
-use bevy_ecs::{entity::Entity, system::{Query, Res, ResMut}};
+use bevy_ecs::{
+    entity::Entity,
+    system::{Query, Res, ResMut},
+};
 
 use game_engine::{
     asset::{AssetHandle, AssetManager, AssetRender, UnitData},
@@ -12,7 +14,10 @@ use game_engine::{
     world::WorldClient,
 };
 
-use crate::{resources::Global, components::{AnimationState, Confirmed, Predicted, RenderPosition}};
+use crate::{
+    components::{AnimationState, Confirmed, Predicted, RenderPosition},
+    resources::Global,
+};
 
 pub fn draw_units(
     client: WorldClient,

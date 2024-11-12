@@ -13,13 +13,13 @@ use game_engine::{
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
-        components::{PhysicsController, NextTilePosition},
+        components::{NextTilePosition, PhysicsController},
         WorldClient,
     },
 };
 
 use crate::{
-    components::{PredictedTileMovement, AnimationState, Predicted, RenderPosition},
+    components::{AnimationState, Predicted, PredictedTileMovement, RenderPosition},
     resources::{Global, OwnedEntity},
 };
 

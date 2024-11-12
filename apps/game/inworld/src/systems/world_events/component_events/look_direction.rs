@@ -1,16 +1,15 @@
+use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Query};
 
-use bevy_ecs::{
-    change_detection::ResMut,
-    event::EventReader,
-    prelude::{Query},
+use game_engine::{
+    logging::info,
+    time::Instant,
+    world::{
+        components::LookDirection, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+        WorldUpdateComponentEvent,
+    },
 };
 
-use game_engine::{world::{WorldInsertComponentEvent, components::LookDirection, WorldUpdateComponentEvent, WorldRemoveComponentEvent}, time::Instant, logging::info};
-
-use crate::{
-    components::{AnimationState},
-    systems::world_events::{PredictionEvents},
-};
+use crate::{components::AnimationState, systems::world_events::PredictionEvents};
 
 pub fn insert_look_direction_events(
     mut prediction_events: ResMut<PredictionEvents>,

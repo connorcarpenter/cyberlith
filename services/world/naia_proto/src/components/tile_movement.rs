@@ -1,4 +1,3 @@
-
 use naia_bevy_shared::Tick;
 
 use logging::{info, warn};
@@ -6,7 +5,7 @@ use math::Vec2;
 
 use crate::{
     components::{NextTilePosition, PhysicsController},
-    constants::{TILE_SIZE},
+    constants::TILE_SIZE,
     messages::PlayerCommands,
     types::Direction,
 };
@@ -42,11 +41,12 @@ pub struct TileMovement {
 }
 
 impl TileMovement {
-    pub fn new_stopped(
-        next_tile_position: &NextTilePosition,
-    ) -> Self {
+    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
         let me = Self {
-            state: TileMovementState::Stopped(TileMovementStoppedState::new(next_tile_position.x(), next_tile_position.y())),
+            state: TileMovementState::Stopped(TileMovementStoppedState::new(
+                next_tile_position.x(),
+                next_tile_position.y(),
+            )),
         };
 
         me
@@ -96,7 +96,11 @@ impl TileMovement {
             panic!("Cannot set moving state when not stopped");
         }
         let (current_tile_x, current_tile_y) = self.tile_position();
-        self.state = TileMovementState::Moving(TileMovementMovingState::new(current_tile_x, current_tile_y, move_dir));
+        self.state = TileMovementState::Moving(TileMovementMovingState::new(
+            current_tile_x,
+            current_tile_y,
+            move_dir,
+        ));
     }
 
     pub fn set_continue(&mut self, tile_x: i16, tile_y: i16, move_dir: Direction) {
@@ -108,7 +112,8 @@ impl TileMovement {
             panic!("Expected done state");
         }
 
-        self.state = TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
+        self.state =
+            TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
     }
 
     // call on each tick
@@ -134,7 +139,6 @@ impl TileMovement {
             output = Some((next_tile_x, next_tile_y));
 
             result = ProcessTickResult::DoNothing;
-
         }
 
         return (result, output);
@@ -146,9 +150,8 @@ impl TileMovement {
         &mut self,
         physics: &PhysicsController,
         tick: Tick,
-        command: Option<PlayerCommands>
+        command: Option<PlayerCommands>,
     ) -> Option<(i16, i16)> {
-
         let Some(command) = command else {
             return None;
         };
@@ -168,12 +171,12 @@ impl TileMovement {
                 self.set_moving(direction);
 
                 return Some((next_tile_x, next_tile_y));
-            },
+            }
             TileMovementState::Moving(state) => {
                 if state.can_buffer_movement(physics) {
                     state.buffer_movement(tick, direction);
                 }
-            },
+            }
         }
 
         return None;
@@ -220,9 +223,7 @@ struct TileMovementMovingState {
 }
 
 impl TileMovementMovingState {
-
     fn new(from_tile_x: i16, from_tile_y: i16, move_dir: Direction) -> Self {
-
         let (dx, dy) = move_dir.to_delta();
         let to_tile_x = from_tile_x + dx as i16;
         let to_tile_y = from_tile_y + dy as i16;
@@ -263,7 +264,6 @@ impl TileMovementMovingState {
         }
 
         if target_distance <= physics.velocity().length() {
-
             // reached target!
 
             self.done = true;
@@ -272,10 +272,13 @@ impl TileMovementMovingState {
                 return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
             } else {
                 let buffered_move_dir = self.buffered_move_dir.take().unwrap();
-                return ProcessTickResult::ShouldContinue(self.to_tile_x, self.to_tile_y, buffered_move_dir);
+                return ProcessTickResult::ShouldContinue(
+                    self.to_tile_x,
+                    self.to_tile_y,
+                    buffered_move_dir,
+                );
             }
         } else {
-
             physics.step();
 
             return ProcessTickResult::DoNothing;
@@ -289,7 +292,10 @@ impl TileMovementMovingState {
     }
 
     pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
-        warn!("buffering command for Tick: {:?}, MoveDir: {:?}", tick, move_dir);
+        warn!(
+            "buffering command for Tick: {:?}, MoveDir: {:?}",
+            tick, move_dir
+        );
 
         self.buffered_move_dir = Some(move_dir);
     }

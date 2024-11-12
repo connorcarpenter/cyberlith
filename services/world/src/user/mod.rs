@@ -1,5 +1,5 @@
-mod systems;
 mod components;
+mod systems;
 
 pub(crate) mod user_data;
 

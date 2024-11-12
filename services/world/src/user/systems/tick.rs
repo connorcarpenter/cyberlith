@@ -15,11 +15,14 @@ use logging::info;
 use world_server_naia_proto::{
     behavior as shared_behavior,
     channels::PlayerCommandChannel,
-    components::{TileMovementType, PhysicsController, LookDirection, NextTilePosition},
+    components::{LookDirection, NextTilePosition, PhysicsController, TileMovementType},
     messages::PlayerCommands,
 };
 
-use crate::{user::{components::ServerTileMovement, UserManager}, asset::AssetManager};
+use crate::{
+    asset::AssetManager,
+    user::{components::ServerTileMovement, UserManager},
+};
 
 #[derive(Resource)]
 struct CachedTickEventsState {
@@ -64,14 +67,14 @@ pub fn tick_events(world: &mut World) {
         ) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
-
             let mut users_without_command = user_manager.user_key_set();
 
             // receive & process command messages
             let mut user_commands: HashMap<UserKey, Option<PlayerCommands>> = HashMap::new();
             let mut messages = server.receive_tick_buffer_messages(server_tick);
-            for (user_key, incoming_command) in messages.read::<PlayerCommandChannel, PlayerCommands>() {
-
+            for (user_key, incoming_command) in
+                messages.read::<PlayerCommandChannel, PlayerCommands>()
+            {
                 users_without_command.remove(&user_key);
 
                 if let Some(prev_command) = user_commands.get_mut(&user_key) {
@@ -98,7 +101,6 @@ pub fn tick_events(world: &mut World) {
 
             // process movement
             for (entity, mut tile_movement, mut physics) in tile_movement_q.iter_mut() {
-
                 let Some(user_key) = user_manager.get_user_key_from_entity(&entity) else {
                     continue;
                 };
@@ -135,7 +137,12 @@ pub fn tick_events(world: &mut World) {
                     let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
                         panic!("NextTilePosition not found for entity: {:?}", entity);
                     };
-                    tile_movement.send_updated_next_tile_position(*server_tick, &mut next_tile_position, outbound_tile_x, outbound_tile_y);
+                    tile_movement.send_updated_next_tile_position(
+                        *server_tick,
+                        &mut next_tile_position,
+                        outbound_tile_x,
+                        outbound_tile_y,
+                    );
                 }
             }
         }

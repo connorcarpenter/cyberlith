@@ -13,7 +13,7 @@ use logging::{info, warn};
 
 use world_server_naia_proto::{
     channels::EntityAssignmentChannel,
-    components::{Main, NextTilePosition, PhysicsController, LookDirection},
+    components::{LookDirection, Main, NextTilePosition, PhysicsController},
     constants::TILE_COUNT,
     messages::{Auth, EntityAssignment},
     types::Direction,
@@ -22,7 +22,7 @@ use world_server_naia_proto::{
 use crate::{
     asset::{AssetCatalog, AssetCommandsExt, AssetManager},
     social::LobbyManager,
-    user::{UserManager, components::ServerTileMovement},
+    user::{components::ServerTileMovement, UserManager},
 };
 
 pub fn auth_events(

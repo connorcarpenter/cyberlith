@@ -19,7 +19,9 @@ use asset_id::{AssetId, AssetType};
 use asset_loader::AssetMetadataStore;
 use logging::info;
 
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, LookDirection, Main, NextTilePosition};
+use world_server_naia_proto::components::{
+    Alt1, AssetEntry, AssetRef, LookDirection, Main, NextTilePosition,
+};
 
 use crate::{
     asset_cache::AssetCache,

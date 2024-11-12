@@ -1,10 +1,21 @@
-use std::{default::Default, collections::{HashMap, VecDeque}};
+use std::{
+    collections::{HashMap, VecDeque},
+    default::Default,
+};
 
-use bevy_ecs::{system::{Res, Query, ResMut}, prelude::Resource};
+use bevy_ecs::{
+    prelude::Resource,
+    system::{Query, Res, ResMut},
+};
 
-use game_engine::{logging::{info, warn}, input::{Key, Input}, naia::{GameInstant, CommandHistory, Tick}, world::{messages::PlayerCommands, types::Direction, WorldClient}};
+use game_engine::{
+    input::{Input, Key},
+    logging::{info, warn},
+    naia::{CommandHistory, GameInstant, Tick},
+    world::{messages::PlayerCommands, types::Direction, WorldClient},
+};
 
-use crate::{resources::Global, components::AnimationState};
+use crate::{components::AnimationState, resources::Global};
 
 const DOUBLE_TAP_BUFFER: u16 = 150;
 const SEQUENTIAL_TAP_DURATION: u16 = 1000;
@@ -28,9 +39,7 @@ pub struct InputManager {
 impl Default for InputManager {
     fn default() -> Self {
         Self {
-            tracked_keys: vec![
-                Key::W, Key::S, Key::A, Key::D,
-            ],
+            tracked_keys: vec![Key::W, Key::S, Key::A, Key::D],
             pressed_keys: HashMap::new(),
             next_command: None,
             double_tap: None,
@@ -42,7 +51,6 @@ impl Default for InputManager {
 }
 
 impl InputManager {
-
     // used as a system
     pub fn recv_key_input(
         mut me: ResMut<Self>,
@@ -74,20 +82,26 @@ impl InputManager {
         me.update_player_command(&client_instant, releases, lookdir);
     }
 
-    fn update_pressed_keys(&mut self, client_instant: &GameInstant, input: &Input) -> Vec<(Key, u16)> {
+    fn update_pressed_keys(
+        &mut self,
+        client_instant: &GameInstant,
+        input: &Input,
+    ) -> Vec<(Key, u16)> {
         let mut output = Vec::new();
 
         for key in &self.tracked_keys {
             if input.is_pressed(*key) {
                 if let Some((prev_instant, prev_duration)) = self.pressed_keys.get_mut(key) {
-                    *prev_duration = Self::get_hold_duration(prev_instant, client_instant, *prev_duration);
+                    *prev_duration =
+                        Self::get_hold_duration(prev_instant, client_instant, *prev_duration);
                     *prev_instant = *client_instant;
                 } else {
                     self.pressed_keys.insert(*key, (*client_instant, 1));
                 }
             } else {
                 if let Some((prev_instant, prev_duration)) = self.pressed_keys.remove(key) {
-                    let duration = Self::get_hold_duration(&prev_instant, client_instant, prev_duration);
+                    let duration =
+                        Self::get_hold_duration(&prev_instant, client_instant, prev_duration);
                     output.push((*key, duration));
                 }
             }
@@ -96,7 +110,11 @@ impl InputManager {
         output
     }
 
-    fn get_hold_duration(prev_instant: &GameInstant, client_instant: &GameInstant, prev_duration: u16) -> u16 {
+    fn get_hold_duration(
+        prev_instant: &GameInstant,
+        client_instant: &GameInstant,
+        prev_duration: u16,
+    ) -> u16 {
         let mut duration = prev_instant.offset_from(client_instant);
         if duration < 0 {
             warn! {"How can duration of keypress be < 0?? Prev: {:?} -> Cur: {:?} = Dur {:?}", prev_instant, client_instant, duration};
@@ -164,7 +182,7 @@ impl InputManager {
                     Key::S => tap_d = true,
                     Key::A => tap_l = true,
                     Key::D => tap_r = true,
-                    _ => {},
+                    _ => {}
                 }
             }
         }
@@ -179,11 +197,18 @@ impl InputManager {
         }
 
         if tap_u || tap_d || tap_l || tap_r {
-            if let Some((_, last_tap_u, last_tap_d, last_tap_l, last_tap_r)) = self.double_tap.take() {
-
+            if let Some((_, last_tap_u, last_tap_d, last_tap_l, last_tap_r)) =
+                self.double_tap.take()
+            {
                 // this is a hack to make it simpler to handle all the conditions
-                if (last_tap_u && last_tap_l) || (last_tap_u && last_tap_r) || (last_tap_d && last_tap_l) || (last_tap_d && last_tap_r) ||
-                    (tap_u && tap_l) || (tap_u && tap_r) || (tap_d && tap_l) || (tap_d && tap_r)
+                if (last_tap_u && last_tap_l)
+                    || (last_tap_u && last_tap_r)
+                    || (last_tap_d && last_tap_l)
+                    || (last_tap_d && last_tap_r)
+                    || (tap_u && tap_l)
+                    || (tap_u && tap_r)
+                    || (tap_d && tap_l)
+                    || (tap_d && tap_r)
                 {
                     // skip
                 } else {
@@ -205,25 +230,28 @@ impl InputManager {
                 self.double_tap = Some((*client_instant, tap_u, tap_d, tap_l, tap_r));
             }
 
-            info!("tap_u: {}, tap_d: {}, tap_l: {}, tap_r: {}", tap_u, tap_d, tap_l, tap_r);
+            info!(
+                "tap_u: {}, tap_d: {}, tap_l: {}, tap_r: {}",
+                tap_u, tap_d, tap_l, tap_r
+            );
             let mut did_tap = false;
             match (tap_u, tap_d, tap_l, tap_r) {
                 (true, false, false, true) => {
                     next_command.set_look(Direction::Northeast);
                     did_tap = true;
-                },
+                }
                 (true, false, true, false) => {
                     next_command.set_look(Direction::Northwest);
                     did_tap = true;
-                },
+                }
                 (false, true, true, false) => {
                     next_command.set_look(Direction::Southwest);
                     did_tap = true;
-                },
+                }
                 (false, true, false, true) => {
                     next_command.set_look(Direction::Southeast);
                     did_tap = true;
-                },
+                }
                 _ => {}
             }
             if !did_tap {
@@ -232,18 +260,24 @@ impl InputManager {
                         (false, false, false, true) => {
                             // towards east
                             let nextdir = match lookdir {
-                                Direction::East | Direction::West | Direction::Northeast | Direction::Southeast => Direction::East,
+                                Direction::East
+                                | Direction::West
+                                | Direction::Northeast
+                                | Direction::Southeast => Direction::East,
                                 Direction::North => Direction::Northeast,
                                 Direction::South => Direction::Southeast,
                                 Direction::Northwest => Direction::North,
                                 Direction::Southwest => Direction::South,
                             };
                             next_command.set_look(nextdir);
-                        },
+                        }
                         (true, false, false, false) => {
                             // towards north
                             let nextdir = match lookdir {
-                                Direction::North | Direction::South | Direction::Northeast | Direction::Northwest => Direction::North,
+                                Direction::North
+                                | Direction::South
+                                | Direction::Northeast
+                                | Direction::Northwest => Direction::North,
                                 Direction::East => Direction::Northeast,
                                 Direction::West => Direction::Northwest,
                                 Direction::Southeast => Direction::East,
@@ -254,7 +288,10 @@ impl InputManager {
                         (false, false, true, false) => {
                             // towards west
                             let nextdir = match lookdir {
-                                Direction::East | Direction::West | Direction::Northwest | Direction::Southwest => Direction::West,
+                                Direction::East
+                                | Direction::West
+                                | Direction::Northwest
+                                | Direction::Southwest => Direction::West,
                                 Direction::North => Direction::Northwest,
                                 Direction::South => Direction::Southwest,
                                 Direction::Northeast => Direction::North,
@@ -265,14 +302,17 @@ impl InputManager {
                         (false, true, false, false) => {
                             // towards south
                             let nextdir = match lookdir {
-                                Direction::North | Direction::South | Direction::Southeast | Direction::Southwest => Direction::South,
+                                Direction::North
+                                | Direction::South
+                                | Direction::Southeast
+                                | Direction::Southwest => Direction::South,
                                 Direction::East => Direction::Southeast,
                                 Direction::West => Direction::Southwest,
                                 Direction::Northeast => Direction::East,
                                 Direction::Northwest => Direction::West,
                             };
                             next_command.set_look(nextdir);
-                        },
+                        }
                         _ => {}
                     }
                 } else {
@@ -291,7 +331,6 @@ impl InputManager {
     }
 
     fn handle_holds(&mut self) {
-
         let next_command = self.next_command.as_mut().unwrap();
 
         let mut short_u = false;
@@ -365,7 +404,7 @@ impl InputManager {
                 (false, true, true, false) => next_command.set_move(Direction::Southwest),
                 (false, true, false, false) => next_command.set_move(Direction::South),
                 (false, true, false, true) => next_command.set_move(Direction::Southeast),
-                (false, false, false, false) => {},
+                (false, false, false, false) => {}
                 _ => panic!("Invalid move command"),
             }
         }
@@ -375,9 +414,12 @@ impl InputManager {
         self.next_command.take()
     }
 
-    pub fn save_to_command_history(&mut self, client_tick: Tick, command_opt: Option<PlayerCommands>) {
+    pub fn save_to_command_history(
+        &mut self,
+        client_tick: Tick,
+        command_opt: Option<PlayerCommands>,
+    ) {
         if !self.command_history.can_insert(&client_tick) {
-
             let most_recent_command_tick = self.command_history.most_recent_tick().unwrap();
 
             // History is full, should this be possible??
@@ -389,11 +431,14 @@ impl InputManager {
         }
 
         // Record command
-        self.command_history.insert(client_tick, command_opt.clone());
+        self.command_history
+            .insert(client_tick, command_opt.clone());
     }
 
-    pub fn pop_command_replays(&mut self, server_tick: Tick) -> Vec<(Tick, Option<PlayerCommands>)> {
-
+    pub fn pop_command_replays(
+        &mut self,
+        server_tick: Tick,
+    ) -> Vec<(Tick, Option<PlayerCommands>)> {
         // TODO: fix this?
         let modified_server_tick = server_tick.wrapping_sub(1);
 

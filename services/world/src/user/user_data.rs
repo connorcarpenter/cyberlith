@@ -1,4 +1,3 @@
-
 use bevy_ecs::entity::Entity;
 
 use auth_server_types::UserId;

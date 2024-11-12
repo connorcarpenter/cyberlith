@@ -1,6 +1,11 @@
 use naia_bevy_shared::Tick;
 
-use crate::{messages::PlayerCommands, components::{PhysicsController, TileMovementType, TileMovement, ProcessTickResult, LookDirection}};
+use crate::{
+    components::{
+        LookDirection, PhysicsController, ProcessTickResult, TileMovement, TileMovementType,
+    },
+    messages::PlayerCommands,
+};
 
 pub fn process_tick(
     tile_movement_type: TileMovementType,
@@ -10,7 +15,6 @@ pub fn process_tick(
     physics: &mut PhysicsController,
     look_direction_opt: Option<&mut LookDirection>,
 ) -> (ProcessTickResult, Option<(i16, i16)>) {
-
     let new_look_direction = {
         if look_direction_opt.is_none() {
             None

@@ -23,8 +23,6 @@ pub struct Global {
 
 impl Default for Global {
     fn default() -> Self {
-        Self {
-            owned_entity: None,
-        }
+        Self { owned_entity: None }
     }
 }

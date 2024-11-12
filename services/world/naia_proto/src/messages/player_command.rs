@@ -1,4 +1,3 @@
-
 use naia_bevy_shared::Message;
 
 use crate::types::Direction;

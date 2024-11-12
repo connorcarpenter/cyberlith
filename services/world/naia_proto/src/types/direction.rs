@@ -15,7 +15,6 @@ pub enum Direction {
 }
 
 impl Direction {
-
     pub fn random() -> Self {
         let i = gen_range_u32(0, 8);
         match i {
@@ -87,13 +86,13 @@ impl Direction {
 
     pub fn to_radians(&self) -> f32 {
         match self {
-            Direction::North =>     270.0_f32.to_radians(),
+            Direction::North => 270.0_f32.to_radians(),
             Direction::Northeast => 315.0_f32.to_radians(),
-            Direction::East =>      0.0_f32.to_radians(),
+            Direction::East => 0.0_f32.to_radians(),
             Direction::Southeast => 45.0_f32.to_radians(),
-            Direction::South =>     90.0_f32.to_radians(),
+            Direction::South => 90.0_f32.to_radians(),
             Direction::Southwest => 135.0_f32.to_radians(),
-            Direction::West =>      180.0_f32.to_radians(),
+            Direction::West => 180.0_f32.to_radians(),
             Direction::Northwest => 225.0_f32.to_radians(),
         }
     }
@@ -103,41 +102,140 @@ mod tests {
     #[test]
     fn from_angle_tests() {
         use super::Direction;
-        assert_eq!(Direction::from_radians(0.0_f32.to_radians()), Direction::East);
-        assert_eq!(Direction::from_radians(45.0_f32.to_radians()), Direction::Northeast);
-        assert_eq!(Direction::from_radians(90.0_f32.to_radians()), Direction::North);
-        assert_eq!(Direction::from_radians(135.0_f32.to_radians()), Direction::Northwest);
-        assert_eq!(Direction::from_radians(180.0_f32.to_radians()), Direction::West);
-        assert_eq!(Direction::from_radians(225.0_f32.to_radians()), Direction::Southwest);
-        assert_eq!(Direction::from_radians(270.0_f32.to_radians()), Direction::South);
-        assert_eq!(Direction::from_radians(315.0_f32.to_radians()), Direction::Southeast);
-        assert_eq!(Direction::from_radians(360.0_f32.to_radians()), Direction::East);
-        assert_eq!(Direction::from_radians(-45.0_f32.to_radians()), Direction::Southeast);
-        assert_eq!(Direction::from_radians(-90.0_f32.to_radians()), Direction::South);
-        assert_eq!(Direction::from_radians(-135.0_f32.to_radians()), Direction::Southwest);
-        assert_eq!(Direction::from_radians(-180.0_f32.to_radians()), Direction::West);
-        assert_eq!(Direction::from_radians(-225.0_f32.to_radians()), Direction::Northwest);
-        assert_eq!(Direction::from_radians(-270.0_f32.to_radians()), Direction::North);
-        assert_eq!(Direction::from_radians(-315.0_f32.to_radians()), Direction::Northeast);
-        assert_eq!(Direction::from_radians(-360.0_f32.to_radians()), Direction::East);
+        assert_eq!(
+            Direction::from_radians(0.0_f32.to_radians()),
+            Direction::East
+        );
+        assert_eq!(
+            Direction::from_radians(45.0_f32.to_radians()),
+            Direction::Northeast
+        );
+        assert_eq!(
+            Direction::from_radians(90.0_f32.to_radians()),
+            Direction::North
+        );
+        assert_eq!(
+            Direction::from_radians(135.0_f32.to_radians()),
+            Direction::Northwest
+        );
+        assert_eq!(
+            Direction::from_radians(180.0_f32.to_radians()),
+            Direction::West
+        );
+        assert_eq!(
+            Direction::from_radians(225.0_f32.to_radians()),
+            Direction::Southwest
+        );
+        assert_eq!(
+            Direction::from_radians(270.0_f32.to_radians()),
+            Direction::South
+        );
+        assert_eq!(
+            Direction::from_radians(315.0_f32.to_radians()),
+            Direction::Southeast
+        );
+        assert_eq!(
+            Direction::from_radians(360.0_f32.to_radians()),
+            Direction::East
+        );
+        assert_eq!(
+            Direction::from_radians(-45.0_f32.to_radians()),
+            Direction::Southeast
+        );
+        assert_eq!(
+            Direction::from_radians(-90.0_f32.to_radians()),
+            Direction::South
+        );
+        assert_eq!(
+            Direction::from_radians(-135.0_f32.to_radians()),
+            Direction::Southwest
+        );
+        assert_eq!(
+            Direction::from_radians(-180.0_f32.to_radians()),
+            Direction::West
+        );
+        assert_eq!(
+            Direction::from_radians(-225.0_f32.to_radians()),
+            Direction::Northwest
+        );
+        assert_eq!(
+            Direction::from_radians(-270.0_f32.to_radians()),
+            Direction::North
+        );
+        assert_eq!(
+            Direction::from_radians(-315.0_f32.to_radians()),
+            Direction::Northeast
+        );
+        assert_eq!(
+            Direction::from_radians(-360.0_f32.to_radians()),
+            Direction::East
+        );
 
         // test boundary conditions
-        assert_eq!(Direction::from_radians(22.4_f32.to_radians()), Direction::East);
-        assert_eq!(Direction::from_radians(22.6_f32.to_radians()), Direction::Northeast);
-        assert_eq!(Direction::from_radians(67.4_f32.to_radians()), Direction::Northeast);
-        assert_eq!(Direction::from_radians(67.6_f32.to_radians()), Direction::North);
-        assert_eq!(Direction::from_radians(112.4_f32.to_radians()), Direction::North);
-        assert_eq!(Direction::from_radians(112.6_f32.to_radians()), Direction::Northwest);
-        assert_eq!(Direction::from_radians(157.4_f32.to_radians()), Direction::Northwest);
-        assert_eq!(Direction::from_radians(157.6_f32.to_radians()), Direction::West);
-        assert_eq!(Direction::from_radians(202.4_f32.to_radians()), Direction::West);
-        assert_eq!(Direction::from_radians(202.6_f32.to_radians()), Direction::Southwest);
-        assert_eq!(Direction::from_radians(247.4_f32.to_radians()), Direction::Southwest);
-        assert_eq!(Direction::from_radians(247.6_f32.to_radians()), Direction::South);
-        assert_eq!(Direction::from_radians(292.4_f32.to_radians()), Direction::South);
-        assert_eq!(Direction::from_radians(292.6_f32.to_radians()), Direction::Southeast);
-        assert_eq!(Direction::from_radians(337.4_f32.to_radians()), Direction::Southeast);
-        assert_eq!(Direction::from_radians(337.6_f32.to_radians()), Direction::East);
+        assert_eq!(
+            Direction::from_radians(22.4_f32.to_radians()),
+            Direction::East
+        );
+        assert_eq!(
+            Direction::from_radians(22.6_f32.to_radians()),
+            Direction::Northeast
+        );
+        assert_eq!(
+            Direction::from_radians(67.4_f32.to_radians()),
+            Direction::Northeast
+        );
+        assert_eq!(
+            Direction::from_radians(67.6_f32.to_radians()),
+            Direction::North
+        );
+        assert_eq!(
+            Direction::from_radians(112.4_f32.to_radians()),
+            Direction::North
+        );
+        assert_eq!(
+            Direction::from_radians(112.6_f32.to_radians()),
+            Direction::Northwest
+        );
+        assert_eq!(
+            Direction::from_radians(157.4_f32.to_radians()),
+            Direction::Northwest
+        );
+        assert_eq!(
+            Direction::from_radians(157.6_f32.to_radians()),
+            Direction::West
+        );
+        assert_eq!(
+            Direction::from_radians(202.4_f32.to_radians()),
+            Direction::West
+        );
+        assert_eq!(
+            Direction::from_radians(202.6_f32.to_radians()),
+            Direction::Southwest
+        );
+        assert_eq!(
+            Direction::from_radians(247.4_f32.to_radians()),
+            Direction::Southwest
+        );
+        assert_eq!(
+            Direction::from_radians(247.6_f32.to_radians()),
+            Direction::South
+        );
+        assert_eq!(
+            Direction::from_radians(292.4_f32.to_radians()),
+            Direction::South
+        );
+        assert_eq!(
+            Direction::from_radians(292.6_f32.to_radians()),
+            Direction::Southeast
+        );
+        assert_eq!(
+            Direction::from_radians(337.4_f32.to_radians()),
+            Direction::Southeast
+        );
+        assert_eq!(
+            Direction::from_radians(337.6_f32.to_radians()),
+            Direction::East
+        );
 
         // test coords
         assert_eq!(Direction::from_coords(0.0, -10.0), Direction::North);

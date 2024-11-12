@@ -1,11 +1,10 @@
-
 use bevy_ecs::prelude::Component;
 
 use naia_bevy_server::Tick;
 
 use logging::info;
 
-use world_server_naia_proto::{components::{ProcessTickResult, NextTilePosition, TileMovement}};
+use world_server_naia_proto::components::{NextTilePosition, ProcessTickResult, TileMovement};
 
 #[derive(Component)]
 pub struct ServerTileMovement {
@@ -13,10 +12,7 @@ pub struct ServerTileMovement {
 }
 
 impl ServerTileMovement {
-    pub fn new_stopped(
-        next_tile_position: &NextTilePosition,
-    ) -> Self {
-
+    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
         let me = Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
         };
@@ -33,7 +29,7 @@ impl ServerTileMovement {
             ProcessTickResult::ShouldStop(tile_x, tile_y) => {
                 self.tile_movement.set_stopped(tile_x, tile_y);
             }
-            ProcessTickResult::DoNothing => {},
+            ProcessTickResult::DoNothing => {}
             ProcessTickResult::ShouldContinue(_, _, _) => {
                 panic!("ShouldMove not expected");
             }

@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use bevy_ecs::{system::Resource, entity::Entity};
+use bevy_ecs::{entity::Entity, system::Resource};
 
 use naia_bevy_server::UserKey;
 

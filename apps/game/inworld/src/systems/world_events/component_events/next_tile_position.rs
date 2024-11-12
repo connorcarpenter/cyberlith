@@ -1,4 +1,3 @@
-
 use bevy_ecs::{
     change_detection::ResMut,
     event::EventReader,
@@ -14,14 +13,18 @@ use game_engine::{
     time::Instant,
     world::{
         // behavior as shared_behavior,
-        components::{NextTilePosition, TileMovementType, PhysicsController},
-        WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+        components::{NextTilePosition, PhysicsController, TileMovementType},
+        WorldClient,
+        WorldInsertComponentEvent,
+        WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
 };
 
 use crate::{
-    components::{ConfirmedTileMovement, PredictedTileMovement, AnimationState, Confirmed, RenderPosition},
+    components::{
+        AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
+    },
     resources::{Global, InputManager, TickTracker},
     systems::world_events::{process_tick, PredictionEvents},
 };
@@ -84,7 +87,11 @@ pub fn update_next_tile_position_events(
     next_tile_position_q: Query<&NextTilePosition>,
     mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
-    mut tile_movement_q: Query<(&mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
+    mut tile_movement_q: Query<(
+        &mut PhysicsController,
+        &mut RenderPosition,
+        &mut AnimationState,
+    )>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -147,7 +154,10 @@ pub fn update_next_tile_position_events(
         return;
     };
 
-    info!("Update received for Server Tick: {:?} (which is 1 less than came through in update event)", server_tick);
+    info!(
+        "Update received for Server Tick: {:?} (which is 1 less than came through in update event)",
+        server_tick
+    );
 
     let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get(confirmed_entity) else {
         panic!(
@@ -155,22 +165,15 @@ pub fn update_next_tile_position_events(
             confirmed_entity
         );
     };
-    let Ok(mut predicted_tile_movement) = predicted_tile_movement_q.get_mut(predicted_entity) else {
+    let Ok(mut predicted_tile_movement) = predicted_tile_movement_q.get_mut(predicted_entity)
+    else {
         panic!(
             "failed to get predicted tile movement for entity: {:?}",
             predicted_entity
         );
     };
     let Ok(
-        [(
-            confirmed_physics,
-            confirmed_render_position,
-            _,
-        ), (
-            mut predicted_physics,
-            mut predicted_render_position,
-            mut predicted_animation_state,
-        )],
+        [(confirmed_physics, confirmed_render_position, _), (mut predicted_physics, mut predicted_render_position, mut predicted_animation_state)],
     ) = tile_movement_q.get_many_mut([confirmed_entity, predicted_entity])
     else {
         panic!(
@@ -183,7 +186,10 @@ pub fn update_next_tile_position_events(
 
     let last_processed_server_tick = tick_tracker.last_processed_server_tick();
     if last_processed_server_tick != current_tick {
-        warn!("Discrepancy! Last Processed Server Tick: {:?}. Server Update Tick: {:?}", last_processed_server_tick, current_tick);
+        warn!(
+            "Discrepancy! Last Processed Server Tick: {:?}. Server Update Tick: {:?}",
+            last_processed_server_tick, current_tick
+        );
     }
 
     // ROLLBACK CLIENT: Replay all stored commands
@@ -200,7 +206,6 @@ pub fn update_next_tile_position_events(
 
     // process commands
     for (command_tick, outgoing_command_opt) in replay_commands {
-
         // info!("Replay Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", command_tick, outgoing_command_opt.as_ref().map(|c| c.get_move()), predicted_tile_movement.get_dis());
 
         // process command

@@ -2,7 +2,13 @@ use bevy_ecs::component::Component;
 
 use math::Vec2;
 
-use crate::{constants::{MOVEMENT_ACCELERATION, MOVEMENT_VELOCITY_MIN, MOVEMENT_DECELERATION, MOVEMENT_VELOCITY_MAX, TILE_SIZE}, components::NextTilePosition};
+use crate::{
+    components::NextTilePosition,
+    constants::{
+        MOVEMENT_ACCELERATION, MOVEMENT_DECELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_VELOCITY_MIN,
+        TILE_SIZE,
+    },
+};
 
 #[derive(Component)]
 pub struct PhysicsController {
@@ -12,11 +18,7 @@ pub struct PhysicsController {
 
 impl PhysicsController {
     pub fn new(ntp: &NextTilePosition) -> Self {
-
-        let position = Vec2::new(
-            ntp.x() as f32 * TILE_SIZE,
-            ntp.y() as f32 * TILE_SIZE,
-        );
+        let position = Vec2::new(ntp.x() as f32 * TILE_SIZE, ntp.y() as f32 * TILE_SIZE);
 
         Self {
             position,
@@ -33,7 +35,6 @@ impl PhysicsController {
     }
 
     pub fn speed_up(&mut self, target_direction: Vec2) {
-
         // let old_velocity = self.velocity;
         let length = self.velocity.length();
 
@@ -51,7 +52,6 @@ impl PhysicsController {
     }
 
     pub fn slow_down(&mut self, target_direction: Vec2) {
-
         // let old_velocity = self.velocity;
         let length = self.velocity.length();
         let current_normal = self.velocity.normalize_or_zero();
