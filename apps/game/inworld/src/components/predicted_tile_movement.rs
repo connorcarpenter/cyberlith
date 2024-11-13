@@ -2,7 +2,7 @@ use bevy_ecs::prelude::Component;
 
 use game_engine::world::components::{MoveBuffer, NextTilePosition, ProcessTickResult, TileMovement};
 
-use crate::components::{client_tile_movement::ClientTileMovement, ConfirmedTileMovement};
+use crate::components::client_tile_movement::ClientTileMovement;
 
 #[derive(Component)]
 pub struct PredictedTileMovement {
@@ -11,7 +11,7 @@ pub struct PredictedTileMovement {
 }
 
 impl ClientTileMovement for PredictedTileMovement {
-    fn inner_mut(&mut self) -> (&mut TileMovement, Option<&mut MoveBuffer>) {
+    fn decompose(&mut self) -> (&mut TileMovement, Option<&mut MoveBuffer>) {
         (&mut self.tile_movement, Some(&mut self.move_buffer))
     }
 
@@ -33,17 +33,21 @@ impl ClientTileMovement for PredictedTileMovement {
 
 impl PredictedTileMovement {
     pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
-        let me = Self {
+        Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
             move_buffer: MoveBuffer::new(),
-        };
+        }
+    }
 
-        me
+    pub fn from_tile_movement(tile_movement: TileMovement) -> Self {
+        Self {
+            tile_movement,
+            move_buffer: MoveBuffer::new(),
+        }
     }
 
     // called by predicted entities
-    pub fn recv_rollback(&mut self, confirmed_tile_movement: &ConfirmedTileMovement) {
-        self.tile_movement
-            .mirror(&confirmed_tile_movement.tile_movement);
+    pub fn recv_rollback(&mut self, predicted_tile_movement: PredictedTileMovement) {
+        self.tile_movement.mirror(&predicted_tile_movement.tile_movement);
     }
 }

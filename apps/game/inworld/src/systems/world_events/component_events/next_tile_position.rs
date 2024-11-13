@@ -23,7 +23,7 @@ use game_engine::{
 
 use crate::{
     components::{
-        AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
+        RollbackTileMovement, AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
     },
     resources::{Global, InputManager, TickTracker},
     systems::world_events::{process_tick, PredictionEvents},
@@ -195,8 +195,7 @@ pub fn update_next_tile_position_events(
     // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
-    let mut confirmed_tile_movement_clone: ConfirmedTileMovement = confirmed_tile_movement.clone();
-    let confirmed_tile_movement_clone = &mut confirmed_tile_movement_clone;
+    let mut rollback_tile_movement = RollbackTileMovement::from(confirmed_tile_movement.clone());
     predicted_physics.recv_rollback(&confirmed_physics);
     predicted_render_position.recv_rollback(&confirmed_render_position);
 
@@ -214,14 +213,11 @@ pub fn update_next_tile_position_events(
         // process movement
         let player_command = input_manager.pop_incoming_command(command_tick);
 
-        // confirmed_tile_movement clone will be able to move to buffered tiles ... but won't be able to buffer new moves ...
-        todo!();
-
         process_tick(
             TileMovementType::ClientPredicted,
             command_tick,
             player_command,
-            confirmed_tile_movement_clone,
+            &mut rollback_tile_movement,
             &mut predicted_physics,
             &mut predicted_render_position,
             &mut predicted_animation_state,
@@ -229,7 +225,7 @@ pub fn update_next_tile_position_events(
     }
     warn!("---");
 
-    predicted_tile_movement.recv_rollback(&confirmed_tile_movement_clone);
+    predicted_tile_movement.recv_rollback(rollback_tile_movement.into());
 
     predicted_render_position.advance_millis(&client, 0);
 }

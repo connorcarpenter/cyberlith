@@ -103,7 +103,7 @@ pub fn process_tick(
         None
     };
 
-    let (inner_tile_movement, inner_move_buffer_opt) = tile_movement.inner_mut();
+    let (inner_tile_movement, inner_move_buffer_opt) = tile_movement.decompose();
     let (result, _) = shared_behavior::process_tick(
         tile_movement_type,
         tick,
