@@ -103,11 +103,13 @@ pub fn process_tick(
         None
     };
 
+    let has_future = tile_movement.has_future();
     let (inner_tile_movement, inner_move_buffer_opt) = tile_movement.decompose();
     let (result, _) = shared_behavior::process_tick(
         tile_movement_type,
         tick,
         player_command,
+        has_future,
         inner_tile_movement,
         physics,
         inner_move_buffer_opt,

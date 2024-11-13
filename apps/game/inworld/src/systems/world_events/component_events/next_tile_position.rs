@@ -23,7 +23,7 @@ use game_engine::{
 
 use crate::{
     components::{
-        RollbackTileMovement, AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
+        AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
     },
     resources::{Global, InputManager, TickTracker},
     systems::world_events::{process_tick, PredictionEvents},
@@ -195,7 +195,7 @@ pub fn update_next_tile_position_events(
     // ROLLBACK CLIENT: Replay all stored commands
 
     // Set to authoritative state
-    let mut rollback_tile_movement = RollbackTileMovement::from(confirmed_tile_movement.clone());
+    let mut rollback_tile_movement = PredictedTileMovement::from_tile_movement(confirmed_tile_movement.tile_movement.clone());
     predicted_physics.recv_rollback(&confirmed_physics);
     predicted_render_position.recv_rollback(&confirmed_render_position);
 

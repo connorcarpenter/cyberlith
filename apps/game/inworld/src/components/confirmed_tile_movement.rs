@@ -36,6 +36,10 @@ impl ClientTileMovement for ConfirmedTileMovement {
             ProcessTickResult::DoNothing => {}
         }
     }
+
+    fn has_future(&self) -> bool {
+        self.future_tile_buffer.has_tiles()
+    }
 }
 
 impl ConfirmedTileMovement {

@@ -22,7 +22,7 @@ impl ServerTileMovement {
         me
     }
 
-    pub fn inner_mut(&mut self) -> (&mut TileMovement, &mut MoveBuffer) {
+    pub fn decompose(&mut self) -> (&mut TileMovement, &mut MoveBuffer) {
         (&mut self.tile_movement, &mut self.move_buffer)
     }
 
@@ -49,6 +49,10 @@ impl ServerTileMovement {
         }
 
         return None;
+    }
+
+    pub fn has_future(&self) -> bool {
+        self.move_buffer.has_buffered_move()
     }
 
     pub fn send_updated_next_tile_position(

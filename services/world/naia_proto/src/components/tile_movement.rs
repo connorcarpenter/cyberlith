@@ -119,12 +119,13 @@ impl TileMovement {
     // call on each tick
     pub fn process_tick(
         &mut self,
+        has_future: bool,
         physics: &mut PhysicsController,
     ) -> ProcessTickResult {
 
         match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
-            TileMovementState::Moving(state) => state.process_tick(physics),
+            TileMovementState::Moving(state) => state.process_tick(has_future, physics),
         }
     }
 
@@ -230,6 +231,7 @@ impl TileMovementMovingState {
     // call on each tick
     fn process_tick(
         &mut self,
+        has_future: bool,
         physics: &mut PhysicsController,
     ) -> ProcessTickResult {
         if self.done {
@@ -242,7 +244,7 @@ impl TileMovementMovingState {
 
         let target_direction = (target_position - physics.position()).normalize();
 
-        if target_distance > STOPPING_DISTANCE {
+        if target_distance > STOPPING_DISTANCE || has_future {
             // speed up
             physics.speed_up(target_direction);
         } else {

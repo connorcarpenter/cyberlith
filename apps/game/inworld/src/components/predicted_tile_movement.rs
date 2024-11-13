@@ -29,6 +29,10 @@ impl ClientTileMovement for PredictedTileMovement {
             ProcessTickResult::DoNothing => {}
         }
     }
+
+    fn has_future(&self) -> bool {
+        self.move_buffer.has_buffered_move()
+    }
 }
 
 impl PredictedTileMovement {
