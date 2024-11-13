@@ -30,6 +30,10 @@ impl PhysicsController {
         self.position
     }
 
+    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16) {
+        self.position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
+    }
+
     pub fn velocity(&self) -> Vec2 {
         self.velocity
     }

@@ -18,7 +18,7 @@ use world_server_naia_proto::{
     components::{LookDirection, NextTilePosition, PhysicsController, TileMovementType},
     messages::PlayerCommands,
 };
-
+use world_server_naia_proto::components::HasMoveBuffered;
 use crate::{
     asset::AssetManager,
     user::{components::ServerTileMovement, UserManager},
@@ -56,6 +56,7 @@ pub fn tick_events(world: &mut World) {
             Res<UserManager>,
             Query<(Entity, &mut ServerTileMovement, &mut PhysicsController)>,
             Query<&mut NextTilePosition>,
+            Query<&mut HasMoveBuffered>,
             Query<&mut LookDirection>,
         )> = SystemState::new(world);
         let (
@@ -63,6 +64,7 @@ pub fn tick_events(world: &mut World) {
             user_manager,
             mut tile_movement_q,
             mut next_tile_position_q,
+            mut has_move_buffered_q,
             mut lookdir_q,
         ) = system_state.get_mut(world);
 
@@ -124,7 +126,7 @@ pub fn tick_events(world: &mut World) {
 
                 let has_future = tile_movement.has_future();
                 let (inner_tile_movement, inner_move_buffer) = tile_movement.decompose();
-                let (result, mut output) = shared_behavior::process_tick(
+                let (result, mut ntp_output, mut hbm_output) = shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
                     player_command,
@@ -134,12 +136,15 @@ pub fn tick_events(world: &mut World) {
                     Some(inner_move_buffer),
                     Some(&mut look_dir),
                 );
-                let result_output = tile_movement.process_result(result);
-                if result_output.is_some() {
-                    output = result_output;
+                let (ntp_result, hbm_result) = tile_movement.process_result(result);
+                if ntp_result.is_some() {
+                    ntp_output = ntp_result;
+                }
+                if hbm_result.is_some() {
+                    hbm_output = hbm_result;
                 }
 
-                if let Some((outbound_tile_x, outbound_tile_y)) = output {
+                if let Some((outbound_tile_x, outbound_tile_y)) = ntp_output {
                     // send updates
                     let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
                         panic!("NextTilePosition not found for entity: {:?}", entity);
@@ -149,6 +154,17 @@ pub fn tick_events(world: &mut World) {
                         &mut next_tile_position,
                         outbound_tile_x,
                         outbound_tile_y,
+                    );
+                }
+                if let Some(hbm) = hbm_output {
+                    // send updates
+                    let Ok(mut has_move_buffered) = has_move_buffered_q.get_mut(entity) else {
+                        panic!("HasMoveBuffered not found for entity: {:?}", entity);
+                    };
+                    tile_movement.send_updated_has_move_buffered(
+                        *server_tick,
+                        &mut has_move_buffered,
+                        hbm,
                     );
                 }
             }

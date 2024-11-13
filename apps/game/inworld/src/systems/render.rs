@@ -79,13 +79,14 @@ pub fn draw_units(
         // draw model
         {
             let (interp_x, interp_y) = render_position.render(&client, &now);
+
+            // TODO: put this in a system
+            anim_state.update(&now, &asset_manager, animated_model_handle, interp_x, interp_y);
+
             transform.translation.x = interp_x;
             transform.translation.y = interp_y;
             transform.set_scale(Vec3::new(1.0, 1.0, 1.0));
             transform.set_rotation(Quat::from_rotation_z(anim_state.rotation));
-
-            // TODO: put this in a system
-            anim_state.update(&now, &asset_manager, animated_model_handle, &transform);
 
             asset_manager.draw_animated_model(
                 &mut render_frame,

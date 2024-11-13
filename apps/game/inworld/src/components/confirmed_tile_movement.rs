@@ -5,7 +5,7 @@ use game_engine::{
     logging::{info, warn},
     naia::Tick,
     world::{
-        components::{NextTilePosition, MoveBuffer, ProcessTickResult, TileMovement},
+        components::{PhysicsController, NextTilePosition, HasMoveBuffered, MoveBuffer, ProcessTickResult, TileMovement},
         types::Direction,
     },
 };
@@ -15,6 +15,7 @@ use crate::components::{client_tile_movement::ClientTileMovement};
 #[derive(Component, Clone)]
 pub struct ConfirmedTileMovement {
     pub(crate) tile_movement: TileMovement,
+    has_future: bool,
 }
 
 impl ClientTileMovement for ConfirmedTileMovement {
@@ -33,7 +34,7 @@ impl ClientTileMovement for ConfirmedTileMovement {
     }
 
     fn has_future(&self) -> bool {
-        false
+        self.has_future
     }
 }
 
@@ -41,14 +42,15 @@ impl ConfirmedTileMovement {
     pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
         Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
+            has_future: false,
         }
     }
 
-    // called by confirmed entities
     pub fn recv_updated_next_tile_position(
         &mut self,
         update_tick: Tick,
         next_tile_position: &NextTilePosition,
+        physics: &mut PhysicsController,
     ) {
         let (next_tile_x, next_tile_y) = (next_tile_position.x(), next_tile_position.y());
         info!(
@@ -64,6 +66,7 @@ impl ConfirmedTileMovement {
 
         if self.tile_movement.is_moving() {
             self.tile_movement.set_stopped(current_tile_x, current_tile_y);
+            physics.set_tile_position(current_tile_x, current_tile_y);
         }
 
         let dx = (next_tile_x - current_tile_x) as i8;
@@ -80,8 +83,23 @@ impl ConfirmedTileMovement {
             let (last_x, last_y, move_dir) = pathfind_to_tile(current_tile_x, current_tile_y, next_tile_x, next_tile_y);
 
             self.tile_movement.set_tile_position(last_x, last_y);
+            physics.set_tile_position(last_x, last_y);
             self.tile_movement.set_moving(move_dir);
         }
+    }
+
+    pub fn recv_updated_has_move_buffered(
+        &mut self,
+        update_tick: Tick,
+        has_move_buffered: &HasMoveBuffered,
+    ) {
+        let has_move_buffered = has_move_buffered.buffered();
+        info!(
+            "Recv HasMoveBuffered. Tick: {:?}, HasMoveBuffered: {:?}",
+            update_tick, has_move_buffered
+        );
+
+        self.has_future = has_move_buffered;
     }
 }
 

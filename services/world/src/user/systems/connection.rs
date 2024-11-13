@@ -18,7 +18,7 @@ use world_server_naia_proto::{
     messages::{Auth, EntityAssignment},
     types::Direction,
 };
-
+use world_server_naia_proto::components::HasMoveBuffered;
 use crate::{
     asset::{AssetCatalog, AssetCommandsExt, AssetManager},
     social::LobbyManager,
@@ -78,6 +78,7 @@ pub fn connect_events(
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
         let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
+        let has_move_buffered = HasMoveBuffered::new(false);
         let look_direction = LookDirection::new(Direction::random());
         let tile_movement = ServerTileMovement::new_stopped(&next_tile_position);
         let physics = PhysicsController::new(&next_tile_position);
@@ -96,6 +97,7 @@ pub fn connect_events(
             )
             // insert position components
             .insert(next_tile_position)
+            .insert(has_move_buffered)
             .insert(look_direction)
             .insert(tile_movement)
             .insert(physics)

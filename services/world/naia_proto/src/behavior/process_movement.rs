@@ -16,7 +16,7 @@ pub fn process_tick(
     physics: &mut PhysicsController,
     mut move_buffer_opt: Option<&mut MoveBuffer>,
     look_direction_opt: Option<&mut LookDirection>,
-) -> (ProcessTickResult, Option<(i16, i16)>) {
+) -> (ProcessTickResult, Option<(i16, i16)>, Option<bool>) {
     let new_look_direction = {
         if look_direction_opt.is_none() {
             None
@@ -29,10 +29,10 @@ pub fn process_tick(
         }
     };
 
-    let output = if tile_movement_type.processes_commands() {
+    let (ntp_output, hbm_output) = if tile_movement_type.processes_commands() {
         tile_movement.process_command(physics, move_buffer_opt.as_deref_mut(), tick, player_command)
     } else {
-        None
+        (None, None)
     };
 
     let tick_result = tile_movement.process_tick(has_future, physics);
@@ -45,5 +45,5 @@ pub fn process_tick(
         }
     }
 
-    return (tick_result, output);
+    return (tick_result, ntp_output, hbm_output);
 }

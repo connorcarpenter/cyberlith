@@ -6,14 +6,13 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    logging::{info, warn},
+    logging::{info},
     math::{Quat, Vec3},
-    naia::{sequence_greater_than, Tick},
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
     world::{
         // behavior as shared_behavior,
-        components::{NextTilePosition, PhysicsController, TileMovementType},
+        components::{NextTilePosition, PhysicsController},
         WorldClient,
         WorldInsertComponentEvent,
         WorldRemoveComponentEvent,
@@ -26,7 +25,7 @@ use crate::{
         AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
     },
     resources::{Global, InputManager, TickTracker},
-    systems::world_events::{process_tick, PredictionEvents},
+    systems::world_events::{PredictionEvents, component_events::rollback::execute_rollback},
 };
 
 pub fn insert_next_tile_position_events(
@@ -81,14 +80,14 @@ pub fn insert_next_tile_position_events(
 pub fn update_next_tile_position_events(
     client: WorldClient,
     global: Res<Global>,
-    tick_tracker: Res<TickTracker>,
+    // tick_tracker: Res<TickTracker>,
     mut input_manager: ResMut<InputManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
     mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
-    mut tile_movement_q: Query<(
-        &mut PhysicsController,
+    mut physics_q: Query<&mut PhysicsController>,
+    mut render_q: Query<(
         &mut RenderPosition,
         &mut AnimationState,
     )>,
@@ -110,8 +109,6 @@ pub fn update_next_tile_position_events(
         return;
     }
 
-    warn!("ROLLBACK!");
-
     for (update_tick, updated_entity) in &events {
         let Ok(next_tile_position) = next_tile_position_q.get(*updated_entity) else {
             panic!(
@@ -125,109 +122,26 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position);
+        let Ok(mut physics) = physics_q.get_mut(*updated_entity) else {
+            panic!(
+                "failed to get physics q for entity: {:?}",
+                updated_entity
+            );
+        };
+        tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position, &mut physics);
     }
 
-    let Some(owned_entity) = &global.owned_entity else {
-        warn!("---");
-        return;
-    };
-    let mut latest_tick: Option<Tick> = None;
-    let confirmed_entity = owned_entity.confirmed;
-    let predicted_entity = owned_entity.predicted;
-
-    for (server_tick, updated_entity) in events {
-        // If entity is owned
-        if updated_entity == confirmed_entity {
-            if let Some(last_tick) = &mut latest_tick {
-                if sequence_greater_than(server_tick, *last_tick) {
-                    *last_tick = server_tick;
-                }
-            } else {
-                latest_tick = Some(server_tick);
-            }
-        }
-    }
-
-    let Some(server_tick) = latest_tick else {
-        warn!("---");
-        return;
-    };
-
-    info!(
-        "Update received for Server Tick: {:?} (which is 1 less than came through in update event)",
-        server_tick
+    execute_rollback(
+        &client,
+        &global,
+        // &tick_tracker,
+        &mut input_manager,
+        &mut predicted_tile_movement_q,
+        &mut confirmed_tile_movement_q,
+        &mut physics_q,
+        &mut render_q,
+        events
     );
-
-    let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get(confirmed_entity) else {
-        panic!(
-            "failed to get confirmed tile movement for entity: {:?}",
-            confirmed_entity
-        );
-    };
-    let Ok(mut predicted_tile_movement) = predicted_tile_movement_q.get_mut(predicted_entity)
-    else {
-        panic!(
-            "failed to get predicted tile movement for entity: {:?}",
-            predicted_entity
-        );
-    };
-    let Ok(
-        [(confirmed_physics, confirmed_render_position, _), (mut predicted_physics, mut predicted_render_position, mut predicted_animation_state)],
-    ) = tile_movement_q.get_many_mut([confirmed_entity, predicted_entity])
-    else {
-        panic!(
-            "failed to get components for entities: {:?}, {:?}",
-            confirmed_entity, predicted_entity
-        );
-    };
-
-    let current_tick = server_tick;
-
-    let last_processed_server_tick = tick_tracker.last_processed_server_tick();
-    if last_processed_server_tick != current_tick {
-        warn!(
-            "Discrepancy! Last Processed Server Tick: {:?}. Server Update Tick: {:?}",
-            last_processed_server_tick, current_tick
-        );
-    }
-
-    // ROLLBACK CLIENT: Replay all stored commands
-
-    // Set to authoritative state
-    let mut rollback_tile_movement = PredictedTileMovement::from_tile_movement(confirmed_tile_movement.tile_movement.clone());
-    predicted_physics.recv_rollback(&confirmed_physics);
-    predicted_render_position.recv_rollback(&confirmed_render_position);
-
-    // PREDICTION ROLLBACK
-
-    let replay_commands = input_manager.pop_command_replays(current_tick);
-
-    // process commands
-    for (command_tick, outgoing_command_opt) in replay_commands {
-        // info!("Replay Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", command_tick, outgoing_command_opt.as_ref().map(|c| c.get_move()), predicted_tile_movement.get_dis());
-
-        // process command
-        input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
-
-        // process movement
-        let player_command = input_manager.pop_incoming_command(command_tick);
-
-        process_tick(
-            TileMovementType::ClientPredicted,
-            command_tick,
-            player_command,
-            &mut rollback_tile_movement,
-            &mut predicted_physics,
-            &mut predicted_render_position,
-            &mut predicted_animation_state,
-        );
-    }
-    warn!("---");
-
-    predicted_tile_movement.recv_rollback(rollback_tile_movement.into());
-
-    predicted_render_position.advance_millis(&client, 0);
 }
 
 pub fn remove_next_tile_position_events(

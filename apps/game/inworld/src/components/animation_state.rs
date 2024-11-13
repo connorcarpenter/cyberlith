@@ -2,10 +2,11 @@ use bevy_ecs::component::Component;
 
 use game_engine::{
     asset::{AnimatedModelData, AssetHandle, AssetManager},
-    render::components::Transform,
     time::Instant,
     world::types::Direction,
 };
+use game_engine::logging::info;
+use game_engine::math::Vec2;
 
 #[derive(Component, Clone)]
 pub struct AnimationState {
@@ -15,6 +16,8 @@ pub struct AnimationState {
     pub(crate) animation_index_ms: f32,
     last_now: Instant,
     last_pos: (f32, f32),
+    is_moving: bool,
+    move_heat: f32,
 }
 
 impl AnimationState {
@@ -26,6 +29,8 @@ impl AnimationState {
             animation_index_ms: 0.0,
             last_now: Instant::now(),
             last_pos: (0.0, 0.0),
+            is_moving: false,
+            move_heat: 0.0,
         }
     }
 
@@ -34,9 +39,9 @@ impl AnimationState {
         now: &Instant,
         asset_manager: &AssetManager,
         model_data: &AssetHandle<AnimatedModelData>,
-        transform: &Transform,
+        x: f32,
+        y: f32,
     ) {
-        let (x, y) = (transform.translation.x, transform.translation.y);
         let (last_x, last_y) = self.last_pos;
         self.last_pos = (x, y);
 
@@ -45,13 +50,22 @@ impl AnimationState {
 
         // change animation if needed
         let is_moving = dx != 0.0 || dy != 0.0;
-        let new_animation_name = if is_moving { "walk" } else { "idle" };
-        if new_animation_name != self.animation_name {
-            self.animation_name = new_animation_name.to_string();
+
+        if is_moving != self.is_moving {
+            self.move_heat += 1.0;
+            if self.move_heat > 7.0 {
+                self.move_heat = 0.0;
+                self.is_moving = is_moving;
+
+                let new_animation_name = if self.is_moving { "walk" } else { "idle" };
+
+                info!("Changing animation to: {} .. dx: {}, dy: {}", new_animation_name, dx, dy);
+                self.animation_name = new_animation_name.to_string();
+            }
         }
 
         // change direction if needed
-        if is_moving {
+        if self.is_moving && is_moving {
             self.lookdir = Direction::from_coords(dx as f32, dy as f32);
             self.rotation = self.lookdir.to_radians();
         }
@@ -63,7 +77,10 @@ impl AnimationState {
         // TODO: move this into config
         let animation_speed_factor = match self.animation_name.as_str() {
             "idle" => 0.075,
-            "walk" => 0.65,
+            "walk" => {
+                let distance = Vec2::new(dx, dy).length();
+                0.15 * distance
+            },
             _ => 0.0,
         };
         self.animation_index_ms += (delta_ms as f32) * animation_speed_factor;
@@ -77,8 +94,10 @@ impl AnimationState {
     }
 
     pub fn recv_rollback(&mut self, other: &AnimationState) {
-        self.rotation = other.rotation;
+        // self.rotation = other.rotation;
         self.lookdir = other.lookdir;
+        // self.animation_name = other.animation_name.clone();
+        // self.animation_index_ms = other.animation_index_ms;
         // TODO: should we rollback other props?
     }
 

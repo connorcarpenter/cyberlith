@@ -150,12 +150,12 @@ impl TileMovement {
         move_buffer_opt: Option<&mut MoveBuffer>,
         tick: Tick,
         command: Option<PlayerCommands>,
-    ) -> Option<(i16, i16)> {
+    ) -> (Option<(i16, i16)>, Option<bool>) {
         let Some(command) = command else {
-            return None;
+            return (None, None);
         };
         let Some(direction) = command.get_move() else {
-            return None;
+            return (None, None);
         };
 
         // info!("process_command: {:?} {:?}", tick, direction);
@@ -169,18 +169,25 @@ impl TileMovement {
 
                 self.set_moving(direction);
 
-                return Some((next_tile_x, next_tile_y));
+                return (Some((next_tile_x, next_tile_y)), None);
             }
             TileMovementState::Moving(state) => {
                 if let Some(move_buffer) = move_buffer_opt {
                     if state.can_buffer_movement(physics) {
+
+                        let prev_had_move = move_buffer.has_buffered_move();
+
                         state.buffer_movement(move_buffer, tick, direction);
+
+                        if !prev_had_move {
+                            return (None, Some(true));
+                        }
                     }
                 }
+
+                return (None, None);
             }
         }
-
-        return None;
     }
 
     pub fn mirror(&mut self, other: &TileMovement) {
