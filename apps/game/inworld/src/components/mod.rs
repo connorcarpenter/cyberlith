@@ -15,5 +15,3 @@ pub use predicted_tile_movement::*;
 
 mod client_tile_movement;
 pub(crate) use client_tile_movement::*;
-
-mod future_tile_buffer;

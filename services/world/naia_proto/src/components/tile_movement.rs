@@ -60,6 +60,19 @@ impl TileMovement {
         }
     }
 
+    pub fn set_tile_position(&mut self, tx: i16, ty: i16) {
+        match &mut self.state {
+            TileMovementState::Stopped(state) => {
+                state.tile_x = tx;
+                state.tile_y = ty;
+            },
+            TileMovementState::Moving(state) => {
+                state.to_tile_x = tx;
+                state.to_tile_y = ty;
+            },
+        }
+    }
+
     // return whether the entity is moving
     pub fn is_moving(&self) -> bool {
         match &self.state {
