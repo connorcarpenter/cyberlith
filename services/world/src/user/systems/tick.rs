@@ -122,15 +122,20 @@ pub fn tick_events(world: &mut World) {
                 //     }
                 // }
 
-                let (result, output) = shared_behavior::process_tick(
+                let (inner_tile_movement, inner_move_buffer) = tile_movement.inner_mut();
+                let (result, mut output) = shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
                     player_command,
-                    tile_movement.inner_mut(),
+                    inner_tile_movement,
                     &mut physics,
+                    Some(inner_move_buffer),
                     Some(&mut look_dir),
                 );
-                tile_movement.process_result(result);
+                let result_output = tile_movement.process_result(result);
+                if result_output.is_some() {
+                    output = result_output;
+                }
 
                 if let Some((outbound_tile_x, outbound_tile_y)) = output {
                     // send updates

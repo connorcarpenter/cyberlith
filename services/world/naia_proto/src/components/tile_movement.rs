@@ -1,10 +1,10 @@
 use naia_bevy_shared::Tick;
 
-use logging::{info, warn};
+use logging::{warn};
 use math::Vec2;
 
 use crate::{
-    components::{NextTilePosition, PhysicsController},
+    components::{MoveBuffer, NextTilePosition, PhysicsController},
     constants::TILE_SIZE,
     messages::PlayerCommands,
     types::Direction,
@@ -120,28 +120,12 @@ impl TileMovement {
     pub fn process_tick(
         &mut self,
         physics: &mut PhysicsController,
-    ) -> (ProcessTickResult, Option<(i16, i16)>) {
-        let mut output = None;
+    ) -> ProcessTickResult {
 
-        let mut result = match &mut self.state {
+        match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
             TileMovementState::Moving(state) => state.process_tick(physics),
-        };
-
-        if let ProcessTickResult::ShouldContinue(tile_x, tile_y, buffered_move_dir) = result {
-            self.set_continue(tile_x, tile_y, buffered_move_dir);
-
-            let (dx, dy) = buffered_move_dir.to_delta();
-
-            let next_tile_x = tile_x + dx as i16;
-            let next_tile_y = tile_y + dy as i16;
-
-            output = Some((next_tile_x, next_tile_y));
-
-            result = ProcessTickResult::DoNothing;
         }
-
-        return (result, output);
     }
 
     // on the client, called by predicted entities
@@ -149,6 +133,7 @@ impl TileMovement {
     pub fn process_command(
         &mut self,
         physics: &PhysicsController,
+        move_buffer_opt: Option<&mut MoveBuffer>,
         tick: Tick,
         command: Option<PlayerCommands>,
     ) -> Option<(i16, i16)> {
@@ -173,8 +158,10 @@ impl TileMovement {
                 return Some((next_tile_x, next_tile_y));
             }
             TileMovementState::Moving(state) => {
-                if state.can_buffer_movement(physics) {
-                    state.buffer_movement(tick, direction);
+                if let Some(move_buffer) = move_buffer_opt {
+                    if state.can_buffer_movement(physics) {
+                        state.buffer_movement(move_buffer, tick, direction);
+                    }
                 }
             }
         }
@@ -218,8 +205,6 @@ struct TileMovementMovingState {
     to_tile_x: i16,
     to_tile_y: i16,
     done: bool,
-
-    buffered_move_dir: Option<Direction>,
 }
 
 impl TileMovementMovingState {
@@ -232,7 +217,6 @@ impl TileMovementMovingState {
             to_tile_x,
             to_tile_y,
             done: false,
-            buffered_move_dir: None,
         }
     }
 
@@ -244,7 +228,10 @@ impl TileMovementMovingState {
     }
 
     // call on each tick
-    fn process_tick(&mut self, physics: &mut PhysicsController) -> ProcessTickResult {
+    fn process_tick(
+        &mut self,
+        physics: &mut PhysicsController,
+    ) -> ProcessTickResult {
         if self.done {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         }
@@ -268,16 +255,8 @@ impl TileMovementMovingState {
 
             self.done = true;
 
-            if self.buffered_move_dir.is_none() {
-                return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
-            } else {
-                let buffered_move_dir = self.buffered_move_dir.take().unwrap();
-                return ProcessTickResult::ShouldContinue(
-                    self.to_tile_x,
-                    self.to_tile_y,
-                    buffered_move_dir,
-                );
-            }
+            return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
+
         } else {
             physics.step();
 
@@ -291,18 +270,18 @@ impl TileMovementMovingState {
         return target_distance < TILE_SIZE * 0.5; // TODO: this should be better
     }
 
-    pub(crate) fn buffer_movement(&mut self, tick: Tick, move_dir: Direction) {
+    pub(crate) fn buffer_movement(&mut self, move_buffer: &mut MoveBuffer, tick: Tick, move_dir: Direction) {
         warn!(
             "buffering command for Tick: {:?}, MoveDir: {:?}",
             tick, move_dir
         );
 
-        self.buffered_move_dir = Some(move_dir);
+        move_buffer.buffer_move(move_dir);
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum ProcessTickResult {
     ShouldStop(i16, i16),
-    ShouldContinue(i16, i16, Direction),
     DoNothing,
 }

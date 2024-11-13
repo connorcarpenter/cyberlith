@@ -213,6 +213,10 @@ pub fn update_next_tile_position_events(
 
         // process movement
         let player_command = input_manager.pop_incoming_command(command_tick);
+
+        // confirmed_tile_movement clone will be able to move to buffered tiles ... but won't be able to buffer new moves ...
+        todo!();
+
         process_tick(
             TileMovementType::ClientPredicted,
             command_tick,

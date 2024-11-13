@@ -2,7 +2,7 @@ use naia_bevy_shared::Tick;
 
 use crate::{
     components::{
-        LookDirection, PhysicsController, ProcessTickResult, TileMovement, TileMovementType,
+        MoveBuffer, LookDirection, PhysicsController, ProcessTickResult, TileMovement, TileMovementType,
     },
     messages::PlayerCommands,
 };
@@ -13,6 +13,7 @@ pub fn process_tick(
     player_command: Option<PlayerCommands>,
     tile_movement: &mut TileMovement,
     physics: &mut PhysicsController,
+    mut move_buffer_opt: Option<&mut MoveBuffer>,
     look_direction_opt: Option<&mut LookDirection>,
 ) -> (ProcessTickResult, Option<(i16, i16)>) {
     let new_look_direction = {
@@ -27,15 +28,13 @@ pub fn process_tick(
         }
     };
 
-    let mut output = if tile_movement_type.processes_commands() {
-        tile_movement.process_command(physics, tick, player_command)
+    let output = if tile_movement_type.processes_commands() {
+        tile_movement.process_command(physics, move_buffer_opt.as_deref_mut(), tick, player_command)
     } else {
         None
     };
-    let (tick_result, tick_output) = tile_movement.process_tick(physics);
-    if tick_output.is_some() && tile_movement_type.is_server() {
-        output = tick_output;
-    }
+
+    let tick_result = tile_movement.process_tick(physics);
 
     if let Some(look_direction) = look_direction_opt {
         if let Some(new_look_direction) = new_look_direction {

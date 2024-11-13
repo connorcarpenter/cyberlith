@@ -10,6 +10,7 @@ use game_engine::{
         types::Direction,
     },
 };
+use game_engine::world::components::MoveBuffer;
 
 use crate::components::client_tile_movement::ClientTileMovement;
 
@@ -20,11 +21,12 @@ pub struct ConfirmedTileMovement {
 }
 
 impl ClientTileMovement for ConfirmedTileMovement {
-    fn inner_mut(&mut self) -> &mut TileMovement {
-        &mut self.tile_movement
+    fn inner_mut(&mut self) -> (&mut TileMovement, Option<&mut MoveBuffer>) {
+        (&mut self.tile_movement, None)
     }
 
     fn process_result(&mut self, result: ProcessTickResult) {
+
         match result {
             ProcessTickResult::ShouldStop(tile_x, tile_y) => {
                 if self.buffered_future_tiles_opt.is_some() {
@@ -34,7 +36,6 @@ impl ClientTileMovement for ConfirmedTileMovement {
                 }
             }
             ProcessTickResult::DoNothing => {}
-            ProcessTickResult::ShouldContinue(_, _, _) => panic!("ShouldContinue not expected"),
         }
     }
 }
