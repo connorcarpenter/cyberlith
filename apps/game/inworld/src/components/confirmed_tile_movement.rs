@@ -64,9 +64,10 @@ impl ConfirmedTileMovement {
             return;
         }
 
+        physics.set_tile_position(current_tile_x, current_tile_y);
+
         if self.tile_movement.is_moving() {
             self.tile_movement.set_stopped(current_tile_x, current_tile_y);
-            physics.set_tile_position(current_tile_x, current_tile_y);
         }
 
         let dx = (next_tile_x - current_tile_x) as i8;
