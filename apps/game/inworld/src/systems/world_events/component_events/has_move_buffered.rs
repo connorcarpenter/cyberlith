@@ -1,15 +1,15 @@
-use bevy_ecs::{change_detection::{ResMut, Res}, event::EventReader, prelude::Query};
+use bevy_ecs::{change_detection::{ResMut}, event::EventReader, prelude::Query};
 
 use game_engine::{
     logging::info,
     time::Instant,
-    world::{WorldClient,
-        components::{HasMoveBuffered, PhysicsController}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+    world::{
+        components::{HasMoveBuffered}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
 };
 
-use crate::{systems::world_events::{component_events::rollback::execute_rollback, PredictionEvents}, resources::{Global, InputManager, TickTracker}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
+use crate::{systems::world_events::{PredictionEvents}, resources::{RollbackManager}, components::{ConfirmedTileMovement}};
 
 pub fn insert_has_move_buffered_events(
     mut prediction_events: ResMut<PredictionEvents>,
@@ -29,19 +29,10 @@ pub fn insert_has_move_buffered_events(
 }
 
 pub fn update_has_move_buffered_events(
-    client: WorldClient,
-    global: Res<Global>,
-    // tick_tracker: Res<TickTracker>,
-    mut input_manager: ResMut<InputManager>,
+    mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<HasMoveBuffered>>,
     has_move_buffered_q: Query<&HasMoveBuffered>,
-    mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
-    mut physics_q: Query<&mut PhysicsController>,
-    mut render_q: Query<(
-        &mut RenderPosition,
-        &mut AnimationState,
-    )>,
 ) {
     let mut events = Vec::new();
     for event in event_reader.read() {
@@ -71,17 +62,7 @@ pub fn update_has_move_buffered_events(
         tile_movement.recv_updated_has_move_buffered(*update_tick, &has_move_buffered);
     }
 
-    execute_rollback(
-        &client,
-        &global,
-        // &tick_tracker,
-        &mut input_manager,
-        &mut predicted_tile_movement_q,
-        &mut confirmed_tile_movement_q,
-        &mut physics_q,
-        &mut render_q,
-        events
-    );
+    rollback_manager.add_events(events);
 }
 
 pub fn remove_has_move_buffered_events(

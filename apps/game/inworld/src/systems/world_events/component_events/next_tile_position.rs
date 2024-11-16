@@ -2,7 +2,6 @@ use bevy_ecs::{
     change_detection::ResMut,
     event::EventReader,
     prelude::{Commands, Query},
-    system::Res,
 };
 
 use game_engine::{
@@ -22,10 +21,10 @@ use game_engine::{
 
 use crate::{
     components::{
-        AnimationState, Confirmed, ConfirmedTileMovement, PredictedTileMovement, RenderPosition,
+        AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition,
     },
-    resources::{Global, InputManager, TickTracker},
-    systems::world_events::{PredictionEvents, component_events::rollback::execute_rollback},
+    resources::RollbackManager,
+    systems::world_events::{PredictionEvents},
 };
 
 pub fn insert_next_tile_position_events(
@@ -78,19 +77,11 @@ pub fn insert_next_tile_position_events(
 }
 
 pub fn update_next_tile_position_events(
-    client: WorldClient,
-    global: Res<Global>,
-    // tick_tracker: Res<TickTracker>,
-    mut input_manager: ResMut<InputManager>,
+    mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
-    mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
     mut physics_q: Query<&mut PhysicsController>,
-    mut render_q: Query<(
-        &mut RenderPosition,
-        &mut AnimationState,
-    )>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -131,17 +122,7 @@ pub fn update_next_tile_position_events(
         tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position, &mut physics);
     }
 
-    execute_rollback(
-        &client,
-        &global,
-        // &tick_tracker,
-        &mut input_manager,
-        &mut predicted_tile_movement_q,
-        &mut confirmed_tile_movement_q,
-        &mut physics_q,
-        &mut render_q,
-        events
-    );
+    rollback_manager.add_events(events);
 }
 
 pub fn remove_next_tile_position_events(

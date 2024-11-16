@@ -11,6 +11,4 @@ mod asset;
 pub use asset::*;
 
 mod prediction_events;
-mod rollback;
-
 pub(crate) use prediction_events::PredictionEvents;
