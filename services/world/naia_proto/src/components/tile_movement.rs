@@ -150,7 +150,7 @@ impl TileMovement {
         move_buffer_opt: Option<&mut MoveBuffer>,
         tick: Tick,
         command: Option<PlayerCommands>,
-    ) -> (Option<(i16, i16)>, Option<bool>) {
+    ) -> (Option<(i16, i16)>, Option<Option<Direction>>) {
         let Some(command) = command else {
             return (None, None);
         };
@@ -180,7 +180,7 @@ impl TileMovement {
                         state.buffer_movement(move_buffer, tick, direction);
 
                         if !prev_had_move {
-                            return (None, Some(true));
+                            return (None, Some(Some(direction)));
                         }
                     }
                 }

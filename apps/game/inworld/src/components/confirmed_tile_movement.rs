@@ -14,27 +14,32 @@ use crate::components::{client_tile_movement::ClientTileMovement};
 
 #[derive(Component, Clone)]
 pub struct ConfirmedTileMovement {
-    pub(crate) tile_movement: TileMovement,
-    has_future: bool,
+    tile_movement: TileMovement,
+    move_buffer: MoveBuffer,
 }
 
 impl ClientTileMovement for ConfirmedTileMovement {
     fn decompose(&mut self) -> (&mut TileMovement, Option<&mut MoveBuffer>) {
-        (&mut self.tile_movement, None)
+        (&mut self.tile_movement, Some(&mut self.move_buffer))
     }
 
     fn process_result(&mut self, result: ProcessTickResult) {
 
         match result {
             ProcessTickResult::ShouldStop(tile_x, tile_y) => {
-                self.tile_movement.set_stopped(tile_x, tile_y);
+                if self.move_buffer.has_buffered_move() {
+                    let buffered_move_dir = self.move_buffer.pop_buffered_move().unwrap();
+                    self.tile_movement.set_continue(tile_x, tile_y, buffered_move_dir);
+                } else {
+                    self.tile_movement.set_stopped(tile_x, tile_y);
+                }
             }
             ProcessTickResult::DoNothing => {}
         }
     }
 
     fn has_future(&self) -> bool {
-        self.has_future
+        self.move_buffer.has_buffered_move()
     }
 }
 
@@ -42,7 +47,7 @@ impl ConfirmedTileMovement {
     pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
         Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
-            has_future: false,
+            move_buffer: MoveBuffer::new(),
         }
     }
 
@@ -94,13 +99,19 @@ impl ConfirmedTileMovement {
         update_tick: Tick,
         has_move_buffered: &HasMoveBuffered,
     ) {
-        let has_move_buffered = has_move_buffered.buffered();
         info!(
             "Recv HasMoveBuffered. Tick: {:?}, HasMoveBuffered: {:?}",
-            update_tick, has_move_buffered
+            update_tick, has_move_buffered.buffered()
         );
+        if let Some(has_move_buffered) = has_move_buffered.buffered() {
+            self.move_buffer.buffer_move(has_move_buffered);
+        } else {
+            self.move_buffer.clear();
+        }
+    }
 
-        self.has_future = has_move_buffered;
+    pub fn decompose_to_values(self) -> (TileMovement, MoveBuffer) {
+        (self.tile_movement, self.move_buffer)
     }
 }
 

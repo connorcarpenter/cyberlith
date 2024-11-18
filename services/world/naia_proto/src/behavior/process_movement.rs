@@ -5,6 +5,7 @@ use crate::{
         MoveBuffer, LookDirection, PhysicsController, ProcessTickResult, TileMovement, TileMovementType,
     },
     messages::PlayerCommands,
+    types::Direction,
 };
 
 pub fn process_tick(
@@ -16,7 +17,7 @@ pub fn process_tick(
     physics: &mut PhysicsController,
     mut move_buffer_opt: Option<&mut MoveBuffer>,
     look_direction_opt: Option<&mut LookDirection>,
-) -> (ProcessTickResult, Option<(i16, i16)>, Option<bool>) {
+) -> (ProcessTickResult, Option<(i16, i16)>, Option<Option<Direction>>) {
     let new_look_direction = {
         if look_direction_opt.is_none() {
             None

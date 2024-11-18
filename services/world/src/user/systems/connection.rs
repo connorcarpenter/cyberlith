@@ -78,7 +78,7 @@ pub fn connect_events(
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
         let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
-        let has_move_buffered = HasMoveBuffered::new(false);
+        let has_move_buffered = HasMoveBuffered::new();
         let look_direction = LookDirection::new(Direction::random());
         let tile_movement = ServerTileMovement::new_stopped(&next_tile_position);
         let physics = PhysicsController::new(&next_tile_position);

@@ -1,5 +1,6 @@
 use crate::types::Direction;
 
+#[derive(Clone)]
 pub struct MoveBuffer {
     buffered_move_dir: Option<Direction>,
 }
@@ -21,5 +22,13 @@ impl MoveBuffer {
 
     pub fn pop_buffered_move(&mut self) -> Option<Direction> {
         self.buffered_move_dir.take()
+    }
+
+    pub fn mirror(&mut self, other: &Self) {
+        self.buffered_move_dir = other.buffered_move_dir;
+    }
+
+    pub fn clear(&mut self) {
+        self.buffered_move_dir = None;
     }
 }

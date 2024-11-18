@@ -114,7 +114,7 @@ impl RollbackManager {
         // ROLLBACK CLIENT: Replay all stored commands
 
         // Set to authoritative state
-        let mut rollback_tile_movement = PredictedTileMovement::from_tile_movement(confirmed_tile_movement.tile_movement.clone());
+        let mut rollback_tile_movement = PredictedTileMovement::from(confirmed_tile_movement);
         predicted_physics.recv_rollback(&confirmed_physics);
         predicted_render_position.recv_rollback(&confirmed_render_position);
         predicted_animation_state.recv_rollback(&confirmed_animation_state);
@@ -145,7 +145,7 @@ impl RollbackManager {
         }
         warn!("---");
 
-        predicted_tile_movement.recv_rollback(rollback_tile_movement.into());
+        predicted_tile_movement.recv_rollback(rollback_tile_movement);
 
         predicted_render_position.advance_millis(&client, 0);
     }

@@ -2,7 +2,7 @@ use bevy_ecs::prelude::Component;
 
 use game_engine::world::components::{MoveBuffer, NextTilePosition, ProcessTickResult, TileMovement};
 
-use crate::components::client_tile_movement::ClientTileMovement;
+use crate::components::{client_tile_movement::ClientTileMovement, ConfirmedTileMovement};
 
 #[derive(Component)]
 pub struct PredictedTileMovement {
@@ -43,15 +43,20 @@ impl PredictedTileMovement {
         }
     }
 
-    pub fn from_tile_movement(tile_movement: TileMovement) -> Self {
-        Self {
-            tile_movement,
-            move_buffer: MoveBuffer::new(),
-        }
-    }
-
     // called by predicted entities
     pub fn recv_rollback(&mut self, predicted_tile_movement: PredictedTileMovement) {
         self.tile_movement.mirror(&predicted_tile_movement.tile_movement);
+        self.move_buffer.mirror(&predicted_tile_movement.move_buffer);
+    }
+}
+
+impl From<&ConfirmedTileMovement> for PredictedTileMovement {
+    fn from(confirmed: &ConfirmedTileMovement) -> Self {
+        let confirmed = confirmed.clone();
+        let (tile_movement, move_buffer) = confirmed.decompose_to_values();
+        Self {
+            tile_movement,
+            move_buffer,
+        }
     }
 }
