@@ -126,7 +126,11 @@ pub fn tick_events(world: &mut World) {
 
                 let has_future = tile_movement.has_future();
                 let (inner_tile_movement, inner_move_buffer) = tile_movement.decompose();
-                let (result, mut ntp_output, mut hbm_output) = shared_behavior::process_tick(
+                let (
+                    result,
+                    mut ntp_output,
+                    mut hbm_output
+                ) = shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
                     player_command,
@@ -136,7 +140,13 @@ pub fn tick_events(world: &mut World) {
                     Some(inner_move_buffer),
                     Some(&mut look_dir),
                 );
-                let (ntp_result, hbm_result) = tile_movement.process_result(result);
+                let (
+                    ntp_result,
+                    hbm_result
+                ) = tile_movement.process_result(
+                    &mut physics,
+                    result
+                );
                 if ntp_result.is_some() {
                     ntp_output = ntp_result;
                 }
@@ -146,6 +156,7 @@ pub fn tick_events(world: &mut World) {
 
                 if let Some((outbound_tile_x, outbound_tile_y)) = ntp_output {
                     // send updates
+                    let outbound_velocity = physics.velocity();
                     let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
                         panic!("NextTilePosition not found for entity: {:?}", entity);
                     };
@@ -154,6 +165,8 @@ pub fn tick_events(world: &mut World) {
                         &mut next_tile_position,
                         outbound_tile_x,
                         outbound_tile_y,
+                        outbound_velocity.x,
+                        outbound_velocity.y,
                     );
                 }
                 if let Some(hbm) = hbm_output {

@@ -4,8 +4,7 @@ use naia_bevy_server::Tick;
 
 use logging::info;
 
-use world_server_naia_proto::components::{HasMoveBuffered, MoveBuffer, NextTilePosition, ProcessTickResult, TileMovement};
-use world_server_naia_proto::types::Direction;
+use world_server_naia_proto::{types::Direction, components::{HasMoveBuffered, PhysicsController, MoveBuffer, NextTilePosition, ProcessTickResult, TileMovement}};
 
 #[derive(Component)]
 pub struct ServerTileMovement {
@@ -27,7 +26,14 @@ impl ServerTileMovement {
         (&mut self.tile_movement, &mut self.move_buffer)
     }
 
-    pub fn process_result(&mut self, result: ProcessTickResult) -> (Option<(i16, i16)>, Option<Option<Direction>>) {
+    pub fn process_result(
+        &mut self,
+        physics: &mut PhysicsController,
+        result: ProcessTickResult
+    ) -> (
+        Option<(i16, i16)>,
+        Option<Option<Direction>>
+    ) {
 
         match result {
             ProcessTickResult::ShouldStop(tile_x, tile_y) => {
@@ -41,9 +47,13 @@ impl ServerTileMovement {
                     let next_tile_x = tile_x + dx as i16;
                     let next_tile_y = tile_y + dy as i16;
 
-                    return (Some((next_tile_x, next_tile_y)), Some(None));
+                    return (
+                        Some((next_tile_x, next_tile_y)),
+                        Some(None)
+                    );
                 } else {
                     self.tile_movement.set_stopped(tile_x, tile_y);
+                    physics.set_velocity(0.0, 0.0);
                 }
             },
             ProcessTickResult::DoNothing => {}
@@ -62,8 +72,10 @@ impl ServerTileMovement {
         next_tile_position: &mut NextTilePosition,
         next_tile_x: i16,
         next_tile_y: i16,
+        velocity_x: f32,
+        velocity_y: f32,
     ) {
-        next_tile_position.set(next_tile_x, next_tile_y);
+        next_tile_position.set(next_tile_x, next_tile_y, velocity_x, velocity_y);
 
         info!(
             "Send NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",

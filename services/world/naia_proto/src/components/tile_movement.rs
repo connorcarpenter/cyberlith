@@ -1,6 +1,6 @@
 use naia_bevy_shared::Tick;
 
-use logging::{warn};
+use logging::{info, warn};
 use math::Vec2;
 
 use crate::{
@@ -129,6 +129,13 @@ impl TileMovement {
             TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
     }
 
+    pub fn reset_movement(&mut self, physics: &mut PhysicsController) {
+        match &mut self.state {
+            TileMovementState::Stopped(_) => panic!("Expected Moving state"),
+            TileMovementState::Moving(state) => state.reset_movement(physics),
+        }
+    }
+
     // call on each tick
     pub fn process_tick(
         &mut self,
@@ -211,6 +218,7 @@ struct TileMovementStoppedState {
 
 impl TileMovementStoppedState {
     fn new(tile_x: i16, tile_y: i16) -> Self {
+        // info!("New Stopped State: ({:?}, {:?})", tile_x, tile_y);
         Self { tile_x, tile_y }
     }
 
@@ -223,6 +231,8 @@ impl TileMovementStoppedState {
 // Tile Movement Moving State
 #[derive(Clone)]
 struct TileMovementMovingState {
+    from_tile_x: i16,
+    from_tile_y: i16,
     to_tile_x: i16,
     to_tile_y: i16,
     done: bool,
@@ -234,7 +244,11 @@ impl TileMovementMovingState {
         let to_tile_x = from_tile_x + dx as i16;
         let to_tile_y = from_tile_y + dy as i16;
 
+        // info!("New Moving State. From ({:?}, {:?}) to ({:?}, {:?})", from_tile_x, from_tile_y, to_tile_x, to_tile_y);
+
         Self {
+            from_tile_x,
+            from_tile_y,
             to_tile_x,
             to_tile_y,
             done: false,
@@ -286,6 +300,11 @@ impl TileMovementMovingState {
 
             return ProcessTickResult::DoNothing;
         }
+    }
+
+    pub(crate) fn reset_movement(&mut self, physics: &mut PhysicsController) {
+        self.done = false;
+        physics.set_tile_position(self.from_tile_x, self.from_tile_y);
     }
 
     pub(crate) fn can_buffer_movement(&self, physics: &PhysicsController) -> bool {

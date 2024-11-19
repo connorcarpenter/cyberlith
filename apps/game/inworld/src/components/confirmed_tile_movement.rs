@@ -58,27 +58,38 @@ impl ConfirmedTileMovement {
         physics: &mut PhysicsController,
     ) {
         let (next_tile_x, next_tile_y) = (next_tile_position.x(), next_tile_position.y());
-        info!(
-            "Recv NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
-            update_tick, next_tile_x, next_tile_y
-        );
 
         let (current_tile_x, current_tile_y) = self.tile_movement.tile_position();
+        info!(
+            "Recv NextTilePosition. Tick: {:?}, Current Tile: ({:?}, {:?}), Next Tile: ({:?}, {:?})",
+            update_tick, current_tile_x, current_tile_y, next_tile_x, next_tile_y
+        );
 
         if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
-            return;
-        }
+            if self.tile_movement.is_stopped() {
+                panic!("Unexpected! Current tile position is the same as the next tile position");
+            } else {
+                // already processed command
 
-        physics.set_tile_position(current_tile_x, current_tile_y);
+                // reset
+                self.tile_movement.reset_movement(physics);
+                physics.set_velocity(next_tile_position.velocity_x(), next_tile_position.velocity_y());
+
+                return;
+            }
+        }
 
         if self.tile_movement.is_moving() {
             self.tile_movement.set_stopped(current_tile_x, current_tile_y);
         }
 
+        physics.set_velocity(next_tile_position.velocity_x(), next_tile_position.velocity_y());
+
         let dx = (next_tile_x - current_tile_x) as i8;
         let dy = (next_tile_y - current_tile_y) as i8;
 
         if let Some(move_dir) = Direction::from_delta(dx, dy) {
+            physics.set_tile_position(current_tile_x, current_tile_y);
             self.tile_movement.set_moving(move_dir);
         } else {
             warn!(

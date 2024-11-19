@@ -38,6 +38,10 @@ impl PhysicsController {
         self.velocity
     }
 
+    pub fn set_velocity(&mut self, x: f32, y: f32) {
+        self.velocity = Vec2::new(x, y);
+    }
+
     pub fn speed_up(&mut self, target_direction: Vec2) {
         // let old_velocity = self.velocity;
         let length = self.velocity.length();
