@@ -114,7 +114,7 @@ impl RollbackManager {
         // ROLLBACK CLIENT: Replay all stored commands
 
         // Set to authoritative state
-        let mut rollback_tile_movement = PredictedTileMovement::from(confirmed_tile_movement);
+        *predicted_tile_movement = PredictedTileMovement::from(confirmed_tile_movement);
         predicted_physics.recv_rollback(&confirmed_physics);
         predicted_render_position.recv_rollback(&confirmed_render_position);
         predicted_animation_state.recv_rollback(&confirmed_animation_state);
@@ -133,19 +133,18 @@ impl RollbackManager {
             // process movement
             let player_command = input_manager.pop_incoming_command(command_tick);
 
+            let predicted_tile_movement_2: &mut PredictedTileMovement = &mut predicted_tile_movement;
             process_tick(
                 TileMovementType::ClientPredicted,
                 command_tick,
                 player_command,
-                &mut rollback_tile_movement,
+                predicted_tile_movement_2,
                 &mut predicted_physics,
                 &mut predicted_render_position,
                 &mut predicted_animation_state,
             );
         }
         warn!("---");
-
-        predicted_tile_movement.recv_rollback(rollback_tile_movement);
 
         predicted_render_position.advance_millis(&client, 0);
     }

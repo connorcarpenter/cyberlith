@@ -1,6 +1,6 @@
 use naia_bevy_shared::Tick;
 
-use logging::{info, warn};
+use logging::warn;
 use math::Vec2;
 
 use crate::{
@@ -154,7 +154,7 @@ impl TileMovement {
     pub fn process_command(
         &mut self,
         physics: &PhysicsController,
-        move_buffer_opt: Option<&mut MoveBuffer>,
+        move_buffer: &mut MoveBuffer,
         tick: Tick,
         command: Option<PlayerCommands>,
     ) -> (Option<(i16, i16)>, Option<Option<Direction>>) {
@@ -179,16 +179,15 @@ impl TileMovement {
                 return (Some((next_tile_x, next_tile_y)), None);
             }
             TileMovementState::Moving(state) => {
-                if let Some(move_buffer) = move_buffer_opt {
-                    if state.can_buffer_movement(physics) {
 
-                        let prev_had_move = move_buffer.has_buffered_move();
+                if state.can_buffer_movement(physics) {
 
-                        state.buffer_movement(move_buffer, tick, direction);
+                    let prev_had_move = move_buffer.has_buffered_move();
 
-                        if !prev_had_move {
-                            return (None, Some(Some(direction)));
-                        }
+                    state.buffer_movement(move_buffer, tick, direction);
+
+                    if !prev_had_move {
+                        return (None, Some(Some(direction)));
                     }
                 }
 

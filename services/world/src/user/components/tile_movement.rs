@@ -62,10 +62,6 @@ impl ServerTileMovement {
         return (None, None);
     }
 
-    pub fn has_future(&self) -> bool {
-        self.move_buffer.has_buffered_move()
-    }
-
     pub fn send_updated_next_tile_position(
         &mut self,
         tick: Tick,

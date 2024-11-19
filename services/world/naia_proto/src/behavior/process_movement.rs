@@ -12,10 +12,9 @@ pub fn process_tick(
     tile_movement_type: TileMovementType,
     tick: Tick,
     player_command: Option<PlayerCommands>,
-    has_future: bool,
     tile_movement: &mut TileMovement,
     physics: &mut PhysicsController,
-    mut move_buffer_opt: Option<&mut MoveBuffer>,
+    move_buffer: &mut MoveBuffer,
     look_direction_opt: Option<&mut LookDirection>,
 ) -> (
     ProcessTickResult,
@@ -35,12 +34,12 @@ pub fn process_tick(
     };
 
     let (ntp_output, hbm_output) = if tile_movement_type.processes_commands() {
-        tile_movement.process_command(physics, move_buffer_opt.as_deref_mut(), tick, player_command)
+        tile_movement.process_command(physics, move_buffer, tick, player_command)
     } else {
         (None, None)
     };
 
-    let tick_result = tile_movement.process_tick(has_future, physics);
+    let tick_result = tile_movement.process_tick(move_buffer.has_buffered_move(), physics);
 
     if let Some(look_direction) = look_direction_opt {
         if let Some(new_look_direction) = new_look_direction {

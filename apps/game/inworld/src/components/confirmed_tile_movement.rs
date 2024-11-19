@@ -19,8 +19,8 @@ pub struct ConfirmedTileMovement {
 }
 
 impl ClientTileMovement for ConfirmedTileMovement {
-    fn decompose(&mut self) -> (&mut TileMovement, Option<&mut MoveBuffer>) {
-        (&mut self.tile_movement, Some(&mut self.move_buffer))
+    fn decompose(&mut self) -> (&mut TileMovement, &mut MoveBuffer) {
+        (&mut self.tile_movement, &mut self.move_buffer)
     }
 
     fn process_result(&mut self, result: ProcessTickResult) {
@@ -36,10 +36,6 @@ impl ClientTileMovement for ConfirmedTileMovement {
             }
             ProcessTickResult::DoNothing => {}
         }
-    }
-
-    fn has_future(&self) -> bool {
-        self.move_buffer.has_buffered_move()
     }
 }
 
@@ -61,8 +57,8 @@ impl ConfirmedTileMovement {
 
         let (current_tile_x, current_tile_y) = self.tile_movement.tile_position();
         info!(
-            "Recv NextTilePosition. Tick: {:?}, Current Tile: ({:?}, {:?}), Next Tile: ({:?}, {:?})",
-            update_tick, current_tile_x, current_tile_y, next_tile_x, next_tile_y
+            "Recv NextTilePosition. Tick: {:?}, Current Tile: ({:?}, {:?}), Next Tile: ({:?}, {:?}), Velocity: ({:?}, {:?})",
+            update_tick, current_tile_x, current_tile_y, next_tile_x, next_tile_y, next_tile_position.velocity_x(), next_tile_position.velocity_y()
         );
 
         if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
@@ -77,31 +73,31 @@ impl ConfirmedTileMovement {
 
                 return;
             }
-        }
-
-        if self.tile_movement.is_moving() {
-            self.tile_movement.set_stopped(current_tile_x, current_tile_y);
-        }
-
-        physics.set_velocity(next_tile_position.velocity_x(), next_tile_position.velocity_y());
-
-        let dx = (next_tile_x - current_tile_x) as i8;
-        let dy = (next_tile_y - current_tile_y) as i8;
-
-        if let Some(move_dir) = Direction::from_delta(dx, dy) {
-            physics.set_tile_position(current_tile_x, current_tile_y);
-            self.tile_movement.set_moving(move_dir);
         } else {
-            warn!(
-                "Invalid move direction. Prev: ({:?}, {:?}), Next: ({:?}, {:?}). Pathfinding...",
-                current_tile_x, current_tile_y, next_tile_x, next_tile_y
-            );
+            if self.tile_movement.is_moving() {
+                self.tile_movement.set_stopped(current_tile_x, current_tile_y);
+            }
 
-            let (last_x, last_y, move_dir) = pathfind_to_tile(current_tile_x, current_tile_y, next_tile_x, next_tile_y);
+            physics.set_velocity(next_tile_position.velocity_x(), next_tile_position.velocity_y());
 
-            self.tile_movement.set_tile_position(last_x, last_y);
-            physics.set_tile_position(last_x, last_y);
-            self.tile_movement.set_moving(move_dir);
+            let dx = (next_tile_x - current_tile_x) as i8;
+            let dy = (next_tile_y - current_tile_y) as i8;
+
+            if let Some(move_dir) = Direction::from_delta(dx, dy) {
+                physics.set_tile_position(current_tile_x, current_tile_y);
+                self.tile_movement.set_moving(move_dir);
+            } else {
+                warn!(
+                    "Invalid move direction. Prev: ({:?}, {:?}), Next: ({:?}, {:?}). Pathfinding...",
+                    current_tile_x, current_tile_y, next_tile_x, next_tile_y
+                );
+
+                let (last_x, last_y, move_dir) = pathfind_to_tile(current_tile_x, current_tile_y, next_tile_x, next_tile_y);
+
+                self.tile_movement.set_tile_position(last_x, last_y);
+                physics.set_tile_position(last_x, last_y);
+                self.tile_movement.set_moving(move_dir);
+            }
         }
     }
 

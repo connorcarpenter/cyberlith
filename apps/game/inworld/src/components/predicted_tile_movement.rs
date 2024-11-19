@@ -11,8 +11,8 @@ pub struct PredictedTileMovement {
 }
 
 impl ClientTileMovement for PredictedTileMovement {
-    fn decompose(&mut self) -> (&mut TileMovement, Option<&mut MoveBuffer>) {
-        (&mut self.tile_movement, Some(&mut self.move_buffer))
+    fn decompose(&mut self) -> (&mut TileMovement, &mut MoveBuffer) {
+        (&mut self.tile_movement, &mut self.move_buffer)
     }
 
     fn process_result(&mut self, result: ProcessTickResult) {
@@ -29,10 +29,6 @@ impl ClientTileMovement for PredictedTileMovement {
             ProcessTickResult::DoNothing => {}
         }
     }
-
-    fn has_future(&self) -> bool {
-        self.move_buffer.has_buffered_move()
-    }
 }
 
 impl PredictedTileMovement {
@@ -41,12 +37,6 @@ impl PredictedTileMovement {
             tile_movement: TileMovement::new_stopped(next_tile_position),
             move_buffer: MoveBuffer::new(),
         }
-    }
-
-    // called by predicted entities
-    pub fn recv_rollback(&mut self, predicted_tile_movement: PredictedTileMovement) {
-        self.tile_movement.mirror(&predicted_tile_movement.tile_movement);
-        self.move_buffer.mirror(&predicted_tile_movement.move_buffer);
     }
 }
 
