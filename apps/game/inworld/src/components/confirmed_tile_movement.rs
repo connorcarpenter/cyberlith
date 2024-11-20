@@ -2,7 +2,7 @@
 use bevy_ecs::prelude::Component;
 
 use game_engine::{
-    logging::{info, warn},
+    logging::{info},
     naia::Tick,
     world::{
         components::{PhysicsController, NextTilePosition, HasMoveBuffered, MoveBuffer, ProcessTickResult, TileMovement},
@@ -67,11 +67,12 @@ impl ConfirmedTileMovement {
         physics.set_velocity(next_tile_position.velocity_x(), next_tile_position.velocity_y());
 
         if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
+
+            // already processed command locally
+
             if self.tile_movement.is_stopped() {
                 panic!("Unexpected! Current tile position is the same as the next tile position");
             } else {
-                // already processed command
-
                 let (last_x, last_y) = self.tile_movement.reset_movement();
                 physics.set_tile_position(last_x, last_y, true);
             }
@@ -90,7 +91,7 @@ impl ConfirmedTileMovement {
 
                 self.tile_movement.set_moving(move_dir);
             } else {
-                panic!( // revert this to a warn! when link conditioner has jitter/loss again
+                panic!( // TODO: revert this to a warn! when link conditioner has jitter/loss again
                     "Invalid move direction. Prev: ({:?}, {:?}), Next: ({:?}, {:?}). Pathfinding...",
                     current_tile_x, current_tile_y, next_tile_x, next_tile_y
                 );

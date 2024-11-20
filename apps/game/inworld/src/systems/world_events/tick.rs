@@ -1,8 +1,9 @@
 use bevy_ecs::{
     change_detection::ResMut, event::EventReader, prelude::Query, query::With, system::Res,
 };
-
+use bevy_ecs::entity::Entity;
 use game_engine::{
+    logging::info,
     naia::Tick,
     world::{
         behavior as shared_behavior,
@@ -16,7 +17,7 @@ use game_engine::{
 use crate::{
     components::{
         AnimationState, ClientTileMovement, Confirmed, ConfirmedTileMovement, Predicted,
-        PredictedTileMovement, RenderPosition,
+        PredictedTileMovement, RenderPosition, TickSkipper,
     },
     resources::{Global, TickTracker, InputManager},
 };
@@ -127,6 +128,8 @@ pub fn server_tick_events(
     mut tick_reader: EventReader<WorldServerTickEvent>,
     mut position_q: Query<
         (
+            Entity,
+            &mut TickSkipper,
             &mut ConfirmedTileMovement,
             &mut PhysicsController,
             &mut RenderPosition,
@@ -135,17 +138,26 @@ pub fn server_tick_events(
         With<Confirmed>,
     >,
 ) {
+    // TODO here! for components which have received an update for this tick, skip processing!
     for event in tick_reader.read() {
         let server_tick = event.tick;
 
         // process movement
         for (
+            confirmed_entity,
+            mut confirmed_tick_skipper,
             mut confirmed_tile_movement,
             mut confirmed_physics,
             mut confirmed_render_position,
             mut confirmed_animation_state,
         ) in position_q.iter_mut()
         {
+            if confirmed_tick_skipper.use_skipped_tick(server_tick) {
+                info!("entity: {:?}, skipping tick: {:?}", confirmed_entity, server_tick);
+                continue;
+            } else {
+                info!("entity: {:?}, processing tick: {:?}", confirmed_entity, server_tick);
+            }
             let confirmed_tile_movement_2: &mut ConfirmedTileMovement =
                 &mut confirmed_tile_movement;
             process_tick(

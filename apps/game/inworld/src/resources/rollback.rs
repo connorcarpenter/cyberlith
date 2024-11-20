@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{system::{Res, ResMut, Resource}, prelude::Query, entity::Entity};
 
-use game_engine::{logging::info, world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}, logging::warn};
+use game_engine::{world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}, logging::warn};
 
 use crate::{resources::TickTracker, systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
 
@@ -69,7 +69,7 @@ impl RollbackManager {
         //     server_tick
         // );
 
-        let Ok(mut confirmed_tile_movement) = confirmed_tile_movement_q.get_mut(confirmed_entity) else {
+        let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get_mut(confirmed_entity) else {
             panic!(
                 "failed to get confirmed tile movement for entity: {:?}",
                 confirmed_entity

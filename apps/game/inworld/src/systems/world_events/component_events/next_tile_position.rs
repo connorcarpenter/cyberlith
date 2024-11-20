@@ -25,7 +25,7 @@ use game_engine::{
 
 use crate::{
     components::{
-        AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition,
+        AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition, TickSkipper,
     },
     resources::{RollbackManager, TickTracker},
     systems::world_events::{PredictionEvents},
@@ -62,6 +62,7 @@ pub fn insert_next_tile_position_events(
             // Insert Position stuff
             .insert(ConfirmedTileMovement::new_stopped(next_tile_position))
             .insert(PhysicsController::new(next_tile_position))
+            .insert(TickSkipper::new())
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderPosition::new(
@@ -88,6 +89,7 @@ pub fn update_next_tile_position_events(
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
     mut physics_q: Query<&mut PhysicsController>,
     mut render_position_q: Query<&mut RenderPosition>,
+    mut tick_skipper_q: Query<&mut TickSkipper>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
@@ -138,6 +140,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
+
         tile_movement.recv_updated_next_tile_position(
             &tick_tracker,
             *update_tick,
@@ -145,6 +148,15 @@ pub fn update_next_tile_position_events(
             &mut physics,
             &mut render_position,
         );
+
+        let Ok(mut tick_skipper) = tick_skipper_q.get_mut(*updated_entity) else {
+            panic!(
+                "failed to get tick_skipper q for entity: {:?}",
+                updated_entity
+            );
+        };
+        info!("entity: {:?}, queueing skipped tick: {:?}", updated_entity, update_tick);
+        tick_skipper.queue_skipped_tick(*update_tick);
     }
 
     rollback_manager.add_events(events);
