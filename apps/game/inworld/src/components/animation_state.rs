@@ -39,14 +39,16 @@ impl AnimationState {
         now: &Instant,
         asset_manager: &AssetManager,
         model_data: &AssetHandle<AnimatedModelData>,
-        x: f32,
-        y: f32,
+        position_x: f32,
+        position_y: f32,
+        velocity_x: f32,
+        velocity_y: f32,
     ) {
         let (last_x, last_y) = self.last_pos;
-        self.last_pos = (x, y);
+        self.last_pos = (position_x, position_y);
 
-        let dx = x - last_x;
-        let dy = y - last_y;
+        let dx = position_x - last_x;
+        let dy = position_y - last_y;
 
         // change animation if needed
         let is_moving = dx != 0.0 || dy != 0.0;
@@ -66,8 +68,11 @@ impl AnimationState {
 
         // change direction if needed
         if self.is_moving && is_moving {
-            self.lookdir = Direction::from_coords(dx as f32, dy as f32);
-            self.rotation = self.lookdir.to_radians();
+            let velocity = Vec2::new(velocity_x, velocity_y);
+            if velocity.length() > 0.1 {
+                self.lookdir = Direction::from_coords(velocity_x, velocity_y);
+                self.rotation = self.lookdir.to_radians();
+            }
         }
 
         // animate

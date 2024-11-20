@@ -37,6 +37,9 @@ impl RenderPosition {
     }
 
     pub fn recv_position(&mut self, position: Vec2, tick: Tick) {
+
+        let mut back_tick_opt = None;
+
         // make sure ticks are in order
         loop {
             if let Some((_, _, back_tick)) = self.queue.back() {
@@ -44,6 +47,7 @@ impl RenderPosition {
                     // warn!("recv_position() - received out of order tick: {:?}", tick);
                     self.queue.pop_back();
                 } else {
+                    back_tick_opt = Some(*back_tick);
                     break;
                 }
             } else {
@@ -61,14 +65,13 @@ impl RenderPosition {
         // );
     }
 
-    // returns number of milliseconds after tick
     pub fn recv_rollback(&mut self, server_render_pos: &RenderPosition) {
         //info!("recv_rollback()");
 
         self.queue = server_render_pos.queue.clone();
     }
 
-    pub fn render(&mut self, client: &WorldClient, now: &Instant) -> (f32, f32) {
+    pub fn render(&mut self, client: &WorldClient, now: &Instant) -> (f32, f32, f32, f32) {
         {
             let duration_elapsed = self.last_render_instant.elapsed(&now);
             let duration_ms = duration_elapsed.as_secs_f32() * 1000.0;
@@ -96,7 +99,7 @@ impl RenderPosition {
             }
 
             let (x, y, _) = self.queue.get(0).unwrap();
-            return (*x, *y);
+            return (*x, *y, 0.0, 0.0);
         }
 
         let (prev_x, prev_y, prev_instant, next_x, next_y, next_instant) = {
@@ -121,6 +124,9 @@ impl RenderPosition {
         };
 
         let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
+        if prev_to_interp < 0.0 {
+            return (prev_x, prev_y, 0.0, 0.0);
+        }
         let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
         let total = prev_to_interp + interp_to_next;
         let interp = prev_to_interp / total;
@@ -128,7 +134,7 @@ impl RenderPosition {
         let interp_x = prev_x + ((next_x - prev_x) * interp);
         let interp_y = prev_y + ((next_y - prev_y) * interp);
 
-        (interp_x, interp_y)
+        (interp_x, interp_y, next_x - prev_x, next_y - prev_y)
     }
 
     pub fn advance_millis(&mut self, client: &WorldClient, millis: u32) {
@@ -139,15 +145,16 @@ impl RenderPosition {
                 panic!("queue is empty");
             }
 
-            let (_, _, prev_tick) = self.queue.get(0).unwrap();
-            let prev_instant = client
-                .tick_to_instant(*prev_tick)
-                .expect("client not initialized?");
+            // // This makes it so interp_instance always is in between the points in the queue
+            // let (_, _, prev_tick) = self.queue.get(0).unwrap();
+            // let prev_instant = client
+            //     .tick_to_instant(*prev_tick)
+            //     .expect("client not initialized?");
 
-            if prev_instant.is_more_than(&self.interp_instant) {
-                self.interp_instant = prev_instant.clone();
-                break;
-            }
+            // if prev_instant.is_more_than(&self.interp_instant) {
+            //     self.interp_instant = prev_instant.clone();
+            //     break;
+            // }
 
             if self.queue.len() < 2 {
                 break;
@@ -164,30 +171,30 @@ impl RenderPosition {
             }
         }
 
-        {
-            // this pops any future positions that are the same as the current position (no interpolation needed)
-            if self.queue.len() >= 3 {
-                if eventually_differs(&self.queue) {
-                    let (front_x, front_y, _) = self.queue.front().unwrap();
-                    let front_x = *front_x;
-                    let front_y = *front_y;
-                    while let Some((x, y, tick)) = self.queue.get(1) {
-                        let x = *x;
-                        let y = *y;
-                        let tick = *tick;
-
-                        if x == front_x && y == front_y {
-                            self.queue.pop_front();
-                            self.interp_instant = client
-                                .tick_to_instant(tick)
-                                .expect("client not initialized?");
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        // {
+        //     // this pops any future positions that are the same as the current position (no interpolation needed)
+        //     if self.queue.len() >= 3 {
+        //         if eventually_differs(&self.queue) {
+        //             let (front_x, front_y, _) = self.queue.front().unwrap();
+        //             let front_x = *front_x;
+        //             let front_y = *front_y;
+        //             while let Some((x, y, tick)) = self.queue.get(1) {
+        //                 let x = *x;
+        //                 let y = *y;
+        //                 let tick = *tick;
+        //
+        //                 if x == front_x && y == front_y {
+        //                     self.queue.pop_front();
+        //                     self.interp_instant = client
+        //                         .tick_to_instant(tick)
+        //                         .expect("client not initialized?");
+        //                 } else {
+        //                     break;
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
 

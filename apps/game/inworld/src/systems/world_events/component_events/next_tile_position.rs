@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{
     change_detection::ResMut,
     event::EventReader,
     prelude::{Commands, Query},
+    system::Res,
 };
 
 use game_engine::{
@@ -17,13 +20,14 @@ use game_engine::{
         WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
+    naia::sequence_greater_than,
 };
 
 use crate::{
     components::{
         AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition,
     },
-    resources::RollbackManager,
+    resources::{RollbackManager, TickTracker},
     systems::world_events::{PredictionEvents},
 };
 
@@ -77,30 +81,39 @@ pub fn insert_next_tile_position_events(
 }
 
 pub fn update_next_tile_position_events(
+    tick_tracker: Res<TickTracker>,
     mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
     next_tile_position_q: Query<&NextTilePosition>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
     mut physics_q: Query<&mut PhysicsController>,
+    mut render_position_q: Query<&mut RenderPosition>,
 ) {
     // When we receive a new Position update for the Player's Entity,
     // we must ensure the Client-side Prediction also remains in-sync
     // So we roll the Prediction back to the authoritative Server state
     // and then execute all Player Commands since that tick, using the CommandHistory helper struct
 
-    let mut events = Vec::new();
+    let mut events = HashMap::new();
     for event in event_reader.read() {
-        let server_tick = event.tick.wrapping_sub(1); // TODO: this shouldn't be necessary to sync!
+        let server_tick = event.tick;
         let updated_entity = event.entity;
 
-        events.push((server_tick, updated_entity));
+        if !events.contains_key(&updated_entity) {
+            events.insert(updated_entity, server_tick);
+        } else {
+            let existing_tick = events.get(&updated_entity).unwrap();
+            if sequence_greater_than(server_tick, *existing_tick) {
+                events.insert(updated_entity, server_tick);
+            }
+        }
     }
 
     if events.is_empty() {
         return;
     }
 
-    for (update_tick, updated_entity) in &events {
+    for (updated_entity, update_tick) in &events {
         let Ok(next_tile_position) = next_tile_position_q.get(*updated_entity) else {
             panic!(
                 "failed to get updated components for entity: {:?}",
@@ -119,7 +132,19 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        tile_movement.recv_updated_next_tile_position(*update_tick, &next_tile_position, &mut physics);
+        let Ok(mut render_position) = render_position_q.get_mut(*updated_entity) else {
+            panic!(
+                "failed to get render_position q for entity: {:?}",
+                updated_entity
+            );
+        };
+        tile_movement.recv_updated_next_tile_position(
+            &tick_tracker,
+            *update_tick,
+            &next_tile_position,
+            &mut physics,
+            &mut render_position,
+        );
     }
 
     rollback_manager.add_events(events);

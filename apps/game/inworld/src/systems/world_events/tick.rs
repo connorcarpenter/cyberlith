@@ -18,7 +18,7 @@ use crate::{
         AnimationState, ClientTileMovement, Confirmed, ConfirmedTileMovement, Predicted,
         PredictedTileMovement, RenderPosition,
     },
-    resources::{Global, InputManager},
+    resources::{Global, TickTracker, InputManager},
 };
 
 pub fn client_tick_events(
@@ -123,6 +123,7 @@ pub fn process_tick(
 }
 
 pub fn server_tick_events(
+    mut tick_tracker: ResMut<TickTracker>,
     mut tick_reader: EventReader<WorldServerTickEvent>,
     mut position_q: Query<
         (
@@ -157,5 +158,8 @@ pub fn server_tick_events(
                 &mut confirmed_animation_state,
             );
         }
+
+        // record
+        tick_tracker.set_last_processed_server_tick(server_tick);
     }
 }

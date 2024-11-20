@@ -1,27 +1,37 @@
+use std::collections::HashMap;
 
 use bevy_ecs::{system::{Res, ResMut, Resource}, prelude::Query, entity::Entity};
 
-use game_engine::{world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}, logging::warn};
+use game_engine::{logging::info, world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}, logging::warn};
 
-use crate::{systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
+use crate::{resources::TickTracker, systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
 
 #[derive(Resource)]
 pub struct RollbackManager {
-    events: Vec<(Tick, Entity)>,
+    events: HashMap<Entity, Tick>,
 }
 
 impl Default for RollbackManager {
     fn default() -> Self {
         Self {
-            events: Vec::new(),
+            events: HashMap::new(),
         }
     }
 }
 
 impl RollbackManager {
 
-    pub fn add_events(&mut self, mut events: Vec<(Tick, Entity)>) {
-        self.events.append(&mut events);
+    pub fn add_events(&mut self, events: HashMap<Entity, Tick>) {
+        for (entity, tick) in events {
+            if self.events.contains_key(&entity) {
+                let existing_tick = self.events.get(&entity).unwrap();
+                if sequence_greater_than(tick, *existing_tick) {
+                    self.events.insert(entity, tick);
+                }
+            } else {
+                self.events.insert(entity, tick);
+            }
+        }
     }
 
     // Used as a system
@@ -29,10 +39,10 @@ impl RollbackManager {
         client: WorldClient,
         global: Res<Global>,
         mut me: ResMut<Self>,
-        // tick_tracker: &TickTracker,
+        tick_tracker: Res<TickTracker>,
         mut input_manager: ResMut<InputManager>,
         mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
-        confirmed_tile_movement_q: Query<&ConfirmedTileMovement>,
+        mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
         mut physics_q: Query<&mut PhysicsController>,
         mut render_q: Query<(&mut RenderPosition, &mut AnimationState)>,
     ) {
@@ -43,26 +53,14 @@ impl RollbackManager {
             return;
         };
 
-        let mut latest_tick: Option<Tick> = None;
         let confirmed_entity = owned_entity.confirmed;
-        let predicted_entity = owned_entity.predicted;
 
-        for (server_tick, updated_entity) in events {
-            // If entity is owned
-            if updated_entity == confirmed_entity {
-                if let Some(last_tick) = &mut latest_tick {
-                    if sequence_greater_than(server_tick, *last_tick) {
-                        *last_tick = server_tick;
-                    }
-                } else {
-                    latest_tick = Some(server_tick);
-                }
-            }
-        }
-
-        let Some(server_tick) = latest_tick else {
+        let Some(server_tick) = events.get(&confirmed_entity) else {
             return;
         };
+        let server_tick = *server_tick;
+
+        let predicted_entity = owned_entity.predicted;
 
         warn!("ROLLBACK!");
 
@@ -71,7 +69,7 @@ impl RollbackManager {
         //     server_tick
         // );
 
-        let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get(confirmed_entity) else {
+        let Ok(mut confirmed_tile_movement) = confirmed_tile_movement_q.get_mut(confirmed_entity) else {
             panic!(
                 "failed to get confirmed tile movement for entity: {:?}",
                 confirmed_entity
@@ -101,19 +99,50 @@ impl RollbackManager {
             );
         };
 
-        let current_tick = server_tick;
+        let mut current_tick = server_tick;
+        if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
+            current_tick = last_processed_server_tick;
+        }
 
-        // let last_processed_server_tick = tick_tracker.last_processed_server_tick();
-        // if last_processed_server_tick != current_tick {
-        //     warn!(
-        //         "Discrepancy! Last Processed Server Tick: {:?}. Server Update Tick: {:?}",
-        //         last_processed_server_tick, current_tick
-        //     );
+        // // roll server state forward possibly
+        // if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
+        //     if last_processed_server_tick != current_tick {
+        //         if sequence_greater_than(last_processed_server_tick, current_tick) {
+        //             info!(
+        //                 "Rolling forward server state from {:?} to {:?}",
+        //                 current_tick, last_processed_server_tick,
+        //             );
+        //
+        //             while current_tick != last_processed_server_tick {
+        //
+        //                 current_tick = current_tick.wrapping_add(1);
+        //
+        //                 // process movement
+        //                 let confirmed_tile_movement_2: &mut ConfirmedTileMovement = &mut confirmed_tile_movement;
+        //                 process_tick(
+        //                     TileMovementType::ClientConfirmed,
+        //                     current_tick,
+        //                     None,
+        //                     confirmed_tile_movement_2,
+        //                     &mut confirmed_physics,
+        //                     &mut confirmed_render_position,
+        //                     &mut confirmed_animation_state,
+        //                 );
+        //             }
+        //
+        //         } else {
+        //             warn!(
+        //                 "Discrepancy! Last Processed Server Tick: {:?}. Server Update Tick: {:?}",
+        //                 last_processed_server_tick, current_tick
+        //             );
+        //         }
+        //     }
         // }
 
         // ROLLBACK CLIENT: Replay all stored commands
 
         // Set to authoritative state
+        let confirmed_tile_movement: &ConfirmedTileMovement = &confirmed_tile_movement;
         *predicted_tile_movement = PredictedTileMovement::from(confirmed_tile_movement);
         predicted_physics.recv_rollback(&confirmed_physics);
         predicted_render_position.recv_rollback(&confirmed_render_position);

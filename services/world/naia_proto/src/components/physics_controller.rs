@@ -1,5 +1,6 @@
 use bevy_ecs::component::Component;
 
+use logging::warn;
 use math::Vec2;
 
 use crate::{
@@ -30,8 +31,12 @@ impl PhysicsController {
         self.position
     }
 
-    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16) {
-        self.position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
+    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16, log: bool) {
+        let new_position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
+        if log {
+            warn!("set_tile_position() .. distance: {:?}", self.position.distance(new_position));
+        }
+        self.position = new_position;
     }
 
     pub fn velocity(&self) -> Vec2 {

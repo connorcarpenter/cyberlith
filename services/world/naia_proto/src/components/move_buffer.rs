@@ -20,6 +20,10 @@ impl MoveBuffer {
         self.buffered_move_dir = Some(move_dir);
     }
 
+    pub fn buffered_move(&self) -> Option<Direction> {
+        self.buffered_move_dir
+    }
+
     pub fn pop_buffered_move(&mut self) -> Option<Direction> {
         self.buffered_move_dir.take()
     }

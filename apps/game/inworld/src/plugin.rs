@@ -10,7 +10,7 @@ use game_engine::naia::ReceiveEvents;
 use game_app_common::AppState;
 
 use crate::{
-    resources::{Global, InputManager, RollbackManager},
+    resources::{Global, TickTracker, InputManager, RollbackManager},
     systems,
     systems::world_events::PredictionEvents,
 };
@@ -24,7 +24,7 @@ impl Plugin for InWorldPlugin {
             .init_resource::<Global>()
             .init_resource::<InputManager>()
             .init_resource::<PredictionEvents>()
-            // .init_resource::<TickTracker>()
+            .init_resource::<TickTracker>()
             .init_resource::<RollbackManager>()
             // systems
             .add_systems(

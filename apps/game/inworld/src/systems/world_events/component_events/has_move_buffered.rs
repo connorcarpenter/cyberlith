@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bevy_ecs::{change_detection::{ResMut}, event::EventReader, prelude::Query};
 
 use game_engine::{
@@ -7,6 +9,7 @@ use game_engine::{
         components::{HasMoveBuffered}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
+    naia::sequence_greater_than,
 };
 
 use crate::{systems::world_events::{PredictionEvents}, resources::{RollbackManager}, components::{ConfirmedTileMovement}};
@@ -34,19 +37,26 @@ pub fn update_has_move_buffered_events(
     has_move_buffered_q: Query<&HasMoveBuffered>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
 ) {
-    let mut events = Vec::new();
+    let mut events = HashMap::new();
     for event in event_reader.read() {
-        let server_tick = event.tick.wrapping_sub(1); // TODO: this shouldn't be necessary to sync!
+        let server_tick = event.tick;
         let updated_entity = event.entity;
 
-        events.push((server_tick, updated_entity));
+        if !events.contains_key(&updated_entity) {
+            events.insert(updated_entity, server_tick);
+        } else {
+            let existing_tick = events.get(&updated_entity).unwrap();
+            if sequence_greater_than(server_tick, *existing_tick) {
+                events.insert(updated_entity, server_tick);
+            }
+        }
     }
 
     if events.is_empty() {
         return;
     }
 
-    for (update_tick, updated_entity) in &events {
+    for (updated_entity, update_tick) in &events {
         let Ok(has_move_buffered) = has_move_buffered_q.get(*updated_entity) else {
             panic!(
                 "failed to get updated components for entity: {:?}",

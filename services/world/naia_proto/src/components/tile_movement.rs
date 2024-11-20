@@ -1,6 +1,6 @@
 use naia_bevy_shared::Tick;
 
-use logging::warn;
+use logging::{info};
 use math::Vec2;
 
 use crate::{
@@ -129,10 +129,10 @@ impl TileMovement {
             TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
     }
 
-    pub fn reset_movement(&mut self, physics: &mut PhysicsController) {
+    pub fn reset_movement(&mut self) -> (i16, i16) {
         match &mut self.state {
             TileMovementState::Stopped(_) => panic!("Expected Moving state"),
-            TileMovementState::Moving(state) => state.reset_movement(physics),
+            TileMovementState::Moving(state) => state.reset_movement(),
         }
     }
 
@@ -182,11 +182,11 @@ impl TileMovement {
 
                 if state.can_buffer_movement(physics) {
 
-                    let prev_had_move = move_buffer.has_buffered_move();
+                    let prev_move = move_buffer.buffered_move();
 
                     state.buffer_movement(move_buffer, tick, direction);
 
-                    if !prev_had_move {
+                    if prev_move != Some(direction) {
                         return (None, Some(Some(direction)));
                     }
                 }
@@ -290,7 +290,7 @@ impl TileMovementMovingState {
 
             self.done = true;
 
-            physics.set_tile_position(self.to_tile_x, self.to_tile_y);
+            physics.set_tile_position(self.to_tile_x, self.to_tile_y, false);
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
 
@@ -301,9 +301,9 @@ impl TileMovementMovingState {
         }
     }
 
-    pub(crate) fn reset_movement(&mut self, physics: &mut PhysicsController) {
+    pub(crate) fn reset_movement(&mut self) -> (i16, i16) {
         self.done = false;
-        physics.set_tile_position(self.from_tile_x, self.from_tile_y);
+        (self.from_tile_x, self.from_tile_y)
     }
 
     pub(crate) fn can_buffer_movement(&self, physics: &PhysicsController) -> bool {
@@ -313,7 +313,7 @@ impl TileMovementMovingState {
     }
 
     pub(crate) fn buffer_movement(&mut self, move_buffer: &mut MoveBuffer, tick: Tick, move_dir: Direction) {
-        warn!(
+        info!(
             "buffering command for Tick: {:?}, MoveDir: {:?}",
             tick, move_dir
         );

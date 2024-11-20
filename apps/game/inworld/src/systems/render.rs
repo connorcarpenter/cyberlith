@@ -78,10 +78,10 @@ pub fn draw_units(
 
         // draw model
         {
-            let (interp_x, interp_y) = render_position.render(&client, &now);
+            let (interp_x, interp_y, velocity_x, velocity_y) = render_position.render(&client, &now);
 
             // TODO: put this in a system
-            anim_state.update(&now, &asset_manager, animated_model_handle, interp_x, interp_y);
+            anim_state.update(&now, &asset_manager, animated_model_handle, interp_x, interp_y, velocity_x, velocity_y);
 
             transform.translation.x = interp_x;
             transform.translation.y = interp_y;
