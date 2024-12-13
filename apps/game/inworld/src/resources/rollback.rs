@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{system::{Res, ResMut, Resource}, prelude::Query, entity::Entity};
 
-use game_engine::{world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}, logging::warn};
+use game_engine::{logging::warn, world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}};
 
 use crate::{resources::TickTracker, systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
 
@@ -49,7 +49,7 @@ impl RollbackManager {
         let events = std::mem::take(&mut me.events);
 
         let Some(owned_entity) = &global.owned_entity else {
-            warn!("---");
+            // warn!("---");
             return;
         };
 

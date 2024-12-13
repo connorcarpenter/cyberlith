@@ -26,6 +26,7 @@ impl ClipboardManagerImpl {
 
     pub(crate) fn get_clipboard() -> RefMut<'static, Clipboard> {
         unsafe {
+            #[allow(static_mut_refs)]
             THREAD_LOCAL_CLIPBOARD
                 .as_ref()
                 .unwrap()

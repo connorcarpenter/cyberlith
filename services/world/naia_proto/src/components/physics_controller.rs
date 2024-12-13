@@ -1,6 +1,7 @@
 use bevy_ecs::component::Component;
 
-use logging::warn;
+use naia_bevy_shared::Tick;
+use logging::{info, warn};
 use math::Vec2;
 
 use crate::{
@@ -31,12 +32,15 @@ impl PhysicsController {
         self.position
     }
 
-    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16, log: bool) {
+    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16, tick: Tick, is_prediction: bool) {
         let new_position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
-        if log {
+        if !is_prediction {
             warn!("set_tile_position() .. distance: {:?}", self.position.distance(new_position));
         }
         self.position = new_position;
+        if !is_prediction {
+            info!("tick: {:?}, position: {:?}, velocity: {:?}", tick, self.position, self.velocity)
+        }
     }
 
     pub fn velocity(&self) -> Vec2 {
@@ -80,8 +84,11 @@ impl PhysicsController {
         // info!("slow_down() .. old velocity: {:?}, new velocity: {:?}", old_velocity, self.velocity);
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self, tick: Tick, is_prediction: bool) {
         self.position += self.velocity;
+        if !is_prediction {
+            info!("tick: {:?}, position: {:?}, velocity: {:?}", tick, self.position, self.velocity)
+        }
     }
 
     pub fn recv_rollback(&mut self, other: &Self) {

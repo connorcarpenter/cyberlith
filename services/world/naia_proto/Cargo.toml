@@ -12,7 +12,7 @@ prod = []
 
 [dependencies]
 naia-bevy-shared = { path = "../../../../naia/adapters/bevy/shared" }
-crypto = { path = "../../../crates/crypto" }
+
 asset_id = { path = "../../../crates/asset/id" }
 logging = { path = "../../../crates/logging" }
 random = { path = "../../../crates/random" }

@@ -21,6 +21,7 @@ pub fn setup(priority: usize, total_priority: usize) {
 
 pub fn spawn<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) -> Task<T> {
     unsafe {
+        #[allow(static_mut_refs)]
         let Some(thread_pool) = THREAD_POOL.as_ref() else {
             panic!("Thread pool not initialized");
         };

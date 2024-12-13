@@ -10,7 +10,7 @@ use http_common::{Request, RequestOptions, Response, ResponseError};
 
 pub(crate) async fn fetch_async(
     request: Request,
-    request_options_opt: Option<RequestOptions>,
+    _request_options_opt: Option<RequestOptions>, // TODO: use this
 ) -> Result<Response, ResponseError> {
     let (sender, receiver): (
         Sender<Result<Response, ResponseError>>,

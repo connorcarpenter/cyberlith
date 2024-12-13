@@ -155,7 +155,7 @@ pub fn update_next_tile_position_events(
                 updated_entity
             );
         };
-        info!("entity: {:?}, queueing skipped tick: {:?}", updated_entity, update_tick);
+        // info!("entity: {:?}, queueing skipped tick: {:?}", updated_entity, update_tick);
         tick_skipper.queue_skipped_tick(*update_tick);
     }
 

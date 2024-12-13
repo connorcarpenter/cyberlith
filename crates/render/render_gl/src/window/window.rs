@@ -83,17 +83,20 @@ impl Window {
 impl Window {
     pub fn take_or_new(window_settings: WindowSettings) -> Window {
         unsafe {
+            #[allow(static_mut_refs)]
             if WINDOW_CONTAINER.is_none() {
                 // info!("creating new window");
                 return Self::new(window_settings).unwrap();
             }
             // info!("using existing window");
+            #[allow(static_mut_refs)]
             return WINDOW_CONTAINER.take().unwrap();
         }
     }
 
     pub fn set(window: Window) {
         unsafe {
+            #[allow(static_mut_refs)]
             if WINDOW_CONTAINER.is_some() {
                 panic!("Window container already set");
             }

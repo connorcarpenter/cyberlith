@@ -87,9 +87,9 @@ impl ServerTileMovement {
     ) {
         has_move_buffered.set_buffered(value);
 
-        info!(
-            "Send HasMoveBuffered. Tick: {:?}, Value: ({:?})",
-            tick, value
-        );
+        // info!(
+        //     "Send HasMoveBuffered. Tick: {:?}, Value: ({:?})",
+        //     tick, value
+        // );
     }
 }

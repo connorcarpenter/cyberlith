@@ -156,7 +156,7 @@ pub fn server_tick_events(
                 info!("entity: {:?}, skipping tick: {:?}", confirmed_entity, server_tick);
                 continue;
             } else {
-                info!("entity: {:?}, processing tick: {:?}", confirmed_entity, server_tick);
+                // info!("entity: {:?}, processing tick: {:?}", confirmed_entity, server_tick);
             }
             let confirmed_tile_movement_2: &mut ConfirmedTileMovement =
                 &mut confirmed_tile_movement;

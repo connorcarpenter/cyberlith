@@ -54,6 +54,7 @@ impl Context {
         };
 
         unsafe {
+            #[allow(static_mut_refs)]
             if CONTEXT.is_some() {
                 panic!("Context already initialized!");
             }
@@ -65,6 +66,7 @@ impl Context {
 
     pub fn get() -> Context {
         unsafe {
+            #[allow(static_mut_refs)]
             CONTEXT
                 .as_ref()
                 .expect("have not initialized GL Context yet!")

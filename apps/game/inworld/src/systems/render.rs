@@ -76,6 +76,15 @@ pub fn draw_units(
             }
         }
 
+        // Uncomment this to disable rendering of predicted character
+        // if predicted_opt.is_some() {
+        //     if let Some(owned_entity) = &global.owned_entity {
+        //         if owned_entity.predicted == entity {
+        //             continue;
+        //         }
+        //     }
+        // }
+
         // draw model
         {
             let (interp_x, interp_y, velocity_x, velocity_y) = render_position.render(&client, &now);
