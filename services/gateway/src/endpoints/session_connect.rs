@@ -107,16 +107,16 @@ pub(crate) async fn handler(
         match http_client::raw::fetch_async(session_connect_request).await {
             Ok(session_connect_response) => {
                 http_server::log_util::recv_res(host, session_server, &logged_remote_url);
-                return Ok(session_connect_response);
+                Ok(session_connect_response)
             }
             Err(err) => {
                 warn!(
                     "Failed session_connect request to session server: {}",
                     err.to_string()
                 );
-                return Err(ResponseError::InternalServerError(
+                Err(ResponseError::InternalServerError(
                     "internal server error".to_string(),
-                ));
+                ))
             }
         }
     }

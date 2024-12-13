@@ -10,9 +10,9 @@ bevy_http_client = { path = "../http/bevy_http_client" }
 http_common = { path = "../http/http_common" }
 executor = { path = "../executor" }
 
-bevy_app = { version = "0.14", default-features=false }
-bevy_ecs = { version = "0.14", default-features=false }
-bevy_core = { version = "0.14", default-features = false }
+bevy_app = { version = "0.15", default-features=false }
+bevy_ecs = { version = "0.15", default-features=false }
+bevy_core = { version = "0.15", default-features = false }
 
 cfg-if = { version = "1.0" }
 

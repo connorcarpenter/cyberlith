@@ -11,6 +11,6 @@ logging = { path = "../../logging" }
 ui_runner = { path = "../runner" }
 asset_loader = { path = "../../asset/loader" }
 
-bevy_ecs = { version = "0.14", default-features = false }
+bevy_ecs = { version = "0.15", default-features = false }
 
 cfg-if = { version = "1.0" }

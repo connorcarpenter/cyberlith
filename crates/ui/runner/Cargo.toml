@@ -20,5 +20,5 @@ ui_state = { path = "state" }
 ui_input = { path = "input" }
 ui_runner_config = { path = "config" }
 
-bevy_app = { version = "0.14", default-features = false }
-bevy_ecs = { version = "0.14", default-features = false }
+bevy_app = { version = "0.15", default-features = false }
+bevy_ecs = { version = "0.15", default-features = false }

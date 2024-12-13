@@ -26,7 +26,7 @@ game_app_common =  { path = "common" }
 game_app_main_menu = { path = "main_menu", optional = true }
 
 # External
-bevy_app = { version = "0.14", default-features=false }
-bevy_ecs = { version = "0.14", default-features=false }
+bevy_app = { version = "0.15", default-features=false }
+bevy_ecs = { version = "0.15", default-features=false }
 
 cfg-if = { version = "1.0" }

@@ -29,8 +29,8 @@ region_server_http_proto = { path = "../region/http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }
 
 # These are the official Bevy crates, we can use them because the Server isn't built for Wasm
-bevy_app = { version = "0.14", default-features=false }
-bevy_ecs = { version = "0.14", default-features=false }
+bevy_app = { version = "0.15", default-features=false }
+bevy_ecs = { version = "0.15", default-features=false }
 
 # TODO: remove this once bevy_log is updates the underlying tracing-log requirement from 0.1.2 to 0.2.0
 regex = { version = "1.10.3", features = ["unicode-case"] }

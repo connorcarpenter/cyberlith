@@ -19,8 +19,8 @@ logging = { path = "../../../crates/logging" }
 git = { path = "../../../crates/git" }
 
 # These are the official Bevy crates, going forward, we can use them because the Server isn't built for Wasm
-bevy_app = { version = "0.14", default-features=false }
-bevy_ecs = { version = "0.14", default-features=false }
+bevy_app = { version = "0.15", default-features=false }
+bevy_ecs = { version = "0.15", default-features=false }
 
 # External crates
 config_rs = { version ="0.14", package = "config", default-features = false, features = ["yaml"] }
