@@ -439,10 +439,7 @@ impl InputManager {
         &mut self,
         server_tick: Tick,
     ) -> Vec<(Tick, Option<PlayerCommands>)> {
-        // TODO: fix this?
-        let modified_server_tick = server_tick.wrapping_sub(1);
-
-        self.command_history.replays(&modified_server_tick)
+        self.command_history.replays(&server_tick)
     }
 
     pub fn recv_incoming_command(&mut self, tick: Tick, key_command_opt: Option<PlayerCommands>) {

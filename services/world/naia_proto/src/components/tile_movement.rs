@@ -144,10 +144,14 @@ impl TileMovement {
         is_prediction: bool,
     ) -> ProcessTickResult {
 
-        match &mut self.state {
+        let output = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
-            TileMovementState::Moving(state) => state.process_tick(has_future, physics, tick, is_prediction),
-        }
+            TileMovementState::Moving(state) => state.process_tick(has_future, physics),
+        };
+
+        physics.tick_log(tick, is_prediction);
+
+        output
     }
 
     // on the client, called by predicted entities
@@ -244,7 +248,9 @@ impl TileMovementStoppedState {
     }
 
     // call on each tick
-    fn process_tick(&mut self) -> ProcessTickResult {
+    fn process_tick(
+        &mut self,
+    ) -> ProcessTickResult {
         return ProcessTickResult::DoNothing;
     }
 
@@ -305,8 +311,6 @@ impl TileMovementMovingState {
         &mut self,
         has_future: bool,
         physics: &mut PhysicsController,
-        tick: Tick,
-        is_prediction: bool,
     ) -> ProcessTickResult {
         if self.done {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
@@ -331,12 +335,12 @@ impl TileMovementMovingState {
 
             self.done = true;
 
-            physics.set_tile_position(self.to_tile_x, self.to_tile_y, tick, is_prediction);
+            physics.set_tile_position(self.to_tile_x, self.to_tile_y);
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
 
         } else {
-            physics.step(tick, is_prediction);
+            physics.step();
 
             return ProcessTickResult::DoNothing;
         }

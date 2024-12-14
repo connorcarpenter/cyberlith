@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{system::{Res, ResMut, Resource}, prelude::Query, entity::Entity};
 
-use game_engine::{logging::warn, world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}};
+use game_engine::{logging::{warn, info}, world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}};
 
 use crate::{resources::TickTracker, systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
 
@@ -62,7 +62,7 @@ impl RollbackManager {
 
         let predicted_entity = owned_entity.predicted;
 
-        warn!("ROLLBACK!");
+        warn!("ROLLBACK! (Tick: {:?})", server_tick);
 
         // info!(
         //     "Update received for Server Tick: {:?} (which is 1 less than came through in update event)",
@@ -101,6 +101,10 @@ impl RollbackManager {
 
         let mut current_tick = server_tick;
         if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
+            if current_tick != last_processed_server_tick {
+                // TODO: just should be a warn
+                panic!("Using last processed server tick: {:?}, instead of previous tick", last_processed_server_tick);
+            }
             current_tick = last_processed_server_tick;
         }
 
@@ -144,7 +148,7 @@ impl RollbackManager {
         // Set to authoritative state
         let confirmed_tile_movement: &ConfirmedTileMovement = &confirmed_tile_movement;
         *predicted_tile_movement = PredictedTileMovement::from(confirmed_tile_movement);
-        predicted_physics.recv_rollback(&confirmed_physics);
+        predicted_physics.recv_rollback(current_tick, &confirmed_physics);
         predicted_render_position.recv_rollback(&confirmed_render_position);
         predicted_animation_state.recv_rollback(&confirmed_animation_state);
 
@@ -154,7 +158,7 @@ impl RollbackManager {
 
         // process commands
         for (command_tick, outgoing_command_opt) in replay_commands {
-            // info!("Replay Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", command_tick, outgoing_command_opt.as_ref().map(|c| c.get_move()), predicted_tile_movement.get_dis());
+            // info!("Replay Command (Tick: {:?})", command_tick);
 
             // process command
             input_manager.recv_incoming_command(command_tick, outgoing_command_opt);

@@ -114,7 +114,7 @@ pub fn process_tick(
         inner_move_buffer,
         None,
     );
-    tile_movement.process_result(result);
+    shared_behavior::process_result(inner_tile_movement, inner_move_buffer, physics, result);
 
     render_position.recv_position(physics.position(), tick);
 

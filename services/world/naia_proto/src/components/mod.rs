@@ -21,6 +21,8 @@ pub use physics_controller::*;
 mod move_buffer;
 pub use move_buffer::*;
 
+mod velocity;
+
 // Plugin
 pub(crate) struct ComponentsPlugin;
 

@@ -141,7 +141,9 @@ pub fn tick_events(world: &mut World) {
                 let (
                     ntp_result,
                     hbm_result
-                ) = tile_movement.process_result(
+                ) = shared_behavior::process_result(
+                    inner_tile_movement,
+                    inner_move_buffer,
                     &mut physics,
                     result
                 );

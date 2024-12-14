@@ -56,3 +56,40 @@ pub fn process_tick(
 
     return (tick_result, ntp_output, hbm_output);
 }
+
+pub fn process_result(
+    tile_movement: &mut TileMovement,
+    move_buffer: &mut MoveBuffer,
+    physics: &mut PhysicsController,
+    result: ProcessTickResult
+) -> (
+    Option<(i16, i16)>,
+    Option<Option<Direction>>
+) {
+
+    match result {
+        ProcessTickResult::ShouldStop(tile_x, tile_y) => {
+            if move_buffer.has_buffered_move() {
+                let buffered_move_dir = move_buffer.pop_buffered_move().unwrap();
+
+                tile_movement.set_continue(tile_x, tile_y, buffered_move_dir);
+
+                let (dx, dy) = buffered_move_dir.to_delta();
+
+                let next_tile_x = tile_x + dx as i16;
+                let next_tile_y = tile_y + dy as i16;
+
+                return (
+                    Some((next_tile_x, next_tile_y)),
+                    Some(None)
+                );
+            } else {
+                tile_movement.set_stopped(tile_x, tile_y);
+                physics.set_velocity(0.0, 0.0);
+            }
+        },
+        ProcessTickResult::DoNothing => {}
+    }
+
+    return (None, None);
+}

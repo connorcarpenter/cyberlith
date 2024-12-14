@@ -4,7 +4,7 @@ use naia_bevy_server::Tick;
 
 use logging::info;
 
-use world_server_naia_proto::{types::Direction, components::{HasMoveBuffered, PhysicsController, MoveBuffer, NextTilePosition, ProcessTickResult, TileMovement}};
+use world_server_naia_proto::{types::Direction, components::{HasMoveBuffered, MoveBuffer, NextTilePosition, TileMovement}};
 
 #[derive(Component)]
 pub struct ServerTileMovement {
@@ -26,42 +26,6 @@ impl ServerTileMovement {
         (&mut self.tile_movement, &mut self.move_buffer)
     }
 
-    pub fn process_result(
-        &mut self,
-        physics: &mut PhysicsController,
-        result: ProcessTickResult
-    ) -> (
-        Option<(i16, i16)>,
-        Option<Option<Direction>>
-    ) {
-
-        match result {
-            ProcessTickResult::ShouldStop(tile_x, tile_y) => {
-                if self.move_buffer.has_buffered_move() {
-                    let buffered_move_dir = self.move_buffer.pop_buffered_move().unwrap();
-
-                    self.tile_movement.set_continue(tile_x, tile_y, buffered_move_dir);
-
-                    let (dx, dy) = buffered_move_dir.to_delta();
-
-                    let next_tile_x = tile_x + dx as i16;
-                    let next_tile_y = tile_y + dy as i16;
-
-                    return (
-                        Some((next_tile_x, next_tile_y)),
-                        Some(None)
-                    );
-                } else {
-                    self.tile_movement.set_stopped(tile_x, tile_y);
-                    physics.set_velocity(0.0, 0.0);
-                }
-            },
-            ProcessTickResult::DoNothing => {}
-        }
-
-        return (None, None);
-    }
-
     pub fn send_updated_next_tile_position(
         &mut self,
         tick: Tick,
@@ -81,7 +45,7 @@ impl ServerTileMovement {
 
     pub fn send_updated_has_move_buffered(
         &mut self,
-        tick: Tick,
+        _tick: Tick,
         has_move_buffered: &mut HasMoveBuffered,
         value: Option<Direction>,
     ) {

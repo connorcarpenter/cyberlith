@@ -5,7 +5,7 @@ use logging::{info, warn};
 use math::Vec2;
 
 use crate::{
-    components::NextTilePosition,
+    components::{NextTilePosition, velocity::Velocity},
     constants::{
         MOVEMENT_ACCELERATION, MOVEMENT_DECELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_VELOCITY_MIN,
         TILE_SIZE,
@@ -15,7 +15,7 @@ use crate::{
 #[derive(Component)]
 pub struct PhysicsController {
     position: Vec2,
-    velocity: Vec2,
+    velocity: Velocity,
 }
 
 impl PhysicsController {
@@ -24,7 +24,7 @@ impl PhysicsController {
 
         Self {
             position,
-            velocity: Vec2::new(0.0, 0.0),
+            velocity: Velocity::new(0.0, 0.0),
         }
     }
 
@@ -32,30 +32,30 @@ impl PhysicsController {
         self.position
     }
 
-    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16, tick: Tick, is_prediction: bool) {
+    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16) {
         let new_position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
-        if !is_prediction {
-            warn!("set_tile_position() .. distance: {:?}", self.position.distance(new_position));
-        }
         self.position = new_position;
-        if !is_prediction {
-            info!("tick: {:?}, position: {:?}, velocity: {:?}", tick, self.position, self.velocity)
-        }
+    }
+
+    pub fn tick_log(&self, tick: Tick, is_prediction: bool) {
+        let prediction = if is_prediction {"PREDICTED"} else {"CONFIRMED"};
+        info!("{:?} - tick: {:?}, position: {:?}, velocity: {:?}", prediction, tick, self.position, self.velocity);
     }
 
     pub fn velocity(&self) -> Vec2 {
-        self.velocity
+        self.velocity.get_vec2()
     }
 
     pub fn set_velocity(&mut self, x: f32, y: f32) {
-        self.velocity = Vec2::new(x, y);
+        self.velocity.set_vec2(Vec2::new(x, y));
     }
 
     pub fn speed_up(&mut self, target_direction: Vec2) {
         // let old_velocity = self.velocity;
-        let length = self.velocity.length();
+        let velocity_vec2 = self.velocity.get_vec2();
+        let length = velocity_vec2.length();
 
-        let current_normal = self.velocity.normalize_or_zero();
+        let current_normal = velocity_vec2.normalize_or_zero();
         let target_normal = target_direction.normalize_or_zero();
         let new_normal = Vec2::new(
             (current_normal.x + target_normal.x) / 2.0,
@@ -63,15 +63,16 @@ impl PhysicsController {
         );
         let new_length = (length + MOVEMENT_ACCELERATION).min(MOVEMENT_VELOCITY_MAX);
 
-        self.velocity = new_normal * new_length;
+        self.velocity.set_vec2(new_normal * new_length);
 
         // info!("speed_up() .. old velocity: {:?}, new velocity: {:?}", old_velocity, self.velocity);
     }
 
     pub fn slow_down(&mut self, target_direction: Vec2) {
         // let old_velocity = self.velocity;
-        let length = self.velocity.length();
-        let current_normal = self.velocity.normalize_or_zero();
+        let velocity_vec2 = self.velocity.get_vec2();
+        let length = velocity_vec2.length();
+        let current_normal = velocity_vec2.normalize_or_zero();
         let target_normal = target_direction.normalize_or_zero();
         let new_normal = Vec2::new(
             (current_normal.x + target_normal.x) / 2.0,
@@ -79,20 +80,20 @@ impl PhysicsController {
         );
         let new_length = (length - MOVEMENT_DECELERATION).max(MOVEMENT_VELOCITY_MIN);
 
-        self.velocity = new_normal * new_length;
+        self.velocity.set_vec2(new_normal * new_length);
 
         // info!("slow_down() .. old velocity: {:?}, new velocity: {:?}", old_velocity, self.velocity);
     }
 
-    pub fn step(&mut self, tick: Tick, is_prediction: bool) {
-        self.position += self.velocity;
-        if !is_prediction {
-            info!("tick: {:?}, position: {:?}, velocity: {:?}", tick, self.position, self.velocity)
-        }
+    pub fn step(&mut self) {
+        self.position += self.velocity.get_vec2();
     }
 
-    pub fn recv_rollback(&mut self, other: &Self) {
+    pub fn recv_rollback(&mut self, tick: Tick, other: &Self) {
         self.position = other.position;
-        self.velocity = other.velocity;
+        self.velocity.set_vec2(other.velocity.get_vec2());
+
+        self.tick_log(tick, true);
     }
 }
+
