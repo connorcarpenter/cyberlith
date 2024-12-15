@@ -85,10 +85,7 @@ pub fn update_next_tile_position_events(
     tick_tracker: Res<TickTracker>,
     mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
-    next_tile_position_q: Query<&NextTilePosition>,
-    mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
-    mut physics_q: Query<&mut PhysicsController>,
-    mut render_position_q: Query<&mut RenderPosition>,
+    mut updated_q: Query<(&NextTilePosition, &mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
     mut tick_skipper_q: Query<&mut TickSkipper>,
 ) {
     let mut events = HashMap::new();
@@ -111,27 +108,18 @@ pub fn update_next_tile_position_events(
     }
 
     for (updated_entity, update_tick) in &events {
-        let Ok(next_tile_position) = next_tile_position_q.get(*updated_entity) else {
+
+        let Ok(
+            (
+                next_tile_position,
+                mut tile_movement,
+                mut physics,
+                mut render_position,
+                mut animation_state,
+            )
+        ) = updated_q.get_mut(*updated_entity) else {
             panic!(
-                "failed to get updated components for entity: {:?}",
-                updated_entity
-            );
-        };
-        let Ok(mut tile_movement) = confirmed_tile_movement_q.get_mut(*updated_entity) else {
-            panic!(
-                "failed to get tile movement q for entity: {:?}",
-                updated_entity
-            );
-        };
-        let Ok(mut physics) = physics_q.get_mut(*updated_entity) else {
-            panic!(
-                "failed to get physics q for entity: {:?}",
-                updated_entity
-            );
-        };
-        let Ok(mut render_position) = render_position_q.get_mut(*updated_entity) else {
-            panic!(
-                "failed to get render_position q for entity: {:?}",
+                "failed to get components q for updated entity: {:?}",
                 updated_entity
             );
         };
@@ -142,6 +130,7 @@ pub fn update_next_tile_position_events(
             &next_tile_position,
             &mut physics,
             &mut render_position,
+            &mut animation_state,
         );
 
         let Ok(mut tick_skipper) = tick_skipper_q.get_mut(*updated_entity) else {

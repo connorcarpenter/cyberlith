@@ -1,9 +1,9 @@
 use bevy_ecs::{
+    entity::Entity,
     change_detection::ResMut, event::EventReader, prelude::Query, query::With, system::Res,
 };
-use bevy_ecs::entity::Entity;
+
 use game_engine::{
-    logging::info,
     naia::Tick,
     world::{
         behavior as shared_behavior,
@@ -153,8 +153,8 @@ pub fn server_tick_events(
         ) in position_q.iter_mut()
         {
             if confirmed_tick_skipper.use_skipped_tick(server_tick) {
-                info!("entity: {:?}, skipping tick: {:?}", confirmed_entity, server_tick);
-                continue;
+                panic!("entity: {:?}, skipping tick: {:?}", confirmed_entity, server_tick);
+                // continue; // uncomment this to skip processing
             } else {
                 // info!("entity: {:?}, processing tick: {:?}", confirmed_entity, server_tick);
             }

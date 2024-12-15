@@ -3,15 +3,15 @@ use bevy_ecs::prelude::Component;
 
 use game_engine::{
     logging::{warn, info},
-    naia::Tick,
+    naia::{Tick, sequence_greater_than},
     world::{
-        components::{PhysicsController, NextTilePosition, NetworkedMoveBuffer, MoveBuffer, TileMovement},
+        components::{TileMovementType, PhysicsController, NextTilePosition, NetworkedMoveBuffer, MoveBuffer, TileMovement},
         types::Direction, constants::TILE_SIZE
     },
     math::Vec2
 };
 
-use crate::{resources::TickTracker, components::{client_tile_movement::ClientTileMovement, RenderPosition}};
+use crate::{systems::world_events::process_tick, resources::TickTracker, components::{AnimationState, client_tile_movement::ClientTileMovement, RenderPosition}};
 
 #[derive(Component, Clone)]
 pub struct ConfirmedTileMovement {
@@ -36,10 +36,11 @@ impl ConfirmedTileMovement {
     pub fn recv_updated_next_tile_position(
         &mut self,
         tick_tracker: &TickTracker,
-        mut update_tick: Tick,
+        update_tick: Tick,
         next_tile_position: &NextTilePosition,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
+        animation_state: &mut AnimationState,
     ) {
         let (next_velocity_x, next_velocity_y) = (next_tile_position.velocity_x(), next_tile_position.velocity_y());
         info!(
@@ -98,7 +99,12 @@ impl ConfirmedTileMovement {
                     let (next_from_tile_x, next_from_tile_y) = if interpolation < 0.5 {
                         (current_from_tile_x, current_from_tile_y)
                     } else {
-                        (current_to_tile_x, current_to_tile_y)
+                        if current_to_tile_x == next_to_tile_x && current_to_tile_y == next_to_tile_y {
+                            // The mover is already moving to the next tile from the correct tile
+                            (current_from_tile_x, current_from_tile_y)
+                        } else {
+                            (current_to_tile_x, current_to_tile_y)
+                        }
                     };
 
                     let next_tile_dx = (next_to_tile_x - next_from_tile_x) as i8;
@@ -131,25 +137,20 @@ impl ConfirmedTileMovement {
 
         physics.tick_log(update_tick, false);
 
-        ////////////////////////
-
-        if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
-            if update_tick != last_processed_server_tick {
-                // TODO: just should be a warn, also do we need this?
-                panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, update_tick);
-            }
-            update_tick = last_processed_server_tick;
-        }
         render_position.recv_position(physics.position(), update_tick);
+
+        self.handle_late_update(tick_tracker, update_tick, physics, render_position, animation_state);
     }
 
     // returns whether or not to rollback
     pub fn recv_updated_net_move_buffer(
         &mut self,
+        tick_tracker: &TickTracker,
         update_tick: Tick,
         net_move_buffer: &NetworkedMoveBuffer,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
+        animation_state: &mut AnimationState,
     ) -> bool {
         info!(
             "Recv NetworkedMoveBuffer. Tick: {:?}, Value: {:?}",
@@ -177,7 +178,46 @@ impl ConfirmedTileMovement {
         physics.tick_log(update_tick, false);
         render_position.recv_position(physics.position(), update_tick);
 
+        self.handle_late_update(tick_tracker, update_tick, physics, render_position, animation_state);
+
         return true;
+    }
+
+    fn handle_late_update(
+        &mut self,
+        tick_tracker: &TickTracker,
+        update_tick: Tick,
+        physics: &mut PhysicsController,
+        render_position: &mut RenderPosition,
+        animation_state: &mut AnimationState
+    ) {
+        let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() else {
+            return;
+        };
+        if update_tick == last_processed_server_tick {
+            return;
+        }
+
+        if sequence_greater_than(update_tick, last_processed_server_tick) {
+            // if update_tick is more than last_processed_server_tick, then panic
+            // TODO: do we need this? what to do here? is this possible?
+            panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, update_tick);
+        }
+
+        // if update_tick is less than last_processed_server_tick, then we should simulate forward
+        let mut current_tick = update_tick;
+        while current_tick != last_processed_server_tick {
+            current_tick = current_tick.wrapping_add(1);
+            process_tick(
+                TileMovementType::ClientConfirmed,
+                current_tick,
+                None, // confirmed entities don't take commands
+                self,
+                physics,
+                render_position,
+                animation_state,
+            );
+        }
     }
 
     pub fn decompose_to_values(self) -> (TileMovement, MoveBuffer) {
@@ -191,6 +231,9 @@ fn pathfind_to_tile(
     bx: i16,
     by: i16,
 ) -> (i16, i16, Direction) {
+    if ax == bx && ay == by {
+        panic!("Unexpected! Shouldn't be the same tile");
+    }
     info!(
         "Pathfinding from ({:?}, {:?}) to ({:?}, {:?})",
         ax, ay, bx, by

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{change_detection::{ResMut}, event::EventReader, prelude::Query};
+use bevy_ecs::{change_detection::{Res, ResMut}, event::EventReader, prelude::Query};
 
 use game_engine::{
     logging::info,
@@ -12,7 +12,7 @@ use game_engine::{
     naia::sequence_greater_than,
 };
 
-use crate::{systems::world_events::{PredictionEvents}, resources::{RollbackManager}, components::{RenderPosition, ConfirmedTileMovement}};
+use crate::{systems::world_events::{PredictionEvents}, resources::{TickTracker, RollbackManager}, components::{RenderPosition, AnimationState, ConfirmedTileMovement}};
 
 pub fn insert_net_move_buffer_events(
     mut prediction_events: ResMut<PredictionEvents>,
@@ -33,9 +33,12 @@ pub fn insert_net_move_buffer_events(
 
 pub fn update_net_move_buffer_events(
     mut rollback_manager: ResMut<RollbackManager>,
+    tick_tracker: Res<TickTracker>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedMoveBuffer>>,
 
-    mut updated_q: Query<(&NetworkedMoveBuffer, &mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition)>,
+    mut updated_q: Query<(
+        &NetworkedMoveBuffer, &mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState
+    )>,
 ) {
     let mut events = HashMap::new();
     for event in event_reader.read() {
@@ -63,7 +66,8 @@ pub fn update_net_move_buffer_events(
                net_move_buffer,
                mut tile_movement,
                mut physics,
-               mut render_position
+               mut render_position,
+               mut animation_state,
             )
         ) = updated_q.get_mut(*updated_entity) else {
             panic!(
@@ -72,10 +76,12 @@ pub fn update_net_move_buffer_events(
             );
         };
         let should_rollback = tile_movement.recv_updated_net_move_buffer(
+            &tick_tracker,
             *update_tick,
             &net_move_buffer,
             &mut physics,
             &mut render_position,
+            &mut animation_state,
         );
         if should_rollback {
             rollback_events.insert(*updated_entity, *update_tick);
