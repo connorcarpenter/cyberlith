@@ -130,7 +130,7 @@ pub fn tick_events(world: &mut World) {
                 let (
                     result,
                     mut ntp_output,
-                    mut hbm_output
+                    mut nmb_output
                 ) = shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
@@ -142,7 +142,7 @@ pub fn tick_events(world: &mut World) {
                 );
                 let (
                     ntp_result,
-                    hbm_result
+                    nmb_result
                 ) = shared_behavior::process_result(
                     inner_tile_movement,
                     inner_move_buffer,
@@ -152,8 +152,8 @@ pub fn tick_events(world: &mut World) {
                 if ntp_result.is_some() {
                     ntp_output = ntp_result;
                 }
-                if hbm_result.is_some() {
-                    hbm_output = hbm_result;
+                if nmb_result.is_some() {
+                    nmb_output = nmb_result;
                 }
 
                 if let Some((outbound_tile_x, outbound_tile_y)) = ntp_output {
@@ -171,7 +171,7 @@ pub fn tick_events(world: &mut World) {
                         outbound_velocity.y,
                     );
                 }
-                if let Some(hbm) = hbm_output {
+                if let Some(nmb) = nmb_output {
                     // send updates
                     let Ok(mut net_move_buffer) = net_move_buffer_q.get_mut(entity) else {
                         panic!("NetworkedMoveBuffer not found for entity: {:?}", entity);
@@ -179,7 +179,7 @@ pub fn tick_events(world: &mut World) {
                     tile_movement.send_updated_net_move_buffer(
                         *server_tick,
                         &mut net_move_buffer,
-                        hbm,
+                        nmb,
                     );
                 }
             }

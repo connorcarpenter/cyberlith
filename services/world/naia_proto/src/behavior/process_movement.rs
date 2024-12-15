@@ -33,7 +33,7 @@ pub fn process_tick(
         }
     };
 
-    let (ntp_output, hbm_output) = if tile_movement_type.processes_commands() {
+    let (ntp_output, nmb_output) = if tile_movement_type.processes_commands() {
         tile_movement.process_command(physics, move_buffer, tick, player_command)
     } else {
         (None, None)
@@ -54,7 +54,7 @@ pub fn process_tick(
         }
     }
 
-    return (tick_result, ntp_output, hbm_output);
+    return (tick_result, ntp_output, nmb_output);
 }
 
 pub fn process_result(
