@@ -85,7 +85,7 @@ pub fn process_result(
                 );
             } else {
                 tile_movement.set_stopped(tile_x, tile_y);
-                physics.set_velocity(0.0, 0.0);
+                physics.set_velocity(0.0, 0.0, false);
             }
         },
         ProcessTickResult::DoNothing => {}

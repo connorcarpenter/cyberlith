@@ -49,9 +49,9 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::insert_look_direction_events,
                     systems::world_events::update_look_direction_events,
                     systems::world_events::remove_look_direction_events,
-                    systems::world_events::insert_has_move_buffered_events,
-                    systems::world_events::update_has_move_buffered_events,
-                    systems::world_events::remove_has_move_buffered_events,
+                    systems::world_events::insert_net_move_buffer_events,
+                    systems::world_events::update_net_move_buffer_events,
+                    systems::world_events::remove_net_move_buffer_events,
                     systems::world_events::insert_asset_ref_events,
                     PredictionEvents::process,
                 )

@@ -5,7 +5,7 @@ use game_engine::{
     logging::{warn, info},
     naia::Tick,
     world::{
-        components::{PhysicsController, NextTilePosition, HasMoveBuffered, MoveBuffer, TileMovement},
+        components::{PhysicsController, NextTilePosition, NetworkedMoveBuffer, MoveBuffer, TileMovement},
         types::Direction, constants::TILE_SIZE
     },
     math::Vec2
@@ -47,7 +47,7 @@ impl ConfirmedTileMovement {
             update_tick, next_tile_position.x(), next_tile_position.y(), next_velocity_x, next_velocity_y
         );
 
-        physics.set_velocity(next_velocity_x, next_velocity_y);
+        physics.set_velocity(next_velocity_x, next_velocity_y, true);
 
         let (new_current_tile_x, new_current_tile_y, next_move_dir) = {
             if self.tile_movement.is_stopped() {
@@ -123,8 +123,12 @@ impl ConfirmedTileMovement {
             }
         };
 
-        physics.set_tile_position(new_current_tile_x, new_current_tile_y);
         self.tile_movement.set_moving(next_move_dir);
+        physics.set_tile_position(new_current_tile_x, new_current_tile_y, true);
+
+        // This is important. Server has already applied velocity to the position, we need to as well here.
+        physics.step();
+
         physics.tick_log(update_tick, false);
 
         ////////////////////////
@@ -135,20 +139,23 @@ impl ConfirmedTileMovement {
         render_position.recv_position(physics.position(), update_tick);
     }
 
-    pub fn recv_updated_has_move_buffered(
+    // returns whether or not to rollback
+    pub fn recv_updated_net_move_buffer(
         &mut self,
-        _update_tick: Tick,
-        has_move_buffered: &HasMoveBuffered,
-    ) {
-        // info!(
-        //     "Recv HasMoveBuffered. Tick: {:?}, HasMoveBuffered: {:?}",
-        //     update_tick, has_move_buffered.buffered()
-        // );
-        if let Some(has_move_buffered) = has_move_buffered.buffered() {
-            self.move_buffer.buffer_move(has_move_buffered);
+        update_tick: Tick,
+        net_move_buffer: &NetworkedMoveBuffer,
+    ) -> bool {
+        info!(
+            "Recv NetworkedMoveBuffer. Tick: {:?}, Value: {:?}",
+            update_tick, net_move_buffer.buffered()
+        );
+        let rollback = self.move_buffer.buffered_move() != net_move_buffer.buffered();
+        if let Some(move_dir) = net_move_buffer.buffered() {
+            self.move_buffer.buffer_move(move_dir);
         } else {
             self.move_buffer.clear();
         }
+        rollback
     }
 
     pub fn decompose_to_values(self) -> (TileMovement, MoveBuffer) {

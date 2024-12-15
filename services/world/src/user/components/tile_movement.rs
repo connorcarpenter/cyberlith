@@ -4,7 +4,7 @@ use naia_bevy_server::Tick;
 
 use logging::info;
 
-use world_server_naia_proto::{types::Direction, components::{HasMoveBuffered, MoveBuffer, NextTilePosition, TileMovement}};
+use world_server_naia_proto::{types::Direction, components::{NetworkedMoveBuffer, MoveBuffer, NextTilePosition, TileMovement}};
 
 #[derive(Component)]
 pub struct ServerTileMovement {
@@ -43,17 +43,17 @@ impl ServerTileMovement {
         );
     }
 
-    pub fn send_updated_has_move_buffered(
+    pub fn send_updated_net_move_buffer(
         &mut self,
-        _tick: Tick,
-        has_move_buffered: &mut HasMoveBuffered,
+        tick: Tick,
+        net_move_buffer: &mut NetworkedMoveBuffer,
         value: Option<Direction>,
     ) {
-        has_move_buffered.set_buffered(value);
+        net_move_buffer.set_buffered(value);
 
-        // info!(
-        //     "Send HasMoveBuffered. Tick: {:?}, Value: ({:?})",
-        //     tick, value
-        // );
+        info!(
+            "Send NetworkedMoveBuffer. Tick: {:?}, Value: ({:?})",
+            tick, value
+        );
     }
 }

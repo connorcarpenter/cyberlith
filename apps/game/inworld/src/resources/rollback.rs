@@ -103,7 +103,7 @@ impl RollbackManager {
         if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
             if current_tick != last_processed_server_tick {
                 // TODO: just should be a warn
-                panic!("Using last processed server tick: {:?}, instead of previous tick", last_processed_server_tick);
+                panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, current_tick);
             }
             current_tick = last_processed_server_tick;
         }
@@ -144,6 +144,7 @@ impl RollbackManager {
         // }
 
         // ROLLBACK CLIENT: Replay all stored commands
+        let previous_predicted_physics = predicted_physics.clone();
 
         // Set to authoritative state
         let confirmed_tile_movement: &ConfirmedTileMovement = &confirmed_tile_movement;
@@ -180,5 +181,23 @@ impl RollbackManager {
         warn!("---");
 
         predicted_render_position.advance_millis(&client, 0);
+
+        {
+            // compare previous physics to current physics
+            let previous_position = previous_predicted_physics.position();
+            let current_position = predicted_physics.position();
+            let previous_velocity = previous_predicted_physics.velocity();
+            let current_velocity = predicted_physics.velocity();
+
+            let position_diff = current_position - previous_position;
+            let velocity_diff = current_velocity - previous_velocity;
+
+            if position_diff.length() > 10.0 || velocity_diff.length() > 0.1 {
+                // panic!(
+                //     "Physics Rollback: Position Diff: {:?}. Velocity Diff: {:?}",
+                //     position_diff, velocity_diff
+                // );
+            }
+        }
     }
 }

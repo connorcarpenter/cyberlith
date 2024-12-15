@@ -335,7 +335,7 @@ impl TileMovementMovingState {
 
             self.done = true;
 
-            physics.set_tile_position(self.to_tile_x, self.to_tile_y);
+            physics.set_tile_position(self.to_tile_x, self.to_tile_y, false);
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
 

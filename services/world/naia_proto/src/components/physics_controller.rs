@@ -12,7 +12,7 @@ use crate::{
     },
 };
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct PhysicsController {
     position: Vec2,
     velocity: Velocity,
@@ -32,22 +32,48 @@ impl PhysicsController {
         self.position
     }
 
-    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16) {
+    pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16, check_diff: bool) {
         let new_position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
-        self.position = new_position;
-    }
 
-    pub fn tick_log(&self, tick: Tick, is_prediction: bool) {
-        let prediction = if is_prediction {"PREDICTED"} else {"CONFIRMED"};
-        info!("{:?} - tick: {:?}, position: {:?}, velocity: {:?}", prediction, tick, self.position, self.velocity);
+        if check_diff {
+            let distance = self.position.distance(new_position);
+            if distance > 0.0 {
+                warn!("set_tile_position({:?}, {:?}): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
+                    tile_x, tile_y, self.position.x, self.position.y, new_position.x, new_position.y, distance,
+                );
+            }
+        }
+
+        self.position = new_position;
     }
 
     pub fn velocity(&self) -> Vec2 {
         self.velocity.get_vec2()
     }
 
-    pub fn set_velocity(&mut self, x: f32, y: f32) {
-        self.velocity.set_vec2(Vec2::new(x, y));
+    pub fn set_velocity(&mut self, x: f32, y: f32, check_diff: bool) {
+        let old_velocity = self.velocity.get_vec2();
+        let new_velocity = Vec2::new(x, y);
+
+        if check_diff {
+            let distance = old_velocity.distance(new_velocity);
+            if distance > 0.0 {
+                warn!("set_velocity(): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
+                    old_velocity.x, old_velocity.y, new_velocity.x, new_velocity.y, distance,
+                );
+            }
+        }
+
+        self.velocity.set_vec2(new_velocity);
+    }
+
+    pub fn tick_log(&self, tick: Tick, is_prediction: bool) {
+        let prediction = if is_prediction {"PREDICTED"} else {"CONFIRMED"};
+        let velocity = self.velocity.get_vec2();
+        info!(
+            "{:?} - tick: {:?}, position: ({:?}, {:?}), velocity: ({:?}, {:?})",
+            prediction, tick, self.position.x, self.position.y, velocity.x, velocity.y
+        );
     }
 
     pub fn speed_up(&mut self, target_direction: Vec2) {

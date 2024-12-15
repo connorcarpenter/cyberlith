@@ -162,16 +162,16 @@ impl PredictionEvents {
         record.recv_lookdir(now);
     }
 
-    pub fn read_insert_hasmovebuffered_event(&mut self, now: &Instant, entity: &Entity) {
+    pub fn read_insert_net_move_buffer_event(&mut self, now: &Instant, entity: &Entity) {
         info!(
-            "received Inserted HasMoveBuffered from World Server!  [ {:?} ]",
+            "received Inserted NetworkedMoveBuffer from World Server!  [ {:?} ]",
             entity,
         );
         if !self.records.contains_key(entity) {
             self.records.insert(*entity, PredictionRecord::new(now));
         }
         let record = self.records.get_mut(entity).unwrap();
-        record.recv_hasmovebuffered(now);
+        record.recv_net_move_buffer(now);
     }
 
     pub fn read_insert_unit_asset_ref_event(
@@ -208,7 +208,7 @@ struct PredictionRecord {
     last_update: Instant,
     has_position: Option<()>,
     has_look_dir: Option<()>,
-    has_has_move_buffered: Option<()>,
+    has_net_move_buffer: Option<()>,
     has_unit_asset_ref: Option<AssetHandle<UnitData>>,
     has_entity_assigment: Option<()>,
 }
@@ -219,7 +219,7 @@ impl PredictionRecord {
             last_update: now.clone(),
             has_position: None,
             has_look_dir: None,
-            has_has_move_buffered: None,
+            has_net_move_buffer: None,
             has_unit_asset_ref: None,
             has_entity_assigment: None,
         }
@@ -235,9 +235,9 @@ impl PredictionRecord {
         self.has_look_dir = Some(());
     }
 
-    pub fn recv_hasmovebuffered(&mut self, now: &Instant) {
+    pub fn recv_net_move_buffer(&mut self, now: &Instant) {
         self.last_update = now.clone();
-        self.has_has_move_buffered = Some(());
+        self.has_net_move_buffer = Some(());
     }
 
     pub fn recv_unit_asset_ref(&mut self, now: &Instant, asset_handle: &AssetHandle<UnitData>) {
@@ -255,6 +255,6 @@ impl PredictionRecord {
             && self.has_unit_asset_ref.is_some()
             && self.has_entity_assigment.is_some()
             && self.has_look_dir.is_some()
-            && self.has_has_move_buffered.is_some()
+            && self.has_net_move_buffer.is_some()
     }
 }

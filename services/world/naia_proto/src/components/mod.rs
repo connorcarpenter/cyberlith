@@ -6,8 +6,8 @@ pub use asset_refs::*;
 mod next_tile_position;
 pub use next_tile_position::*;
 
-mod has_move_buffered;
-pub use has_move_buffered::*;
+mod networked_move_buffer;
+pub use networked_move_buffer::*;
 
 mod look_direction;
 pub use look_direction::*;
@@ -31,7 +31,7 @@ impl ProtocolPlugin for ComponentsPlugin {
         protocol
             .add_plugin(AssetRefsPlugin)
             .add_component::<NextTilePosition>()
-            .add_component::<HasMoveBuffered>()
+            .add_component::<NetworkedMoveBuffer>()
             .add_component::<LookDirection>();
     }
 }

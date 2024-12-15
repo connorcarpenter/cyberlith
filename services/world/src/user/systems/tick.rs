@@ -18,7 +18,9 @@ use world_server_naia_proto::{
     components::{LookDirection, NextTilePosition, PhysicsController, TileMovementType},
     messages::PlayerCommands,
 };
-use world_server_naia_proto::components::HasMoveBuffered;
+
+use world_server_naia_proto::components::NetworkedMoveBuffer;
+
 use crate::{
     asset::AssetManager,
     user::{components::ServerTileMovement, UserManager},
@@ -56,7 +58,7 @@ pub fn tick_events(world: &mut World) {
             Res<UserManager>,
             Query<(Entity, &mut ServerTileMovement, &mut PhysicsController)>,
             Query<&mut NextTilePosition>,
-            Query<&mut HasMoveBuffered>,
+            Query<&mut NetworkedMoveBuffer>,
             Query<&mut LookDirection>,
         )> = SystemState::new(world);
         let (
@@ -64,7 +66,7 @@ pub fn tick_events(world: &mut World) {
             user_manager,
             mut tile_movement_q,
             mut next_tile_position_q,
-            mut has_move_buffered_q,
+            mut net_move_buffer_q,
             mut lookdir_q,
         ) = system_state.get_mut(world);
 
@@ -171,12 +173,12 @@ pub fn tick_events(world: &mut World) {
                 }
                 if let Some(hbm) = hbm_output {
                     // send updates
-                    let Ok(mut has_move_buffered) = has_move_buffered_q.get_mut(entity) else {
-                        panic!("HasMoveBuffered not found for entity: {:?}", entity);
+                    let Ok(mut net_move_buffer) = net_move_buffer_q.get_mut(entity) else {
+                        panic!("NetworkedMoveBuffer not found for entity: {:?}", entity);
                     };
-                    tile_movement.send_updated_has_move_buffered(
+                    tile_movement.send_updated_net_move_buffer(
                         *server_tick,
-                        &mut has_move_buffered,
+                        &mut net_move_buffer,
                         hbm,
                     );
                 }

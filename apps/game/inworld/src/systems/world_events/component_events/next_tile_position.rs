@@ -91,11 +91,6 @@ pub fn update_next_tile_position_events(
     mut render_position_q: Query<&mut RenderPosition>,
     mut tick_skipper_q: Query<&mut TickSkipper>,
 ) {
-    // When we receive a new Position update for the Player's Entity,
-    // we must ensure the Client-side Prediction also remains in-sync
-    // So we roll the Prediction back to the authoritative Server state
-    // and then execute all Player Commands since that tick, using the CommandHistory helper struct
-
     let mut events = HashMap::new();
     for event in event_reader.read() {
         let server_tick = event.tick;

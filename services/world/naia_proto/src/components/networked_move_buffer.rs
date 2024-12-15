@@ -7,11 +7,11 @@ use crate::types::Direction;
 // This is networked
 
 #[derive(Component, Replicate)]
-pub struct HasMoveBuffered {
+pub struct NetworkedMoveBuffer {
     buffered: Property<Option<Direction>>,
 }
 
-impl HasMoveBuffered {
+impl NetworkedMoveBuffer {
     pub fn new() -> Self {
         Self::new_complete(None)
     }

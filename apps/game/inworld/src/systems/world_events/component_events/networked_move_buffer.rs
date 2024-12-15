@@ -6,7 +6,7 @@ use game_engine::{
     logging::info,
     time::Instant,
     world::{
-        components::{HasMoveBuffered}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+        components::{NetworkedMoveBuffer}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
     naia::sequence_greater_than,
@@ -14,27 +14,27 @@ use game_engine::{
 
 use crate::{systems::world_events::{PredictionEvents}, resources::{RollbackManager}, components::{ConfirmedTileMovement}};
 
-pub fn insert_has_move_buffered_events(
+pub fn insert_net_move_buffer_events(
     mut prediction_events: ResMut<PredictionEvents>,
-    mut event_reader: EventReader<WorldInsertComponentEvent<HasMoveBuffered>>,
+    mut event_reader: EventReader<WorldInsertComponentEvent<NetworkedMoveBuffer>>,
 ) {
     for event in event_reader.read() {
         let now = Instant::now();
         let entity = event.entity;
 
         info!(
-            "received Inserted Component: `HasMoveBuffered` from World Server! (entity: {:?})",
+            "received Inserted Component: `NetworkedMoveBuffer` from World Server! (entity: {:?})",
             entity
         );
 
-        prediction_events.read_insert_hasmovebuffered_event(&now, &entity);
+        prediction_events.read_insert_net_move_buffer_event(&now, &entity);
     }
 }
 
-pub fn update_has_move_buffered_events(
+pub fn update_net_move_buffer_events(
     mut rollback_manager: ResMut<RollbackManager>,
-    mut event_reader: EventReader<WorldUpdateComponentEvent<HasMoveBuffered>>,
-    has_move_buffered_q: Query<&HasMoveBuffered>,
+    mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedMoveBuffer>>,
+    net_move_buffer_q: Query<&NetworkedMoveBuffer>,
     mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
 ) {
     let mut events = HashMap::new();
@@ -56,8 +56,9 @@ pub fn update_has_move_buffered_events(
         return;
     }
 
+    let mut rollback_events = HashMap::new();
     for (updated_entity, update_tick) in &events {
-        let Ok(has_move_buffered) = has_move_buffered_q.get(*updated_entity) else {
+        let Ok(net_move_buffer) = net_move_buffer_q.get(*updated_entity) else {
             panic!(
                 "failed to get updated components for entity: {:?}",
                 updated_entity
@@ -69,16 +70,19 @@ pub fn update_has_move_buffered_events(
                 updated_entity
             );
         };
-        tile_movement.recv_updated_has_move_buffered(*update_tick, &has_move_buffered);
+        let should_rollback = tile_movement.recv_updated_net_move_buffer(*update_tick, &net_move_buffer);
+        if should_rollback {
+            rollback_events.insert(*updated_entity, *update_tick);
+        }
     }
 
-    rollback_manager.add_events(events);
+    rollback_manager.add_events(rollback_events);
 }
 
-pub fn remove_has_move_buffered_events(
-    mut event_reader: EventReader<WorldRemoveComponentEvent<HasMoveBuffered>>,
+pub fn remove_net_move_buffer_events(
+    mut event_reader: EventReader<WorldRemoveComponentEvent<NetworkedMoveBuffer>>,
 ) {
     for _event in event_reader.read() {
-        info!("removed HasMoveBuffered component from entity");
+        info!("removed NetworkedMoveBuffer component from entity");
     }
 }
