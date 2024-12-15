@@ -177,6 +177,7 @@ pub fn tick_events(world: &mut World) {
                         panic!("NetworkedMoveBuffer not found for entity: {:?}", entity);
                     };
                     tile_movement.send_updated_net_move_buffer(
+                        &physics,
                         *server_tick,
                         &mut net_move_buffer,
                         nmb,

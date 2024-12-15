@@ -6,13 +6,13 @@ use game_engine::{
     logging::info,
     time::Instant,
     world::{
-        components::{NetworkedMoveBuffer}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+        components::{PhysicsController, NetworkedMoveBuffer}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
     naia::sequence_greater_than,
 };
 
-use crate::{systems::world_events::{PredictionEvents}, resources::{RollbackManager}, components::{ConfirmedTileMovement}};
+use crate::{systems::world_events::{PredictionEvents}, resources::{RollbackManager}, components::{RenderPosition, ConfirmedTileMovement}};
 
 pub fn insert_net_move_buffer_events(
     mut prediction_events: ResMut<PredictionEvents>,
@@ -34,8 +34,8 @@ pub fn insert_net_move_buffer_events(
 pub fn update_net_move_buffer_events(
     mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedMoveBuffer>>,
-    net_move_buffer_q: Query<&NetworkedMoveBuffer>,
-    mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
+
+    mut updated_q: Query<(&NetworkedMoveBuffer, &mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition)>,
 ) {
     let mut events = HashMap::new();
     for event in event_reader.read() {
@@ -58,19 +58,25 @@ pub fn update_net_move_buffer_events(
 
     let mut rollback_events = HashMap::new();
     for (updated_entity, update_tick) in &events {
-        let Ok(net_move_buffer) = net_move_buffer_q.get(*updated_entity) else {
-            panic!(
-                "failed to get updated components for entity: {:?}",
-                updated_entity
-            );
-        };
-        let Ok(mut tile_movement) = confirmed_tile_movement_q.get_mut(*updated_entity) else {
+        let Ok(
+            (
+               net_move_buffer,
+               mut tile_movement,
+               mut physics,
+               mut render_position
+            )
+        ) = updated_q.get_mut(*updated_entity) else {
             panic!(
                 "failed to get tile movement q for entity: {:?}",
                 updated_entity
             );
         };
-        let should_rollback = tile_movement.recv_updated_net_move_buffer(*update_tick, &net_move_buffer);
+        let should_rollback = tile_movement.recv_updated_net_move_buffer(
+            *update_tick,
+            &net_move_buffer,
+            &mut physics,
+            &mut render_position,
+        );
         if should_rollback {
             rollback_events.insert(*updated_entity, *update_tick);
         }

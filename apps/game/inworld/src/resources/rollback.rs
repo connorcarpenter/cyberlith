@@ -102,7 +102,7 @@ impl RollbackManager {
         let mut current_tick = server_tick;
         if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
             if current_tick != last_processed_server_tick {
-                // TODO: just should be a warn
+                // TODO: just should be a warn, also do we need this?
                 panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, current_tick);
             }
             current_tick = last_processed_server_tick;

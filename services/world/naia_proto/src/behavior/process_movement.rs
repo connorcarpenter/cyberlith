@@ -74,6 +74,9 @@ pub fn process_result(
 
                 tile_movement.set_continue(tile_x, tile_y, buffered_move_dir);
 
+                // This is important, because client expects to receive the next_tile_position AFTER a simulation step
+                physics.step();
+
                 let (dx, dy) = buffered_move_dir.to_delta();
 
                 let next_tile_x = tile_x + dx as i16;

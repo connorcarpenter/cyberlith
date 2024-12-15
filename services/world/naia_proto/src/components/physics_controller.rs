@@ -32,6 +32,21 @@ impl PhysicsController {
         self.position
     }
 
+    pub fn set_position(&mut self, x: f32, y: f32, check_diff: bool) {
+        let new_position = Vec2::new(x, y);
+
+        if check_diff {
+            let distance = self.position.distance(new_position);
+            if distance > 0.0 {
+                warn!("set_position({:?}, {:?}): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
+                    x, y, self.position.x, self.position.y, new_position.x, new_position.y, distance,
+                );
+            }
+        }
+
+        self.position = new_position;
+    }
+
     pub fn set_tile_position(&mut self, tile_x: i16, tile_y: i16, check_diff: bool) {
         let new_position = Vec2::new(tile_x as f32 * TILE_SIZE, tile_y as f32 * TILE_SIZE);
 

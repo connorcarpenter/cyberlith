@@ -126,15 +126,19 @@ impl ConfirmedTileMovement {
         self.tile_movement.set_moving(next_move_dir);
         physics.set_tile_position(new_current_tile_x, new_current_tile_y, true);
 
-        // This is important. Server has already applied velocity to the position, we need to as well here.
+        // This is important. Server has already applied velocity to the position, before sending the NTP, we need to as well here.
         physics.step();
 
         physics.tick_log(update_tick, false);
 
         ////////////////////////
 
-        if let Some(last_tick) = tick_tracker.last_processed_server_tick() {
-            update_tick = last_tick;
+        if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
+            if update_tick != last_processed_server_tick {
+                // TODO: just should be a warn, also do we need this?
+                panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, update_tick);
+            }
+            update_tick = last_processed_server_tick;
         }
         render_position.recv_position(physics.position(), update_tick);
     }
@@ -144,18 +148,36 @@ impl ConfirmedTileMovement {
         &mut self,
         update_tick: Tick,
         net_move_buffer: &NetworkedMoveBuffer,
+        physics: &mut PhysicsController,
+        render_position: &mut RenderPosition,
     ) -> bool {
         info!(
             "Recv NetworkedMoveBuffer. Tick: {:?}, Value: {:?}",
-            update_tick, net_move_buffer.buffered()
+            update_tick, net_move_buffer.get()
         );
-        let rollback = self.move_buffer.buffered_move() != net_move_buffer.buffered();
-        if let Some(move_dir) = net_move_buffer.buffered() {
-            self.move_buffer.buffer_move(move_dir);
-        } else {
-            self.move_buffer.clear();
+
+        let updated_value = net_move_buffer.get();
+        if updated_value.is_none() {
+            if self.move_buffer.has_buffered_move() {
+                // changed
+                self.move_buffer.clear();
+                return true;
+            } else {
+                // did not change
+                return false;
+            }
         }
-        rollback
+
+        let (updated_move_dir, updated_position, updated_velocity) = updated_value.unwrap();
+
+        self.move_buffer.buffer_move(updated_move_dir);
+        physics.set_position(updated_position.x, updated_position.y, true);
+        physics.set_velocity(updated_velocity.x, updated_velocity.y, true);
+
+        physics.tick_log(update_tick, false);
+        render_position.recv_position(physics.position(), update_tick);
+
+        return true;
     }
 
     pub fn decompose_to_values(self) -> (TileMovement, MoveBuffer) {
