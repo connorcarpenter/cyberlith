@@ -176,6 +176,7 @@ impl ConfirmedTileMovement {
         physics.set_velocity(updated_velocity.x, updated_velocity.y, true);
 
         physics.tick_log(update_tick, false);
+
         render_position.recv_position(physics.position(), update_tick);
 
         self.handle_late_update(tick_tracker, update_tick, physics, render_position, animation_state);

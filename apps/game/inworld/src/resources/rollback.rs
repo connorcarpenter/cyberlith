@@ -43,8 +43,7 @@ impl RollbackManager {
         mut input_manager: ResMut<InputManager>,
         mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
         mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
-        mut physics_q: Query<&mut PhysicsController>,
-        mut render_q: Query<(&mut RenderPosition, &mut AnimationState)>,
+        mut components_q: Query<(&mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
     ) {
         let events = std::mem::take(&mut me.events);
 
@@ -82,16 +81,9 @@ impl RollbackManager {
                 predicted_entity
             );
         };
-        let Ok([confirmed_physics, mut predicted_physics]) = physics_q.get_many_mut([confirmed_entity, predicted_entity])
-        else {
-            panic!(
-                "failed to get physics for entities: {:?}, {:?}",
-                confirmed_entity, predicted_entity
-            );
-        };
         let Ok(
-            [(confirmed_render_position, confirmed_animation_state), (mut predicted_render_position, mut predicted_animation_state)],
-        ) = render_q.get_many_mut([confirmed_entity, predicted_entity])
+            [(confirmed_physics, confirmed_render_position, confirmed_animation_state), (mut predicted_physics, mut predicted_render_position, mut predicted_animation_state)],
+        ) = components_q.get_many_mut([confirmed_entity, predicted_entity])
         else {
             panic!(
                 "failed to get components for entities: {:?}, {:?}",
@@ -144,7 +136,6 @@ impl RollbackManager {
         // }
 
         // ROLLBACK CLIENT: Replay all stored commands
-        let previous_predicted_physics = predicted_physics.clone();
 
         // Set to authoritative state
         let confirmed_tile_movement: &ConfirmedTileMovement = &confirmed_tile_movement;
@@ -180,24 +171,7 @@ impl RollbackManager {
         }
         warn!("---");
 
+        // TODO: why is this necessary again? should refactor into a separate method
         predicted_render_position.advance_millis(&client, 0);
-
-        {
-            // compare previous physics to current physics
-            let previous_position = previous_predicted_physics.position();
-            let current_position = predicted_physics.position();
-            let previous_velocity = previous_predicted_physics.velocity();
-            let current_velocity = predicted_physics.velocity();
-
-            let position_diff = current_position - previous_position;
-            let velocity_diff = current_velocity - previous_velocity;
-
-            if position_diff.length() > 10.0 || velocity_diff.length() > 0.1 {
-                // panic!(
-                //     "Physics Rollback: Position Diff: {:?}. Velocity Diff: {:?}",
-                //     position_diff, velocity_diff
-                // );
-            }
-        }
     }
 }

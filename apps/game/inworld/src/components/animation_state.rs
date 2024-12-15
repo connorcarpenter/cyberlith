@@ -15,7 +15,7 @@ pub struct AnimationState {
     pub(crate) animation_name: String,
     pub(crate) animation_index_ms: f32,
     last_now: Instant,
-    last_pos: (f32, f32),
+    last_pos: Vec2,
     is_moving: bool,
     move_heat: f32,
 }
@@ -28,7 +28,7 @@ impl AnimationState {
             animation_name: "idle".to_string(),
             animation_index_ms: 0.0,
             last_now: Instant::now(),
-            last_pos: (0.0, 0.0),
+            last_pos: Vec2::ZERO,
             is_moving: false,
             move_heat: 0.0,
         }
@@ -39,16 +39,14 @@ impl AnimationState {
         now: &Instant,
         asset_manager: &AssetManager,
         model_data: &AssetHandle<AnimatedModelData>,
-        position_x: f32,
-        position_y: f32,
-        velocity_x: f32,
-        velocity_y: f32,
+        position: Vec2,
+        velocity: Vec2,
     ) {
-        let (last_x, last_y) = self.last_pos;
-        self.last_pos = (position_x, position_y);
+        let last_position = self.last_pos;
+        self.last_pos = position;
 
-        let dx = position_x - last_x;
-        let dy = position_y - last_y;
+        let dx = position.x - last_position.x;
+        let dy = position.y - last_position.y;
 
         // change animation if needed
         let is_moving = dx != 0.0 || dy != 0.0;
@@ -68,9 +66,8 @@ impl AnimationState {
 
         // change direction if needed
         if self.is_moving && is_moving {
-            let velocity = Vec2::new(velocity_x, velocity_y);
             if velocity.length() > 0.1 {
-                self.lookdir = Direction::from_coords(velocity_x, velocity_y);
+                self.lookdir = Direction::from_coords(velocity.x, velocity.y);
                 self.rotation = self.lookdir.to_radians();
             }
         }

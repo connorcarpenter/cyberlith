@@ -11,7 +11,8 @@ use game_engine::{
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {
-    queue: VecDeque<(f32, f32, Tick)>,
+    // front is oldest, back is newest
+    position_queue: VecDeque<(Vec2, Tick)>,
     last_render_instant: Instant,
     interp_instant: GameInstant,
 }
@@ -26,12 +27,12 @@ impl RenderPosition {
         let y = next_tile_position.y() as f32 * TILE_SIZE;
 
         let mut me = Self {
-            queue: VecDeque::new(),
+            position_queue: VecDeque::new(),
             last_render_instant: Instant::now(),
             interp_instant: tick_instant,
         };
 
-        me.queue.push_back((x, y, tick));
+        me.position_queue.push_back((Vec2::new(x, y), tick));
 
         me
     }
@@ -42,10 +43,10 @@ impl RenderPosition {
 
         // make sure ticks are in order
         loop {
-            if let Some((_, _, back_tick)) = self.queue.back() {
+            if let Some((_, back_tick)) = self.position_queue.back() {
                 if sequence_less_than(tick, *back_tick) || tick == *back_tick {
                     // warn!("recv_position() - received out of order tick: {:?}", tick);
-                    self.queue.pop_back();
+                    self.position_queue.pop_back();
                 } else {
                     back_tick_opt = Some(*back_tick);
                     break;
@@ -55,7 +56,7 @@ impl RenderPosition {
             }
         }
 
-        self.queue.push_back((position.x, position.y, tick));
+        self.position_queue.push_back((position, tick));
 
         // let host = if is_server { "Server" } else { "Client" };
         // let rollback = if is_rollback { "Rollback" } else { "" };
@@ -68,15 +69,16 @@ impl RenderPosition {
     pub fn recv_rollback(&mut self, server_render_pos: &RenderPosition) {
         //info!("recv_rollback()");
 
-        self.queue = server_render_pos.queue.clone();
+        self.position_queue = server_render_pos.position_queue.clone();
     }
 
-    pub fn render(&mut self, client: &WorldClient, now: &Instant) -> (f32, f32, f32, f32) {
+    // returns (position, velocity)
+    pub fn render(&mut self, client: &WorldClient, now: &Instant) -> (Vec2, Vec2) {
         {
             let duration_elapsed = self.last_render_instant.elapsed(&now);
             let duration_ms = duration_elapsed.as_secs_f32() * 1000.0;
 
-            let adjust: f32 = match self.queue.len() {
+            let adjust: f32 = match self.position_queue.len() {
                 0 => 0.7,
                 1 => 0.8,
                 2 => 0.9,
@@ -93,18 +95,18 @@ impl RenderPosition {
         //info!("duration_ms: {:?}", duration_ms);
         self.last_render_instant = now.clone();
 
-        if self.queue.len() < 2 {
-            if self.queue.len() < 1 {
+        if self.position_queue.len() < 2 {
+            if self.position_queue.len() < 1 {
                 panic!("queue is empty");
             }
 
-            let (x, y, _) = self.queue.get(0).unwrap();
-            return (*x, *y, 0.0, 0.0);
+            let (position, _) = self.position_queue.get(0).unwrap();
+            return (*position, Vec2::ZERO);
         }
 
-        let (prev_x, prev_y, prev_instant, next_x, next_y, next_instant) = {
-            let (prev_x, prev_y, prev_tick) = self.queue.get(0).unwrap();
-            let (next_x, next_y, next_tick) = self.queue.get(1).unwrap();
+        let (prev_pos, prev_instant, next_pos, next_instant) = {
+            let (prev_pos, prev_tick) = self.position_queue.get(0).unwrap();
+            let (next_pos, next_tick) = self.position_queue.get(1).unwrap();
 
             let prev_instant = client
                 .tick_to_instant(*prev_tick)
@@ -114,34 +116,33 @@ impl RenderPosition {
                 .expect("client not initialized?");
 
             (
-                *prev_x,
-                *prev_y,
+                *prev_pos,
                 prev_instant,
-                *next_x,
-                *next_y,
+                *next_pos,
                 next_instant,
             )
         };
 
         let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
         if prev_to_interp < 0.0 {
-            return (prev_x, prev_y, 0.0, 0.0);
+            return (prev_pos, Vec2::ZERO);
         }
         let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
         let total = prev_to_interp + interp_to_next;
         let interp = prev_to_interp / total;
 
-        let interp_x = prev_x + ((next_x - prev_x) * interp);
-        let interp_y = prev_y + ((next_y - prev_y) * interp);
+        let interp_x = prev_pos.x + ((next_pos.x - prev_pos.x) * interp);
+        let interp_y = prev_pos.y + ((next_pos.y - prev_pos.y) * interp);
 
-        (interp_x, interp_y, next_x - prev_x, next_y - prev_y)
+        let interp_pos = Vec2::new(interp_x, interp_y);
+        (interp_pos, next_pos - prev_pos)
     }
 
     pub fn advance_millis(&mut self, client: &WorldClient, millis: u32) {
         self.interp_instant = self.interp_instant.add_millis(millis);
 
         loop {
-            if self.queue.len() < 1 {
+            if self.position_queue.len() < 1 {
                 panic!("queue is empty");
             }
 
@@ -156,16 +157,16 @@ impl RenderPosition {
             //     break;
             // }
 
-            if self.queue.len() < 2 {
+            if self.position_queue.len() < 2 {
                 break;
             }
 
-            let (_, _, next_tick) = self.queue.get(1).unwrap();
+            let (_, next_tick) = self.position_queue.get(1).unwrap();
             let next_instant = client
                 .tick_to_instant(*next_tick)
                 .expect("client not initialized?");
             if self.interp_instant.is_more_than(&next_instant) {
-                self.queue.pop_front();
+                self.position_queue.pop_front();
             } else {
                 break;
             }
