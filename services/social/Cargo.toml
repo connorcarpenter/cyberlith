@@ -22,5 +22,3 @@ social_server_http_proto = { path = "http_proto" }
 region_server_http_proto = { path = "../region/http_proto" }
 session_server_http_proto = { path = "../session/http_proto" }
 
-cfg-if = { version = "1.0" }
-

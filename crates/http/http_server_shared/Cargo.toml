@@ -8,6 +8,3 @@ workspace = "../../.."
 http_common = { path = "../http_common" }
 executor = { path = "../../executor" }
 logging = { path = "../../logging" }
-
-once_cell = { version = "1.4.1" }
-async-dup = { version = "1.2.2" }

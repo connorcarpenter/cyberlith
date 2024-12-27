@@ -8,14 +8,9 @@ workspace = "../../../.."
 asset_id = { path = "../../../asset/id" }
 render_api = { path = "../../../render/render_api" }
 storage = { path = "../../../storage" }
-instant = { path = "../../../instant" }
-math = { path = "../../../math" }
 logging = { path = "../../../logging" }
 ui_runner_config = { path = "../config" }
 ui_layout = { path = "../../layout" }
-
-bevy_app = { version = "0.15", default-features = false }
-bevy_ecs = { version = "0.15", default-features = false }
 
 # TODO: Remove this once Ui serialization is moved to `asset_serde` crate
 serde = { version = "1.0.189", features = ["derive"] }

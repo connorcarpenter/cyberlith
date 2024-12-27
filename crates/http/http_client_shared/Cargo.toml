@@ -6,7 +6,6 @@ workspace = "../../.."
 
 [dependencies]
 http_common = { path = "../http_common" }
-log = "0.4.17"
 
 # For compiling natively:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

@@ -7,8 +7,6 @@ workspace = "../../.."
 [dependencies]
 http_common = { path = "../http_common" }
 http_client_shared = { path = "../http_client_shared" }
-naia-serde = { path = "../../../../naia/shared/serde" }
-logging = { path = "../../../crates/logging" }
 executor = { path = "../../../crates/executor" }
 
 bevy_ecs = { version = "0.15", default-features = false }

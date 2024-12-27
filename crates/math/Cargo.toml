@@ -5,7 +5,6 @@ edition = "2021"
 workspace = "../.."
 
 [dependencies]
-random = { path = "../random" }
 logging = { path = "../logging" }
 
 naia-serde = { path = "../../../naia/shared/serde" }

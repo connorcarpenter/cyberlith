@@ -10,6 +10,5 @@ workspace = "../../.."
 asset_loader = { path = "../loader" }
 render_api = { path = "../../render/render_api" }
 storage = { path = "../../storage" }
-ui_state = { path = "../../ui/runner/state" }
 ui_runner_config = { path = "../../ui/runner/config" }
 logging = { path = "../../logging" }

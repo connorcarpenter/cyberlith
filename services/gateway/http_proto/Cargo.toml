@@ -11,6 +11,5 @@ publish = false
 [dependencies]
 naia-serde = { path = "../../../../naia/shared/serde" }
 http_common = { path = "../../../crates/http/http_common" }
-crypto = { path = "../../../crates/crypto" }
 
 auth_server_http_proto = { path = "../../auth/http_proto" }

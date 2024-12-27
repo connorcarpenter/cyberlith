@@ -6,4 +6,3 @@ workspace = "../../.."
 
 [dependencies]
 http_common = { path = "../http_common" }
-naia-serde = { path = "../../../../naia/shared/serde" }

@@ -7,7 +7,3 @@ workspace = "../../.."
 [dependencies]
 http_common = { path = "../http_common" }
 http_client_shared = { path = "../http_client_shared" }
-
-naia-serde = { path = "../../../../naia/shared/serde" }
-
-cfg-if = { version = "1.0" }

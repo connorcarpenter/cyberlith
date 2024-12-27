@@ -7,16 +7,13 @@ edition = "2021"
 publish = false
 
 [features]
-local = [ "game_engine/local" ]
-prod = [ "game_engine/prod" ]
-gl_renderer = [ "game_engine/gl_renderer" ]
-wgpu_renderer = [ "game_engine/wgpu_renderer" ]
-odst = [ "game_engine/odst" ]
+local = [ ]
+prod = [ ]
+gl_renderer = [  ]
+wgpu_renderer = [  ]
+odst = [ ]
 
 [dependencies]
-# Internal
-# goal is to have ONLY game_engine here!!!
-game_engine = { path = "../../../crates/engine" }
 
 # External
 bevy_app = { version = "0.15", default-features=false }

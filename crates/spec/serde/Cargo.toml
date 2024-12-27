@@ -13,7 +13,6 @@ write_json = [ "serde", "serde_json" ]
 [dependencies]
 spec = { path = "../../spec" }
 asset_id = { path = "../../../crates/asset/id" }
-logging = { path = "../../../crates/logging" }
 
 # for BITS
 naia-serde = { path = "../../../../naia/shared/serde", optional = true }

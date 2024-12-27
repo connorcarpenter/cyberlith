@@ -9,7 +9,6 @@ publish = false
 # Internal Crates
 render_api = { path = "../render_api" }
 render_gl = { path = "../render_gl" }
-math = { path = "../../math" }
 input = { path = "../../input" }
 egui_gl = { path = "../egui_gl" }
 storage = { path = "../../storage" }

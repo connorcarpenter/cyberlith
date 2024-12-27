@@ -11,10 +11,8 @@ read_json = [ "serde", "serde_json" ]
 write_json = [ "serde", "serde_json" ]
 
 [dependencies]
-logging = { path = "../../logging" }
 render_api = { path = "../../render/render_api" }
 asset_id = { path = "../../asset/id" }
-crypto = { path = "../../crypto" }
 ui_builder_config = { path = "../builder/config" }
 ui_layout = { path = "../../ui/layout" }
 

@@ -6,6 +6,5 @@ workspace = "../.."
 
 [dependencies]
 rand = { version = "0.8.5" }
-logging = { path = "../logging" }
 
 naia-socket-shared = { path = "../../../naia/socket/shared", features = [ "wbindgen" ] }

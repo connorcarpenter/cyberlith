@@ -13,10 +13,7 @@ write_json = [ "serde", "serde_json", "ui_serde/write_json", "spec_serde/write_j
 [dependencies]
 cfg-if = { version = "1.0" }
 
-render_api = { path = "../../render/render_api" }
 asset_id = { path = "../id" }
-crypto = { path = "../../crypto" }
-logging = { path = "../../../crates/logging" }
 ui_serde = { path = "../../ui/serde" }
 spec_serde = { path = "../../spec/serde" }
 

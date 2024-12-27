@@ -15,7 +15,6 @@ http_server = { path = "../../crates/http/http_server" }
 http_client = { path = "../../crates/http/http_client" }
 crypto = { path = "../../crates/crypto" }
 config = { path = "../../config", features = ["auth"] }
-random = { path = "../../crates/random" }
 email = { path = "../../crates/email" }
 logging = { path = "../../crates/logging" }
 timequeue = { path = "../../crates/timequeue" }

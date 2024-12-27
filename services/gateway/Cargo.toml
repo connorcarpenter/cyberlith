@@ -28,4 +28,3 @@ session_server_naia_proto = { path = "../session/naia_proto" }
 world_server_naia_proto = { path = "../world/naia_proto" }
 
 base64 = { version = "0.13" }
-cfg-if = { version = "1.0" }

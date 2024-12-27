@@ -22,6 +22,4 @@ social = []
 odst = []
 
 [dependencies]
-logging = { path = "../crates/logging" }
-
 cfg-if = { version = "1.0" }

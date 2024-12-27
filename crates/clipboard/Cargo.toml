@@ -6,7 +6,6 @@ workspace = "../.."
 
 [dependencies]
 logging = { path = "../../crates/logging" }
-executor = { path = "../../crates/executor" }
 
 bevy_app = { version = "0.15", default-features = false }
 bevy_ecs = { version = "0.15", default-features = false }
@@ -19,6 +18,7 @@ arboard = { version = "3.2.0" }
 thread_local = { version = "1.1.0" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+executor = { path = "../../crates/executor" }
 crossbeam-channel = { version = "0.5" }
 js-sys = { version = "0.3" }
 wasm-bindgen = { version = "0.2" }

@@ -12,9 +12,6 @@ render_api = { path = "../../render/render_api" }
 math = { path = "../../math" }
 storage = { path = "../../storage" }
 filesystem = { path = "../../filesystem" }
-random = { path = "../../random" }
-input = { path = "../../input" }
-instant = { path = "../../instant" }
 logging = { path = "../../logging" }
 
 ui_runner_config = { path = "../../ui/runner/config" }
