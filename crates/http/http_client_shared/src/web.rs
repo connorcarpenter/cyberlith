@@ -29,9 +29,9 @@ pub(crate) async fn fetch_base(
     request: &Request,
     request_options_opt: Option<RequestOptions>,
 ) -> Result<web_sys::Response, JsValue> {
-    let mut opts = web_sys::RequestInit::new();
-    opts.method(request.method.as_str());
-    opts.mode(web_sys::RequestMode::Cors);
+    let opts = web_sys::RequestInit::new();
+    opts.set_method(request.method.as_str());
+    opts.set_mode(web_sys::RequestMode::Cors);
     if let Some(request_options) = request_options_opt {
         if let Some(timeout) = request_options.timeout_opt {
             let abort_controller = AbortController::new()?;
@@ -50,7 +50,7 @@ pub(crate) async fn fetch_base(
                 )
                 .expect("cannot set timeout");
 
-            opts.signal(Some(&abort_signal));
+            opts.set_signal(Some(&abort_signal));
         }
     }
 
@@ -58,7 +58,7 @@ pub(crate) async fn fetch_base(
         let body_bytes: &[u8] = &request.body;
         let body_array: js_sys::Uint8Array = body_bytes.into();
         let js_value: &JsValue = body_array.as_ref();
-        opts.body(Some(js_value));
+        opts.set_body(js_value);
     }
 
     let js_request = web_sys::Request::new_with_str_and_init(&request.url, &opts)?;

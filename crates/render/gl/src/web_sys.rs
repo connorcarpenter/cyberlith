@@ -1,17 +1,16 @@
-use super::*;
+use std::cell::RefCell;
 
 use js_sys::{self, Array};
 use slotmap::{new_key_type, SlotMap};
-use std::cell::RefCell;
+
 use web_sys::{
     self, HtmlCanvasElement, HtmlImageElement, HtmlVideoElement, ImageBitmap,
     WebGl2RenderingContext, WebGlBuffer, WebGlFramebuffer, WebGlProgram, WebGlQuery,
     WebGlRenderbuffer, WebGlSampler, WebGlShader, WebGlSync, WebGlTexture, WebGlTransformFeedback,
-    WebGlUniformLocation, WebGlVertexArrayObject,
+    WebGlUniformLocation, WebGlVertexArrayObject, VideoFrame
 };
 
-#[cfg(web_sys_unstable_apis)]
-use web_sys::VideoFrame;
+use super::*;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -475,7 +474,6 @@ impl Context {
             .unwrap();
     }
 
-    #[cfg(web_sys_unstable_apis)]
     pub unsafe fn tex_image_2d_with_video_frame(
         &self,
         target: u32,
@@ -497,7 +495,6 @@ impl Context {
             .unwrap();
     }
 
-    #[cfg(web_sys_unstable_apis)]
     /// WebGL2 Only
     pub unsafe fn tex_image_2d_with_video_frame_and_width_and_height(
         &self,
@@ -673,7 +670,6 @@ impl Context {
             .unwrap(); // TODO: Handle return value?
     }
 
-    #[cfg(web_sys_unstable_apis)]
     pub unsafe fn tex_sub_image_2d_with_video_frame(
         &self,
         target: u32,
@@ -699,7 +695,6 @@ impl Context {
             .unwrap(); // TODO: Handle return value?
     }
 
-    #[cfg(web_sys_unstable_apis)]
     /// WebGL2 Only
     pub unsafe fn tex_sub_image_2d_with_video_frame_and_width_and_height(
         &self,
@@ -848,7 +843,6 @@ impl Context {
             .unwrap(); // TODO: Handle return value?
     }
 
-    #[cfg(web_sys_unstable_apis)]
     /// WebGL2 Only
     pub unsafe fn tex_image_3d_with_video_frame(
         &self,
@@ -971,7 +965,6 @@ impl Context {
             .unwrap(); // TODO: Handle return value?
     }
 
-    #[cfg(web_sys_unstable_apis)]
     /// WebGL2 Only
     pub unsafe fn tex_sub_image_3d_with_video_frame(
         &self,

@@ -28,10 +28,7 @@ fn clipboard_set(contents: String) {
         };
 
         let nav = window.navigator();
-        let Some(clipboard) = nav.clipboard() else {
-            warn!("Failed to access clipboard");
-            return;
-        };
+        let clipboard = nav.clipboard();
 
         info!("writing to clipboard: {}", contents);
         let promise = clipboard.write_text(&contents);

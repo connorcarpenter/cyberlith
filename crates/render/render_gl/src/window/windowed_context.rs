@@ -77,11 +77,6 @@ mod inner {
 
         /// Resizes the context
         pub fn resize(&self, _physical_size: winit::dpi::PhysicalSize<u32>) {}
-
-        /// Swap buffers - should always be called after rendering.
-        pub fn swap_buffers(&self) -> Result<(), WindowError> {
-            Ok(())
-        }
     }
 }
 

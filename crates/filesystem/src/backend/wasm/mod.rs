@@ -114,8 +114,8 @@ async fn handle_write(task: &WriteTask) -> Result<FsTaskResultEnum, TaskError> {
     let file_name = task.path.file_name().unwrap().to_str().unwrap();
 
     // create file
-    let mut options = FileSystemGetFileOptions::new();
-    options.create(true);
+    let options = FileSystemGetFileOptions::new();
+    options.set_create(true);
     let file_handle_promise = dir_handle.get_file_handle_with_options(file_name, &options);
 
     info!(
@@ -279,8 +279,8 @@ async fn handle_create_dir(task: &CreateDirTask) -> Result<FsTaskResultEnum, Tas
     let root = get_root().await;
 
     let folder_name = task.path.clone().into_os_string().into_string().unwrap();
-    let mut options = FileSystemGetDirectoryOptions::new();
-    options.create(true);
+    let options = FileSystemGetDirectoryOptions::new();
+    options.set_create(true);
     let dir_handle_promise = root.get_directory_handle_with_options(&folder_name, &options);
     let dir_handle_js = JsFuture::from(dir_handle_promise)
         .await

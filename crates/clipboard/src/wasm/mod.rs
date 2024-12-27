@@ -41,9 +41,7 @@ pub(crate) async fn task_process_async() -> Result<String, TaskError> {
     };
 
     let nav = window.navigator();
-    let Some(clipboard) = nav.clipboard() else {
-        return Err(TaskError::IoError("Failed to access clipboard".to_owned()));
-    };
+    let clipboard = nav.clipboard();
 
     let promise = clipboard.read_text();
     match JsFuture::from(promise).await {

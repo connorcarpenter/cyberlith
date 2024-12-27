@@ -1,7 +1,7 @@
 use bevy_ecs::component::Component;
 
 use naia_bevy_shared::Tick;
-use logging::{info, warn};
+use logging::warn;
 use math::Vec2;
 
 use crate::{
@@ -82,13 +82,13 @@ impl PhysicsController {
         self.velocity.set_vec2(new_velocity);
     }
 
-    pub fn tick_log(&self, tick: Tick, is_prediction: bool) {
-        let prediction = if is_prediction {"PREDICTED"} else {"CONFIRMED"};
-        let velocity = self.velocity.get_vec2();
-        info!(
-            "{:?} - tick: {:?}, position: ({:?}, {:?}), velocity: ({:?}, {:?})",
-            prediction, tick, self.position.x, self.position.y, velocity.x, velocity.y
-        );
+    pub fn tick_log(&self, _tick: Tick, _is_prediction: bool) {
+        // let prediction = if is_prediction {"PREDICTED"} else {"CONFIRMED"};
+        // let velocity = self.velocity.get_vec2();
+        // info!(
+        //     "{:?} - tick: {:?}, position: ({:?}, {:?}), velocity: ({:?}, {:?})",
+        //     prediction, tick, self.position.x, self.position.y, velocity.x, velocity.y
+        // );
     }
 
     pub fn speed_up(&mut self, target_direction: Vec2) {
