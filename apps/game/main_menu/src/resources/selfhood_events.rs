@@ -2,12 +2,10 @@ use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, event::EventReader, prelude::Resource};
 
-use game_engine::{
-    logging::info,
-    session::{
-        components::{Selfhood, SelfhoodUser},
-        SessionInsertComponentEvent,
-    },
+use game_engine::logging::info;
+use game_app_network::session::{
+    components::{Selfhood, SelfhoodUser},
+    SessionInsertComponentEvent,
 };
 
 struct SelfhoodRecord {

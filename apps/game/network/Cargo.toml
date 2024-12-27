@@ -1,0 +1,34 @@
+[package]
+name = "game_app_network"
+version = "0.1.0"
+authors = ["connorcarpenter <connorcarpenter@gmail.com>"]
+workspace = "../../.."
+edition = "2021"
+publish = false
+
+[features]
+local = [ "config/local", "session_server_naia_proto/local", "world_server_naia_proto/local" ]
+prod = [ "config/prod", "session_server_naia_proto/prod", "world_server_naia_proto/prod" ]
+odst = []
+
+[dependencies]
+session_server_naia_proto = { path = "../../../services/session/naia_proto" }
+world_server_naia_proto = { path = "../../../services/world/naia_proto" }
+
+# Internal
+asset_loader = { path = "../../../crates/asset/loader" }
+asset_id = { path = "../../../crates/asset/id" }
+asset_cache = { path = "../../../crates/asset/cache" }
+ui_runner = { path = "../../../crates/ui/runner" }
+filesystem = { path = "../../../crates/filesystem" }
+logging = { path = "../../../crates/logging" }
+kernel = { path = "../../../crates/kernel" }
+config = { path = "../../../config" }
+
+# External
+naia-bevy-client = { path = "../../../../naia/adapters/bevy/client", features = ["transport_webrtc"] }
+
+bevy_app = { version = "0.15", default-features=false }
+bevy_ecs = { version = "0.15", default-features=false }
+
+cfg-if = { version = "1.0" }

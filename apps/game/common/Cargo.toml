@@ -16,11 +16,9 @@ odst = [ "game_engine/odst" ]
 [dependencies]
 # Internal
 # goal is to have ONLY game_engine here!!!
-game_engine = { path = "../../../crates/engine", features = ["networked"] }
+game_engine = { path = "../../../crates/engine" }
 
 # External
 bevy_app = { version = "0.15", default-features=false }
 bevy_ecs = { version = "0.15", default-features=false }
 bevy_state = { version = "0.15", features = ["bevy_app"], default-features=false }
-
-cfg-if = { version = "1.0" }

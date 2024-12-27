@@ -2,7 +2,7 @@ use std::default::Default;
 
 use bevy_ecs::prelude::Resource;
 
-use game_engine::naia::{sequence_greater_than, Tick};
+use game_app_network::naia::{sequence_greater_than, Tick};
 
 #[derive(Resource)]
 pub struct TickTracker {

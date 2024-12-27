@@ -1,10 +1,7 @@
-use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Startup, Update};
 
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
-
-use kernel::http::CookieStore;
 
 use session_server_naia_proto::protocol as session_server_naia_protocol;
 use world_server_naia_proto::protocol as world_server_naia_protocol;
@@ -14,27 +11,15 @@ use super::{
     asset_ref_processor::AssetRefProcessor,
     client_markers::{Session, World},
     connection_manager::ConnectionManager,
-};
-use crate::{
-    networked::{session_events::SessionEventsPlugin, world_events::WorldEventsPlugin},
-    EnginePlugin,
+    session_events::SessionEventsPlugin,
+    world_events::WorldEventsPlugin,
 };
 
-pub struct NetworkedEnginePlugin {
-    cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
-}
-
-impl NetworkedEnginePlugin {
-    pub fn new(cookie_store_opt: Option<Arc<RwLock<CookieStore>>>) -> Self {
-        Self { cookie_store_opt }
-    }
-}
+pub struct NetworkedEnginePlugin;
 
 impl Plugin for NetworkedEnginePlugin {
     fn build(&self, app: &mut App) {
-        let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
-
-        app.add_plugins(engine_plugin)
+        app
             .add_plugins(NaiaClientPlugin::<Session>::new(
                 NaiaClientConfig::default(),
                 session_server_naia_protocol(),

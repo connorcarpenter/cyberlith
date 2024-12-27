@@ -11,8 +11,8 @@ name = "standalone"
 path = "src/main.rs"
 
 [features]
-local = [ "launcher_app/local", "config/local" ]
-prod = [ "launcher_app/prod", "config/prod" ]
+local = [ "launcher_app/local", "game_app/local", "config/local" ]
+prod = [ "launcher_app/prod", "game_app/prod", "config/prod" ]
 gl_renderer = [ "launcher_app/gl_renderer", "game_app/gl_renderer" ]
 wgpu_renderer = [ "launcher_app/wgpu_renderer", "game_app/wgpu_renderer" ]
 

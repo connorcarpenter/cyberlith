@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy_ecs::component::Component;
 
-use game_engine::naia::{sequence_greater_than, Tick};
+use game_app_network::naia::{sequence_greater_than, Tick};
 
 #[derive(Component)]
 pub struct TickSkipper {

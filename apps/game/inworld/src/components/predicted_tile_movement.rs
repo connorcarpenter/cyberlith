@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::Component;
 
-use game_engine::world::components::{MoveBuffer, NextTilePosition, TileMovement};
+use game_app_network::world::components::{MoveBuffer, NextTilePosition, TileMovement};
 
 use crate::components::{client_tile_movement::ClientTileMovement, ConfirmedTileMovement};
 

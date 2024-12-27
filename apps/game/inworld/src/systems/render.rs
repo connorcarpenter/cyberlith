@@ -11,8 +11,8 @@ use game_engine::{
         resources::RenderFrame,
     },
     time::Instant,
-    world::WorldClient,
 };
+use game_app_network::world::WorldClient;
 
 use crate::{
     components::{AnimationState, Confirmed, Predicted, RenderPosition},

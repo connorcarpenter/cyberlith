@@ -1,25 +1,16 @@
 #[macro_use]
 extern crate cfg_if;
 
-cfg_if! {
-    if #[cfg(feature = "networked")] {
-        mod networked;
-        pub use networked::*;
-    } else {}
-}
-
 mod plugin;
 pub use plugin::EnginePlugin;
 
-mod asset_cache;
-mod embedded_asset;
 mod renderer;
 
 pub mod kernel {
     pub use kernel::{executor, get_querystring_param, AppExitAction, KernelApp};
 }
 pub mod asset {
-    pub use crate::asset_cache::AssetLoadedEvent;
+    pub use asset_cache::AssetLoadedEvent;
     pub use asset_id::{AssetId, AssetType, ETag};
     pub use asset_loader::{
         embedded_asset_event, AnimatedModelData, AnimationData, AssetHandle, AssetManager,

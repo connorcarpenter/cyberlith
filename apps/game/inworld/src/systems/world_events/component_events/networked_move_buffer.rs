@@ -5,12 +5,12 @@ use bevy_ecs::{change_detection::{Res, ResMut}, event::EventReader, prelude::Que
 use game_engine::{
     logging::info,
     time::Instant,
-    world::{
-        components::{PhysicsController, NetworkedMoveBuffer}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
-        WorldUpdateComponentEvent,
-    },
-    naia::sequence_greater_than,
 };
+use game_app_network::{    world::{
+    components::{PhysicsController, NetworkedMoveBuffer}, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+    WorldUpdateComponentEvent,
+},
+                           naia::sequence_greater_than};
 
 use crate::{systems::world_events::{PredictionEvents}, resources::{TickTracker, RollbackManager}, components::{RenderPosition, AnimationState, ConfirmedTileMovement}};
 

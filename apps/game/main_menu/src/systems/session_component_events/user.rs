@@ -4,12 +4,10 @@ use bevy_ecs::{
     event::{EventReader, EventWriter},
 };
 
-use game_engine::{
-    logging::info,
-    session::{
-        components::User, SessionInsertComponentEvent, SessionRemoveComponentEvent,
-        SessionUpdateComponentEvent,
-    },
+use game_engine::logging::info;
+use game_app_network::session::{
+    components::User, SessionInsertComponentEvent, SessionRemoveComponentEvent,
+    SessionUpdateComponentEvent,
 };
 
 use crate::{resources::user_manager::UserManager, ui::events::ResyncUserListUiEvent};

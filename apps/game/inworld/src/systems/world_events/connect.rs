@@ -16,8 +16,8 @@ use game_engine::{
     },
     storage::Storage,
     ui::UiManager,
-    world::WorldConnectEvent,
 };
+use game_app_network::world::WorldConnectEvent;
 
 use crate::systems::scene_setup;
 

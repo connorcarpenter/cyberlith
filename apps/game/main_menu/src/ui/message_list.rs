@@ -7,11 +7,11 @@ use bevy_ecs::{
 use game_engine::{
     asset::AssetManager,
     input::InputEvent,
-    session::{
-        components::{ChatMessage, User},
-        SessionClient,
-    },
     ui::{UiHandle, UiManager},
+};
+use game_app_network::session::{
+    components::{ChatMessage, User},
+    SessionClient,
 };
 
 use crate::{

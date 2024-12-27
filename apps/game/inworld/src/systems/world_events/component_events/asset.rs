@@ -4,8 +4,8 @@ use game_engine::{
     asset::{AssetHandle, AssetType, UnitData},
     logging::info,
     time::Instant,
-    world::{components::Main, WorldInsertAssetRefEvent},
 };
+use game_app_network::world::{components::Main, WorldInsertAssetRefEvent};
 
 use crate::systems::world_events::PredictionEvents;
 

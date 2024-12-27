@@ -1,12 +1,12 @@
 use bevy_ecs::component::Component;
 
+use game_app_network::world::types::Direction;
 use game_engine::{
     asset::{AnimatedModelData, AssetHandle, AssetManager},
     time::Instant,
-    world::types::Direction,
+    logging::info,
+    math::Vec2,
 };
-use game_engine::logging::info;
-use game_engine::math::Vec2;
 
 #[derive(Component, Clone)]
 pub struct AnimationState {

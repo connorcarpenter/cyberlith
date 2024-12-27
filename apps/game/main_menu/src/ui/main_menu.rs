@@ -11,9 +11,9 @@ use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
     logging::info,
     render::components::RenderLayers,
-    session::{components::Lobby, SessionClient},
     ui::UiManager,
 };
+use game_app_network::session::{components::Lobby, SessionClient};
 
 use game_app_common::AppState;
 

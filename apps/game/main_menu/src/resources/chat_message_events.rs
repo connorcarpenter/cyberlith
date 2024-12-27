@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::{entity::Entity, event::EventReader, prelude::Resource};
 
-use game_engine::session::{
+use game_app_network::session::{
     components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal},
     SessionInsertComponentEvent,
 };

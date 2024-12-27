@@ -10,16 +10,16 @@ use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
     logging::{info, warn},
-    session::{
-        channels,
-        components::{ChatMessage, User},
-        messages, SessionClient,
-    },
     social::{LobbyId, MessageId},
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         NodeActiveState, UiHandle, UiManager,
     },
+};
+use game_app_network::session::{
+    channels,
+    components::{ChatMessage, User},
+    messages, SessionClient,
 };
 
 use crate::{

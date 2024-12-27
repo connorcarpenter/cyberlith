@@ -12,10 +12,10 @@ use game_engine::{
     math::Quat,
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
-    world::{
-        components::{NextTilePosition, PhysicsController},
-        WorldClient,
-    },
+};
+use game_app_network::world::{
+    components::{NextTilePosition, PhysicsController},
+    WorldClient,
 };
 
 use crate::{

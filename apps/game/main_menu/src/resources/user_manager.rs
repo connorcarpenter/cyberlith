@@ -4,12 +4,12 @@ use bevy_ecs::{entity::Entity, event::EventWriter, prelude::Query, system::Resou
 
 use game_engine::{
     asset::AssetManager,
-    session::components::User,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         UiHandle, UiManager,
     },
 };
+use game_app_network::session::components::User;
 
 use crate::{
     resources::lobby_manager::LobbyManager,

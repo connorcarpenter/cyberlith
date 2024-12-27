@@ -1,23 +1,19 @@
 use std::sync::{Arc, RwLock};
 
-use bevy_app::{App, Plugin, Startup, Update};
+use bevy_app::{App, Plugin, Startup};
 use bevy_ecs::system::ResMut;
 use bevy_state::app::StatesPlugin;
 
 use asset_loader::AssetPlugin;
+use asset_cache::AssetCachePlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
-use kernel::http::CookieStore;
-use kernel::KernelPlugin;
+use kernel::{KernelPlugin, http::CookieStore};
 use render_api::RenderApiPlugin;
 use ui_render::UiRenderPlugin;
 use ui_runner::UiPlugin;
 
-use crate::{
-    asset_cache::{AssetCache, AssetLoadedEvent},
-    embedded_asset::handle_embedded_asset_event,
-    renderer::RendererPlugin,
-};
+use crate::renderer::RendererPlugin;
 
 pub struct EnginePlugin {
     cookie_store_opt: Option<Arc<RwLock<CookieStore>>>,
@@ -44,14 +40,9 @@ impl Plugin for EnginePlugin {
             .add_plugins(UiRenderPlugin)
             .add_plugins(FileSystemPlugin)
             .add_plugins(StatesPlugin)
+            .add_plugins(AssetCachePlugin)
             // startup system
-            .add_systems(Startup, engine_startup)
-            // asset cache stuff, todo: maybe refactor out?
-            .insert_resource(AssetCache::new("assets"))
-            .add_event::<AssetLoadedEvent>()
-            .add_systems(Update, AssetCache::handle_save_asset_tasks)
-            // embedded asset
-            .add_systems(Update, handle_embedded_asset_event);
+            .add_systems(Startup, engine_startup);
     }
 }
 

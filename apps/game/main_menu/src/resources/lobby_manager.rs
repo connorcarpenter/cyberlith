@@ -9,16 +9,16 @@ use bevy_ecs::{
 use game_engine::{
     asset::AssetManager,
     logging::info,
-    session::{
-        channels,
-        components::{Lobby, User},
-        messages, SessionClient,
-    },
     social::LobbyId,
     ui::{
         extensions::{ListUiExt, ListUiExtItem},
         UiHandle, UiManager,
     },
+};
+use game_app_network::session::{
+    channels,
+    components::{Lobby, User},
+    messages, SessionClient,
 };
 
 use crate::{

@@ -3,7 +3,7 @@ use bevy_ecs::{
     change_detection::ResMut, event::EventReader, prelude::Query, query::With, system::Res,
 };
 
-use game_engine::{
+use game_app_network::{
     naia::Tick,
     world::{
         behavior as shared_behavior,

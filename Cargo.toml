@@ -26,6 +26,7 @@ members = [
     "apps/game/main_menu",
     "apps/game/inworld",
     "apps/game/common",
+    "apps/game/network",
 
     ### Services ###
     # Redirector Server
@@ -119,6 +120,7 @@ members = [
     "crates/asset/loader",
     "crates/asset/render",
     "crates/asset/id",
+    "crates/asset/cache",
     # Http
     "crates/http/bevy_http_client",
     "crates/http/bevy_http_server",

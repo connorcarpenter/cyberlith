@@ -12,6 +12,8 @@ use game_engine::{
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
+};
+use game_app_network::{
     world::{
         // behavior as shared_behavior,
         components::{NextTilePosition, PhysicsController},
@@ -20,7 +22,7 @@ use game_engine::{
         WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
-    naia::sequence_greater_than,
+    naia::sequence_greater_than
 };
 
 use crate::{

@@ -4,7 +4,8 @@ use bevy_ecs::{
     prelude::Query,
 };
 
-use game_engine::{asset::AssetManager, session::components::User, ui::UiManager};
+use game_engine::{asset::AssetManager, ui::UiManager};
+use game_app_network::session::components::User;
 
 use crate::{
     resources::{lobby_manager::LobbyManager, user_manager::UserManager},

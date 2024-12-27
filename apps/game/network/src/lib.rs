@@ -1,8 +1,9 @@
+
 mod asset_cache_checker;
 mod asset_ref_processor;
 mod client_markers;
 mod connection_manager;
-mod networked_plugin;
+mod plugin;
 mod session_events;
 mod world_events;
 
@@ -75,4 +76,4 @@ pub mod session {
     pub use session_server_naia_proto::{channels, components, messages};
 }
 
-pub use networked_plugin::NetworkedEnginePlugin;
+pub use plugin::NetworkedEnginePlugin;

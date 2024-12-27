@@ -2,15 +2,11 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Update};
 
-use game_engine::{
-    http::CookieStore,
-    kernel::KernelApp,
-    render::{resources::WindowSettings, Draw},
-    NetworkedEnginePlugin,
-};
+use game_engine::{http::CookieStore, kernel::KernelApp, render::{resources::WindowSettings, Draw}, EnginePlugin};
 
 use game_app_common::CommonPlugin;
 use game_app_inworld::InWorldPlugin;
+use game_app_network::NetworkedEnginePlugin;
 
 #[cfg(feature = "no_odst")]
 use game_app_main_menu::MainMenuPlugin;
@@ -32,12 +28,13 @@ impl KernelApp for GameApp {
 
 impl Plugin for GameApp {
     fn build(&self, app: &mut App) {
-        let networked_engine_plugin = NetworkedEnginePlugin::new(self.cookie_store_opt.clone());
+        let engine_plugin = EnginePlugin::new(self.cookie_store_opt.clone());
 
         #[cfg(feature = "no_odst")]
         app.add_plugins(MainMenuPlugin);
 
-        app.add_plugins(networked_engine_plugin)
+        app
+            .add_plugins(engine_plugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Cyberlith".to_string(),
@@ -46,6 +43,7 @@ impl Plugin for GameApp {
                 ..Default::default()
             })
             .add_plugins(CommonPlugin)
+            .add_plugins(NetworkedEnginePlugin)
             .add_plugins(InWorldPlugin)
             // handle resizes
             .add_systems(Update, resize::handle_viewport_resize)

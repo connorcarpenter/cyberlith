@@ -4,15 +4,13 @@ use naia_bevy_client::{Client, ResponseSendKey};
 
 use session_server_naia_proto::messages::{LoadAssetRequest, LoadAssetResponse};
 
+use asset_cache::{AssetCache, AssetLoadedEvent};
 use asset_id::{AssetId, AssetType};
 use asset_loader::{AssetManager, AssetMetadataStore};
 use filesystem::{FileSystemManager, ReadResult, TaskKey};
 use ui_runner::UiManager;
 
-use crate::{
-    asset_cache::{AssetCache, AssetLoadedEvent},
-    networked::client_markers::Session,
-};
+use crate::client_markers::Session;
 
 type SessionClient<'a> = Client<'a, Session>;
 

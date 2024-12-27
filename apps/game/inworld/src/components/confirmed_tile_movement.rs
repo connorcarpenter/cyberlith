@@ -3,13 +3,13 @@ use bevy_ecs::prelude::Component;
 
 use game_engine::{
     logging::{warn, info},
-    naia::{Tick, sequence_greater_than},
-    world::{
-        components::{TileMovementType, PhysicsController, NextTilePosition, NetworkedMoveBuffer, MoveBuffer, TileMovement},
-        types::Direction, constants::TILE_SIZE
-    },
     math::Vec2
 };
+use game_app_network::{naia::{Tick, sequence_greater_than},
+                       world::{
+                           components::{TileMovementType, PhysicsController, NextTilePosition, NetworkedMoveBuffer, MoveBuffer, TileMovement},
+                           types::Direction, constants::TILE_SIZE
+                       }};
 
 use crate::{systems::world_events::process_tick, resources::TickTracker, components::{AnimationState, client_tile_movement::ClientTileMovement, RenderPosition}};
 

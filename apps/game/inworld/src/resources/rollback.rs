@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use bevy_ecs::{system::{Res, ResMut, Resource}, prelude::Query, entity::Entity};
 
-use game_engine::{logging::{warn}, world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}};
+use game_engine::logging::{warn};
+use game_app_network::{world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}};
 
 use crate::{resources::TickTracker, systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
 

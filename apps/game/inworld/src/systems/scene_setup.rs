@@ -12,8 +12,8 @@ use game_engine::{
         shapes,
     },
     storage::Storage,
-    world::constants::{TILE_COUNT, TILE_SIZE},
 };
+use game_app_network::world::constants::{TILE_COUNT, TILE_SIZE};
 
 const TILE_SCALE: f32 = (TILE_SIZE * 0.5) - 5.0;
 

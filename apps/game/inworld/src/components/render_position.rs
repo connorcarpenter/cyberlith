@@ -4,10 +4,9 @@ use bevy_ecs::component::Component;
 
 use game_engine::{
     math::Vec2,
-    naia::{sequence_less_than, GameInstant, Tick},
     time::Instant,
-    world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},
 };
+use game_app_network::{naia::{sequence_less_than, GameInstant, Tick}, world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient}};
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {

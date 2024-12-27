@@ -9,6 +9,7 @@ use bevy_ecs::{
     world::World,
 };
 
+use asset_cache::{AssetCache, AssetLoadedEvent};
 use asset_id::AssetId;
 use asset_loader::{AssetMetadataStore, TypedAssetId};
 use logging::info;
@@ -16,9 +17,7 @@ use logging::info;
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
 use crate::{
-    asset_cache::{AssetCache, AssetLoadedEvent},
-    networked::world_events::InsertAssetRefEvent,
-    world::WorldClient,
+    world::WorldClient, world_events::InsertAssetRefEvent,
 };
 
 type AssetProcessorId = TypeId;

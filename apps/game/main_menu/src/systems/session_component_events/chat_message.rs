@@ -5,12 +5,10 @@ use bevy_ecs::{
     prelude::Query,
 };
 
-use game_engine::{
-    logging::info,
-    session::{
-        components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby},
-        SessionClient, SessionInsertComponentEvent,
-    },
+use game_engine::logging::info;
+use game_app_network::session::{
+    components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby},
+    SessionClient, SessionInsertComponentEvent,
 };
 
 use crate::{

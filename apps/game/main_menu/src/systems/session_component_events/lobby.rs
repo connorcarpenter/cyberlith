@@ -6,13 +6,11 @@ use bevy_ecs::{
     system::Res,
 };
 
-use game_engine::{
-    logging::{info, warn},
-    session::{
-        components::{Lobby, LobbyMember},
-        SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,
-        SessionUpdateComponentEvent,
-    },
+use game_engine::logging::{info, warn};
+use game_app_network::session::{
+    components::{Lobby, LobbyMember},
+    SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,
+    SessionUpdateComponentEvent,
 };
 
 use crate::{

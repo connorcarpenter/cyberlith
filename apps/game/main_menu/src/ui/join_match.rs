@@ -8,12 +8,12 @@ use game_engine::{
     asset::AssetManager,
     input::{InputEvent, Key},
     logging::info,
-    session::{
-        channels,
-        components::{Lobby, User},
-        messages, SessionClient,
-    },
     ui::{UiHandle, UiManager},
+};
+use game_app_network::session::{
+    channels,
+    components::{Lobby, User},
+    messages, SessionClient,
 };
 
 use crate::{

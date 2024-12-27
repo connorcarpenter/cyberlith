@@ -5,8 +5,7 @@ use bevy_ecs::{
 };
 use bevy_state::condition::in_state;
 
-use game_engine::naia::ReceiveEvents;
-
+use game_app_network::naia::ReceiveEvents;
 use game_app_common::AppState;
 
 use crate::{

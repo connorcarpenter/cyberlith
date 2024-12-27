@@ -7,9 +7,9 @@ use bevy_ecs::{
 
 use game_engine::{
     input::{GamepadRumbleIntensity, Input, RumbleManager},
-    session::SessionClient,
     ui::{UiHandle, UiManager},
 };
+use game_app_network::session::SessionClient;
 
 use crate::{
     resources::lobby_manager::LobbyManager,
