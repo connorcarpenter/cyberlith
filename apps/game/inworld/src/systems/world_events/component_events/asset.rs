@@ -5,6 +5,7 @@ use game_engine::{
     logging::info,
     time::Instant,
 };
+
 use game_app_network::world::{components::Main, WorldInsertAssetRefEvent};
 
 use crate::systems::world_events::PredictionEvents;

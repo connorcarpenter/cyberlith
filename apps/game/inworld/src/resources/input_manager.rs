@@ -12,8 +12,11 @@ use game_engine::{
     input::{Input, Key},
     logging::{info, warn},
 };
-use game_app_network::{    naia::{CommandHistory, GameInstant, Tick},
-                           world::{messages::PlayerCommands, types::Direction, WorldClient}};
+
+use game_app_network::{
+    naia::{CommandHistory, GameInstant, Tick},
+    world::{messages::PlayerCommands, types::Direction, WorldClient},
+};
 
 use crate::{components::AnimationState, resources::Global};
 

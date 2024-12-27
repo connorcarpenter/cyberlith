@@ -4,7 +4,12 @@ use naia_bevy_server::Tick;
 
 use logging::info;
 
-use world_server_naia_proto::{types::Direction, components::{PhysicsController, NetworkedMoveBuffer, MoveBuffer, NextTilePosition, TileMovement}};
+use world_server_naia_proto::{
+    components::{
+        MoveBuffer, NetworkedMoveBuffer, NextTilePosition, PhysicsController, TileMovement,
+    },
+    types::Direction,
+};
 
 #[derive(Component)]
 pub struct ServerTileMovement {

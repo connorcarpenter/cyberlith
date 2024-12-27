@@ -24,7 +24,10 @@ impl TickSkipper {
                 return;
             }
             if sequence_greater_than(*front_tick, tick) {
-                panic!("TickSkipper::queue_skipped_tick() - received out of order tick: {:?}", tick);
+                panic!(
+                    "TickSkipper::queue_skipped_tick() - received out of order tick: {:?}",
+                    tick
+                );
             }
         }
         self.skipped_ticks.push_front(tick);

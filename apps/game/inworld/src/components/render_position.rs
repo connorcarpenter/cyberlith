@@ -2,11 +2,12 @@ use std::collections::VecDeque;
 
 use bevy_ecs::component::Component;
 
-use game_engine::{
-    math::Vec2,
-    time::Instant,
+use game_engine::{math::Vec2, time::Instant};
+
+use game_app_network::{
+    naia::{sequence_less_than, GameInstant, Tick},
+    world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},
 };
-use game_app_network::{naia::{sequence_less_than, GameInstant, Tick}, world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient}};
 
 #[derive(Component, Clone)]
 pub struct RenderPosition {
@@ -37,7 +38,6 @@ impl RenderPosition {
     }
 
     pub fn recv_position(&mut self, position: Vec2, tick: Tick) {
-
         let mut back_tick_opt = None;
 
         // make sure ticks are in order
@@ -114,12 +114,7 @@ impl RenderPosition {
                 .tick_to_instant(*next_tick)
                 .expect("client not initialized?");
 
-            (
-                *prev_pos,
-                prev_instant,
-                *next_pos,
-                next_instant,
-            )
+            (*prev_pos, prev_instant, *next_pos, next_instant)
         };
 
         let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;

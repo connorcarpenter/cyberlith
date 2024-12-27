@@ -1,6 +1,6 @@
 use bevy_ecs::{
-    entity::Entity,
-    change_detection::ResMut, event::EventReader, prelude::Query, query::With, system::Res,
+    change_detection::ResMut, entity::Entity, event::EventReader, prelude::Query, query::With,
+    system::Res,
 };
 
 use game_app_network::{
@@ -19,7 +19,7 @@ use crate::{
         AnimationState, ClientTileMovement, Confirmed, ConfirmedTileMovement, Predicted,
         PredictedTileMovement, RenderPosition, TickSkipper,
     },
-    resources::{Global, TickTracker, InputManager},
+    resources::{Global, InputManager, TickTracker},
 };
 
 pub fn client_tick_events(
@@ -153,7 +153,10 @@ pub fn server_tick_events(
         ) in position_q.iter_mut()
         {
             if confirmed_tick_skipper.use_skipped_tick(server_tick) {
-                panic!("entity: {:?}, skipping tick: {:?}", confirmed_entity, server_tick);
+                panic!(
+                    "entity: {:?}, skipping tick: {:?}",
+                    confirmed_entity, server_tick
+                );
                 // continue; // uncomment this to skip processing
             } else {
                 // info!("entity: {:?}, processing tick: {:?}", confirmed_entity, server_tick);

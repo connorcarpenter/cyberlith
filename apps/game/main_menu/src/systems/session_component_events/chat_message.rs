@@ -6,6 +6,7 @@ use bevy_ecs::{
 };
 
 use game_engine::logging::info;
+
 use game_app_network::session::{
     components::{ChatMessage, ChatMessageGlobal, ChatMessageLocal, Lobby},
     SessionClient, SessionInsertComponentEvent,

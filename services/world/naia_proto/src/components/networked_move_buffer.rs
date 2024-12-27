@@ -1,9 +1,9 @@
 use bevy_ecs::prelude::Component;
 
-use naia_bevy_shared::{Serde, Property, Replicate, SignedVariableInteger};
 use math::Vec2;
+use naia_bevy_shared::{Property, Replicate, Serde, SignedVariableInteger};
 
-use crate::{constants::TILE_SIZE, types::Direction, components::PhysicsController};
+use crate::{components::PhysicsController, constants::TILE_SIZE, types::Direction};
 
 // This is networked
 
@@ -25,11 +25,7 @@ impl NetworkedMoveBuffer {
         Some(self.buffered.as_ref().unwrap().get())
     }
 
-    pub fn set(
-        &mut self,
-        physics: &PhysicsController,
-        buffered: Option<Direction>
-    ) {
+    pub fn set(&mut self, physics: &PhysicsController, buffered: Option<Direction>) {
         if buffered.is_none() {
             *self.buffered = None;
             return;
@@ -53,7 +49,6 @@ struct BufferedMove {
 
 impl BufferedMove {
     fn new(physics: &PhysicsController, direction: Direction) -> Self {
-
         let position = physics.position();
         let tile_x = (position.x / TILE_SIZE).round() as i16;
         let tile_y = (position.y / TILE_SIZE).round() as i16;
@@ -82,7 +77,10 @@ impl BufferedMove {
         let tile_position_y = self.tile_y as f32 * TILE_SIZE;
         let position_delta_x = self.position_delta_x.get() as f32 / 100.0;
         let position_delta_y = self.position_delta_y.get() as f32 / 100.0;
-        let position = Vec2::new(tile_position_x + position_delta_x, tile_position_y + position_delta_y);
+        let position = Vec2::new(
+            tile_position_x + position_delta_x,
+            tile_position_y + position_delta_y,
+        );
 
         let velocity_x = self.velocity_x.get() as f32 / 100.0;
         let velocity_y = self.velocity_y.get() as f32 / 100.0;

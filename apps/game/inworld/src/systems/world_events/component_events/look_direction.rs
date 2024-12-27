@@ -1,9 +1,7 @@
 use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Query};
 
-use game_engine::{
-    logging::info,
-    time::Instant,
-};
+use game_engine::{logging::info, time::Instant};
+
 use game_app_network::world::{
     components::LookDirection, WorldInsertComponentEvent, WorldRemoveComponentEvent,
     WorldUpdateComponentEvent,

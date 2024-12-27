@@ -2,7 +2,8 @@ use naia_bevy_shared::Tick;
 
 use crate::{
     components::{
-        MoveBuffer, LookDirection, PhysicsController, ProcessTickResult, TileMovement, TileMovementType,
+        LookDirection, MoveBuffer, PhysicsController, ProcessTickResult, TileMovement,
+        TileMovementType,
     },
     messages::PlayerCommands,
     types::Direction,
@@ -19,7 +20,7 @@ pub fn process_tick(
 ) -> (
     ProcessTickResult,
     Option<(i16, i16)>,
-    Option<Option<Direction>>
+    Option<Option<Direction>>,
 ) {
     let new_look_direction = {
         if look_direction_opt.is_none() {
@@ -61,12 +62,8 @@ pub fn process_result(
     tile_movement: &mut TileMovement,
     move_buffer: &mut MoveBuffer,
     physics: &mut PhysicsController,
-    result: ProcessTickResult
-) -> (
-    Option<(i16, i16)>,
-    Option<Option<Direction>>
-) {
-
+    result: ProcessTickResult,
+) -> (Option<(i16, i16)>, Option<Option<Direction>>) {
     match result {
         ProcessTickResult::ShouldStop(tile_x, tile_y) => {
             if move_buffer.has_buffered_move() {
@@ -82,15 +79,12 @@ pub fn process_result(
                 let next_tile_x = tile_x + dx as i16;
                 let next_tile_y = tile_y + dy as i16;
 
-                return (
-                    Some((next_tile_x, next_tile_y)),
-                    Some(None)
-                );
+                return (Some((next_tile_x, next_tile_y)), Some(None));
             } else {
                 tile_movement.set_stopped(tile_x, tile_y);
                 physics.set_velocity(0.0, 0.0, false);
             }
-        },
+        }
         ProcessTickResult::DoNothing => {}
     }
 

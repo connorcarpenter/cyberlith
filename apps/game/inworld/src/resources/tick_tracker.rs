@@ -11,7 +11,9 @@ pub struct TickTracker {
 
 impl Default for TickTracker {
     fn default() -> Self {
-        Self { last_processed_server_tick_opt: None }
+        Self {
+            last_processed_server_tick_opt: None,
+        }
     }
 }
 

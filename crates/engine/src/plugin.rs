@@ -4,11 +4,11 @@ use bevy_app::{App, Plugin, Startup};
 use bevy_ecs::system::ResMut;
 use bevy_state::app::StatesPlugin;
 
-use asset_loader::AssetPlugin;
 use asset_cache::AssetCachePlugin;
+use asset_loader::AssetPlugin;
 use filesystem::FileSystemPlugin;
 use input::{Input, InputPlugin};
-use kernel::{KernelPlugin, http::CookieStore};
+use kernel::{http::CookieStore, KernelPlugin};
 use render_api::RenderApiPlugin;
 use ui_render::UiRenderPlugin;
 use ui_runner::UiPlugin;

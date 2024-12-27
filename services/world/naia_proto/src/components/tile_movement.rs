@@ -72,11 +72,11 @@ impl TileMovement {
             TileMovementState::Stopped(state) => {
                 state.tile_x = tx;
                 state.tile_y = ty;
-            },
+            }
             TileMovementState::Moving(state) => {
                 state.to_tile_x = tx;
                 state.to_tile_y = ty;
-            },
+            }
         }
     }
 
@@ -132,7 +132,8 @@ impl TileMovement {
             panic!("Expected done state");
         }
 
-        self.state = TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
+        self.state =
+            TileMovementState::Moving(TileMovementMovingState::new(tile_x, tile_y, move_dir));
     }
 
     // call on each tick
@@ -143,7 +144,6 @@ impl TileMovement {
         tick: Tick,
         is_prediction: bool,
     ) -> ProcessTickResult {
-
         let output = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
             TileMovementState::Moving(state) => state.process_tick(has_future, physics),
@@ -184,9 +184,7 @@ impl TileMovement {
                 return (Some((next_tile_x, next_tile_y)), None);
             }
             TileMovementState::Moving(state) => {
-
                 if state.can_buffer_movement(physics) {
-
                     let prev_move = move_buffer.buffered_move();
 
                     state.buffer_movement(move_buffer, tick, direction);
@@ -248,9 +246,7 @@ impl TileMovementStoppedState {
     }
 
     // call on each tick
-    fn process_tick(
-        &mut self,
-    ) -> ProcessTickResult {
+    fn process_tick(&mut self) -> ProcessTickResult {
         return ProcessTickResult::DoNothing;
     }
 
@@ -299,7 +295,12 @@ impl TileMovementMovingState {
     }
 
     pub fn tile_positions(&self) -> (i16, i16, i16, i16) {
-        (self.from_tile_x, self.from_tile_y, self.to_tile_x, self.to_tile_y)
+        (
+            self.from_tile_x,
+            self.from_tile_y,
+            self.to_tile_x,
+            self.to_tile_y,
+        )
     }
 
     pub fn target_tile_position(&self) -> (i16, i16) {
@@ -338,7 +339,6 @@ impl TileMovementMovingState {
             physics.set_tile_position(self.to_tile_x, self.to_tile_y, false);
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
-
         } else {
             physics.step();
 
@@ -352,7 +352,12 @@ impl TileMovementMovingState {
         return target_distance < TILE_SIZE * 0.5; // TODO: this should be better
     }
 
-    pub(crate) fn buffer_movement(&mut self, move_buffer: &mut MoveBuffer, _tick: Tick, move_dir: Direction) {
+    pub(crate) fn buffer_movement(
+        &mut self,
+        move_buffer: &mut MoveBuffer,
+        _tick: Tick,
+        move_dir: Direction,
+    ) {
         // info!(
         //     "buffering command for Tick: {:?}, MoveDir: {:?}",
         //     tick, move_dir

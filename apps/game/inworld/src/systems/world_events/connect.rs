@@ -6,8 +6,6 @@ use bevy_ecs::{
 };
 use bevy_state::state::NextState;
 
-use game_app_common::AppState;
-
 use game_engine::{
     logging::info,
     render::{
@@ -17,6 +15,8 @@ use game_engine::{
     storage::Storage,
     ui::UiManager,
 };
+
+use game_app_common::AppState;
 use game_app_network::world::WorldConnectEvent;
 
 use crate::systems::scene_setup;

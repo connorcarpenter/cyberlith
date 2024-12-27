@@ -2,7 +2,12 @@ use std::sync::{Arc, RwLock};
 
 use bevy_app::{App, Plugin, Update};
 
-use game_engine::{http::CookieStore, kernel::KernelApp, render::{resources::WindowSettings, Draw}, EnginePlugin};
+use game_engine::{
+    http::CookieStore,
+    kernel::KernelApp,
+    render::{resources::WindowSettings, Draw},
+    EnginePlugin,
+};
 
 use game_app_common::CommonPlugin;
 use game_app_inworld::InWorldPlugin;
@@ -33,8 +38,7 @@ impl Plugin for GameApp {
         #[cfg(feature = "no_odst")]
         app.add_plugins(MainMenuPlugin);
 
-        app
-            .add_plugins(engine_plugin)
+        app.add_plugins(engine_plugin)
             // Add Window Settings Plugin
             .insert_resource(WindowSettings {
                 title: "Cyberlith".to_string(),

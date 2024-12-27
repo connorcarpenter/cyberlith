@@ -1,11 +1,11 @@
 use bevy_ecs::component::Component;
 
-use naia_bevy_shared::Tick;
 use logging::warn;
 use math::Vec2;
+use naia_bevy_shared::Tick;
 
 use crate::{
-    components::{NextTilePosition, velocity::Velocity},
+    components::{velocity::Velocity, NextTilePosition},
     constants::{
         MOVEMENT_ACCELERATION, MOVEMENT_DECELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_VELOCITY_MIN,
         TILE_SIZE,
@@ -38,8 +38,15 @@ impl PhysicsController {
         if check_diff {
             let distance = self.position.distance(new_position);
             if distance > 0.0 {
-                warn!("set_position({:?}, {:?}): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
-                    x, y, self.position.x, self.position.y, new_position.x, new_position.y, distance,
+                warn!(
+                    "set_position({:?}, {:?}): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
+                    x,
+                    y,
+                    self.position.x,
+                    self.position.y,
+                    new_position.x,
+                    new_position.y,
+                    distance,
                 );
             }
         }
@@ -53,8 +60,15 @@ impl PhysicsController {
         if check_diff {
             let distance = self.position.distance(new_position);
             if distance > 0.0 {
-                warn!("set_tile_position({:?}, {:?}): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
-                    tile_x, tile_y, self.position.x, self.position.y, new_position.x, new_position.y, distance,
+                warn!(
+                    "set_tile_position({:?}, {:?}): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
+                    tile_x,
+                    tile_y,
+                    self.position.x,
+                    self.position.y,
+                    new_position.x,
+                    new_position.y,
+                    distance,
                 );
             }
         }
@@ -73,7 +87,8 @@ impl PhysicsController {
         if check_diff {
             let distance = old_velocity.distance(new_velocity);
             if distance > 0.0 {
-                warn!("set_velocity(): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
+                warn!(
+                    "set_velocity(): ({:?}, {:?}) -> ({:?}, {:?}), distance: {:?}",
                     old_velocity.x, old_velocity.y, new_velocity.x, new_velocity.y, distance,
                 );
             }
@@ -137,4 +152,3 @@ impl PhysicsController {
         self.tick_log(tick, true);
     }
 }
-

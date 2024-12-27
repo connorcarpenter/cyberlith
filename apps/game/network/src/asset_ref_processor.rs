@@ -16,9 +16,7 @@ use logging::info;
 
 use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, Main};
 
-use crate::{
-    world::WorldClient, world_events::InsertAssetRefEvent,
-};
+use crate::{world::WorldClient, world_events::InsertAssetRefEvent};
 
 type AssetProcessorId = TypeId;
 

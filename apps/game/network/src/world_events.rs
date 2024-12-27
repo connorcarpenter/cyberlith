@@ -7,6 +7,10 @@ use bevy_ecs::{
     system::{Res, SystemState},
 };
 
+use asset_cache::AssetCache;
+use asset_id::{AssetId, AssetType};
+use asset_loader::AssetMetadataStore;
+use logging::info;
 use naia_bevy_client::{
     component_events::{
         component_events_startup, get_component_events, AppRegisterComponentEvents,
@@ -14,16 +18,16 @@ use naia_bevy_client::{
     },
     events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent},
 };
-use asset_cache::AssetCache;
-use asset_id::{AssetId, AssetType};
-use asset_loader::AssetMetadataStore;
-use logging::info;
 
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, NetworkedMoveBuffer, LookDirection, Main, NextTilePosition};
+use world_server_naia_proto::components::{
+    Alt1, AssetEntry, AssetRef, LookDirection, Main, NetworkedMoveBuffer, NextTilePosition,
+};
 
 use crate::{
-    client_markers::World, connection_manager::ConnectionManager,
-    world::{WorldClient, WorldDespawnEntityEvent, WorldSpawnEntityEvent}, asset_ref_processor::{AssetProcessor, AssetRefProcessor}
+    asset_ref_processor::{AssetProcessor, AssetRefProcessor},
+    client_markers::World,
+    connection_manager::ConnectionManager,
+    world::{WorldClient, WorldDespawnEntityEvent, WorldSpawnEntityEvent},
 };
 
 pub type WorldInsertComponentEvent<C> = InsertComponentEvent<World, C>;

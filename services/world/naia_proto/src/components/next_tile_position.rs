@@ -14,7 +14,12 @@ pub struct NextTilePosition {
 
 impl NextTilePosition {
     pub fn new(x: i16, y: i16) -> Self {
-        Self::new_complete(x, y, SignedVariableInteger::new(0), SignedVariableInteger::new(0))
+        Self::new_complete(
+            x,
+            y,
+            SignedVariableInteger::new(0),
+            SignedVariableInteger::new(0),
+        )
     }
 
     pub fn x(&self) -> i16 {
@@ -33,13 +38,7 @@ impl NextTilePosition {
         self.velocity_y.get() as f32 / 100.0
     }
 
-    pub fn set(
-        &mut self,
-        x: i16,
-        y: i16,
-        velocity_x: f32,
-        velocity_y: f32,
-    ) {
+    pub fn set(&mut self, x: i16, y: i16, velocity_x: f32, velocity_y: f32) {
         *self.x = x;
         *self.y = y;
 

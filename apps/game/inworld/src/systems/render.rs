@@ -12,6 +12,7 @@ use game_engine::{
     },
     time::Instant,
 };
+
 use game_app_network::world::WorldClient;
 
 use crate::{
@@ -71,7 +72,8 @@ pub fn draw_units(
             // check if this is ours, if so, we don't need to render it
             if let Some(owned_entity) = &global.owned_entity {
                 if owned_entity.confirmed == entity {
-                    continue;
+                    // TODO: uncomment below line to avoid rendering the confirmed position of our own character
+                    // continue;
                 }
             }
         }
@@ -90,7 +92,13 @@ pub fn draw_units(
             let (interp_position, velocity) = render_position.render(&client, &now);
 
             // TODO: put this in a system
-            anim_state.update(&now, &asset_manager, animated_model_handle, interp_position, velocity);
+            anim_state.update(
+                &now,
+                &asset_manager,
+                animated_model_handle,
+                interp_position,
+                velocity,
+            );
 
             transform.translation.x = interp_position.x;
             transform.translation.y = interp_position.y;

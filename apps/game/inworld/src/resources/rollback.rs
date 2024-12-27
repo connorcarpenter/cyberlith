@@ -1,11 +1,27 @@
 use std::collections::HashMap;
 
-use bevy_ecs::{system::{Res, ResMut, Resource}, prelude::Query, entity::Entity};
+use bevy_ecs::{
+    entity::Entity,
+    prelude::Query,
+    system::{Res, ResMut, Resource},
+};
 
-use game_engine::logging::{warn};
-use game_app_network::{world::{components::{PhysicsController, TileMovementType}, WorldClient}, naia::{sequence_greater_than, Tick}};
+use game_engine::logging::warn;
 
-use crate::{resources::TickTracker, systems::world_events::process_tick, resources::{Global, InputManager}, components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition}};
+use game_app_network::{
+    naia::{sequence_greater_than, Tick},
+    world::{
+        components::{PhysicsController, TileMovementType},
+        WorldClient,
+    },
+};
+
+use crate::{
+    components::{AnimationState, ConfirmedTileMovement, PredictedTileMovement, RenderPosition},
+    resources::TickTracker,
+    resources::{Global, InputManager},
+    systems::world_events::process_tick,
+};
 
 #[derive(Resource)]
 pub struct RollbackManager {
@@ -21,7 +37,6 @@ impl Default for RollbackManager {
 }
 
 impl RollbackManager {
-
     pub fn add_events(&mut self, events: HashMap<Entity, Tick>) {
         for (entity, tick) in events {
             if self.events.contains_key(&entity) {
@@ -44,7 +59,11 @@ impl RollbackManager {
         mut input_manager: ResMut<InputManager>,
         mut predicted_tile_movement_q: Query<&mut PredictedTileMovement>,
         mut confirmed_tile_movement_q: Query<&mut ConfirmedTileMovement>,
-        mut components_q: Query<(&mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
+        mut components_q: Query<(
+            &mut PhysicsController,
+            &mut RenderPosition,
+            &mut AnimationState,
+        )>,
     ) {
         let events = std::mem::take(&mut me.events);
 
@@ -69,7 +88,8 @@ impl RollbackManager {
         //     server_tick
         // );
 
-        let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get_mut(confirmed_entity) else {
+        let Ok(confirmed_tile_movement) = confirmed_tile_movement_q.get_mut(confirmed_entity)
+        else {
             panic!(
                 "failed to get confirmed tile movement for entity: {:?}",
                 confirmed_entity
@@ -96,7 +116,10 @@ impl RollbackManager {
         if let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() {
             if current_tick != last_processed_server_tick {
                 // TODO: just should be a warn, also do we need this?
-                panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, current_tick);
+                panic!(
+                    "Using last processed server tick: {:?}, instead of previous tick: {:?}",
+                    last_processed_server_tick, current_tick
+                );
             }
             current_tick = last_processed_server_tick;
         }
@@ -159,7 +182,8 @@ impl RollbackManager {
             // process movement
             let player_command = input_manager.pop_incoming_command(command_tick);
 
-            let predicted_tile_movement_2: &mut PredictedTileMovement = &mut predicted_tile_movement;
+            let predicted_tile_movement_2: &mut PredictedTileMovement =
+                &mut predicted_tile_movement;
             process_tick(
                 TileMovementType::ClientPredicted,
                 command_tick,

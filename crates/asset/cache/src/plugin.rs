@@ -1,7 +1,9 @@
-
 use bevy_app::{App, Plugin, Update};
 
-use crate::{embedded_asset::handle_embedded_asset_event, asset_cache::{AssetCache, AssetLoadedEvent}};
+use crate::{
+    asset_cache::{AssetCache, AssetLoadedEvent},
+    embedded_asset::handle_embedded_asset_event,
+};
 
 pub struct AssetCachePlugin;
 

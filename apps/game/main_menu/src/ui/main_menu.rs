@@ -13,9 +13,9 @@ use game_engine::{
     render::components::RenderLayers,
     ui::UiManager,
 };
-use game_app_network::session::{components::Lobby, SessionClient};
 
 use game_app_common::AppState;
+use game_app_network::session::{components::Lobby, SessionClient};
 
 use crate::{
     resources::{

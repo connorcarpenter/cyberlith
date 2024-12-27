@@ -1,4 +1,3 @@
-
 use bevy_app::{App, Plugin, Startup, Update};
 
 use naia_bevy_client::{ClientConfig as NaiaClientConfig, Plugin as NaiaClientPlugin};
@@ -19,25 +18,24 @@ pub struct NetworkedEnginePlugin;
 
 impl Plugin for NetworkedEnginePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_plugins(NaiaClientPlugin::<Session>::new(
-                NaiaClientConfig::default(),
-                session_server_naia_protocol(),
-            ))
-            .add_plugins(NaiaClientPlugin::<World>::new(
-                NaiaClientConfig::default(),
-                world_server_naia_protocol(),
-            ))
-            // connection manager stuff, maybe refactor out into a plugin?
-            .init_resource::<ConnectionManager>()
-            .add_systems(Update, ConnectionManager::handle_connection)
-            // asset ref processing stuff
-            .init_resource::<AssetRefProcessor>()
-            .add_systems(Startup, AssetRefProcessor::init_asset_loaded_events)
-            .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
-            .init_resource::<AssetCacheChecker>()
-            .add_systems(Update, AssetCacheChecker::handle_load_asset_tasks)
-            .add_plugins(SessionEventsPlugin)
-            .add_plugins(WorldEventsPlugin);
+        app.add_plugins(NaiaClientPlugin::<Session>::new(
+            NaiaClientConfig::default(),
+            session_server_naia_protocol(),
+        ))
+        .add_plugins(NaiaClientPlugin::<World>::new(
+            NaiaClientConfig::default(),
+            world_server_naia_protocol(),
+        ))
+        // connection manager stuff, maybe refactor out into a plugin?
+        .init_resource::<ConnectionManager>()
+        .add_systems(Update, ConnectionManager::handle_connection)
+        // asset ref processing stuff
+        .init_resource::<AssetRefProcessor>()
+        .add_systems(Startup, AssetRefProcessor::init_asset_loaded_events)
+        .add_systems(Update, AssetRefProcessor::handle_asset_loaded_events)
+        .init_resource::<AssetCacheChecker>()
+        .add_systems(Update, AssetCacheChecker::handle_load_asset_tasks)
+        .add_plugins(SessionEventsPlugin)
+        .add_plugins(WorldEventsPlugin);
     }
 }

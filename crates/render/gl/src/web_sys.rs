@@ -4,10 +4,10 @@ use js_sys::{self, Array};
 use slotmap::{new_key_type, SlotMap};
 
 use web_sys::{
-    self, HtmlCanvasElement, HtmlImageElement, HtmlVideoElement, ImageBitmap,
+    self, HtmlCanvasElement, HtmlImageElement, HtmlVideoElement, ImageBitmap, VideoFrame,
     WebGl2RenderingContext, WebGlBuffer, WebGlFramebuffer, WebGlProgram, WebGlQuery,
     WebGlRenderbuffer, WebGlSampler, WebGlShader, WebGlSync, WebGlTexture, WebGlTransformFeedback,
-    WebGlUniformLocation, WebGlVertexArrayObject, VideoFrame
+    WebGlUniformLocation, WebGlVertexArrayObject,
 };
 
 use super::*;

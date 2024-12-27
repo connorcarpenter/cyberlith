@@ -21,8 +21,8 @@ use session_server_naia_proto::components::{
 };
 
 use crate::{
-    connection_manager::ConnectionManager,
     client_markers::Session,
+    connection_manager::ConnectionManager,
     session::{SessionDespawnEntityEvent, SessionErrorEvent, SessionSpawnEntityEvent},
 };
 

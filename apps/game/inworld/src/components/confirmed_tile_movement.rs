@@ -1,17 +1,27 @@
-
 use bevy_ecs::prelude::Component;
 
 use game_engine::{
-    logging::{warn, info},
-    math::Vec2
+    logging::{info, warn},
+    math::Vec2,
 };
-use game_app_network::{naia::{Tick, sequence_greater_than},
-                       world::{
-                           components::{TileMovementType, PhysicsController, NextTilePosition, NetworkedMoveBuffer, MoveBuffer, TileMovement},
-                           types::Direction, constants::TILE_SIZE
-                       }};
 
-use crate::{systems::world_events::process_tick, resources::TickTracker, components::{AnimationState, client_tile_movement::ClientTileMovement, RenderPosition}};
+use game_app_network::{
+    naia::{sequence_greater_than, Tick},
+    world::{
+        components::{
+            MoveBuffer, NetworkedMoveBuffer, NextTilePosition, PhysicsController, TileMovement,
+            TileMovementType,
+        },
+        constants::TILE_SIZE,
+        types::Direction,
+    },
+};
+
+use crate::{
+    components::{client_tile_movement::ClientTileMovement, AnimationState, RenderPosition},
+    resources::TickTracker,
+    systems::world_events::process_tick,
+};
 
 #[derive(Component, Clone)]
 pub struct ConfirmedTileMovement {
@@ -42,10 +52,17 @@ impl ConfirmedTileMovement {
         render_position: &mut RenderPosition,
         animation_state: &mut AnimationState,
     ) {
-        let (next_velocity_x, next_velocity_y) = (next_tile_position.velocity_x(), next_tile_position.velocity_y());
+        let (next_velocity_x, next_velocity_y) = (
+            next_tile_position.velocity_x(),
+            next_tile_position.velocity_y(),
+        );
         info!(
             "Recv NextTilePosition. Tick: {:?}, Next Tile: ({:?}, {:?}), Velocity: ({:?}, {:?})",
-            update_tick, next_tile_position.x(), next_tile_position.y(), next_velocity_x, next_velocity_y
+            update_tick,
+            next_tile_position.x(),
+            next_tile_position.y(),
+            next_velocity_x,
+            next_velocity_y
         );
 
         physics.set_velocity(next_velocity_x, next_velocity_y, true);
@@ -57,7 +74,9 @@ impl ConfirmedTileMovement {
                 let stopped_state = self.tile_movement.as_stopped_mut();
                 let (current_tile_x, current_tile_y) = stopped_state.tile_position();
                 if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
-                    panic!("Unexpected! Current tile position is the same as the next tile position");
+                    panic!(
+                        "Unexpected! Current tile position is the same as the next tile position"
+                    );
                 } else {
                     let (new_current_tile_x, new_current_tile_y, new_move_dir) = {
                         let dx = (next_tile_x - current_tile_x) as i8;
@@ -72,8 +91,10 @@ impl ConfirmedTileMovement {
                             );
 
                             pathfind_to_tile(
-                                current_tile_x, current_tile_y,
-                                next_tile_x, next_tile_y,
+                                current_tile_x,
+                                current_tile_y,
+                                next_tile_x,
+                                next_tile_y,
                             )
                         }
                     };
@@ -84,22 +105,36 @@ impl ConfirmedTileMovement {
                 // Is Moving
                 let moving_state = self.tile_movement.as_moving();
 
-                let (current_from_tile_x, current_from_tile_y, current_to_tile_x, current_to_tile_y) = moving_state.tile_positions();
+                let (
+                    current_from_tile_x,
+                    current_from_tile_y,
+                    current_to_tile_x,
+                    current_to_tile_y,
+                ) = moving_state.tile_positions();
                 let interpolation: f32 = {
                     let current_position = physics.position();
-                    let from_position = Vec2::new(current_from_tile_x as f32 * TILE_SIZE, current_from_tile_y as f32 * TILE_SIZE);
-                    let to_position = Vec2::new(current_to_tile_x as f32 * TILE_SIZE, current_to_tile_y as f32 * TILE_SIZE);
+                    let from_position = Vec2::new(
+                        current_from_tile_x as f32 * TILE_SIZE,
+                        current_from_tile_y as f32 * TILE_SIZE,
+                    );
+                    let to_position = Vec2::new(
+                        current_to_tile_x as f32 * TILE_SIZE,
+                        current_to_tile_y as f32 * TILE_SIZE,
+                    );
                     let from_dis = current_position.distance(from_position);
                     let to_dis = current_position.distance(to_position);
                     let total_dis = from_dis + to_dis;
                     from_dis / total_dis
                 };
-                let (next_to_tile_x, next_to_tile_y) = (next_tile_position.x(), next_tile_position.y());
+                let (next_to_tile_x, next_to_tile_y) =
+                    (next_tile_position.x(), next_tile_position.y());
                 let (next_from_tile_x, next_from_tile_y, next_move_dir) = {
                     let (next_from_tile_x, next_from_tile_y) = if interpolation < 0.5 {
                         (current_from_tile_x, current_from_tile_y)
                     } else {
-                        if current_to_tile_x == next_to_tile_x && current_to_tile_y == next_to_tile_y {
+                        if current_to_tile_x == next_to_tile_x
+                            && current_to_tile_y == next_to_tile_y
+                        {
                             // The mover is already moving to the next tile from the correct tile
                             (current_from_tile_x, current_from_tile_y)
                         } else {
@@ -118,13 +153,16 @@ impl ConfirmedTileMovement {
                         );
 
                         pathfind_to_tile(
-                            next_from_tile_x, next_from_tile_y,
-                            next_to_tile_x, next_to_tile_y
+                            next_from_tile_x,
+                            next_from_tile_y,
+                            next_to_tile_x,
+                            next_to_tile_y,
                         )
                     }
                 };
 
-                self.tile_movement.set_stopped(next_from_tile_x, next_from_tile_y);
+                self.tile_movement
+                    .set_stopped(next_from_tile_x, next_from_tile_y);
                 (next_from_tile_x, next_from_tile_y, next_move_dir)
             }
         };
@@ -139,7 +177,13 @@ impl ConfirmedTileMovement {
 
         render_position.recv_position(physics.position(), update_tick);
 
-        self.handle_late_update(tick_tracker, update_tick, physics, render_position, animation_state);
+        self.handle_late_update(
+            tick_tracker,
+            update_tick,
+            physics,
+            render_position,
+            animation_state,
+        );
     }
 
     // returns whether or not to rollback
@@ -154,7 +198,8 @@ impl ConfirmedTileMovement {
     ) -> bool {
         info!(
             "Recv NetworkedMoveBuffer. Tick: {:?}, Value: {:?}",
-            update_tick, net_move_buffer.get()
+            update_tick,
+            net_move_buffer.get()
         );
 
         let updated_value = net_move_buffer.get();
@@ -179,7 +224,13 @@ impl ConfirmedTileMovement {
 
         render_position.recv_position(physics.position(), update_tick);
 
-        self.handle_late_update(tick_tracker, update_tick, physics, render_position, animation_state);
+        self.handle_late_update(
+            tick_tracker,
+            update_tick,
+            physics,
+            render_position,
+            animation_state,
+        );
 
         return true;
     }
@@ -190,7 +241,7 @@ impl ConfirmedTileMovement {
         update_tick: Tick,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
-        animation_state: &mut AnimationState
+        animation_state: &mut AnimationState,
     ) {
         let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() else {
             return;
@@ -202,7 +253,10 @@ impl ConfirmedTileMovement {
         if sequence_greater_than(update_tick, last_processed_server_tick) {
             // if update_tick is more than last_processed_server_tick, then panic
             // TODO: do we need this? what to do here? is this possible?
-            panic!("Using last processed server tick: {:?}, instead of previous tick: {:?}", last_processed_server_tick, update_tick);
+            panic!(
+                "Using last processed server tick: {:?}, instead of previous tick: {:?}",
+                last_processed_server_tick, update_tick
+            );
         }
 
         // if update_tick is less than last_processed_server_tick, then we should simulate forward
@@ -226,12 +280,7 @@ impl ConfirmedTileMovement {
     }
 }
 
-fn pathfind_to_tile(
-    ax: i16,
-    ay: i16,
-    bx: i16,
-    by: i16,
-) -> (i16, i16, Direction) {
+fn pathfind_to_tile(ax: i16, ay: i16, bx: i16, by: i16) -> (i16, i16, Direction) {
     if ax == bx && ay == by {
         panic!("Unexpected! Shouldn't be the same tile");
     }

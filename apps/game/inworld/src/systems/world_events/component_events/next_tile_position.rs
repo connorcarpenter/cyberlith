@@ -8,12 +8,14 @@ use bevy_ecs::{
 };
 
 use game_engine::{
-    logging::{info},
+    logging::info,
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility},
     time::Instant,
 };
+
 use game_app_network::{
+    naia::sequence_greater_than,
     world::{
         // behavior as shared_behavior,
         components::{NextTilePosition, PhysicsController},
@@ -22,15 +24,12 @@ use game_app_network::{
         WorldRemoveComponentEvent,
         WorldUpdateComponentEvent,
     },
-    naia::sequence_greater_than
 };
 
 use crate::{
-    components::{
-        AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition, TickSkipper,
-    },
+    components::{AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition, TickSkipper},
     resources::{RollbackManager, TickTracker},
-    systems::world_events::{PredictionEvents},
+    systems::world_events::PredictionEvents,
 };
 
 pub fn insert_next_tile_position_events(
@@ -87,7 +86,13 @@ pub fn update_next_tile_position_events(
     tick_tracker: Res<TickTracker>,
     mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
-    mut updated_q: Query<(&NextTilePosition, &mut ConfirmedTileMovement, &mut PhysicsController, &mut RenderPosition, &mut AnimationState)>,
+    mut updated_q: Query<(
+        &NextTilePosition,
+        &mut ConfirmedTileMovement,
+        &mut PhysicsController,
+        &mut RenderPosition,
+        &mut AnimationState,
+    )>,
     mut tick_skipper_q: Query<&mut TickSkipper>,
 ) {
     let mut events = HashMap::new();
@@ -110,16 +115,14 @@ pub fn update_next_tile_position_events(
     }
 
     for (updated_entity, update_tick) in &events {
-
-        let Ok(
-            (
-                next_tile_position,
-                mut tile_movement,
-                mut physics,
-                mut render_position,
-                mut animation_state,
-            )
-        ) = updated_q.get_mut(*updated_entity) else {
+        let Ok((
+            next_tile_position,
+            mut tile_movement,
+            mut physics,
+            mut render_position,
+            mut animation_state,
+        )) = updated_q.get_mut(*updated_entity)
+        else {
             panic!(
                 "failed to get components q for updated entity: {:?}",
                 updated_entity

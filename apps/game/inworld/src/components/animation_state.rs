@@ -1,12 +1,13 @@
 use bevy_ecs::component::Component;
 
-use game_app_network::world::types::Direction;
 use game_engine::{
     asset::{AnimatedModelData, AssetHandle, AssetManager},
-    time::Instant,
     logging::info,
     math::Vec2,
+    time::Instant,
 };
+
+use game_app_network::world::types::Direction;
 
 #[derive(Component, Clone)]
 pub struct AnimationState {
@@ -59,7 +60,10 @@ impl AnimationState {
 
                 let new_animation_name = if self.is_moving { "walk" } else { "idle" };
 
-                info!("Changing animation to: {} .. dx: {}, dy: {}", new_animation_name, dx, dy);
+                info!(
+                    "Changing animation to: {} .. dx: {}, dy: {}",
+                    new_animation_name, dx, dy
+                );
                 self.animation_name = new_animation_name.to_string();
             }
         }
@@ -82,7 +86,7 @@ impl AnimationState {
             "walk" => {
                 let distance = Vec2::new(dx, dy).length();
                 0.15 * distance
-            },
+            }
             _ => 0.0,
         };
         self.animation_index_ms += (delta_ms as f32) * animation_speed_factor;

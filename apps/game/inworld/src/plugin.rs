@@ -5,11 +5,11 @@ use bevy_ecs::{
 };
 use bevy_state::condition::in_state;
 
-use game_app_network::naia::ReceiveEvents;
 use game_app_common::AppState;
+use game_app_network::naia::ReceiveEvents;
 
 use crate::{
-    resources::{Global, TickTracker, InputManager, RollbackManager},
+    resources::{Global, InputManager, RollbackManager, TickTracker},
     systems,
     systems::world_events::PredictionEvents,
 };
@@ -61,7 +61,9 @@ impl Plugin for InWorldPlugin {
             .configure_sets(Update, systems::Rollback.after(ReceiveEvents))
             .add_systems(
                 Update,
-                RollbackManager::execute_rollback.run_if(in_state(AppState::InGame)).in_set(systems::Rollback),
+                RollbackManager::execute_rollback
+                    .run_if(in_state(AppState::InGame))
+                    .in_set(systems::Rollback),
             )
             // Tick Event
             .configure_sets(Update, systems::Tick.after(systems::Rollback))

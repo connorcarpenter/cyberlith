@@ -7,6 +7,7 @@ use bevy_ecs::{
 };
 
 use game_engine::logging::{info, warn};
+
 use game_app_network::session::{
     components::{Lobby, LobbyMember},
     SessionClient, SessionInsertComponentEvent, SessionRemoveComponentEvent,

@@ -127,11 +127,7 @@ pub fn tick_events(world: &mut World) {
                 // }
 
                 let (inner_tile_movement, inner_move_buffer) = tile_movement.decompose();
-                let (
-                    result,
-                    mut ntp_output,
-                    mut nmb_output
-                ) = shared_behavior::process_tick(
+                let (result, mut ntp_output, mut nmb_output) = shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
                     player_command,
@@ -140,14 +136,11 @@ pub fn tick_events(world: &mut World) {
                     inner_move_buffer,
                     Some(&mut look_dir),
                 );
-                let (
-                    ntp_result,
-                    nmb_result
-                ) = shared_behavior::process_result(
+                let (ntp_result, nmb_result) = shared_behavior::process_result(
                     inner_tile_movement,
                     inner_move_buffer,
                     &mut physics,
-                    result
+                    result,
                 );
                 if ntp_result.is_some() {
                     ntp_output = ntp_result;

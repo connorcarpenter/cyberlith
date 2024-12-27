@@ -7,12 +7,12 @@ use bevy_ecs::{
     system::Resource,
 };
 
-use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Client, Timer};
 use asset_cache::{AssetCache, AssetLoadedEvent};
 use asset_loader::{AssetManager, AssetMetadataStore};
 use filesystem::FileSystemManager;
 use kernel::http::HttpClient;
 use logging::{info, warn};
+use naia_bevy_client::{transport::webrtc::Socket as WebrtcSocket, Client, Timer};
 use ui_runner::UiManager;
 
 use session_server_naia_proto::{
@@ -22,13 +22,13 @@ use session_server_naia_proto::{
 use world_server_naia_proto::messages::Auth as WorldAuth;
 
 use crate::{
+    asset_cache_checker::AssetCacheChecker,
     client_markers::{Session, World},
     session::{
         SessionConnectEvent, SessionDisconnectEvent, SessionMessageEvents, SessionRejectEvent,
         SessionRequestEvents,
     },
     world::{WorldConnectEvent, WorldDisconnectEvent},
-    asset_cache_checker::AssetCacheChecker,
 };
 
 type SessionClient<'a> = Client<'a, Session>;

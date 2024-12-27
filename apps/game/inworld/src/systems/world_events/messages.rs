@@ -1,12 +1,9 @@
 use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Commands};
 
-use game_engine::{
-    logging::info,
-    time::Instant,
-};
+use game_engine::{logging::info, time::Instant};
+
 use game_app_network::world::{
-    channels::EntityAssignmentChannel, messages::EntityAssignment, WorldClient,
-    WorldMessageEvents,
+    channels::EntityAssignmentChannel, messages::EntityAssignment, WorldClient, WorldMessageEvents,
 };
 
 use crate::{resources::Global, systems::world_events::PredictionEvents};
