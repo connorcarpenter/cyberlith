@@ -14,12 +14,11 @@ use logging::info;
 
 use world_server_naia_proto::{
     behavior as shared_behavior,
+    behavior::TickOutput,
     channels::PlayerCommandChannel,
-    components::{LookDirection, NextTilePosition, PhysicsController, TileMovementType},
+    components::{LookDirection, NetworkedMoveBuffer, NextTilePosition, PhysicsController, TileMovementType},
     messages::PlayerCommands,
 };
-
-use world_server_naia_proto::components::NetworkedMoveBuffer;
 
 use crate::{
     asset::AssetManager,
@@ -126,8 +125,9 @@ pub fn tick_events(world: &mut World) {
                 //     }
                 // }
 
+                let mut tick_output = TickOutput::new();
                 let (inner_tile_movement, inner_move_buffer) = tile_movement.decompose();
-                let (result, mut ntp_output, mut nmb_output) = shared_behavior::process_tick(
+                let result = shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
                     player_command,
@@ -135,21 +135,17 @@ pub fn tick_events(world: &mut World) {
                     &mut physics,
                     inner_move_buffer,
                     Some(&mut look_dir),
+                    Some(&mut tick_output),
                 );
-                let (ntp_result, nmb_result) = shared_behavior::process_result(
+                shared_behavior::process_result(
                     inner_tile_movement,
                     inner_move_buffer,
                     &mut physics,
                     result,
+                    Some(&mut tick_output),
                 );
-                if ntp_result.is_some() {
-                    ntp_output = ntp_result;
-                }
-                if nmb_result.is_some() {
-                    nmb_output = nmb_result;
-                }
 
-                if let Some((outbound_tile_x, outbound_tile_y)) = ntp_output {
+                if let Some((outbound_tile_x, outbound_tile_y)) = tick_output.take_outbound_next_tile_position() {
                     // send updates
                     let outbound_velocity = physics.velocity();
                     let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
@@ -164,7 +160,7 @@ pub fn tick_events(world: &mut World) {
                         outbound_velocity.y,
                     );
                 }
-                if let Some(nmb) = nmb_output {
+                if let Some(outbound_next_move_buffer) = tick_output.take_outbound_next_move_buffer() {
                     // send updates
                     let Ok(mut net_move_buffer) = net_move_buffer_q.get_mut(entity) else {
                         panic!("NetworkedMoveBuffer not found for entity: {:?}", entity);
@@ -173,7 +169,7 @@ pub fn tick_events(world: &mut World) {
                         &physics,
                         *server_tick,
                         &mut net_move_buffer,
-                        nmb,
+                        outbound_next_move_buffer,
                     );
                 }
             }

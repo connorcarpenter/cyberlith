@@ -3,6 +3,7 @@ use naia_bevy_shared::Tick;
 use math::Vec2;
 
 use crate::{
+    behavior::TickOutput,
     components::{MoveBuffer, NextTilePosition, PhysicsController},
     constants::TILE_SIZE,
     messages::PlayerCommands,
@@ -162,12 +163,13 @@ impl TileMovement {
         move_buffer: &mut MoveBuffer,
         tick: Tick,
         command: Option<PlayerCommands>,
-    ) -> (Option<(i16, i16)>, Option<Option<Direction>>) {
+        output_opt: Option<&mut TickOutput>,
+    ) {
         let Some(command) = command else {
-            return (None, None);
+            return;
         };
         let Some(direction) = command.get_move() else {
-            return (None, None);
+            return;
         };
 
         // info!("process_command: {:?} {:?}", tick, direction);
@@ -181,7 +183,11 @@ impl TileMovement {
 
                 self.set_moving(direction);
 
-                return (Some((next_tile_x, next_tile_y)), None);
+                if let Some(tick_output) = output_opt {
+                    tick_output.set_next_tile_position(next_tile_x, next_tile_y);
+                }
+
+                return;
             }
             TileMovementState::Moving(state) => {
                 if state.can_buffer_movement(physics) {
@@ -190,11 +196,14 @@ impl TileMovement {
                     state.buffer_movement(move_buffer, tick, direction);
 
                     if prev_move != Some(direction) {
-                        return (None, Some(Some(direction)));
+                        if let Some(tick_output) = output_opt {
+                            tick_output.set_next_move_buffer(Some(direction));
+                        }
+                        return;
                     }
                 }
 
-                return (None, None);
+                return;
             }
         }
     }
@@ -340,6 +349,7 @@ impl TileMovementMovingState {
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         } else {
+            // This is important, this is the main simulation step
             physics.step();
 
             return ProcessTickResult::DoNothing;

@@ -105,7 +105,7 @@ pub fn process_tick(
     };
 
     let (inner_tile_movement, inner_move_buffer) = tile_movement.decompose();
-    let (result, _, _) = shared_behavior::process_tick(
+    let result = shared_behavior::process_tick(
         tile_movement_type,
         tick,
         player_command,
@@ -113,8 +113,9 @@ pub fn process_tick(
         physics,
         inner_move_buffer,
         None,
+        None,
     );
-    shared_behavior::process_result(inner_tile_movement, inner_move_buffer, physics, result);
+    shared_behavior::process_result(inner_tile_movement, inner_move_buffer, physics, result, None);
 
     render_position.recv_position(physics.position(), tick);
 

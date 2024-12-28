@@ -170,7 +170,7 @@ impl ConfirmedTileMovement {
         self.tile_movement.set_moving(next_move_dir);
         physics.set_tile_position(new_current_tile_x, new_current_tile_y, true);
 
-        // This is important. Server has already applied velocity to the position, before sending the NTP, we need to as well here.
+        // This is important. Server has already applied velocity to the position, before sending the NTP, so we need to as well here.
         physics.step();
 
         physics.tick_log(update_tick, false);
