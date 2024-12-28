@@ -13,7 +13,7 @@ use logging::{info, warn};
 
 use world_server_naia_proto::{
     channels::EntityAssignmentChannel,
-    components::{LookDirection, Main, NextTilePosition, PhysicsController},
+    components::{NetworkedLookDir, Main, NetworkedTileTarget, PhysicsController},
     constants::TILE_COUNT,
     messages::{Auth, EntityAssignment},
     types::Direction,
@@ -79,9 +79,9 @@ pub fn connect_events(
         let tile_position_x = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
-        let next_tile_position = NextTilePosition::new(tile_position_x, tile_position_y);
+        let next_tile_position = NetworkedTileTarget::new(tile_position_x, tile_position_y);
         let net_move_buffer = NetworkedMoveBuffer::new();
-        let look_direction = LookDirection::new(Direction::random());
+        let look_direction = NetworkedLookDir::new(Direction::random());
         let tile_movement = ServerTileMovement::new_stopped(&next_tile_position);
         let physics = PhysicsController::new(&next_tile_position);
 

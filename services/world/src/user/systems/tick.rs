@@ -16,7 +16,7 @@ use world_server_naia_proto::{
     behavior as shared_behavior,
     behavior::TickOutput,
     channels::PlayerCommandChannel,
-    components::{LookDirection, NetworkedMoveBuffer, NextTilePosition, PhysicsController, TileMovementType},
+    components::{NetworkedLookDir, NetworkedMoveBuffer, NetworkedTileTarget, PhysicsController, TileMovementType},
     messages::PlayerCommands,
 };
 
@@ -56,9 +56,9 @@ pub fn tick_events(world: &mut World) {
             Server,
             Res<UserManager>,
             Query<(Entity, &mut ServerTileMovement, &mut PhysicsController)>,
-            Query<&mut NextTilePosition>,
+            Query<&mut NetworkedTileTarget>,
             Query<&mut NetworkedMoveBuffer>,
-            Query<&mut LookDirection>,
+            Query<&mut NetworkedLookDir>,
         )> = SystemState::new(world);
         let (
             mut server,

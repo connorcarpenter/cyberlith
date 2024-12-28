@@ -6,7 +6,7 @@ use logging::info;
 
 use world_server_naia_proto::{
     components::{
-        MoveBuffer, NetworkedMoveBuffer, NextTilePosition, PhysicsController, TileMovement,
+        MoveBuffer, NetworkedMoveBuffer, NetworkedTileTarget, PhysicsController, TileMovement,
     },
     types::Direction,
 };
@@ -18,7 +18,7 @@ pub struct ServerTileMovement {
 }
 
 impl ServerTileMovement {
-    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
+    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
         let me = Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
             move_buffer: MoveBuffer::new(),
@@ -34,7 +34,7 @@ impl ServerTileMovement {
     pub fn send_updated_next_tile_position(
         &mut self,
         tick: Tick,
-        next_tile_position: &mut NextTilePosition,
+        next_tile_position: &mut NetworkedTileTarget,
         next_tile_x: i16,
         next_tile_y: i16,
         velocity_x: f32,

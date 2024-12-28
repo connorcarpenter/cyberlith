@@ -6,7 +6,7 @@ use game_engine::{math::Vec2, time::Instant};
 
 use game_app_network::{
     naia::{sequence_less_than, GameInstant, Tick},
-    world::{components::NextTilePosition, constants::TILE_SIZE, WorldClient},
+    world::{components::NetworkedTileTarget, constants::TILE_SIZE, WorldClient},
 };
 
 #[derive(Component, Clone)]
@@ -19,7 +19,7 @@ pub struct RenderPosition {
 
 impl RenderPosition {
     pub fn new(
-        next_tile_position: &NextTilePosition,
+        next_tile_position: &NetworkedTileTarget,
         tick: Tick,
         tick_instant: GameInstant,
     ) -> Self {

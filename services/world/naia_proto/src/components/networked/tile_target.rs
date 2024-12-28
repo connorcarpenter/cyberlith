@@ -5,14 +5,14 @@ use naia_bevy_shared::{Property, Replicate, SignedVariableInteger};
 // This is networked
 
 #[derive(Component, Replicate)]
-pub struct NextTilePosition {
+pub struct NetworkedTileTarget {
     x: Property<i16>,
     y: Property<i16>,
     velocity_x: Property<SignedVariableInteger<11>>,
     velocity_y: Property<SignedVariableInteger<11>>,
 }
 
-impl NextTilePosition {
+impl NetworkedTileTarget {
     pub fn new(x: i16, y: i16) -> Self {
         Self::new_complete(
             x,

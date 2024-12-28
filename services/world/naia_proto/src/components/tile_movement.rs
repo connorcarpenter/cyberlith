@@ -3,7 +3,7 @@ use naia_bevy_shared::Tick;
 use math::Vec2;
 
 use crate::{
-    components::{MoveBuffer, NextTilePosition, PhysicsController},
+    components::{MoveBuffer, NetworkedTileTarget, PhysicsController},
     constants::TILE_SIZE,
     types::Direction,
 };
@@ -47,7 +47,7 @@ pub struct TileMovement {
 }
 
 impl TileMovement {
-    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
+    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
         let me = Self {
             state: TileMovementState::Stopped(TileMovementStoppedState::new(
                 next_tile_position.x(),

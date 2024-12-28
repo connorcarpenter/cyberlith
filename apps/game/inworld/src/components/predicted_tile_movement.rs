@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::Component;
 
-use game_app_network::world::components::{MoveBuffer, NextTilePosition, TileMovement};
+use game_app_network::world::components::{MoveBuffer, NetworkedTileTarget, TileMovement};
 
 use crate::components::{client_tile_movement::ClientTileMovement, ConfirmedTileMovement};
 
@@ -17,7 +17,7 @@ impl ClientTileMovement for PredictedTileMovement {
 }
 
 impl PredictedTileMovement {
-    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
+    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
         Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
             move_buffer: MoveBuffer::new(),

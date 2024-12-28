@@ -9,7 +9,7 @@ use game_app_network::{
     naia::{sequence_greater_than, Tick},
     world::{
         components::{
-            MoveBuffer, NetworkedMoveBuffer, NextTilePosition, PhysicsController, TileMovement,
+            MoveBuffer, NetworkedMoveBuffer, NetworkedTileTarget, PhysicsController, TileMovement,
             TileMovementType,
         },
         constants::TILE_SIZE,
@@ -36,7 +36,7 @@ impl ClientTileMovement for ConfirmedTileMovement {
 }
 
 impl ConfirmedTileMovement {
-    pub fn new_stopped(next_tile_position: &NextTilePosition) -> Self {
+    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
         Self {
             tile_movement: TileMovement::new_stopped(next_tile_position),
             move_buffer: MoveBuffer::new(),
@@ -47,7 +47,7 @@ impl ConfirmedTileMovement {
         &mut self,
         tick_tracker: &TickTracker,
         update_tick: Tick,
-        next_tile_position: &NextTilePosition,
+        next_tile_position: &NetworkedTileTarget,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
         animation_state: &mut AnimationState,

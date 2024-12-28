@@ -5,7 +5,7 @@ use math::Vec2;
 use naia_bevy_shared::Tick;
 
 use crate::{
-    components::{velocity::Velocity, NextTilePosition},
+    components::{velocity::Velocity, NetworkedTileTarget},
     constants::{
         MOVEMENT_ACCELERATION, MOVEMENT_DECELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_VELOCITY_MIN,
         TILE_SIZE,
@@ -19,7 +19,7 @@ pub struct PhysicsController {
 }
 
 impl PhysicsController {
-    pub fn new(ntp: &NextTilePosition) -> Self {
+    pub fn new(ntp: &NetworkedTileTarget) -> Self {
         let position = Vec2::new(ntp.x() as f32 * TILE_SIZE, ntp.y() as f32 * TILE_SIZE);
 
         Self {

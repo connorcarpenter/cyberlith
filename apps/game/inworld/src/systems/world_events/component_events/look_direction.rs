@@ -3,7 +3,7 @@ use bevy_ecs::{change_detection::ResMut, event::EventReader, prelude::Query};
 use game_engine::{logging::info, time::Instant};
 
 use game_app_network::world::{
-    components::LookDirection, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+    components::NetworkedLookDir, WorldInsertComponentEvent, WorldRemoveComponentEvent,
     WorldUpdateComponentEvent,
 };
 
@@ -12,10 +12,10 @@ use crate::{components::AnimationState, systems::world_events::PredictionEvents}
 pub fn insert_look_direction_events(
     mut prediction_events: ResMut<PredictionEvents>,
 
-    lookdir_q: Query<&LookDirection>,
+    lookdir_q: Query<&NetworkedLookDir>,
     mut animation_state_q: Query<&mut AnimationState>,
 
-    mut event_reader: EventReader<WorldInsertComponentEvent<LookDirection>>,
+    mut event_reader: EventReader<WorldInsertComponentEvent<NetworkedLookDir>>,
 ) {
     for event in event_reader.read() {
         let now = Instant::now();
@@ -37,10 +37,10 @@ pub fn insert_look_direction_events(
 }
 
 pub fn update_look_direction_events(
-    look_direction_q: Query<&LookDirection>,
+    look_direction_q: Query<&NetworkedLookDir>,
     mut animation_state_q: Query<&mut AnimationState>,
 
-    mut event_reader: EventReader<WorldUpdateComponentEvent<LookDirection>>,
+    mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedLookDir>>,
 ) {
     for event in event_reader.read() {
         let entity = event.entity;
@@ -60,7 +60,7 @@ pub fn update_look_direction_events(
 }
 
 pub fn remove_look_direction_events(
-    mut event_reader: EventReader<WorldRemoveComponentEvent<LookDirection>>,
+    mut event_reader: EventReader<WorldRemoveComponentEvent<NetworkedLookDir>>,
 ) {
     for _event in event_reader.read() {
         info!("removed LookDirection component from entity");

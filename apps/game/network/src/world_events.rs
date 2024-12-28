@@ -20,7 +20,7 @@ use naia_bevy_client::{
 };
 
 use world_server_naia_proto::components::{
-    Alt1, AssetEntry, AssetRef, LookDirection, Main, NetworkedMoveBuffer, NextTilePosition,
+    Alt1, AssetEntry, AssetRef, NetworkedLookDir, Main, NetworkedMoveBuffer, NetworkedTileTarget,
 };
 
 use crate::{
@@ -47,8 +47,8 @@ impl Plugin for WorldEventsPlugin {
             // component events
             .add_systems(Startup, component_events_startup::<World>)
             .add_systems(Update, component_events_update)
-            .add_component_events::<World, NextTilePosition>()
-            .add_component_events::<World, LookDirection>()
+            .add_component_events::<World, NetworkedTileTarget>()
+            .add_component_events::<World, NetworkedLookDir>()
             .add_component_events::<World, NetworkedMoveBuffer>()
             // asset events
             .add_event::<InsertAssetRefEvent<Main>>()
@@ -71,9 +71,9 @@ fn component_events_update(world: &mut BevyWorld) {
         }
 
         // component events
-        events.process::<NextTilePosition>(world);
+        events.process::<NetworkedTileTarget>(world);
         events.process::<NetworkedMoveBuffer>(world);
-        events.process::<LookDirection>(world);
+        events.process::<NetworkedLookDir>(world);
 
         // info!("]");
     }

@@ -5,11 +5,11 @@ use naia_bevy_shared::{Property, Replicate};
 use crate::types::Direction;
 
 #[derive(Component, Replicate)]
-pub struct LookDirection {
+pub struct NetworkedLookDir {
     inner: Property<Direction>,
 }
 
-impl LookDirection {
+impl NetworkedLookDir {
     pub fn new(dir: Direction) -> Self {
         Self::new_complete(dir)
     }

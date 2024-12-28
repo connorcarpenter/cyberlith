@@ -3,7 +3,7 @@ use naia_bevy_shared::Tick;
 use crate::{
     behavior::tick_output::TickOutput,
     components::{
-        LookDirection, MoveBuffer, PhysicsController, ProcessTickResult, TileMovement,
+        NetworkedLookDir, MoveBuffer, PhysicsController, ProcessTickResult, TileMovement,
         TileMovementType,
     },
     messages::PlayerCommands,
@@ -16,7 +16,7 @@ pub fn process_tick(
     tile_movement: &mut TileMovement,
     physics: &mut PhysicsController,
     move_buffer: &mut MoveBuffer,
-    look_direction_opt: Option<&mut LookDirection>,
+    look_direction_opt: Option<&mut NetworkedLookDir>,
     mut output_opt: Option<&mut TickOutput>,
 ) {
     let new_look_direction = {

@@ -15,7 +15,7 @@ use game_engine::{
 };
 
 use game_app_network::world::{
-    components::{NextTilePosition, PhysicsController},
+    components::{NetworkedTileTarget, PhysicsController},
     WorldClient,
 };
 
@@ -54,7 +54,7 @@ impl PredictionEvents {
         mut commands: Commands,
         mut global: ResMut<Global>,
         mut prediction_events: ResMut<PredictionEvents>,
-        position_q: Query<&NextTilePosition>,
+        position_q: Query<&NetworkedTileTarget>,
     ) {
         prediction_events.prune();
 

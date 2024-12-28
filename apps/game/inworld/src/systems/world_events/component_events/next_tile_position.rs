@@ -18,7 +18,7 @@ use game_app_network::{
     naia::sequence_greater_than,
     world::{
         // behavior as shared_behavior,
-        components::{NextTilePosition, PhysicsController},
+        components::{NetworkedTileTarget, PhysicsController},
         WorldClient,
         WorldInsertComponentEvent,
         WorldRemoveComponentEvent,
@@ -35,9 +35,9 @@ use crate::{
 pub fn insert_next_tile_position_events(
     client: WorldClient,
     mut commands: Commands,
-    next_tile_position_q: Query<&NextTilePosition>,
+    next_tile_position_q: Query<&NetworkedTileTarget>,
     mut prediction_events: ResMut<PredictionEvents>,
-    mut event_reader: EventReader<WorldInsertComponentEvent<NextTilePosition>>,
+    mut event_reader: EventReader<WorldInsertComponentEvent<NetworkedTileTarget>>,
 ) {
     for event in event_reader.read() {
         let now = Instant::now();
@@ -85,9 +85,9 @@ pub fn insert_next_tile_position_events(
 pub fn update_next_tile_position_events(
     tick_tracker: Res<TickTracker>,
     mut rollback_manager: ResMut<RollbackManager>,
-    mut event_reader: EventReader<WorldUpdateComponentEvent<NextTilePosition>>,
+    mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedTileTarget>>,
     mut updated_q: Query<(
-        &NextTilePosition,
+        &NetworkedTileTarget,
         &mut ConfirmedTileMovement,
         &mut PhysicsController,
         &mut RenderPosition,
@@ -152,7 +152,7 @@ pub fn update_next_tile_position_events(
 }
 
 pub fn remove_next_tile_position_events(
-    mut event_reader: EventReader<WorldRemoveComponentEvent<NextTilePosition>>,
+    mut event_reader: EventReader<WorldRemoveComponentEvent<NetworkedTileTarget>>,
 ) {
     for _event in event_reader.read() {
         info!("removed NextTilePosition component from entity");
