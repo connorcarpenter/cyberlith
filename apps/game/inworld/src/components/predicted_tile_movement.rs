@@ -17,9 +17,9 @@ impl ClientTileMovement for PredictedTileMovement {
 }
 
 impl PredictedTileMovement {
-    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
+    pub fn new_stopped(net_tile_target: &NetworkedTileTarget) -> Self {
         Self {
-            tile_movement: TileMovement::new_stopped(next_tile_position),
+            tile_movement: TileMovement::new_stopped(net_tile_target),
             move_buffer: MoveBuffer::new(),
         }
     }

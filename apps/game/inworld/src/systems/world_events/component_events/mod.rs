@@ -1,8 +1,8 @@
-mod next_tile_position;
-pub use next_tile_position::*;
+mod networked_tile_target;
+pub use networked_tile_target::*;
 
-mod look_direction;
-pub use look_direction::*;
+mod networked_look_dir;
+pub use networked_look_dir::*;
 
 mod networked_move_buffer;
 pub use networked_move_buffer::*;

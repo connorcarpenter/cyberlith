@@ -18,9 +18,9 @@ pub struct ServerTileMovement {
 }
 
 impl ServerTileMovement {
-    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
+    pub fn new_stopped(net_tile_target: &NetworkedTileTarget) -> Self {
         let me = Self {
-            tile_movement: TileMovement::new_stopped(next_tile_position),
+            tile_movement: TileMovement::new_stopped(net_tile_target),
             move_buffer: MoveBuffer::new(),
         };
 
@@ -31,19 +31,19 @@ impl ServerTileMovement {
         (&mut self.tile_movement, &mut self.move_buffer)
     }
 
-    pub fn send_updated_next_tile_position(
+    pub fn send_updated_net_tile_target(
         &mut self,
         tick: Tick,
-        next_tile_position: &mut NetworkedTileTarget,
+        net_tile_target: &mut NetworkedTileTarget,
         next_tile_x: i16,
         next_tile_y: i16,
         velocity_x: f32,
         velocity_y: f32,
     ) {
-        next_tile_position.set(next_tile_x, next_tile_y, velocity_x, velocity_y);
+        net_tile_target.set(next_tile_x, next_tile_y, velocity_x, velocity_y);
 
         info!(
-            "Send NextTilePosition. Tick: {:?}, Tile: ({:?}, {:?})",
+            "Send NetworkedTileTarget. Tick: {:?}, Tile: ({:?}, {:?})",
             tick, next_tile_x, next_tile_y
         );
     }

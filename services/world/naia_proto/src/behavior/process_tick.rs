@@ -89,7 +89,7 @@ fn process_command(
         tile_movement.set_moving(direction);
 
         if let Some(tick_output) = output_opt {
-            tick_output.set_next_tile_position(next_tile_x, next_tile_y);
+            tick_output.set_net_tile_target(next_tile_x, next_tile_y);
         }
         return;
     } else {
@@ -125,7 +125,7 @@ fn process_result(
 
                 tile_movement.set_continue(tile_x, tile_y, buffered_move_dir);
 
-                // This is important, because client expects to receive the next_tile_position AFTER a simulation step
+                // This is important, because client expects to receive the net_tile_target AFTER a simulation step
                 physics.step();
 
                 let (dx, dy) = buffered_move_dir.to_delta();
@@ -134,7 +134,7 @@ fn process_result(
                 let next_tile_y = tile_y + dy as i16;
 
                 if let Some(output) = output_opt {
-                    output.set_next_tile_position(next_tile_x, next_tile_y);
+                    output.set_net_tile_target(next_tile_x, next_tile_y);
                     output.set_next_move_buffer(None);
                 }
 

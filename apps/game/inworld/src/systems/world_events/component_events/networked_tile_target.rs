@@ -32,10 +32,10 @@ use crate::{
     systems::world_events::PredictionEvents,
 };
 
-pub fn insert_next_tile_position_events(
+pub fn insert_net_tile_target_events(
     client: WorldClient,
     mut commands: Commands,
-    next_tile_position_q: Query<&NetworkedTileTarget>,
+    net_tile_target_q: Query<&NetworkedTileTarget>,
     mut prediction_events: ResMut<PredictionEvents>,
     mut event_reader: EventReader<WorldInsertComponentEvent<NetworkedTileTarget>>,
 ) {
@@ -48,26 +48,26 @@ pub fn insert_next_tile_position_events(
         let entity = event.entity;
 
         info!(
-            "received Inserted Component: `NextTilePosition` from World Server! (entity: {:?})",
+            "received Inserted Component: `NetworkedTileTarget` from World Server! (entity: {:?})",
             entity
         );
 
-        let next_tile_position = next_tile_position_q.get(entity).unwrap();
+        let net_tile_target = net_tile_target_q.get(entity).unwrap();
 
-        prediction_events.read_insert_position_event(&now, &entity);
+        prediction_events.read_insert_net_tile_target_event(&now, &entity);
 
         let layer = RenderLayers::layer(0);
 
         commands
             .entity(entity)
             // Insert Position stuff
-            .insert(ConfirmedTileMovement::new_stopped(next_tile_position))
-            .insert(PhysicsController::new(next_tile_position))
+            .insert(ConfirmedTileMovement::new_stopped(net_tile_target))
+            .insert(PhysicsController::new(net_tile_target))
             .insert(TickSkipper::new())
             // Insert other Rendering Stuff
             .insert(AnimationState::new())
             .insert(RenderPosition::new(
-                next_tile_position,
+                net_tile_target,
                 server_tick,
                 server_tick_instant,
             ))
@@ -82,7 +82,7 @@ pub fn insert_next_tile_position_events(
     }
 }
 
-pub fn update_next_tile_position_events(
+pub fn update_net_tile_target_events(
     tick_tracker: Res<TickTracker>,
     mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedTileTarget>>,
@@ -116,7 +116,7 @@ pub fn update_next_tile_position_events(
 
     for (updated_entity, update_tick) in &events {
         let Ok((
-            next_tile_position,
+            net_tile_target,
             mut tile_movement,
             mut physics,
             mut render_position,
@@ -129,10 +129,10 @@ pub fn update_next_tile_position_events(
             );
         };
 
-        tile_movement.recv_updated_next_tile_position(
+        tile_movement.recv_updated_net_tile_target(
             &tick_tracker,
             *update_tick,
-            &next_tile_position,
+            &net_tile_target,
             &mut physics,
             &mut render_position,
             &mut animation_state,
@@ -151,10 +151,10 @@ pub fn update_next_tile_position_events(
     rollback_manager.add_events(events);
 }
 
-pub fn remove_next_tile_position_events(
+pub fn remove_net_tile_target_events(
     mut event_reader: EventReader<WorldRemoveComponentEvent<NetworkedTileTarget>>,
 ) {
     for _event in event_reader.read() {
-        info!("removed NextTilePosition component from entity");
+        info!("removed NetworkedTileTarget component from entity");
     }
 }

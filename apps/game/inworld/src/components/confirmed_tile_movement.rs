@@ -36,31 +36,31 @@ impl ClientTileMovement for ConfirmedTileMovement {
 }
 
 impl ConfirmedTileMovement {
-    pub fn new_stopped(next_tile_position: &NetworkedTileTarget) -> Self {
+    pub fn new_stopped(net_tile_target: &NetworkedTileTarget) -> Self {
         Self {
-            tile_movement: TileMovement::new_stopped(next_tile_position),
+            tile_movement: TileMovement::new_stopped(net_tile_target),
             move_buffer: MoveBuffer::new(),
         }
     }
 
-    pub fn recv_updated_next_tile_position(
+    pub fn recv_updated_net_tile_target(
         &mut self,
         tick_tracker: &TickTracker,
         update_tick: Tick,
-        next_tile_position: &NetworkedTileTarget,
+        net_tile_target: &NetworkedTileTarget,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
         animation_state: &mut AnimationState,
     ) {
         let (next_velocity_x, next_velocity_y) = (
-            next_tile_position.velocity_x(),
-            next_tile_position.velocity_y(),
+            net_tile_target.velocity_x(),
+            net_tile_target.velocity_y(),
         );
         info!(
-            "Recv NextTilePosition. Tick: {:?}, Next Tile: ({:?}, {:?}), Velocity: ({:?}, {:?})",
+            "Recv NetworkedTileTarget. Tick: {:?}, Next Tile: ({:?}, {:?}), Velocity: ({:?}, {:?})",
             update_tick,
-            next_tile_position.x(),
-            next_tile_position.y(),
+            net_tile_target.x(),
+            net_tile_target.y(),
             next_velocity_x,
             next_velocity_y
         );
@@ -70,7 +70,7 @@ impl ConfirmedTileMovement {
         let (new_current_tile_x, new_current_tile_y, next_move_dir) = {
             if self.tile_movement.is_stopped() {
                 // Is Stopped
-                let (next_tile_x, next_tile_y) = (next_tile_position.x(), next_tile_position.y());
+                let (next_tile_x, next_tile_y) = (net_tile_target.x(), net_tile_target.y());
                 let stopped_state = self.tile_movement.as_stopped_mut();
                 let (current_tile_x, current_tile_y) = stopped_state.tile_position();
                 if current_tile_x == next_tile_x && current_tile_y == next_tile_y {
@@ -127,7 +127,7 @@ impl ConfirmedTileMovement {
                     from_dis / total_dis
                 };
                 let (next_to_tile_x, next_to_tile_y) =
-                    (next_tile_position.x(), next_tile_position.y());
+                    (net_tile_target.x(), net_tile_target.y());
                 let (next_from_tile_x, next_from_tile_y, next_move_dir) = {
                     let (next_from_tile_x, next_from_tile_y) = if interpolation < 0.5 {
                         (current_from_tile_x, current_from_tile_y)

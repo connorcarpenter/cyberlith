@@ -79,11 +79,11 @@ pub fn connect_events(
         let tile_position_x = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
         let tile_position_y = Random::gen_range_i32(-TILE_COUNT, TILE_COUNT) as i16;
 
-        let next_tile_position = NetworkedTileTarget::new(tile_position_x, tile_position_y);
+        let net_tile_target = NetworkedTileTarget::new(tile_position_x, tile_position_y);
         let net_move_buffer = NetworkedMoveBuffer::new();
-        let look_direction = NetworkedLookDir::new(Direction::random());
-        let tile_movement = ServerTileMovement::new_stopped(&next_tile_position);
-        let physics = PhysicsController::new(&next_tile_position);
+        let net_look_dir = NetworkedLookDir::new(Direction::random());
+        let tile_movement = ServerTileMovement::new_stopped(&net_tile_target);
+        let physics = PhysicsController::new(&net_tile_target);
 
         // give user an entity
         let user_entity = commands
@@ -98,9 +98,9 @@ pub fn connect_events(
                 AssetCatalog::AvatarUnit.into(),
             )
             // insert position components
-            .insert(next_tile_position)
+            .insert(net_tile_target)
             .insert(net_move_buffer)
-            .insert(look_direction)
+            .insert(net_look_dir)
             .insert(tile_movement)
             .insert(physics)
             // return Entity id

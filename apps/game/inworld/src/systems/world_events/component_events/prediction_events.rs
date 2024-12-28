@@ -71,15 +71,15 @@ impl PredictionEvents {
                 .expect("client uninitialized?");
 
             // Here we create a local copy of the Player entity, to use for client-side prediction
-            let next_tile_position = position_q.get(future_prediction_entity).unwrap();
-            let physics = PhysicsController::new(next_tile_position);
+            let net_tile_target = position_q.get(future_prediction_entity).unwrap();
+            let physics = PhysicsController::new(net_tile_target);
 
             let prediction_entity = commands.spawn_empty().id();
 
             commands
                 .entity(prediction_entity)
                 // Position stuff
-                .insert(PredictedTileMovement::new_stopped(next_tile_position))
+                .insert(PredictedTileMovement::new_stopped(net_tile_target))
                 .insert(physics)
                 // Other rendering stuff
                 .insert(RenderLayers::layer(0))
@@ -90,7 +90,7 @@ impl PredictionEvents {
                 )
                 .insert(AnimationState::new())
                 .insert(RenderPosition::new(
-                    next_tile_position,
+                    net_tile_target,
                     client_tick,
                     client_tick_instant,
                 ))
@@ -139,28 +139,28 @@ impl PredictionEvents {
         results
     }
 
-    pub fn read_insert_position_event(&mut self, now: &Instant, entity: &Entity) {
+    pub fn read_insert_net_tile_target_event(&mut self, now: &Instant, entity: &Entity) {
         info!(
-            "received Inserted Position from World Server!  [ {:?} ]",
+            "received Inserted NetworkedTileTarget from World Server!  [ {:?} ]",
             entity,
         );
         if !self.records.contains_key(entity) {
             self.records.insert(*entity, PredictionRecord::new(now));
         }
         let record = self.records.get_mut(entity).unwrap();
-        record.recv_position(now);
+        record.recv_net_tile_target(now);
     }
 
-    pub fn read_insert_lookdir_event(&mut self, now: &Instant, entity: &Entity) {
+    pub fn read_insert_net_look_dir_event(&mut self, now: &Instant, entity: &Entity) {
         info!(
-            "received Inserted LookDirection from World Server!  [ {:?} ]",
+            "received Inserted NetworkedLookDir from World Server!  [ {:?} ]",
             entity,
         );
         if !self.records.contains_key(entity) {
             self.records.insert(*entity, PredictionRecord::new(now));
         }
         let record = self.records.get_mut(entity).unwrap();
-        record.recv_lookdir(now);
+        record.recv_net_look_dir(now);
     }
 
     pub fn read_insert_net_move_buffer_event(&mut self, now: &Instant, entity: &Entity) {
@@ -207,8 +207,8 @@ impl PredictionEvents {
 
 struct PredictionRecord {
     last_update: Instant,
-    has_position: Option<()>,
-    has_look_dir: Option<()>,
+    has_net_tile_target: Option<()>,
+    has_net_look_dir: Option<()>,
     has_net_move_buffer: Option<()>,
     has_unit_asset_ref: Option<AssetHandle<UnitData>>,
     has_entity_assigment: Option<()>,
@@ -218,22 +218,22 @@ impl PredictionRecord {
     pub fn new(now: &Instant) -> Self {
         Self {
             last_update: now.clone(),
-            has_position: None,
-            has_look_dir: None,
+            has_net_tile_target: None,
+            has_net_look_dir: None,
             has_net_move_buffer: None,
             has_unit_asset_ref: None,
             has_entity_assigment: None,
         }
     }
 
-    pub fn recv_position(&mut self, now: &Instant) {
+    pub fn recv_net_tile_target(&mut self, now: &Instant) {
         self.last_update = now.clone();
-        self.has_position = Some(());
+        self.has_net_tile_target = Some(());
     }
 
-    pub fn recv_lookdir(&mut self, now: &Instant) {
+    pub fn recv_net_look_dir(&mut self, now: &Instant) {
         self.last_update = now.clone();
-        self.has_look_dir = Some(());
+        self.has_net_look_dir = Some(());
     }
 
     pub fn recv_net_move_buffer(&mut self, now: &Instant) {
@@ -252,10 +252,10 @@ impl PredictionRecord {
     }
 
     pub fn is_done(&self) -> bool {
-        self.has_position.is_some()
+        self.has_net_tile_target.is_some()
             && self.has_unit_asset_ref.is_some()
             && self.has_entity_assigment.is_some()
-            && self.has_look_dir.is_some()
+            && self.has_net_look_dir.is_some()
             && self.has_net_move_buffer.is_some()
     }
 }

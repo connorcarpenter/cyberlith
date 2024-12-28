@@ -19,12 +19,12 @@ pub struct RenderPosition {
 
 impl RenderPosition {
     pub fn new(
-        next_tile_position: &NetworkedTileTarget,
+        net_tile_target: &NetworkedTileTarget,
         tick: Tick,
         tick_instant: GameInstant,
     ) -> Self {
-        let x = next_tile_position.x() as f32 * TILE_SIZE;
-        let y = next_tile_position.y() as f32 * TILE_SIZE;
+        let x = net_tile_target.x() as f32 * TILE_SIZE;
+        let y = net_tile_target.y() as f32 * TILE_SIZE;
 
         let mut me = Self {
             position_queue: VecDeque::new(),

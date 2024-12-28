@@ -64,7 +64,7 @@ pub fn tick_events(world: &mut World) {
             mut server,
             user_manager,
             mut tile_movement_q,
-            mut next_tile_position_q,
+            mut net_tile_target_q,
             mut net_move_buffer_q,
             mut lookdir_q,
         ) = system_state.get_mut(world);
@@ -113,7 +113,7 @@ pub fn tick_events(world: &mut World) {
                     // multiple commands per entity??
                 };
                 let Ok(mut look_dir) = lookdir_q.get_mut(entity) else {
-                    panic!("LookDirection not found for entity: {:?}", entity);
+                    panic!("NetworkedLookDir not found for entity: {:?}", entity);
                 };
 
                 // if let Some(player_commands) = player_command.as_ref() {
@@ -138,15 +138,15 @@ pub fn tick_events(world: &mut World) {
                     Some(&mut tick_output),
                 );
 
-                if let Some((outbound_tile_x, outbound_tile_y)) = tick_output.take_outbound_next_tile_position() {
+                if let Some((outbound_tile_x, outbound_tile_y)) = tick_output.take_outbound_net_tile_target() {
                     // send updates
                     let outbound_velocity = physics.velocity();
-                    let Ok(mut next_tile_position) = next_tile_position_q.get_mut(entity) else {
-                        panic!("NextTilePosition not found for entity: {:?}", entity);
+                    let Ok(mut net_tile_target) = net_tile_target_q.get_mut(entity) else {
+                        panic!("NetworkedTileTarget not found for entity: {:?}", entity);
                     };
-                    tile_movement.send_updated_next_tile_position(
+                    tile_movement.send_updated_net_tile_target(
                         *server_tick,
-                        &mut next_tile_position,
+                        &mut net_tile_target,
                         outbound_tile_x,
                         outbound_tile_y,
                         outbound_velocity.x,

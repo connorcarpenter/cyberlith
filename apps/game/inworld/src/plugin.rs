@@ -42,15 +42,19 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::message_events,
                     systems::world_events::spawn_entity_events,
                     systems::world_events::despawn_entity_events,
-                    systems::world_events::insert_next_tile_position_events,
-                    systems::world_events::update_next_tile_position_events,
-                    systems::world_events::remove_next_tile_position_events,
-                    systems::world_events::insert_look_direction_events,
-                    systems::world_events::update_look_direction_events,
-                    systems::world_events::remove_look_direction_events,
+                    //
+                    systems::world_events::insert_net_tile_target_events,
+                    systems::world_events::update_net_tile_target_events,
+                    systems::world_events::remove_net_tile_target_events,
+                    //
+                    systems::world_events::insert_net_look_dir_events,
+                    systems::world_events::update_net_look_dir_events,
+                    systems::world_events::remove_net_look_dir_events,
+                    //
                     systems::world_events::insert_net_move_buffer_events,
                     systems::world_events::update_net_move_buffer_events,
                     systems::world_events::remove_net_move_buffer_events,
+                    //
                     systems::world_events::insert_asset_ref_events,
                     PredictionEvents::process,
                 )
