@@ -3,10 +3,8 @@ use naia_bevy_shared::Tick;
 use math::Vec2;
 
 use crate::{
-    behavior::TickOutput,
     components::{MoveBuffer, NextTilePosition, PhysicsController},
     constants::TILE_SIZE,
-    messages::PlayerCommands,
     types::Direction,
 };
 
@@ -155,59 +153,6 @@ impl TileMovement {
         output
     }
 
-    // on the client, called by predicted entities
-    // on the server, called by confirmed entities
-    pub fn process_command(
-        &mut self,
-        physics: &PhysicsController,
-        move_buffer: &mut MoveBuffer,
-        tick: Tick,
-        command: Option<PlayerCommands>,
-        output_opt: Option<&mut TickOutput>,
-    ) {
-        let Some(command) = command else {
-            return;
-        };
-        let Some(direction) = command.get_move() else {
-            return;
-        };
-
-        // info!("process_command: {:?} {:?}", tick, direction);
-
-        match &mut self.state {
-            TileMovementState::Stopped(state) => {
-                let (dx, dy) = direction.to_delta();
-
-                let next_tile_x = state.tile_x + dx as i16;
-                let next_tile_y = state.tile_y + dy as i16;
-
-                self.set_moving(direction);
-
-                if let Some(tick_output) = output_opt {
-                    tick_output.set_next_tile_position(next_tile_x, next_tile_y);
-                }
-
-                return;
-            }
-            TileMovementState::Moving(state) => {
-                if state.can_buffer_movement(physics) {
-                    let prev_move = move_buffer.buffered_move();
-
-                    state.buffer_movement(move_buffer, tick, direction);
-
-                    if prev_move != Some(direction) {
-                        if let Some(tick_output) = output_opt {
-                            tick_output.set_next_move_buffer(Some(direction));
-                        }
-                        return;
-                    }
-                }
-
-                return;
-            }
-        }
-    }
-
     pub fn mirror(&mut self, other: &TileMovement) {
         self.state = other.state.clone();
     }
@@ -228,6 +173,13 @@ impl TileMovement {
 
     pub fn as_moving(&self) -> &TileMovementMovingState {
         match &self.state {
+            TileMovementState::Stopped(_) => panic!("Expected Moving state"),
+            TileMovementState::Moving(state) => state,
+        }
+    }
+
+    pub fn as_moving_mut(&mut self) -> &mut TileMovementMovingState {
+        match &mut self.state {
             TileMovementState::Stopped(_) => panic!("Expected Moving state"),
             TileMovementState::Moving(state) => state,
         }

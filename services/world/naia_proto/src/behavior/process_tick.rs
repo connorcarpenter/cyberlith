@@ -17,8 +17,8 @@ pub fn process_tick(
     physics: &mut PhysicsController,
     move_buffer: &mut MoveBuffer,
     look_direction_opt: Option<&mut LookDirection>,
-    output_opt: Option<&mut TickOutput>,
-) -> ProcessTickResult {
+    mut output_opt: Option<&mut TickOutput>,
+) {
     let new_look_direction = {
         if look_direction_opt.is_none() {
             None
@@ -32,7 +32,13 @@ pub fn process_tick(
     };
 
     if tile_movement_type.processes_commands() {
-        tile_movement.process_command(physics, move_buffer, tick, player_command, output_opt);
+        let output_opt: Option<&mut TickOutput> = output_opt.as_mut().map(
+            |output| {
+                let output: &mut TickOutput = output;
+                output
+            }
+        );
+        process_command(tile_movement, physics, move_buffer, tick, player_command, output_opt);
     }
 
     let tick_result = tile_movement.process_tick(
@@ -50,10 +56,62 @@ pub fn process_tick(
         }
     }
 
-    return tick_result;
+    process_result(tile_movement, move_buffer, physics, tick_result, output_opt);
 }
 
-pub fn process_result(
+// on the client, called by predicted entities
+// on the server, called by confirmed entities
+fn process_command(
+    tile_movement: &mut TileMovement,
+    physics: &PhysicsController,
+    move_buffer: &mut MoveBuffer,
+    tick: Tick,
+    command: Option<PlayerCommands>,
+    output_opt: Option<&mut TickOutput>,
+) {
+    let Some(command) = command else {
+        return;
+    };
+    let Some(direction) = command.get_move() else {
+        return;
+    };
+
+    // info!("process_command: {:?} {:?}", tick, direction);
+
+    if tile_movement.is_stopped() {
+        let state = tile_movement.as_stopped_mut();
+        let (tile_x, tile_y) = state.tile_position();
+        let (dx, dy) = direction.to_delta();
+
+        let next_tile_x = tile_x + dx as i16;
+        let next_tile_y = tile_y + dy as i16;
+
+        tile_movement.set_moving(direction);
+
+        if let Some(tick_output) = output_opt {
+            tick_output.set_next_tile_position(next_tile_x, next_tile_y);
+        }
+        return;
+    } else {
+        let state = tile_movement.as_moving_mut();
+        if state.can_buffer_movement(physics) {
+            let prev_move = move_buffer.buffered_move();
+
+            state.buffer_movement(move_buffer, tick, direction);
+
+            if prev_move != Some(direction) {
+                if let Some(tick_output) = output_opt {
+                    tick_output.set_next_move_buffer(Some(direction));
+                }
+                return;
+            }
+        }
+
+        return;
+    }
+}
+
+fn process_result(
     tile_movement: &mut TileMovement,
     move_buffer: &mut MoveBuffer,
     physics: &mut PhysicsController,
