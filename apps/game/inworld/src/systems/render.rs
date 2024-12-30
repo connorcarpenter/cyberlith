@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{Query, Res, ResMut},
+    system::{SystemState, Query, Res, ResMut},
 };
 
 use game_engine::{
@@ -8,51 +8,49 @@ use game_engine::{
     math::{Quat, Vec3},
     render::{
         components::{RenderLayer, Transform, Visibility},
-        resources::RenderFrame,
+        resources::{RenderFrame, Time},
     },
-    time::Instant,
 };
 
 use game_app_network::world::WorldClient;
 
 use crate::{
-    components::{AnimationState, Confirmed, Predicted, RenderPosition},
-    resources::Global,
+    components::{AnimationState, RenderPosition},
+    resources::{PredictedWorld},
 };
 
 pub fn draw_units(
+    time: Res<Time>,
     client: WorldClient,
-    global: Res<Global>,
     asset_manager: Res<AssetManager>,
     mut render_frame: ResMut<RenderFrame>,
+    mut predicted_world: ResMut<PredictedWorld>,
     mut unit_q: Query<(
         Entity,
         &AssetHandle<UnitData>,
-        &mut AnimationState,
-        // &RenderHelper,
-        &mut RenderPosition,
-        // &mut TileMovement,
-        Option<&Confirmed>,
-        Option<&Predicted>,
-        &mut Transform,
         &Visibility,
+        &AnimationState,
+        &mut RenderPosition,
         Option<&RenderLayer>,
     )>,
 ) {
-    let now = Instant::now();
+    let duration_ms = time.get_elapsed_ms();
+
+    let mut predicted_system_state: SystemState<Query<(
+        &AnimationState,
+        &mut RenderPosition
+    )>> = SystemState::new(predicted_world.world_mut());
+    let mut predicted_unit_q = predicted_system_state.get_mut(predicted_world.world_mut());
+
+    let mut transform = Transform::default();
 
     // Aggregate Models
     for (
         entity,
         unit_handle,
-        mut anim_state,
-        // render_helper,
-        mut render_position,
-        // mut tile_movement,
-        confirmed_opt,
-        predicted_opt,
-        mut transform,
         visibility,
+        confirmed_anim_state,
+        mut confirmed_render_position,
         render_layer_opt,
     ) in unit_q.iter_mut()
     {
@@ -64,53 +62,44 @@ pub fn draw_units(
             continue;
         };
 
-        if confirmed_opt.is_some() && predicted_opt.is_some() {
-            panic!("Unit cannot be both confirmed and predicted");
-        }
+        let Ok((predicted_anim_state, mut predicted_render_position)) = predicted_unit_q.get_mut(entity) else {
+            continue;
+        };
 
-        if confirmed_opt.is_some() {
-            // check if this is ours, if so, we don't need to render it
-            if let Some(owned_entity) = &global.owned_entity {
-                if owned_entity.confirmed == entity {
-                    // TODO: uncomment below line to avoid rendering the confirmed position of our own character
-                    // continue;
-                }
-            }
-        }
-
-        // Uncomment this to disable rendering of predicted character
-        // if predicted_opt.is_some() {
-        //     if let Some(owned_entity) = &global.owned_entity {
-        //         if owned_entity.predicted == entity {
-        //             continue;
-        //         }
-        //     }
-        // }
-
-        // draw model
+        // draw confirmed model
         {
-            let (interp_position, velocity) = render_position.render(&client, &now);
-
-            // TODO: put this in a system
-            anim_state.update(
-                &now,
-                &asset_manager,
-                animated_model_handle,
-                interp_position,
-                velocity,
-            );
+            let interp_position = confirmed_render_position.render(&client, duration_ms);
 
             transform.translation.x = interp_position.x;
             transform.translation.y = interp_position.y;
             transform.set_scale(Vec3::new(1.0, 1.0, 1.0));
-            transform.set_rotation(Quat::from_rotation_z(anim_state.rotation));
+            transform.set_rotation(Quat::from_rotation_z(predicted_anim_state.rotation));
 
             asset_manager.draw_animated_model(
                 &mut render_frame,
                 animated_model_handle,
-                &anim_state.animation_name,
+                &confirmed_anim_state.animation_name,
                 &transform,
-                anim_state.animation_index_ms,
+                confirmed_anim_state.animation_index_ms,
+                render_layer_opt,
+            );
+        }
+
+        // draw predicted model
+        {
+            let interp_position = predicted_render_position.render(&client, duration_ms);
+
+            transform.translation.x = interp_position.x;
+            transform.translation.y = interp_position.y;
+            transform.set_scale(Vec3::new(1.0, 1.0, 1.0));
+            transform.set_rotation(Quat::from_rotation_z(predicted_anim_state.rotation));
+
+            asset_manager.draw_animated_model(
+                &mut render_frame,
+                animated_model_handle,
+                &predicted_anim_state.animation_name,
+                &transform,
+                predicted_anim_state.animation_index_ms,
                 render_layer_opt,
             );
         }

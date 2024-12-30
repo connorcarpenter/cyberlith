@@ -3,6 +3,7 @@ use bevy_ecs::prelude::Component;
 use game_engine::{
     logging::{info, warn},
     math::Vec2,
+    asset::{AssetHandle, AssetManager, UnitData},
 };
 
 use game_app_network::{
@@ -45,13 +46,11 @@ impl ConfirmedTileMovement {
 
     pub fn recv_updated_net_tile_target(
         &mut self,
-        tick_tracker: &TickTracker,
         update_tick: Tick,
         net_tile_target: &NetworkedTileTarget,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
-        animation_state: &mut AnimationState,
-    ) {
+    ) -> bool {
         let (next_velocity_x, next_velocity_y) = (
             net_tile_target.velocity_x(),
             net_tile_target.velocity_y(),
@@ -177,25 +176,17 @@ impl ConfirmedTileMovement {
 
         render_position.recv_position(physics.position(), update_tick);
 
-        self.handle_late_update(
-            tick_tracker,
-            update_tick,
-            physics,
-            render_position,
-            animation_state,
-        );
+        return true;
     }
 
     // returns whether or not to rollback
     pub fn recv_updated_net_move_buffer(
         &mut self,
-        tick_tracker: &TickTracker,
         update_tick: Tick,
         net_move_buffer: &NetworkedMoveBuffer,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
-        animation_state: &mut AnimationState,
-    ) -> bool {
+    ) -> (bool, bool) {
         info!(
             "Recv NetworkedMoveBuffer. Tick: {:?}, Value: {:?}",
             update_tick,
@@ -207,10 +198,10 @@ impl ConfirmedTileMovement {
             if self.move_buffer.has_buffered_move() {
                 // changed
                 self.move_buffer.clear();
-                return true;
+                return (true, false);
             } else {
                 // did not change
-                return false;
+                return (false, false);
             }
         }
 
@@ -224,24 +215,18 @@ impl ConfirmedTileMovement {
 
         render_position.recv_position(physics.position(), update_tick);
 
-        self.handle_late_update(
-            tick_tracker,
-            update_tick,
-            physics,
-            render_position,
-            animation_state,
-        );
-
-        return true;
+        return (true, true);
     }
 
-    fn handle_late_update(
+    pub fn handle_late_update(
         &mut self,
+        asset_manager: &AssetManager,
         tick_tracker: &TickTracker,
         update_tick: Tick,
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
         animation_state: &mut AnimationState,
+        unit_handle: &AssetHandle<UnitData>,
     ) {
         let Some(last_processed_server_tick) = tick_tracker.last_processed_server_tick() else {
             return;
@@ -259,11 +244,17 @@ impl ConfirmedTileMovement {
             );
         }
 
+        let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle)
+        else {
+            return;
+        };
+
         // if update_tick is less than last_processed_server_tick, then we should simulate forward
         let mut current_tick = update_tick;
         while current_tick != last_processed_server_tick {
             current_tick = current_tick.wrapping_add(1);
             process_tick(
+                asset_manager,
                 TileMovementType::ClientConfirmed,
                 current_tick,
                 None, // confirmed entities don't take commands
@@ -271,6 +262,7 @@ impl ConfirmedTileMovement {
                 physics,
                 render_position,
                 animation_state,
+                animated_model_handle,
             );
         }
     }

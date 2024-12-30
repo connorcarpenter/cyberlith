@@ -6,12 +6,12 @@ use bevy_ecs::{
     prelude::Query,
 };
 
-use game_engine::{logging::info, time::Instant};
+use game_engine::{logging::info, asset::{AssetHandle, AssetManager, UnitData}};
 
 use game_app_network::{
     naia::sequence_greater_than,
     world::{
-        components::{NetworkedMoveBuffer, PhysicsController},
+        WorldClient, components::{NetworkedMoveBuffer, PhysicsController},
         WorldInsertComponentEvent, WorldRemoveComponentEvent, WorldUpdateComponentEvent,
     },
 };
@@ -19,15 +19,18 @@ use game_app_network::{
 use crate::{
     components::{AnimationState, ConfirmedTileMovement, RenderPosition},
     resources::{RollbackManager, TickTracker},
-    systems::world_events::PredictionEvents,
 };
 
 pub fn insert_net_move_buffer_events(
-    mut prediction_events: ResMut<PredictionEvents>,
+    client: WorldClient,
+    mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldInsertComponentEvent<NetworkedMoveBuffer>>,
 ) {
+    let Some(server_tick) = client.server_tick() else {
+        return;
+    };
     for event in event_reader.read() {
-        let now = Instant::now();
+
         let entity = event.entity;
 
         info!(
@@ -35,11 +38,12 @@ pub fn insert_net_move_buffer_events(
             entity
         );
 
-        prediction_events.read_insert_net_move_buffer_event(&now, &entity);
+        rollback_manager.add_event(entity, server_tick);
     }
 }
 
 pub fn update_net_move_buffer_events(
+    asset_manager: Res<AssetManager>,
     mut rollback_manager: ResMut<RollbackManager>,
     tick_tracker: Res<TickTracker>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedMoveBuffer>>,
@@ -50,6 +54,7 @@ pub fn update_net_move_buffer_events(
         &mut PhysicsController,
         &mut RenderPosition,
         &mut AnimationState,
+        &AssetHandle<UnitData>,
     )>,
 ) {
     let mut events = HashMap::new();
@@ -79,6 +84,7 @@ pub fn update_net_move_buffer_events(
             mut physics,
             mut render_position,
             mut animation_state,
+            unit_handle,
         )) = updated_q.get_mut(*updated_entity)
         else {
             panic!(
@@ -86,14 +92,23 @@ pub fn update_net_move_buffer_events(
                 updated_entity
             );
         };
-        let should_rollback = tile_movement.recv_updated_net_move_buffer(
-            &tick_tracker,
+        let (should_rollback, must_handle_late_update) = tile_movement.recv_updated_net_move_buffer(
             *update_tick,
             &net_move_buffer,
             &mut physics,
             &mut render_position,
-            &mut animation_state,
         );
+        if must_handle_late_update {
+            tile_movement.handle_late_update(
+                &asset_manager,
+                &tick_tracker,
+                *update_tick,
+                &mut physics,
+                &mut render_position,
+                &mut animation_state,
+                &unit_handle,
+            );
+        }
         if should_rollback {
             rollback_events.insert(*updated_entity, *update_tick);
         }
@@ -108,4 +123,6 @@ pub fn remove_net_move_buffer_events(
     for _event in event_reader.read() {
         info!("removed NetworkedMoveBuffer component from entity");
     }
+
+    // TODO: trigger rollback!
 }

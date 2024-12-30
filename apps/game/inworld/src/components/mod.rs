@@ -1,9 +1,6 @@
 mod animation_state;
 pub(crate) use animation_state::*;
 
-mod markers;
-pub use markers::*;
-
 mod render_position;
 pub(crate) use render_position::*;
 

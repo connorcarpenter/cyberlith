@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use bevy_ecs::component::Component;
 
-use game_engine::{math::Vec2, time::Instant};
+use game_engine::{math::Vec2};
 
 use game_app_network::{
     naia::{sequence_less_than, GameInstant, Tick},
@@ -13,7 +13,6 @@ use game_app_network::{
 pub struct RenderPosition {
     // front is oldest, back is newest
     position_queue: VecDeque<(Vec2, Tick)>,
-    last_render_instant: Instant,
     interp_instant: GameInstant,
 }
 
@@ -28,7 +27,6 @@ impl RenderPosition {
 
         let mut me = Self {
             position_queue: VecDeque::new(),
-            last_render_instant: Instant::now(),
             interp_instant: tick_instant,
         };
 
@@ -65,6 +63,14 @@ impl RenderPosition {
         // );
     }
 
+    pub fn extract(confirmed_render_pos: &Self, old_predicted_render_pos_opt: Option<&Self>) -> Self {
+        let mut me = confirmed_render_pos.clone();
+        if let Some(old_predicted_render_pos) = old_predicted_render_pos_opt {
+            me.interp_instant = old_predicted_render_pos.interp_instant;
+        }
+        me
+    }
+
     pub fn recv_rollback(&mut self, server_render_pos: &RenderPosition) {
         //info!("recv_rollback()");
 
@@ -72,11 +78,8 @@ impl RenderPosition {
     }
 
     // returns (position, velocity)
-    pub fn render(&mut self, client: &WorldClient, now: &Instant) -> (Vec2, Vec2) {
+    pub fn render(&mut self, client: &WorldClient, duration_ms: f32) -> Vec2 {
         {
-            let duration_elapsed = self.last_render_instant.elapsed(&now);
-            let duration_ms = duration_elapsed.as_secs_f32() * 1000.0;
-
             let adjust: f32 = match self.position_queue.len() {
                 0 => 0.7,
                 1 => 0.8,
@@ -91,16 +94,13 @@ impl RenderPosition {
             self.advance_millis(client, duration_ms as u32);
         }
 
-        //info!("duration_ms: {:?}", duration_ms);
-        self.last_render_instant = now.clone();
-
         if self.position_queue.len() < 2 {
             if self.position_queue.len() < 1 {
                 panic!("queue is empty");
             }
 
             let (position, _) = self.position_queue.get(0).unwrap();
-            return (*position, Vec2::ZERO);
+            return *position;
         }
 
         let (prev_pos, prev_instant, next_pos, next_instant) = {
@@ -119,7 +119,7 @@ impl RenderPosition {
 
         let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
         if prev_to_interp < 0.0 {
-            return (prev_pos, Vec2::ZERO);
+            return prev_pos;
         }
         let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
         let total = prev_to_interp + interp_to_next;
@@ -129,7 +129,7 @@ impl RenderPosition {
         let interp_y = prev_pos.y + ((next_pos.y - prev_pos.y) * interp);
 
         let interp_pos = Vec2::new(interp_x, interp_y);
-        (interp_pos, next_pos - prev_pos)
+        interp_pos
     }
 
     pub fn advance_millis(&mut self, client: &WorldClient, millis: u32) {

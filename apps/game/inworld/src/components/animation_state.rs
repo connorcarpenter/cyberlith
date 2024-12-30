@@ -4,7 +4,6 @@ use game_engine::{
     asset::{AnimatedModelData, AssetHandle, AssetManager},
     logging::info,
     math::Vec2,
-    time::Instant,
 };
 
 use game_app_network::world::types::Direction;
@@ -15,7 +14,6 @@ pub struct AnimationState {
     lookdir: Direction,
     pub(crate) animation_name: String,
     pub(crate) animation_index_ms: f32,
-    last_now: Instant,
     last_pos: Vec2,
     is_moving: bool,
     move_heat: f32,
@@ -28,7 +26,6 @@ impl AnimationState {
             lookdir: Direction::East,
             animation_name: "idle".to_string(),
             animation_index_ms: 0.0,
-            last_now: Instant::now(),
             last_pos: Vec2::ZERO,
             is_moving: false,
             move_heat: 0.0,
@@ -37,11 +34,11 @@ impl AnimationState {
 
     pub fn update(
         &mut self,
-        now: &Instant,
         asset_manager: &AssetManager,
         model_data: &AssetHandle<AnimatedModelData>,
         position: Vec2,
         velocity: Vec2,
+        delta_ms: f32,
     ) {
         let last_position = self.last_pos;
         self.last_pos = position;
@@ -77,8 +74,6 @@ impl AnimationState {
         }
 
         // animate
-        let delta_ms = self.last_now.elapsed(now).as_millis(); // TODO: delta should be some global thats passed into here...
-        self.last_now = now.clone();
 
         // TODO: move this into config
         let animation_speed_factor = match self.animation_name.as_str() {
@@ -89,7 +84,7 @@ impl AnimationState {
             }
             _ => 0.0,
         };
-        self.animation_index_ms += (delta_ms as f32) * animation_speed_factor;
+        self.animation_index_ms += delta_ms * animation_speed_factor;
 
         let max_duration_ms = asset_manager
             .get_animated_model_animation_duration_ms(model_data, &self.animation_name);
@@ -97,14 +92,6 @@ impl AnimationState {
         while self.animation_index_ms >= max_duration_ms {
             self.animation_index_ms -= max_duration_ms;
         }
-    }
-
-    pub fn recv_rollback(&mut self, other: &AnimationState) {
-        // self.rotation = other.rotation;
-        self.lookdir = other.lookdir;
-        // self.animation_name = other.animation_name.clone();
-        // self.animation_index_ms = other.animation_index_ms;
-        // TODO: should we rollback other props?
     }
 
     pub fn recv_lookdir_update(&mut self, lookdir: &Direction) {

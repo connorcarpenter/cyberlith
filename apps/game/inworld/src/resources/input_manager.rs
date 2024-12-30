@@ -5,7 +5,7 @@ use std::{
 
 use bevy_ecs::{
     prelude::Resource,
-    system::{Query, Res, ResMut},
+    system::{Query, Res, ResMut, SystemState},
 };
 
 use game_engine::{
@@ -18,7 +18,7 @@ use game_app_network::{
     world::{messages::PlayerCommands, types::Direction, WorldClient},
 };
 
-use crate::{components::AnimationState, resources::Global};
+use crate::{components::AnimationState, resources::{Global, PredictedWorld}};
 
 const DOUBLE_TAP_BUFFER: u16 = 150;
 const SEQUENTIAL_TAP_DURATION: u16 = 1000;
@@ -60,7 +60,7 @@ impl InputManager {
         client: WorldClient,
         global: Res<Global>,
         input: Res<Input>,
-        animation_state_q: Query<&AnimationState>,
+        mut predicted_world: ResMut<PredictedWorld>,
     ) {
         if global.owned_entity.is_none() {
             return;
@@ -74,9 +74,11 @@ impl InputManager {
         let releases = me.update_pressed_keys(&client_instant, &input);
 
         // get prediction's current look direction
-        let client_avatar_entity = global.owned_entity.as_ref().unwrap().predicted;
+        let client_avatar_entity = global.owned_entity.as_ref().unwrap().confirmed;
+
+        let mut predicted_system_state: SystemState<Query<&AnimationState>> = SystemState::new(predicted_world.world_mut());
+        let animation_state_q = predicted_system_state.get(predicted_world.world_mut());
         let Ok(animation_state) = animation_state_q.get(client_avatar_entity) else {
-            warn!("Client Prediction Avatar does not have AnimationState component!");
             return;
         };
         let lookdir = animation_state.lookdir();

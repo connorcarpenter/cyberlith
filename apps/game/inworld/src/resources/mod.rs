@@ -9,3 +9,6 @@ pub use rollback::*;
 
 mod tick_tracker;
 pub use tick_tracker::*;
+
+mod predicted_world;
+pub use predicted_world::*;

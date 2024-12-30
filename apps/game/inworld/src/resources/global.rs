@@ -4,14 +4,12 @@ use bevy_ecs::prelude::{Entity, Resource};
 
 pub struct OwnedEntity {
     pub confirmed: Entity,
-    pub predicted: Entity,
 }
 
 impl OwnedEntity {
-    pub fn new(confirmed_entity: Entity, predicted_entity: Entity) -> Self {
+    pub fn new(confirmed_entity: Entity) -> Self {
         Self {
             confirmed: confirmed_entity,
-            predicted: predicted_entity,
         }
     }
 }

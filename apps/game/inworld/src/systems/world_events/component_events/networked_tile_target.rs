@@ -11,7 +11,7 @@ use game_engine::{
     logging::info,
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility},
-    time::Instant,
+    asset::{AssetHandle, AssetManager, UnitData},
 };
 
 use game_app_network::{
@@ -27,21 +27,23 @@ use game_app_network::{
 };
 
 use crate::{
-    components::{AnimationState, Confirmed, ConfirmedTileMovement, RenderPosition, TickSkipper},
+    components::{AnimationState, ConfirmedTileMovement, RenderPosition, TickSkipper},
     resources::{RollbackManager, TickTracker},
-    systems::world_events::PredictionEvents,
 };
 
 pub fn insert_net_tile_target_events(
     client: WorldClient,
     mut commands: Commands,
     net_tile_target_q: Query<&NetworkedTileTarget>,
-    mut prediction_events: ResMut<PredictionEvents>,
+    mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldInsertComponentEvent<NetworkedTileTarget>>,
 ) {
+    let Some(server_tick) = client.server_tick() else {
+        return;
+    };
+
     for event in event_reader.read() {
-        let now = Instant::now();
-        let server_tick = client.server_tick().unwrap();
+
         let server_tick_instant = client
             .tick_to_instant(server_tick)
             .expect("failed to convert tick to instant");
@@ -54,7 +56,7 @@ pub fn insert_net_tile_target_events(
 
         let net_tile_target = net_tile_target_q.get(entity).unwrap();
 
-        prediction_events.read_insert_net_tile_target_event(&now, &entity);
+        rollback_manager.add_event(entity, server_tick);
 
         let layer = RenderLayers::layer(0);
 
@@ -76,13 +78,12 @@ pub fn insert_net_tile_target_events(
             .insert(
                 Transform::from_translation(Vec3::splat(0.0))
                     .with_rotation(Quat::from_rotation_z(f32::to_radians(90.0))),
-            )
-            // mark as Confirmed
-            .insert(Confirmed);
+            );
     }
 }
 
 pub fn update_net_tile_target_events(
+    asset_manager: Res<AssetManager>,
     tick_tracker: Res<TickTracker>,
     mut rollback_manager: ResMut<RollbackManager>,
     mut event_reader: EventReader<WorldUpdateComponentEvent<NetworkedTileTarget>>,
@@ -92,6 +93,7 @@ pub fn update_net_tile_target_events(
         &mut PhysicsController,
         &mut RenderPosition,
         &mut AnimationState,
+        &AssetHandle<UnitData>,
     )>,
     mut tick_skipper_q: Query<&mut TickSkipper>,
 ) {
@@ -121,6 +123,7 @@ pub fn update_net_tile_target_events(
             mut physics,
             mut render_position,
             mut animation_state,
+            unit_handle,
         )) = updated_q.get_mut(*updated_entity)
         else {
             panic!(
@@ -129,14 +132,23 @@ pub fn update_net_tile_target_events(
             );
         };
 
-        tile_movement.recv_updated_net_tile_target(
-            &tick_tracker,
+        let must_handle_late_update = tile_movement.recv_updated_net_tile_target(
             *update_tick,
             &net_tile_target,
             &mut physics,
             &mut render_position,
-            &mut animation_state,
         );
+        if must_handle_late_update {
+            tile_movement.handle_late_update(
+                &asset_manager,
+                &tick_tracker,
+                *update_tick,
+                &mut physics,
+                &mut render_position,
+                &mut animation_state,
+                &unit_handle,
+            )
+        }
 
         let Ok(mut tick_skipper) = tick_skipper_q.get_mut(*updated_entity) else {
             panic!(
@@ -157,4 +169,6 @@ pub fn remove_net_tile_target_events(
     for _event in event_reader.read() {
         info!("removed NetworkedTileTarget component from entity");
     }
+
+    // TODO: trigger Rollback!
 }
