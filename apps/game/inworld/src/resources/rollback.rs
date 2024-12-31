@@ -73,11 +73,11 @@ impl RollbackManager {
 
             let events = std::mem::take(&mut me.events);
 
-            let Some(owned_entity) = &global.owned_entity else {
+            let Some(confirmed_entity) = &global.owned_entity else {
                 // warn!("---");
                 return;
             };
-            let confirmed_entity = owned_entity.confirmed;
+            let confirmed_entity = *confirmed_entity;
 
             let Some(server_tick) = events.get(&confirmed_entity) else {
                 return;

@@ -6,7 +6,7 @@ use game_app_network::world::{
     channels::EntityAssignmentChannel, messages::EntityAssignment, WorldClient, WorldMessageEvents,
 };
 
-use crate::resources::{Global, OwnedEntity, RollbackManager};
+use crate::resources::{Global, RollbackManager};
 
 pub fn message_events(
     mut commands: Commands,
@@ -24,13 +24,13 @@ pub fn message_events(
             let entity = message.entity.get(&client).unwrap();
             if assign {
                 info!("gave ownership of entity: {:?}", entity);
-                global.owned_entity = Some(OwnedEntity::new(entity));
+                global.owned_entity = Some(entity);
                 rollback_manager.add_event(entity, server_tick);
             } else {
                 let mut disowned: bool = false;
                 if let Some(owned_entity) = &global.owned_entity {
-                    if owned_entity.confirmed == entity {
-                        commands.entity(owned_entity.confirmed).despawn();
+                    if *owned_entity == entity {
+                        commands.entity(*owned_entity).despawn();
                         disowned = true;
                     }
                 }

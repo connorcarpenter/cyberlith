@@ -33,11 +33,7 @@ pub fn client_tick_events(
     mut tick_reader: EventReader<WorldClientTickEvent>,
     unit_handle_q: Query<&AssetHandle<UnitData>>,
 ) {
-    let Some(predicted_entity) = global
-        .owned_entity
-        .as_ref()
-        .map(|owned_entity| owned_entity.confirmed)
-    else {
+    let Some(owned_entity) = global.owned_entity else {
         return;
     };
 
@@ -64,10 +60,10 @@ pub fn client_tick_events(
         mut client_physics,
         mut client_render_position,
         mut animation_state,
-    )) = character_q.get_mut(predicted_entity) else {
+    )) = character_q.get_mut(owned_entity) else {
         return;
     };
-    let Ok(unit_handle) = unit_handle_q.get(predicted_entity) else {
+    let Ok(unit_handle) = unit_handle_q.get(owned_entity) else {
         return;
     };
     let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle) else {

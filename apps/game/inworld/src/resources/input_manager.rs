@@ -74,7 +74,7 @@ impl InputManager {
         let releases = me.update_pressed_keys(&client_instant, &input);
 
         // get prediction's current look direction
-        let client_avatar_entity = global.owned_entity.as_ref().unwrap().confirmed;
+        let client_avatar_entity = global.owned_entity.unwrap();
 
         let mut predicted_system_state: SystemState<Query<&AnimationState>> = SystemState::new(predicted_world.world_mut());
         let animation_state_q = predicted_system_state.get(predicted_world.world_mut());
