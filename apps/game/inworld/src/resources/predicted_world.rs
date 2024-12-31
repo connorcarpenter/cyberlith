@@ -41,7 +41,7 @@ impl PredictedWorld {
                 &ConfirmedTileMovement,
                 &PhysicsController,
                 &RenderPosition,
-                &AnimationState
+                &AnimationState,
         )>> = SystemState::new(main);
         let character_q = system_state.get(main);
 
@@ -51,7 +51,7 @@ impl PredictedWorld {
             confirmed_tile_movement,
             confirmed_physics,
             confirmed_render_pos,
-            confirmed_animation_state
+            confirmed_animation_state,
         ) in character_q.iter() {
 
             // Get old predicted render position

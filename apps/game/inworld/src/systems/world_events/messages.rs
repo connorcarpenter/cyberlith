@@ -25,7 +25,7 @@ pub fn message_events(
             if assign {
                 info!("gave ownership of entity: {:?}", entity);
                 global.owned_entity = Some(entity);
-                rollback_manager.add_event(entity, server_tick);
+                rollback_manager.add_event(server_tick);
             } else {
                 let mut disowned: bool = false;
                 if let Some(owned_entity) = &global.owned_entity {
@@ -37,7 +37,7 @@ pub fn message_events(
                 if disowned {
                     info!("removed ownership of entity");
                     global.owned_entity = None;
-                    rollback_manager.add_event(entity, server_tick);
+                    rollback_manager.add_event(server_tick);
                 }
             }
         }

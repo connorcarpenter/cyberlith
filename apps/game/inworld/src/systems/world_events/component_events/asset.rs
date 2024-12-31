@@ -37,7 +37,7 @@ pub fn insert_asset_ref_events(
                 //     &unit_data_handle,
                 // );
                 let server_tick = client.server_tick().unwrap();
-                rollback_manager.add_event(entity, server_tick);
+                rollback_manager.add_event(server_tick);
 
                 commands.entity(entity).insert(unit_data_handle);
             }

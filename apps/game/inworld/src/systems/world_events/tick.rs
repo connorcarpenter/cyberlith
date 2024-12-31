@@ -10,7 +10,7 @@ use game_app_network::{
     world::{
         behavior as shared_behavior,
         channels::PlayerCommandChannel,
-        components::{PhysicsController, TileMovementType},
+        components::{NetworkedLastCommand, PhysicsController, TileMovementType},
         messages::PlayerCommands,
         WorldClient, WorldClientTickEvent, WorldServerTickEvent,
     },
@@ -31,11 +31,9 @@ pub fn client_tick_events(
     mut input_manager: ResMut<InputManager>,
     mut predicted_world: ResMut<PredictedWorld>,
     mut tick_reader: EventReader<WorldClientTickEvent>,
-    unit_handle_q: Query<&AssetHandle<UnitData>>,
+    unit_q: Query<(Entity, &AssetHandle<UnitData>, &NetworkedLastCommand)>,
 ) {
-    let Some(owned_entity) = global.owned_entity else {
-        return;
-    };
+    let owned_entity_opt = global.owned_entity;
 
     let mut client_ticks = Vec::new();
     for event in tick_reader.read() {
@@ -51,24 +49,9 @@ pub fn client_tick_events(
             &mut PredictedTileMovement,
             &mut PhysicsController,
             &mut RenderPosition,
-            &mut AnimationState
+            &mut AnimationState,
         )>> = SystemState::new(predicted_world.world_mut());
     let mut character_q = predicted_system_state.get_mut(predicted_world.world_mut());
-
-    let Ok((
-        mut client_tile_movement,
-        mut client_physics,
-        mut client_render_position,
-        mut animation_state,
-    )) = character_q.get_mut(owned_entity) else {
-        return;
-    };
-    let Ok(unit_handle) = unit_handle_q.get(owned_entity) else {
-        return;
-    };
-    let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle) else {
-        return;
-    };
 
     for client_tick in client_ticks {
 
@@ -93,18 +76,44 @@ pub fn client_tick_events(
 
         // process tick
         let player_command = input_manager.pop_incoming_command(client_tick);
-        let client_tile_movement_2: &mut PredictedTileMovement = &mut client_tile_movement;
-        process_tick(
-            &asset_manager,
-            TileMovementType::ClientPredicted,
-            client_tick,
-            player_command,
-            client_tile_movement_2,
-            &mut client_physics,
-            &mut client_render_position,
-            &mut animation_state,
-            animated_model_handle,
-        );
+
+        for (entity, unit_handle, last_command) in unit_q.iter() {
+            let Ok((
+                       mut predicted_tile_movement,
+                       mut predicted_physics,
+                       mut predicted_render_position,
+                       mut predicted_animation_state,
+                   )) = character_q.get_mut(entity) else {
+                continue;
+            };
+            let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle) else {
+                continue;
+            };
+
+            let next_command = {
+                if let Some(owned_entity) = owned_entity_opt {
+                    if entity == owned_entity {
+                        player_command.clone()
+                    } else {
+                        last_command.to_player_commands()
+                    }
+                } else {
+                    last_command.to_player_commands()
+                }
+            };
+            let client_tile_movement_2: &mut PredictedTileMovement = &mut predicted_tile_movement;
+            process_tick(
+                &asset_manager,
+                TileMovementType::ClientPredicted,
+                client_tick,
+                next_command,
+                client_tile_movement_2,
+                &mut predicted_physics,
+                &mut predicted_render_position,
+                &mut predicted_animation_state,
+                animated_model_handle,
+            );
+        }
     }
 }
 

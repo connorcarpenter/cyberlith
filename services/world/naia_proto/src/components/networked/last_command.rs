@@ -35,4 +35,16 @@ impl NetworkedLastCommand {
         self.set(move_dir);
         return;
     }
+
+    pub fn to_player_commands(&self) -> Option<PlayerCommands> {
+
+        let last_move = self.get();
+        if last_move.is_none() {
+            return None;
+        }
+
+        let mut output = PlayerCommands::new();
+        output.set_move(last_move.unwrap());
+        Some(output)
+    }
 }

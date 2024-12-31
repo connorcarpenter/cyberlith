@@ -56,7 +56,7 @@ pub fn insert_net_tile_target_events(
 
         let net_tile_target = net_tile_target_q.get(entity).unwrap();
 
-        rollback_manager.add_event(entity, server_tick);
+        rollback_manager.add_event(server_tick);
 
         let layer = RenderLayers::layer(0);
 
@@ -126,10 +126,7 @@ pub fn update_net_tile_target_events(
             unit_handle,
         )) = updated_q.get_mut(*updated_entity)
         else {
-            panic!(
-                "failed to get components q for updated entity: {:?}",
-                updated_entity
-            );
+            continue;
         };
 
         let must_handle_late_update = tile_movement.recv_updated_net_tile_target(

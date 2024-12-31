@@ -13,7 +13,7 @@ use game_engine::{logging::warn, asset::{AssetHandle, AssetManager, UnitData}};
 use game_app_network::{
     naia::{sequence_greater_than, Tick},
     world::{
-        components::{PhysicsController, TileMovementType},
+        components::{PhysicsController, NetworkedLastCommand, TileMovementType},
         WorldClient,
     },
 };
@@ -26,32 +26,31 @@ use crate::{
 
 #[derive(Resource)]
 pub struct RollbackManager {
-    events: HashMap<Entity, Tick>,
+    events: Option<Tick>,
 }
 
 impl Default for RollbackManager {
     fn default() -> Self {
         Self {
-            events: HashMap::new(),
+            events: None,
         }
     }
 }
 
 impl RollbackManager {
     pub fn add_events(&mut self, events: HashMap<Entity, Tick>) {
-        for (entity, tick) in events {
-            self.add_event(entity, tick);
+        for (_, tick) in events {
+            self.add_event(tick);
         }
     }
 
-    pub fn add_event(&mut self, entity: Entity, tick: Tick) {
-        if self.events.contains_key(&entity) {
-            let existing_tick = self.events.get(&entity).unwrap();
-            if sequence_greater_than(tick, *existing_tick) {
-                self.events.insert(entity, tick);
+    pub fn add_event(&mut self, tick: Tick) {
+        if let Some(existing_tick) = self.events {
+            if sequence_greater_than(tick, existing_tick) {
+                self.events = Some(tick);
             }
         } else {
-            self.events.insert(entity, tick);
+            self.events = Some(tick);
         }
     }
 
@@ -59,7 +58,7 @@ impl RollbackManager {
     pub(crate) fn execute_rollback(
         main_world: &mut World,
     ) {
-        let (current_tick, confirmed_entity) = {
+        let (current_tick, owned_entity_opt) = {
             let mut main_system_state: SystemState<(
                 Res<Global>,
                 ResMut<Self>,
@@ -71,18 +70,11 @@ impl RollbackManager {
                 tick_tracker,
             ) = main_system_state.get_mut(main_world);
 
-            let events = std::mem::take(&mut me.events);
-
-            let Some(confirmed_entity) = &global.owned_entity else {
-                // warn!("---");
+            let Some(server_tick) = std::mem::take(&mut me.events) else {
                 return;
             };
-            let confirmed_entity = *confirmed_entity;
 
-            let Some(server_tick) = events.get(&confirmed_entity) else {
-                return;
-            };
-            let server_tick = *server_tick;
+            let owned_entity_opt = global.owned_entity;
 
             warn!("ROLLBACK! (Tick: {:?})", server_tick);
 
@@ -141,7 +133,7 @@ impl RollbackManager {
             // not necessary here yet
             main_system_state.apply(main_world);
 
-            (current_tick, confirmed_entity)
+            (current_tick, owned_entity_opt)
         };
 
         main_world.resource_scope(|main_world: &mut World, mut predicted_world: Mut<PredictedWorld>| {
@@ -158,21 +150,14 @@ impl RollbackManager {
                     WorldClient,
                     Res<AssetManager>,
                     ResMut<InputManager>,
-                    Query<&AssetHandle<UnitData>>,
+                    Query<(Entity, &AssetHandle<UnitData>, &NetworkedLastCommand)>,
                 )> = SystemState::new(main_world);
             let (
                 client,
                 asset_manager,
                 mut input_manager,
-                unit_handle_q,
+                unit_q,
             ) = main_system_state.get_mut(main_world);
-
-            let replay_commands = input_manager.pop_command_replays(current_tick);
-
-            let Ok(unit_handle) = unit_handle_q.get(confirmed_entity) else {
-                return;
-            };
-            let animated_model_handle = asset_manager.get_unit_animated_model_handle(unit_handle).unwrap();
 
             let mut predicted_system_state: SystemState<
                 Query<(
@@ -182,13 +167,9 @@ impl RollbackManager {
                     &mut AnimationState,
                 )>
             > = SystemState::new(predicted_world.world_mut());
-            let mut character_q = predicted_system_state.get_mut(predicted_world.world_mut());
-            let (
-                mut predicted_tile_movement,
-                mut predicted_physics,
-                mut predicted_render_position,
-                mut predicted_animation_state,
-            ) = character_q.get_mut(confirmed_entity).unwrap();
+            let mut predicted_unit_q = predicted_system_state.get_mut(predicted_world.world_mut());
+
+            let replay_commands = input_manager.pop_command_replays(current_tick);
 
             // process commands
             for (command_tick, outgoing_command_opt) in replay_commands {
@@ -200,24 +181,50 @@ impl RollbackManager {
                 // process movement
                 let player_command = input_manager.pop_incoming_command(command_tick);
 
-                let predicted_tile_movement_2: &mut PredictedTileMovement =
-                    &mut predicted_tile_movement;
-                process_tick(
-                    &asset_manager,
-                    TileMovementType::ClientPredicted,
-                    command_tick,
-                    player_command,
-                    predicted_tile_movement_2,
-                    &mut predicted_physics,
-                    &mut predicted_render_position,
-                    &mut predicted_animation_state,
-                    &animated_model_handle,
-                );
+                //
+                for (entity, unit_handle, last_command) in unit_q.iter() {
+                    let animated_model_handle = asset_manager.get_unit_animated_model_handle(unit_handle).unwrap();
+
+                    let (
+                        mut predicted_tile_movement,
+                        mut predicted_physics,
+                        mut predicted_render_position,
+                        mut predicted_animation_state,
+                    ) = predicted_unit_q.get_mut(entity).unwrap();
+
+                    let next_command = {
+                        if let Some(owned_entity) = owned_entity_opt {
+                            if entity == owned_entity {
+                                player_command.clone()
+                            } else {
+                                last_command.to_player_commands()
+                            }
+                        } else {
+                            last_command.to_player_commands()
+                        }
+                    };
+                    let predicted_tile_movement_2: &mut PredictedTileMovement =
+                        &mut predicted_tile_movement;
+                    process_tick(
+                        &asset_manager,
+                        TileMovementType::ClientPredicted,
+                        command_tick,
+                        next_command,
+                        predicted_tile_movement_2,
+                        &mut predicted_physics,
+                        &mut predicted_render_position,
+                        &mut predicted_animation_state,
+                        &animated_model_handle,
+                    );
+                }
             }
             warn!("---");
 
             // TODO: why is this necessary again? should refactor into a separate method
-            predicted_render_position.advance_millis(&client, 0);
+            for (entity, _, _) in unit_q.iter() {
+                let (_, _, mut predicted_render_position, _) = predicted_unit_q.get_mut(entity).unwrap();
+                predicted_render_position.advance_millis(&client, 0);
+            }
         });
     }
 }

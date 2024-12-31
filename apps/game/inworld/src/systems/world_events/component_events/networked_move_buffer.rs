@@ -38,7 +38,7 @@ pub fn insert_net_move_buffer_events(
             entity
         );
 
-        rollback_manager.add_event(entity, server_tick);
+        rollback_manager.add_event(server_tick);
     }
 }
 
@@ -87,10 +87,7 @@ pub fn update_net_move_buffer_events(
             unit_handle,
         )) = updated_q.get_mut(*updated_entity)
         else {
-            panic!(
-                "failed to get tile movement q for entity: {:?}",
-                updated_entity
-            );
+            continue;
         };
         let (should_rollback, must_handle_late_update) = tile_movement.recv_updated_net_move_buffer(
             *update_tick,
