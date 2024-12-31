@@ -71,12 +71,6 @@ impl RenderPosition {
         me
     }
 
-    pub fn recv_rollback(&mut self, server_render_pos: &RenderPosition) {
-        //info!("recv_rollback()");
-
-        self.position_queue = server_render_pos.position_queue.clone();
-    }
-
     // returns (position, velocity)
     pub fn render(&mut self, client: &WorldClient, duration_ms: f32) -> Vec2 {
         {
@@ -193,16 +187,16 @@ impl RenderPosition {
     }
 }
 
-fn eventually_differs(queue: &VecDeque<(f32, f32, Tick)>) -> bool {
-    let (front_x, front_y, _) = queue.front().unwrap();
-    let front_x = *front_x;
-    let front_y = *front_y;
-    let mut index = 1;
-    while let Some((x, y, _)) = queue.get(index) {
-        if *x != front_x || *y != front_y {
-            return true;
-        }
-        index += 1;
-    }
-    return false;
-}
+// fn eventually_differs(queue: &VecDeque<(f32, f32, Tick)>) -> bool {
+//     let (front_x, front_y, _) = queue.front().unwrap();
+//     let front_x = *front_x;
+//     let front_y = *front_y;
+//     let mut index = 1;
+//     while let Some((x, y, _)) = queue.get(index) {
+//         if *x != front_x || *y != front_y {
+//             return true;
+//         }
+//         index += 1;
+//     }
+//     return false;
+// }

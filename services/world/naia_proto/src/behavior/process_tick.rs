@@ -101,7 +101,7 @@ fn process_command(
 
             if prev_move != Some(direction) {
                 if let Some(tick_output) = output_opt {
-                    tick_output.set_next_move_buffer(Some(direction));
+                    tick_output.set_net_move_buffer(Some(direction));
                 }
                 return;
             }
@@ -135,7 +135,7 @@ fn process_result(
 
                 if let Some(output) = output_opt {
                     output.set_net_tile_target(next_tile_x, next_tile_y);
-                    output.set_next_move_buffer(None);
+                    output.set_net_move_buffer(None);
                 }
 
                 return;

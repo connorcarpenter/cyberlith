@@ -13,6 +13,9 @@ pub use move_buffer::*;
 mod tile_target;
 pub use tile_target::*;
 
+mod last_command;
+pub use last_command::*;
+
 // Plugin
 pub(crate) struct ComponentsPlugin;
 
@@ -22,6 +25,7 @@ impl ProtocolPlugin for ComponentsPlugin {
             .add_plugin(AssetRefsPlugin)
             .add_component::<NetworkedTileTarget>()
             .add_component::<NetworkedMoveBuffer>()
-            .add_component::<NetworkedLookDir>();
+            .add_component::<NetworkedLookDir>()
+            .add_component::<NetworkedLastCommand>();
     }
 }

@@ -19,7 +19,7 @@ use world_server_naia_proto::{
     types::Direction,
 };
 
-use world_server_naia_proto::components::NetworkedMoveBuffer;
+use world_server_naia_proto::components::{NetworkedLastCommand, NetworkedMoveBuffer};
 
 use crate::{
     asset::{AssetCatalog, AssetCommandsExt, AssetManager},
@@ -82,6 +82,7 @@ pub fn connect_events(
         let net_tile_target = NetworkedTileTarget::new(tile_position_x, tile_position_y);
         let net_move_buffer = NetworkedMoveBuffer::new();
         let net_look_dir = NetworkedLookDir::new(Direction::random());
+        let net_last_command = NetworkedLastCommand::new(None);
         let tile_movement = ServerTileMovement::new_stopped(&net_tile_target);
         let physics = PhysicsController::new(&net_tile_target);
 
@@ -101,6 +102,7 @@ pub fn connect_events(
             .insert(net_tile_target)
             .insert(net_move_buffer)
             .insert(net_look_dir)
+            .insert(net_last_command)
             .insert(tile_movement)
             .insert(physics)
             // return Entity id

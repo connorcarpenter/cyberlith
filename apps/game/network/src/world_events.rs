@@ -19,9 +19,7 @@ use naia_bevy_client::{
     events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent},
 };
 
-use world_server_naia_proto::components::{
-    Alt1, AssetEntry, AssetRef, NetworkedLookDir, Main, NetworkedMoveBuffer, NetworkedTileTarget,
-};
+use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, NetworkedLookDir, Main, NetworkedMoveBuffer, NetworkedTileTarget, NetworkedLastCommand};
 
 use crate::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},
@@ -50,6 +48,7 @@ impl Plugin for WorldEventsPlugin {
             .add_component_events::<World, NetworkedTileTarget>()
             .add_component_events::<World, NetworkedLookDir>()
             .add_component_events::<World, NetworkedMoveBuffer>()
+            .add_component_events::<World, NetworkedLastCommand>()
             // asset events
             .add_event::<InsertAssetRefEvent<Main>>()
             .add_event::<InsertAssetRefEvent<Alt1>>();
@@ -74,6 +73,7 @@ fn component_events_update(world: &mut BevyWorld) {
         events.process::<NetworkedTileTarget>(world);
         events.process::<NetworkedMoveBuffer>(world);
         events.process::<NetworkedLookDir>(world);
+        events.process::<NetworkedLastCommand>(world);
 
         // info!("]");
     }

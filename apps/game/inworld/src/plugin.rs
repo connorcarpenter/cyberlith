@@ -54,6 +54,10 @@ impl Plugin for InWorldPlugin {
                     systems::world_events::update_net_move_buffer_events,
                     systems::world_events::remove_net_move_buffer_events,
                     //
+                    systems::world_events::insert_net_last_command_events,
+                    systems::world_events::update_net_last_command_events,
+                    systems::world_events::remove_net_last_command_events,
+                    //
                     systems::world_events::insert_asset_ref_events,
                 )
                     .run_if(in_state(AppState::InGame))

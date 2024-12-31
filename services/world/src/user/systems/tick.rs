@@ -16,7 +16,7 @@ use world_server_naia_proto::{
     behavior as shared_behavior,
     behavior::TickOutput,
     channels::PlayerCommandChannel,
-    components::{NetworkedLookDir, NetworkedMoveBuffer, NetworkedTileTarget, PhysicsController, TileMovementType},
+    components::{NetworkedLookDir, NetworkedMoveBuffer, NetworkedLastCommand, NetworkedTileTarget, PhysicsController, TileMovementType},
     messages::PlayerCommands,
 };
 
@@ -59,6 +59,7 @@ pub fn tick_events(world: &mut World) {
             Query<&mut NetworkedTileTarget>,
             Query<&mut NetworkedMoveBuffer>,
             Query<&mut NetworkedLookDir>,
+            Query<&mut NetworkedLastCommand>,
         )> = SystemState::new(world);
         let (
             mut server,
@@ -66,7 +67,8 @@ pub fn tick_events(world: &mut World) {
             mut tile_movement_q,
             mut net_tile_target_q,
             mut net_move_buffer_q,
-            mut lookdir_q,
+            mut net_look_dir_q,
+            mut net_last_command_q,
         ) = system_state.get_mut(world);
 
         for server_tick in tick_events.iter() {
@@ -96,6 +98,7 @@ pub fn tick_events(world: &mut World) {
                 if user_commands.contains_key(&user_key) {
                     panic!("User should not have a command");
                 } else {
+                    // TODO: possibly use command derived from last processed command?
                     user_commands.insert(user_key, None);
                 }
             }
@@ -103,7 +106,11 @@ pub fn tick_events(world: &mut World) {
             // All game logic should happen here, on a tick event
 
             // process movement
-            for (entity, mut tile_movement, mut physics) in tile_movement_q.iter_mut() {
+            for (
+                entity,
+                mut tile_movement,
+                mut physics
+            ) in tile_movement_q.iter_mut() {
                 let Some(user_key) = user_manager.get_user_key_from_entity(&entity) else {
                     continue;
                 };
@@ -112,25 +119,16 @@ pub fn tick_events(world: &mut World) {
                     panic!("No command found for user: {:?}", user_key);
                     // multiple commands per entity??
                 };
-                let Ok(mut look_dir) = lookdir_q.get_mut(entity) else {
+                let Ok(mut look_dir) = net_look_dir_q.get_mut(entity) else {
                     panic!("NetworkedLookDir not found for entity: {:?}", entity);
                 };
-
-                // if let Some(player_commands) = player_command.as_ref() {
-                //     if let Some(move_dir) = player_commands.get_move() {
-                //         // let distance = tile_movement.get_dis();
-                //         // info!("Recv Move Command. Tick: {:?}. MoveDir: {:?}. Dis: {:?}", server_tick, move_dir, distance);
-                //     } else {
-                //         info!("Recv Move Command. Tick: {:?}. MoveDir: None", server_tick);
-                //     }
-                // }
 
                 let mut tick_output = TickOutput::new();
                 let (inner_tile_movement, inner_move_buffer) = tile_movement.decompose();
                 shared_behavior::process_tick(
                     TileMovementType::Server,
                     *server_tick,
-                    player_command,
+                    player_command.clone(),
                     inner_tile_movement,
                     &mut physics,
                     inner_move_buffer,
@@ -153,7 +151,7 @@ pub fn tick_events(world: &mut World) {
                         outbound_velocity.y,
                     );
                 }
-                if let Some(outbound_next_move_buffer) = tick_output.take_outbound_next_move_buffer() {
+                if let Some(outbound_net_move_buffer) = tick_output.take_outbound_net_move_buffer() {
                     // send updates
                     let Ok(mut net_move_buffer) = net_move_buffer_q.get_mut(entity) else {
                         panic!("NetworkedMoveBuffer not found for entity: {:?}", entity);
@@ -162,9 +160,14 @@ pub fn tick_events(world: &mut World) {
                         &physics,
                         *server_tick,
                         &mut net_move_buffer,
-                        outbound_next_move_buffer,
+                        outbound_net_move_buffer,
                     );
                 }
+                // set last command component
+                let Ok(mut net_last_command) = net_last_command_q.get_mut(entity) else {
+                    panic!("NetworkedLastCommand not found for entity: {:?}", entity);
+                };
+                net_last_command.recv_command(player_command.clone());
             }
         }
     }
