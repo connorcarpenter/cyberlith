@@ -7,6 +7,7 @@ use crate::{
     constants::TILE_SIZE,
     types::Direction,
 };
+use crate::constants::MOVEMENT_VELOCITY_MIN;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TileMovementType {
@@ -228,6 +229,7 @@ pub struct TileMovementMovingState {
     from_tile_y: i16,
     to_tile_x: i16,
     to_tile_y: i16,
+    dir: Direction,
     done: bool,
 }
 
@@ -244,6 +246,7 @@ impl TileMovementMovingState {
             from_tile_y,
             to_tile_x,
             to_tile_y,
+            dir: move_dir,
             done: false,
         }
     }
@@ -279,30 +282,17 @@ impl TileMovementMovingState {
         }
 
         let target_position = self.target_position();
-        let target_distance = physics.position().distance(target_position);
-        const STOPPING_DISTANCE: f32 = 0.5 * TILE_SIZE;
 
-        let target_direction = (target_position - physics.position()).normalize();
-
-        if target_distance > STOPPING_DISTANCE || has_future {
-            // speed up
-            physics.speed_up(target_direction);
-        } else {
-            // slow down
-            physics.slow_down(target_direction);
-        }
-
-        if target_distance <= physics.velocity().length() {
+        if physics.position().distance(target_position) <= MOVEMENT_VELOCITY_MIN * 2.0 {
             // reached target!
-
             self.done = true;
 
             physics.set_tile_position(self.to_tile_x, self.to_tile_y, false);
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         } else {
-            // This is important, this is the main simulation step
-            physics.step();
+
+            physics.accelerate(self.dir, target_position, has_future);
 
             return ProcessTickResult::DoNothing;
         }

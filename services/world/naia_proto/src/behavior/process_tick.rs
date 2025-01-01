@@ -57,6 +57,8 @@ pub fn process_tick(
     }
 
     process_result(tile_movement, move_buffer, physics, tick_result, output_opt);
+
+    physics.step();
 }
 
 // on the client, called by predicted entities
@@ -124,9 +126,6 @@ fn process_result(
                 let buffered_move_dir = move_buffer.pop_buffered_move().unwrap();
 
                 tile_movement.set_continue(tile_x, tile_y, buffered_move_dir);
-
-                // This is important, because client expects to receive the net_tile_target AFTER a simulation step
-                physics.step();
 
                 let (dx, dy) = buffered_move_dir.to_delta();
 

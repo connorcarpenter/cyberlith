@@ -236,10 +236,17 @@ impl ConfirmedTileMovement {
         }
 
         if sequence_greater_than(update_tick, last_processed_server_tick) {
-            // if update_tick is more than last_processed_server_tick, then panic
-            // TODO: do we need this? what to do here? is this possible?
+            // If we're hitting this, we're receiving an EARLY update from the server
+            // what should we do in this case?
             panic!(
-                "Using last processed server tick: {:?}, instead of previous tick: {:?}",
+                "Early Tick Update! Last processed server tick: {:?}, update tick: {:?}",
+                last_processed_server_tick, update_tick
+            );
+        } else {
+            // If we're hitting this, we're receiving a LATE update from the server
+            // what should we do in this case?
+            panic!(
+                "Late Tick Update! Last processed server tick: {:?}, update tick: {:?}",
                 last_processed_server_tick, update_tick
             );
         }
