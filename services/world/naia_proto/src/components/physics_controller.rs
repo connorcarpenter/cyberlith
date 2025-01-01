@@ -12,7 +12,8 @@ use crate::{
     },
     types::Direction,
 };
-use crate::constants::{MOVEMENT_STOPPING_DISTANCE, MOVEMENT_VELOCITY_MIN};
+use crate::components::spline::SplinePath;
+use crate::constants::{MOVEMENT_STOPPING_DISTANCE, MOVEMENT_VELOCITY_MIN, TICK_DURATION_MS};
 
 #[derive(Component, Clone)]
 pub struct PhysicsController {
@@ -155,92 +156,64 @@ fn find_steering(
     current_position: Vec2,
     current_velocity: Vec2,
     current_direction: Direction,
-    target_position: Vec2,
+    current_target_position: Vec2,
     future_direction: Option<Direction>
 ) -> Vec2 {
+
     if let Some(future_direction) = future_direction {
-        // ARRIVE WITH VELOCITY BEHAVIOR
-        let current_target_position = target_position;
+
+        // build control points for spline
+        let mut control_points = Vec::new();
+        control_points.push(current_position);
         let future_target_position = {
             let (dx, dy) = future_direction.to_delta();
             let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
             current_target_position + offset
         };
-        let starting_position = {
-            let (dx, dy) = current_direction.to_delta();
-            let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
-            current_target_position - offset
+        control_points.push(current_target_position);
+        control_points.push(future_target_position);
+
+        // build spline path
+        let spline_path = SplinePath::new(&control_points);
+
+        // Evaluate derivative at param=0
+        // let (_current_position, current_derivative) = spline_path.sample(0.0);
+        let future_position = spline_path.position(0.2);
+        let future_offset = future_position - current_position;
+        let future_velocity = future_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
+        return future_velocity - current_velocity;
+
+    } else {
+        // ARRIVAL BEHAVIOR
+        let target_offset = current_target_position - current_position;
+        let target_distance = target_offset.length();
+        let target_direction = target_offset.normalize_or_zero();
+
+        let accelerate_to_max_speed = {
+            let current_speed = current_velocity.length();
+            if current_speed <= MOVEMENT_VELOCITY_MIN {
+                true
+            } else {
+                let ticks_to_target = target_distance / current_speed;
+                let tick_to_deacc = (current_speed - MOVEMENT_VELOCITY_MIN) / MOVEMENT_ACCELERATION;
+                if ticks_to_target > tick_to_deacc {
+                    true
+                } else {
+                    false
+                }
+            }
         };
-        let current_target_dir = (current_target_position - starting_position).normalize_or_zero();
-        let future_target_dir = (future_target_position - current_target_position).normalize_or_zero();
-        let blended_dir = (current_target_dir + future_target_dir).normalize_or_zero();
-        if blended_dir.length() < MOVEMENT_FRICTION {
-            return find_steering_arrival(current_position, current_velocity, current_target_position);
-        }
-        let target_velocity = blended_dir * MOVEMENT_VELOCITY_MAX;
 
-        // Find steering such that the entity passes through current_target_position with the given target_velocity
-
-        // Find an auxiliary position that would allow entity to reach current_target_position with target_velocity
-        let aux_target_position = closest_point_on_a_ray(
-            current_target_position,
-            -target_velocity,
-            current_position,
-        ).unwrap_or(current_target_position);
-        let aux_target_offset = aux_target_position - current_position;
-        let aux_target_distance = aux_target_offset.length();
-        let aux_desired_velocity = aux_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
-
-        // Find target desired velocity
-        let current_target_offset = current_target_position - current_position;
-        let current_target_distance = current_target_offset.length();
-        let target_desired_velocity = current_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
-
-        // Blend aux_desired_velocity with target_desired_velocity
-        let desired_velocity = {
-            let total_distance = current_target_distance + aux_target_distance;
-            const AUX_PREFERENCE: f32 = 0.5; // 0.0 = target, 1.0 = aux
-            let aux_weight = ((aux_target_distance / total_distance) * AUX_PREFERENCE) + (1.0 - AUX_PREFERENCE);
-            let target_weight = 1.0 - aux_weight;
-            (aux_desired_velocity * aux_weight) + (target_desired_velocity * target_weight)
+        let desired_velocity = if accelerate_to_max_speed {
+            // SEEK / PASS-THROUGH
+            target_direction * MOVEMENT_VELOCITY_MAX
+        } else {
+            // ARRIVAL
+            target_direction * MOVEMENT_VELOCITY_MIN
         };
 
         return desired_velocity - current_velocity;
-    } else {
-        return find_steering_arrival(current_position, current_velocity, target_position);
     }
-}
-
-fn find_steering_arrival(current_position: Vec2, current_velocity: Vec2, target_position: Vec2) -> Vec2 {
-    // ARRIVAL BEHAVIOR
-    let target_offset = target_position - current_position;
-    let target_distance = target_offset.length();
-    let target_direction = target_offset.normalize_or_zero();
-
-    let accelerate_to_max_speed = {
-        let current_speed = current_velocity.length();
-        if current_speed <= MOVEMENT_VELOCITY_MIN {
-            true
-        } else {
-            let ticks_to_target = target_distance / current_speed;
-            let tick_to_deacc = (current_speed - MOVEMENT_VELOCITY_MIN) / MOVEMENT_ACCELERATION;
-            if ticks_to_target > tick_to_deacc {
-                true
-            } else {
-                false
-            }
-        }
-    };
-
-    let desired_velocity = if accelerate_to_max_speed {
-        // SEEK / PASS-THROUGH
-        target_direction * MOVEMENT_VELOCITY_MAX
-    } else {
-        // ARRIVAL
-        target_direction * MOVEMENT_VELOCITY_MIN
-    };
-
-    desired_velocity - current_velocity
 }
 
 fn steering_to_control_signal(steering: Vec2) -> Option<Direction> {

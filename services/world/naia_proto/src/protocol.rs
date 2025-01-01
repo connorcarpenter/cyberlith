@@ -3,6 +3,7 @@ use std::time::Duration;
 use naia_bevy_shared::Protocol;
 
 use crate::{channels::ChannelsPlugin, components::ComponentsPlugin, messages::MessagesPlugin};
+use crate::constants::TICK_DURATION_MS;
 
 // Protocol Build
 pub fn protocol() -> Protocol {
@@ -11,7 +12,7 @@ pub fn protocol() -> Protocol {
     // Config
     builder
         .rtc_endpoint("api/world_connect".to_string())
-        .tick_interval(Duration::from_millis(40))
+        .tick_interval(Duration::from_millis(TICK_DURATION_MS))
         // .enable_client_authoritative_entities()
         // Channels
         .add_plugin(ChannelsPlugin)

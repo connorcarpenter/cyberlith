@@ -1,6 +1,7 @@
 mod tile_movement;
 pub use tile_movement::*;
 
+mod spline;
 mod physics_controller;
 pub use physics_controller::*;
 
