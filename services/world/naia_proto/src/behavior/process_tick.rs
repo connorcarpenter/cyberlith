@@ -42,10 +42,10 @@ pub fn process_tick(
     }
 
     let tick_result = tile_movement.process_tick(
-        move_buffer.has_buffered_move(),
-        physics,
         tick,
         tile_movement_type.is_prediction(),
+        physics,
+        move_buffer.buffered_move(),
     );
 
     if let Some(look_direction) = look_direction_opt {

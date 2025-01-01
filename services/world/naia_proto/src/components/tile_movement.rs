@@ -7,7 +7,7 @@ use crate::{
     constants::TILE_SIZE,
     types::Direction,
 };
-use crate::constants::MOVEMENT_VELOCITY_MIN;
+use crate::constants::MOVEMENT_ARRIVAL_DISTANCE;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TileMovementType {
@@ -139,14 +139,14 @@ impl TileMovement {
     // call on each tick
     pub fn process_tick(
         &mut self,
-        has_future: bool,
-        physics: &mut PhysicsController,
         tick: Tick,
         is_prediction: bool,
+        physics: &mut PhysicsController,
+        future_direction: Option<Direction>,
     ) -> ProcessTickResult {
         let output = match &mut self.state {
             TileMovementState::Stopped(state) => state.process_tick(),
-            TileMovementState::Moving(state) => state.process_tick(has_future, physics),
+            TileMovementState::Moving(state) => state.process_tick(physics, future_direction),
         };
 
         physics.tick_log(tick, is_prediction);
@@ -274,8 +274,8 @@ impl TileMovementMovingState {
     // call on each tick
     fn process_tick(
         &mut self,
-        has_future: bool,
         physics: &mut PhysicsController,
+        future_direction: Option<Direction>,
     ) -> ProcessTickResult {
         if self.done {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
@@ -283,7 +283,7 @@ impl TileMovementMovingState {
 
         let target_position = self.target_position();
 
-        if physics.position().distance(target_position) <= MOVEMENT_VELOCITY_MIN * 2.0 {
+        if physics.position().distance(target_position) <= MOVEMENT_ARRIVAL_DISTANCE {
             // reached target!
             self.done = true;
 
@@ -292,7 +292,7 @@ impl TileMovementMovingState {
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
         } else {
 
-            physics.accelerate(self.dir, target_position, has_future);
+            physics.update_velocity(self.dir, target_position, future_direction);
 
             return ProcessTickResult::DoNothing;
         }

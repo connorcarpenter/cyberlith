@@ -7,18 +7,17 @@ use naia_bevy_shared::Tick;
 use crate::{
     components::{velocity::Velocity, NetworkedTileTarget},
     constants::{
-        MOVEMENT_ACCELERATION, MOVEMENT_DECELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_VELOCITY_MIN,
-        TILE_SIZE,
+        MOVEMENT_ACCELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_ARRIVAL_DISTANCE,
+        TILE_SIZE, MOVEMENT_FRICTION, MOVEMENT_STEERING_DEADZONE
     },
+    types::Direction,
 };
-use crate::constants::{MOVEMENT_FRICTION, MOVEMENT_NUDGE_MAX};
-use crate::types::Direction;
+use crate::constants::{MOVEMENT_STOPPING_DISTANCE, MOVEMENT_VELOCITY_MIN};
 
 #[derive(Component, Clone)]
 pub struct PhysicsController {
     position: Vec2,
     velocity: Velocity,
-    nudge: Option<Vec2>,
 }
 
 impl PhysicsController {
@@ -28,7 +27,6 @@ impl PhysicsController {
         Self {
             position,
             velocity: Velocity::new(0.0, 0.0),
-            nudge: None,
         }
     }
 
@@ -110,115 +108,201 @@ impl PhysicsController {
         // );
     }
 
-    pub fn accelerate(&mut self, dir: Direction, target_position: Vec2, has_future: bool) {
+    pub fn update_velocity(
+        &mut self,
+        current_direction: Direction,
+        target_position: Vec2,
+        next_direction: Option<Direction>
+    ) {
 
-        let mut velocity = self.velocity.get_vec2();
+        let current_velocity = self.velocity.get_vec2();
+        let current_position = self.position;
 
-        // friction
-        let speed = velocity.length();
-        if speed > MOVEMENT_FRICTION {
-            velocity = velocity.normalize_or_zero() * (speed - MOVEMENT_FRICTION);
-        } else {
-            velocity = Vec2::ZERO;
-        }
+        let new_velocity = update(
+            current_position,
+            current_velocity,
+            current_direction,
+            target_position,
+            next_direction,
+        );
 
-        let mut accelerate_to_max_speed = has_future;
-        if !accelerate_to_max_speed {
-            let speed = velocity.length();
-            if speed <= MOVEMENT_VELOCITY_MIN {
-                accelerate_to_max_speed = true;
-            } else {
-                let target_distance = self.position.distance(target_position);
-                let ticks_to_target = target_distance / speed;
-                let tick_to_deacc = (speed - MOVEMENT_VELOCITY_MIN) / MOVEMENT_DECELERATION;
-                if ticks_to_target > tick_to_deacc {
-                    accelerate_to_max_speed = true;
-                } else {
-                    accelerate_to_max_speed = false;
-                }
-            }
-        }
-
-        // find acceleration
-        let (tdx, tdy) = dir.to_delta();
-        let target_direction = Vec2::new(tdx as f32, tdy as f32);
-        let target_direction = target_direction.normalize_or_zero();
-
-        let target_velocity = if accelerate_to_max_speed {
-            // SEEK / PASS-THROUGH
-            target_direction * MOVEMENT_VELOCITY_MAX
-        } else {
-            // ARRIVAL
-            target_direction * MOVEMENT_VELOCITY_MIN
-        };
-        let mut acceleration = target_velocity - velocity;
-
-        // nudge
-        {
-            if let Some(closest_point) = closest_point_on_a_line(self.position, target_velocity, target_position) {
-                let mut target_diff = target_position - closest_point;
-                let target_length = target_diff.length();
-                if target_length > 0.0 {
-                    if target_length > MOVEMENT_NUDGE_MAX {
-                        target_diff = target_diff.normalize_or_zero() * MOVEMENT_NUDGE_MAX;
-                    }
-                    self.nudge = Some(target_diff);
-                } else {
-                    self.nudge = None;
-                }
-            } else {
-                // we have overshot the target!
-                let target_velocity = (target_position - self.position).normalize_or_zero() * MOVEMENT_VELOCITY_MIN;
-                acceleration = target_velocity - velocity;
-
-                self.nudge = None;
-            }
-        };
-
-        //
-
-        let accelerating = acceleration.dot(velocity) > 0.0;
-        let accelerate_max = if accelerating { MOVEMENT_ACCELERATION } else { MOVEMENT_DECELERATION };
-        if acceleration.length() > accelerate_max {
-            acceleration = acceleration.normalize_or_zero() * accelerate_max;
-        }
-
-        velocity += acceleration;
-
-        let speed = velocity.length();
-        if speed > MOVEMENT_VELOCITY_MAX {
-            velocity = velocity.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
-        }
-
-        self.velocity.set_vec2(velocity);
+        self.velocity.set_vec2(new_velocity);
     }
 
     pub fn step(&mut self) {
         self.position += self.velocity.get_vec2();
+    }
+}
 
-        if let Some(nudge) = self.nudge.take() {
-            self.position += nudge;
+fn update(
+    current_position: Vec2,
+    current_velocity: Vec2,
+    current_direction: Direction,
+    target_position: Vec2,
+    future_direction: Option<Direction>
+) -> Vec2 {
+    let mut output_velocity = current_velocity;
+
+    let steering = find_steering(current_position, current_velocity, current_direction, target_position, future_direction);
+    let control_signal = steering_to_control_signal(steering);
+    apply_locomotion(control_signal, &mut output_velocity);
+    apply_limitations(&mut output_velocity);
+
+    output_velocity
+}
+
+fn find_steering(
+    current_position: Vec2,
+    current_velocity: Vec2,
+    current_direction: Direction,
+    target_position: Vec2,
+    future_direction: Option<Direction>
+) -> Vec2 {
+    if let Some(future_direction) = future_direction {
+        // ARRIVE WITH VELOCITY BEHAVIOR
+        let current_target_position = target_position;
+        let future_target_position = {
+            let (dx, dy) = future_direction.to_delta();
+            let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
+            current_target_position + offset
+        };
+        let starting_position = {
+            let (dx, dy) = current_direction.to_delta();
+            let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
+            current_target_position - offset
+        };
+        let current_target_dir = (current_target_position - starting_position).normalize_or_zero();
+        let future_target_dir = (future_target_position - current_target_position).normalize_or_zero();
+        let blended_dir = (current_target_dir + future_target_dir).normalize_or_zero();
+        if blended_dir.length() < MOVEMENT_FRICTION {
+            return find_steering_arrival(current_position, current_velocity, current_target_position);
+        }
+        let target_velocity = blended_dir * MOVEMENT_VELOCITY_MAX;
+
+        // Find steering such that the entity passes through current_target_position with the given target_velocity
+
+        // Find an auxiliary position that would allow entity to reach current_target_position with target_velocity
+        let aux_target_position = closest_point_on_a_ray(
+            current_target_position,
+            -target_velocity,
+            current_position,
+        ).unwrap_or(current_target_position);
+        let aux_target_offset = aux_target_position - current_position;
+        let aux_target_distance = aux_target_offset.length();
+        let aux_desired_velocity = aux_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
+
+        // Find target desired velocity
+        let current_target_offset = current_target_position - current_position;
+        let current_target_distance = current_target_offset.length();
+        let target_desired_velocity = current_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
+
+        // Blend aux_desired_velocity with target_desired_velocity
+        let desired_velocity = {
+            let total_distance = current_target_distance + aux_target_distance;
+            const AUX_PREFERENCE: f32 = 0.5; // 0.0 = target, 1.0 = aux
+            let aux_weight = ((aux_target_distance / total_distance) * AUX_PREFERENCE) + (1.0 - AUX_PREFERENCE);
+            let target_weight = 1.0 - aux_weight;
+            (aux_desired_velocity * aux_weight) + (target_desired_velocity * target_weight)
+        };
+
+        return desired_velocity - current_velocity;
+    } else {
+        return find_steering_arrival(current_position, current_velocity, target_position);
+    }
+}
+
+fn find_steering_arrival(current_position: Vec2, current_velocity: Vec2, target_position: Vec2) -> Vec2 {
+    // ARRIVAL BEHAVIOR
+    let target_offset = target_position - current_position;
+    let target_distance = target_offset.length();
+    let target_direction = target_offset.normalize_or_zero();
+
+    let accelerate_to_max_speed = {
+        let current_speed = current_velocity.length();
+        if current_speed <= MOVEMENT_VELOCITY_MIN {
+            true
+        } else {
+            let ticks_to_target = target_distance / current_speed;
+            let tick_to_deacc = (current_speed - MOVEMENT_VELOCITY_MIN) / MOVEMENT_ACCELERATION;
+            if ticks_to_target > tick_to_deacc {
+                true
+            } else {
+                false
+            }
+        }
+    };
+
+    let desired_velocity = if accelerate_to_max_speed {
+        // SEEK / PASS-THROUGH
+        target_direction * MOVEMENT_VELOCITY_MAX
+    } else {
+        // ARRIVAL
+        target_direction * MOVEMENT_VELOCITY_MIN
+    };
+
+    desired_velocity - current_velocity
+}
+
+fn steering_to_control_signal(steering: Vec2) -> Option<Direction> {
+    if steering.length() < MOVEMENT_STEERING_DEADZONE {
+        return None;
+    }
+
+    let direction = Direction::from_coords(steering.x, steering.y);
+    return Some(direction);
+}
+
+fn apply_locomotion(control_signal: Option<Direction>, velocity: &mut Vec2) {
+    if let Some(control_signal) = control_signal {
+        // control signal exists, apply acceleration
+        let (dx, dy) = control_signal.to_delta();
+        let mut acceleration = Vec2::new(dx as f32, dy as f32).normalize_or_zero();
+        acceleration = acceleration * MOVEMENT_ACCELERATION;
+
+        *velocity += acceleration;
+    } else {
+        // no control signal, allow friction to slow down
+        if velocity.length() > MOVEMENT_FRICTION {
+            // apply friction
+            let friction = velocity.normalize_or_zero() * MOVEMENT_FRICTION;
+            *velocity -= friction;
+        } else {
+            // friction completely kills velocity
+            *velocity = Vec2::ZERO;
         }
     }
 }
 
-pub fn closest_point_on_a_line(a: Vec2, ab: Vec2, c: Vec2) -> Option<Vec2> {
+fn apply_limitations(velocity: &mut Vec2) {
+
+    // limit max speed
+    if velocity.length() > MOVEMENT_VELOCITY_MAX {
+        *velocity = velocity.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
+    }
+}
+
+// a is the start point of a ray, ab is the direction of the ray, c is the target point
+fn closest_point_on_a_ray(
+    ray_start: Vec2,
+    ray_dir: Vec2,
+    target: Vec2
+) -> Option<Vec2> {
 
     // If (a == b), the line is degenerate; just return a.
-    if ab.length_squared() < f32::EPSILON {
-        return Some(a); // TODO: should be None here?
+    if ray_dir.length_squared() < f32::EPSILON {
+        return Some(ray_start); // TODO: should be None here?
     }
 
     // Vector from a to c
-    let ac = c - a;
+    let ac = target - ray_start;
 
     // Project ac onto ab to find parameter t
-    let t = ac.dot(ab) / ab.dot(ab);
+    let t = ac.dot(ray_dir) / ray_dir.dot(ray_dir);
 
     if t < 0.0 {
         return None;
     }
 
     // The closest point on the line is then a + t * ab
-    return Some(a + ab * t)
+    return Some(ray_start + ray_dir * t)
 }
