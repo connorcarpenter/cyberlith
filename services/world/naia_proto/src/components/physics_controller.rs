@@ -159,53 +159,61 @@ fn find_steering(
     future_direction: Option<Direction>
 ) -> Vec2 {
     if let Some(future_direction) = future_direction {
-        // ARRIVE WITH VELOCITY BEHAVIOR
-        let current_target_position = target_position;
-        let future_target_position = {
-            let (dx, dy) = future_direction.to_delta();
-            let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
-            current_target_position + offset
-        };
-        let starting_position = {
-            let (dx, dy) = current_direction.to_delta();
-            let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
-            current_target_position - offset
-        };
-        let current_target_dir = (current_target_position - starting_position).normalize_or_zero();
-        let future_target_dir = (future_target_position - current_target_position).normalize_or_zero();
-        let blended_dir = (current_target_dir + future_target_dir).normalize_or_zero();
-        if blended_dir.length() < MOVEMENT_FRICTION {
-            return find_steering_arrival(current_position, current_velocity, current_target_position);
-        }
-        let target_velocity = blended_dir * MOVEMENT_VELOCITY_MAX;
+        // // ARRIVE WITH VELOCITY BEHAVIOR
+        // let current_target_position = target_position;
+        // let future_target_position = {
+        //     let (dx, dy) = future_direction.to_delta();
+        //     let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
+        //     current_target_position + offset
+        // };
+        // let starting_position = {
+        //     let (dx, dy) = current_direction.to_delta();
+        //     let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
+        //     current_target_position - offset
+        // };
+        // let current_target_dir = (current_target_position - starting_position).normalize_or_zero();
+        // let future_target_dir = (future_target_position - current_target_position).normalize_or_zero();
+        // let blended_dir = (current_target_dir + future_target_dir).normalize_or_zero();
+        // if blended_dir.length() < MOVEMENT_FRICTION {
+        //     return find_steering_arrival(current_position, current_velocity, current_target_position);
+        // }
+        // let target_velocity = blended_dir * MOVEMENT_VELOCITY_MAX;
 
         // Find steering such that the entity passes through current_target_position with the given target_velocity
 
         // Find an auxiliary position that would allow entity to reach current_target_position with target_velocity
-        let aux_target_position = closest_point_on_a_ray(
-            current_target_position,
-            -target_velocity,
-            current_position,
-        ).unwrap_or(current_target_position);
-        let aux_target_offset = aux_target_position - current_position;
-        let aux_target_distance = aux_target_offset.length();
-        let aux_desired_velocity = aux_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
+        // let aux_target_position = closest_point_on_a_ray(
+        //     current_target_position,
+        //     -target_velocity,
+        //     current_position,
+        // ).unwrap_or(current_target_position);
+        // let aux_target_offset = aux_target_position - current_position;
+        // let aux_target_distance = aux_target_offset.length();
+        // let aux_desired_velocity = aux_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
 
         // Find target desired velocity
-        let current_target_offset = current_target_position - current_position;
-        let current_target_distance = current_target_offset.length();
-        let target_desired_velocity = current_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
+        // let current_target_offset = current_target_position - current_position;
+        // let current_target_distance = current_target_offset.length();
+        // let target_desired_velocity = current_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
 
         // Blend aux_desired_velocity with target_desired_velocity
-        let desired_velocity = {
-            let total_distance = current_target_distance + aux_target_distance;
-            const AUX_PREFERENCE: f32 = 0.5; // 0.0 = target, 1.0 = aux
-            let aux_weight = ((aux_target_distance / total_distance) * AUX_PREFERENCE) + (1.0 - AUX_PREFERENCE);
-            let target_weight = 1.0 - aux_weight;
-            (aux_desired_velocity * aux_weight) + (target_desired_velocity * target_weight)
-        };
+        // let desired_velocity = {
+        //     if aux_target_distance > MOVEMENT_ARRIVAL_DISTANCE {
+        //         aux_desired_velocity
+        //     } else {
+        //         target_velocity
+        //     }
+        // };
 
-        return desired_velocity - current_velocity;
+        // return desired_velocity - current_velocity;
+
+        // SEEK BEHAVIOR
+        let target_offset = target_position - current_position;
+        let target_direction = target_offset.normalize_or_zero();
+
+        let desired_velocity = target_direction * MOVEMENT_VELOCITY_MAX;
+
+        desired_velocity - current_velocity
     } else {
         return find_steering_arrival(current_position, current_velocity, target_position);
     }
@@ -253,23 +261,46 @@ fn steering_to_control_signal(steering: Vec2) -> Option<Direction> {
 }
 
 fn apply_locomotion(control_signal: Option<Direction>, velocity: &mut Vec2) {
-    if let Some(control_signal) = control_signal {
+    let (cx, cy) = if let Some(control_signal) = control_signal {
         // control signal exists, apply acceleration
         let (dx, dy) = control_signal.to_delta();
-        let mut acceleration = Vec2::new(dx as f32, dy as f32).normalize_or_zero();
-        acceleration = acceleration * MOVEMENT_ACCELERATION;
+        let acceleration = Vec2::new(dx as f32, dy as f32).normalize_or_zero()  * MOVEMENT_ACCELERATION;
 
         *velocity += acceleration;
+
+        (dx, dy)
     } else {
-        // no control signal, allow friction to slow down
-        if velocity.length() > MOVEMENT_FRICTION {
-            // apply friction
-            let friction = velocity.normalize_or_zero() * MOVEMENT_FRICTION;
-            *velocity -= friction;
+        (0, 0)
+    };
+
+    // friction
+    if cx != 0 && cy != 0 {
+        return;
+    }
+
+    let mut apply_friction = false;
+    let mut friction = Vec2::ZERO;
+    if cx == 0 {
+        // apply friction on x-axis
+        if velocity.x.abs() < MOVEMENT_FRICTION {
+            velocity.x = 0.0;
         } else {
-            // friction completely kills velocity
-            *velocity = Vec2::ZERO;
+            friction.x -= velocity.x;
+            apply_friction = true;
         }
+    }
+    if cy == 0 {
+        // apply friction on y-axis
+        if velocity.y.abs() < MOVEMENT_FRICTION {
+            velocity.y = 0.0;
+        } else {
+            friction.y -= velocity.y;
+            apply_friction = true;
+        }
+    }
+    if apply_friction {
+        friction = friction.normalize_or_zero() * MOVEMENT_FRICTION;
+        *velocity += friction;
     }
 }
 
