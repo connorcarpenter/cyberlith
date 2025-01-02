@@ -108,22 +108,57 @@ impl PhysicsController {
         // );
     }
 
+    pub fn get_steering_vars(
+        &self,
+        current_direction: Direction,
+        current_target_position: Vec2,
+        next_direction: Option<Direction>
+    ) -> Option<(Vec2, Vec2)> {
+        let current_position = self.position();
+
+        if next_direction.is_none() {
+            if current_position.distance(current_target_position) <= MOVEMENT_ARRIVAL_DISTANCE {
+                // arrived!
+                return None;
+            }
+        }
+
+        let axis_ray = {
+            let (dx, dy) = current_direction.to_delta();
+            Vec2::new(dx as f32 * -1.0, dy as f32 * -1.0).normalize_or_zero()
+        };
+
+        let Some(axis_ray_nearest_point) = closest_point_on_a_ray(
+            current_target_position,
+            axis_ray,
+            current_position,
+        ) else {
+            // arrived!
+            return None;
+        };
+
+        return Some((axis_ray, axis_ray_nearest_point));
+    }
+
     pub fn update_velocity(
         &mut self,
         current_direction: Direction,
-        target_position: Vec2,
-        next_direction: Option<Direction>
+        current_target_position: Vec2,
+        future_direction: Option<Direction>,
+        axis_ray: Vec2,
+        axis_ray_nearest_point: Vec2,
     ) {
-
-        let current_velocity = self.velocity.get_vec2();
         let current_position = self.position;
+        let current_velocity = self.velocity.get_vec2();
 
         let new_velocity = update(
             current_position,
             current_velocity,
             current_direction,
-            target_position,
-            next_direction,
+            current_target_position,
+            future_direction,
+            axis_ray,
+            axis_ray_nearest_point,
         );
 
         self.velocity.set_vec2(new_velocity);
@@ -138,13 +173,22 @@ fn update(
     current_position: Vec2,
     current_velocity: Vec2,
     current_direction: Direction,
-    target_position: Vec2,
-    future_direction: Option<Direction>
+    current_target_position: Vec2,
+    future_direction: Option<Direction>,
+    axis_ray: Vec2,
+    axis_ray_nearest_point: Vec2,
 ) -> Vec2 {
     let mut output_velocity = current_velocity;
 
-    let steering = find_steering(current_position, current_velocity, current_direction, target_position, future_direction);
-    let control_signal = steering_to_control_signal(steering);
+    let control_signal = find_steering(
+        current_position,
+        current_velocity,
+        current_direction,
+        current_target_position,
+        future_direction,
+        axis_ray,
+        axis_ray_nearest_point,
+    );
     apply_locomotion(control_signal, &mut output_velocity);
     apply_limitations(&mut output_velocity);
 
@@ -156,151 +200,208 @@ fn find_steering(
     current_velocity: Vec2,
     current_direction: Direction,
     target_position: Vec2,
-    future_direction: Option<Direction>
-) -> Vec2 {
-    if let Some(future_direction) = future_direction {
-        // // ARRIVE WITH VELOCITY BEHAVIOR
-        // let current_target_position = target_position;
-        // let future_target_position = {
-        //     let (dx, dy) = future_direction.to_delta();
-        //     let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
-        //     current_target_position + offset
-        // };
-        // let starting_position = {
-        //     let (dx, dy) = current_direction.to_delta();
-        //     let offset = Vec2::new(dx as f32, dy as f32) * TILE_SIZE;
-        //     current_target_position - offset
-        // };
-        // let current_target_dir = (current_target_position - starting_position).normalize_or_zero();
-        // let future_target_dir = (future_target_position - current_target_position).normalize_or_zero();
-        // let blended_dir = (current_target_dir + future_target_dir).normalize_or_zero();
-        // if blended_dir.length() < MOVEMENT_FRICTION {
-        //     return find_steering_arrival(current_position, current_velocity, current_target_position);
-        // }
-        // let target_velocity = blended_dir * MOVEMENT_VELOCITY_MAX;
+    future_direction: Option<Direction>,
+    axis_ray: Vec2,
+    axis_ray_nearest_point: Vec2,
+) -> Option<Direction> {
 
-        // Find steering such that the entity passes through current_target_position with the given target_velocity
-
-        // Find an auxiliary position that would allow entity to reach current_target_position with target_velocity
-        // let aux_target_position = closest_point_on_a_ray(
-        //     current_target_position,
-        //     -target_velocity,
-        //     current_position,
-        // ).unwrap_or(current_target_position);
-        // let aux_target_offset = aux_target_position - current_position;
-        // let aux_target_distance = aux_target_offset.length();
-        // let aux_desired_velocity = aux_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
-
-        // Find target desired velocity
-        // let current_target_offset = current_target_position - current_position;
-        // let current_target_distance = current_target_offset.length();
-        // let target_desired_velocity = current_target_offset.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
-
-        // Blend aux_desired_velocity with target_desired_velocity
-        // let desired_velocity = {
-        //     if aux_target_distance > MOVEMENT_ARRIVAL_DISTANCE {
-        //         aux_desired_velocity
-        //     } else {
-        //         target_velocity
-        //     }
-        // };
-
-        // return desired_velocity - current_velocity;
-
-        // SEEK BEHAVIOR
-        let target_offset = target_position - current_position;
-        let target_direction = target_offset.normalize_or_zero();
-
-        let desired_velocity = target_direction * MOVEMENT_VELOCITY_MAX;
-
-        desired_velocity - current_velocity
-    } else {
-        return find_steering_arrival(current_position, current_velocity, target_position);
-    }
-}
-
-fn find_steering_arrival(current_position: Vec2, current_velocity: Vec2, target_position: Vec2) -> Vec2 {
-    // ARRIVAL BEHAVIOR
-    let target_offset = target_position - current_position;
-    let target_distance = target_offset.length();
-    let target_direction = target_offset.normalize_or_zero();
-
-    let accelerate_to_max_speed = {
-        let current_speed = current_velocity.length();
-        if current_speed <= MOVEMENT_VELOCITY_MIN {
-            true
-        } else {
-            let ticks_to_target = target_distance / current_speed;
-            let tick_to_deacc = (current_speed - MOVEMENT_VELOCITY_MIN) / MOVEMENT_ACCELERATION;
-            if ticks_to_target > tick_to_deacc {
-                true
-            } else {
-                false
-            }
+    let axis_distance_to_target = axis_ray_nearest_point.distance(target_position);
+    if future_direction.is_none() {
+        // real_distance_to_target IS > MOVEMENT_ARRIVAL_DISTANCE, otherwise wouldn't be here
+        if axis_distance_to_target <= MOVEMENT_ARRIVAL_DISTANCE {
+            // we have overshot
+            let target_offset = target_position - current_position;
+            let target_distance = target_offset.length();
+            let target_direction = target_offset.normalize_or_zero();
+            let desired_velocity = target_direction * MOVEMENT_VELOCITY_MIN;
+            let desired_acceleration = desired_velocity - current_velocity;
+            return Some(Direction::from_coords(desired_acceleration.x, desired_acceleration.y));
         }
-    };
-
-    let desired_velocity = if accelerate_to_max_speed {
-        // SEEK / PASS-THROUGH
-        target_direction * MOVEMENT_VELOCITY_MAX
-    } else {
-        // ARRIVAL
-        target_direction * MOVEMENT_VELOCITY_MIN
-    };
-
-    desired_velocity - current_velocity
-}
-
-fn steering_to_control_signal(steering: Vec2) -> Option<Direction> {
-    if steering.length() < MOVEMENT_STEERING_DEADZONE {
-        return None;
     }
 
-    let direction = Direction::from_coords(steering.x, steering.y);
-    return Some(direction);
+    let real_distance_to_target = current_position.distance(target_position);
+    let offset_to_axis = axis_ray_nearest_point - current_position;
+    let distance_to_axis = offset_to_axis.length();
+    let direction_to_axis = offset_to_axis.normalize_or_zero();
+
+    let forward_direction = axis_ray * -1.0;
+    let left_direction = Vec2::new(-forward_direction.y, forward_direction.x);
+    let forward_speed = current_velocity.dot(forward_direction);
+    let left_speed = current_velocity.dot(left_direction);
+    let left_velocity = left_direction * left_speed;
+    let left_speed_to_axis = left_velocity.dot(direction_to_axis);
+
+    // forward_control_x & _y are -1, 0, or 1 here
+    let (mut forward_control_x, mut forward_control_y) = current_direction.to_delta();
+    if forward_control_x == 0 || forward_control_y == 0 {
+        // forward is orthogonal
+        if forward_control_x == 0 {
+            // forward is on vertical axis
+
+            // steer to axis
+            {
+                let accelerate_to_axis = {
+
+                    if left_speed_to_axis < 0.0 {
+                        // currently moving away from axis
+                        true
+                    } else {
+                        // currently moving towards axis
+                        let left_speed_abs = left_speed.abs();
+                        let ticks_to_target = distance_to_axis / left_speed_abs;
+                        let tick_to_deacc = left_speed_abs / MOVEMENT_FRICTION;
+                        if ticks_to_target > tick_to_deacc {
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                };
+
+                if accelerate_to_axis {
+                    if offset_to_axis.x > 0.0 {
+                        forward_control_x = 1;
+                    } else {
+                        forward_control_x = -1;
+                    }
+                }
+            }
+
+            // steer to target
+            {
+                // the question here is, do we set forward_control_y to 0 or not?
+                let accelerate_to_target = {
+
+                    if forward_speed < 0.0 {
+                        // currently moving away from target
+                        true
+                    } else {
+                        // currently moving towards target
+                        let forward_speed_abs = forward_speed.abs();
+                        let ticks_to_target = axis_distance_to_target / forward_speed_abs;
+                        let tick_to_deacc = forward_speed_abs / MOVEMENT_FRICTION;
+                        if ticks_to_target > tick_to_deacc {
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                };
+
+                if !accelerate_to_target {
+                    forward_control_y = 0;
+                }
+            }
+
+            Direction::from_delta(forward_control_x, forward_control_y)
+        } else {
+            // forward is on horizontal axis
+
+            // steer to axis
+            {
+                let accelerate_to_axis = {
+
+                    if left_speed_to_axis < 0.0 {
+                        // currently moving away from axis
+                        true
+                    } else {
+                        // currently moving towards axis
+                        let left_speed_abs = left_speed.abs();
+                        let ticks_to_target = distance_to_axis / left_speed_abs;
+                        let tick_to_deacc = left_speed_abs / MOVEMENT_FRICTION;
+                        if ticks_to_target > tick_to_deacc {
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                };
+
+                if accelerate_to_axis {
+                    if offset_to_axis.y > 0.0 {
+                        forward_control_y = 1;
+                    } else {
+                        forward_control_y = -1;
+                    }
+                }
+            }
+
+            // steer to target
+            {
+                // the question here is, do we set forward_control_x to 0 or not?
+                let accelerate_to_target = {
+
+                    if forward_speed < 0.0 {
+                        // currently moving away from target
+                        true
+                    } else {
+                        // currently moving towards target
+                        let forward_speed_abs = forward_speed.abs();
+                        let ticks_to_target = axis_distance_to_target / forward_speed_abs;
+                        let tick_to_deacc = forward_speed_abs / MOVEMENT_FRICTION;
+                        if ticks_to_target > tick_to_deacc {
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                };
+
+                if !accelerate_to_target {
+                    forward_control_x = 0;
+                }
+            }
+
+            Direction::from_delta(forward_control_x, forward_control_y)
+        }
+    } else {
+        // forward is diagonal
+        todo!();
+
+        Direction::from_delta(forward_control_x, forward_control_y)
+    }
 }
 
-fn apply_locomotion(control_signal: Option<Direction>, velocity: &mut Vec2) {
-    let (cx, cy) = if let Some(control_signal) = control_signal {
+fn apply_locomotion(
+    control_signal: Option<Direction>,
+    velocity: &mut Vec2,
+) {
+    if let Some(control_signal) = control_signal {
         // control signal exists, apply acceleration
         let (dx, dy) = control_signal.to_delta();
         let acceleration = Vec2::new(dx as f32, dy as f32).normalize_or_zero()  * MOVEMENT_ACCELERATION;
 
         *velocity += acceleration;
 
-        (dx, dy)
-    } else {
-        (0, 0)
-    };
-
-    // friction
-    if cx != 0 && cy != 0 {
-        return;
-    }
-
-    let mut apply_friction = false;
-    let mut friction = Vec2::ZERO;
-    if cx == 0 {
-        // apply friction on x-axis
-        if velocity.x.abs() < MOVEMENT_FRICTION {
-            velocity.x = 0.0;
-        } else {
-            friction.x -= velocity.x;
-            apply_friction = true;
+        // apply friction against backwards velocity
+        let forward_direction = acceleration.normalize_or_zero();
+        let forward_speed = velocity.dot(forward_direction);
+        if forward_speed < 0.0 {
+            // currently moving backwards, apply friction
+            let friction = forward_direction * MOVEMENT_FRICTION;
+            *velocity += friction;
         }
-    }
-    if cy == 0 {
-        // apply friction on y-axis
-        if velocity.y.abs() < MOVEMENT_FRICTION {
-            velocity.y = 0.0;
+
+        // apply friction against sideways velocity
+        let left_direction = Vec2::new(-forward_direction.y, forward_direction.x);
+        let left_speed = velocity.dot(left_direction);
+        let friction = if left_speed < 0.0 {
+            // currently moving left
+            left_direction * MOVEMENT_FRICTION
+
         } else {
-            friction.y -= velocity.y;
-            apply_friction = true;
-        }
-    }
-    if apply_friction {
-        friction = friction.normalize_or_zero() * MOVEMENT_FRICTION;
+            // currently moving right
+            left_direction * MOVEMENT_FRICTION * -1.0
+        };
         *velocity += friction;
+    } else {
+        // no control signal, apply friction
+        if velocity.length() > MOVEMENT_FRICTION {
+            let friction = velocity.normalize_or_zero() * MOVEMENT_FRICTION * -1.0;
+            *velocity += friction;
+        } else {
+            *velocity = Vec2::ZERO;
+        }
     }
 }
 
@@ -312,7 +413,6 @@ fn apply_limitations(velocity: &mut Vec2) {
     }
 }
 
-// a is the start point of a ray, ab is the direction of the ray, c is the target point
 fn closest_point_on_a_ray(
     ray_start: Vec2,
     ray_dir: Vec2,
@@ -336,4 +436,24 @@ fn closest_point_on_a_ray(
 
     // The closest point on the line is then a + t * ab
     return Some(ray_start + ray_dir * t)
+}
+
+fn side_of_line(
+    line_start: Vec2,
+    line_dir: Vec2,
+    target: Vec2
+) -> i8 {
+    // Compute the vector from the line anchor to the target
+    let pt_to_target = target - line_start;
+
+    // 2D cross product of line_dir and pt_to_target
+    let cross_val = line_dir.x * pt_to_target.y - line_dir.y * pt_to_target.x;
+
+    if cross_val.abs() < 1e-7 {
+        0  // ~ collinear
+    } else if cross_val > 0.0 {
+        1  // "left"
+    } else {
+        -1 // "right"
+    }
 }

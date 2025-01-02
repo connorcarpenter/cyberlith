@@ -282,19 +282,28 @@ impl TileMovementMovingState {
         }
 
         let target_position = self.target_position();
+        if let Some((axis_ray, axis_ray_nearest_point)) = physics.get_steering_vars(
+            self.dir,
+            target_position,
+            future_direction,
+        ) {
+            // have not arrived
+            physics.update_velocity(
+                self.dir,
+                target_position,
+                future_direction,
+                axis_ray,
+                axis_ray_nearest_point,
+            );
 
-        if physics.position().distance(target_position) <= MOVEMENT_ARRIVAL_DISTANCE {
+            return ProcessTickResult::DoNothing;
+        } else {
             // reached target!
             self.done = true;
 
             physics.set_tile_position(self.to_tile_x, self.to_tile_y, false);
 
             return ProcessTickResult::ShouldStop(self.to_tile_x, self.to_tile_y);
-        } else {
-
-            physics.update_velocity(self.dir, target_position, future_direction);
-
-            return ProcessTickResult::DoNothing;
         }
     }
 
