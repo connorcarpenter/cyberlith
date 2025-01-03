@@ -80,8 +80,14 @@ impl Direction {
             (-1, 1) => Some(Direction::Southwest),
             (-1, 0) => Some(Direction::West),
             (-1, -1) => Some(Direction::Northwest),
-            _ => None,
+            (0, 0) => None,
+            _ => panic!("Invalid delta"),
         }
+    }
+
+    pub fn to_opposite(&self) -> Self {
+        let (dx, dy) = self.to_delta();
+        Direction::from_delta(-dx, -dy).unwrap()
     }
 
     pub fn to_radians(&self) -> f32 {

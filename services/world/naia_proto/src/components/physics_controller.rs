@@ -112,11 +112,11 @@ impl PhysicsController {
         &self,
         current_direction: Direction,
         current_target_position: Vec2,
-        next_direction: Option<Direction>
+        future_direction: Option<Direction>
     ) -> Option<(Vec2, Vec2)> {
         let current_position = self.position();
 
-        if next_direction.is_none() {
+        if future_direction.is_none() {
             if current_position.distance(current_target_position) <= MOVEMENT_ARRIVAL_DISTANCE {
                 // arrived!
                 return None;
@@ -231,6 +231,57 @@ fn find_steering(
     let left_velocity = left_direction * left_speed;
     let left_speed_to_axis = left_velocity.dot(direction_to_axis);
 
+    // check if we should accelerate to axis
+    let accelerate_to_axis = {
+        if distance_to_axis < MOVEMENT_STEERING_DEADZONE {
+            false
+        } else {
+            if left_speed_to_axis < 0.0 {
+                // currently moving away from axis
+                true
+            } else {
+                // currently moving towards axis
+                let left_speed_abs = left_speed.abs();
+                let ticks_to_target = distance_to_axis / left_speed_abs;
+                let tick_to_deacc = left_speed_abs / MOVEMENT_FRICTION;
+                if ticks_to_target > tick_to_deacc {
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    };
+
+    let has_non_opposite_future = {
+        if let Some(future_direction) = future_direction {
+            let opposite_future_direction = future_direction.to_opposite();
+            current_direction != opposite_future_direction
+        } else {
+            false
+        }
+    };
+    let accelerate_to_target = {
+        if has_non_opposite_future {
+            true
+        } else {
+            if forward_speed < 0.0 {
+                // currently moving away from target
+                true
+            } else {
+                // currently moving towards target
+                let forward_speed_abs = forward_speed.abs();
+                let ticks_to_target = axis_distance_to_target / forward_speed_abs;
+                let tick_to_deacc = (forward_speed_abs - MOVEMENT_VELOCITY_MIN) / MOVEMENT_FRICTION;
+                if ticks_to_target > tick_to_deacc {
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    };
+
     // forward_control_x & _y are -1, 0, or 1 here
     let (mut forward_control_x, mut forward_control_y) = current_direction.to_delta();
     if forward_control_x == 0 || forward_control_y == 0 {
@@ -239,127 +290,80 @@ fn find_steering(
             // forward is on vertical axis
 
             // steer to axis
-            {
-                let accelerate_to_axis = {
-
-                    if left_speed_to_axis < 0.0 {
-                        // currently moving away from axis
-                        true
-                    } else {
-                        // currently moving towards axis
-                        let left_speed_abs = left_speed.abs();
-                        let ticks_to_target = distance_to_axis / left_speed_abs;
-                        let tick_to_deacc = left_speed_abs / MOVEMENT_FRICTION;
-                        if ticks_to_target > tick_to_deacc {
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                };
-
-                if accelerate_to_axis {
-                    if offset_to_axis.x > 0.0 {
-                        forward_control_x = 1;
-                    } else {
-                        forward_control_x = -1;
-                    }
+            if accelerate_to_axis {
+                if offset_to_axis.x > 0.0 {
+                    forward_control_x = 1;
+                } else {
+                    forward_control_x = -1;
                 }
             }
 
             // steer to target
-            {
-                // the question here is, do we set forward_control_y to 0 or not?
-                let accelerate_to_target = {
-
-                    if forward_speed < 0.0 {
-                        // currently moving away from target
-                        true
-                    } else {
-                        // currently moving towards target
-                        let forward_speed_abs = forward_speed.abs();
-                        let ticks_to_target = axis_distance_to_target / forward_speed_abs;
-                        let tick_to_deacc = forward_speed_abs / MOVEMENT_FRICTION;
-                        if ticks_to_target > tick_to_deacc {
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                };
-
-                if !accelerate_to_target {
-                    forward_control_y = 0;
-                }
+            // the question here is, do we set forward_control_y to 0 or not?
+            if !accelerate_to_target {
+                forward_control_y = 0;
             }
-
-            Direction::from_delta(forward_control_x, forward_control_y)
         } else {
             // forward is on horizontal axis
 
             // steer to axis
-            {
-                let accelerate_to_axis = {
-
-                    if left_speed_to_axis < 0.0 {
-                        // currently moving away from axis
-                        true
-                    } else {
-                        // currently moving towards axis
-                        let left_speed_abs = left_speed.abs();
-                        let ticks_to_target = distance_to_axis / left_speed_abs;
-                        let tick_to_deacc = left_speed_abs / MOVEMENT_FRICTION;
-                        if ticks_to_target > tick_to_deacc {
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                };
-
-                if accelerate_to_axis {
-                    if offset_to_axis.y > 0.0 {
-                        forward_control_y = 1;
-                    } else {
-                        forward_control_y = -1;
-                    }
+            if accelerate_to_axis {
+                if offset_to_axis.y > 0.0 {
+                    forward_control_y = 1;
+                } else {
+                    forward_control_y = -1;
                 }
             }
 
             // steer to target
-            {
-                // the question here is, do we set forward_control_x to 0 or not?
-                let accelerate_to_target = {
-
-                    if forward_speed < 0.0 {
-                        // currently moving away from target
-                        true
-                    } else {
-                        // currently moving towards target
-                        let forward_speed_abs = forward_speed.abs();
-                        let ticks_to_target = axis_distance_to_target / forward_speed_abs;
-                        let tick_to_deacc = forward_speed_abs / MOVEMENT_FRICTION;
-                        if ticks_to_target > tick_to_deacc {
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                };
-
-                if !accelerate_to_target {
-                    forward_control_x = 0;
-                }
+            // the question here is, do we set forward_control_x to 0 or not?
+            if !accelerate_to_target {
+                forward_control_x = 0;
             }
-
-            Direction::from_delta(forward_control_x, forward_control_y)
         }
     } else {
         // forward is diagonal
-        todo!();
 
-        Direction::from_delta(forward_control_x, forward_control_y)
+        match (accelerate_to_axis, accelerate_to_target) {
+            (true, true) => {
+                // the question here is do we set forward_control_x OR forward_control_y to 0?
+                // only one should be set to 0
+                // the non-zero one should be sufficient to move both towards the target AND the axis
+
+                let cross_val = side_of_line(target_position, forward_direction, current_position);
+                let reverse = forward_control_x == forward_control_y;
+
+                if cross_val == 0 {
+                    // if accelerate_to_axis is true, this should not happen!
+                    panic!("Offset is exactly on the line, this should not happen!");
+                }
+
+                let cross_val_is_left = cross_val > 0;
+                let zero_out_y = cross_val_is_left == reverse;
+
+                if zero_out_y {
+                    forward_control_y = 0;
+                } else  {
+                    forward_control_x = 0;
+                }
+            }
+            (false, true) => {
+                // do nothing, already moving in correct direction
+            }
+            (true, false) => {
+                // set control signal to steer directly to axis
+                forward_control_x = if direction_to_axis.x > 0.0 { 1 } else { -1 };
+                forward_control_y = if direction_to_axis.y > 0.0 { 1 } else { -1 };
+            }
+            (false, false) => {
+                // zero out control signal
+                forward_control_x = 0;
+                forward_control_y = 0;
+            }
+        }
     }
+
+    Direction::from_delta(forward_control_x, forward_control_y)
 }
 
 fn apply_locomotion(
@@ -447,7 +451,7 @@ fn side_of_line(
     let pt_to_target = target - line_start;
 
     // 2D cross product of line_dir and pt_to_target
-    let cross_val = line_dir.x * pt_to_target.y - line_dir.y * pt_to_target.x;
+    let cross_val = line_dir.perp_dot(pt_to_target);
 
     if cross_val.abs() < 1e-7 {
         0  // ~ collinear
