@@ -1,8 +1,8 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 
 use bevy_ecs::component::Component;
 
-use game_engine::{math::Vec2};
+use game_engine::{math::Vec2, logging::info};
 
 use game_app_network::{
     naia::{sequence_less_than, GameInstant, Tick},
@@ -14,6 +14,8 @@ pub struct RenderPosition {
     // front is oldest, back is newest
     position_queue: VecDeque<(Vec2, Tick)>,
     interp_instant: GameInstant,
+    last_render_position: Vec2,
+    error_interpolation_opt: Option<(Vec2, GameInstant, Duration)>
 }
 
 impl RenderPosition {
@@ -28,6 +30,8 @@ impl RenderPosition {
         let mut me = Self {
             position_queue: VecDeque::new(),
             interp_instant: tick_instant,
+            last_render_position: Vec2::new(x, y),
+            error_interpolation_opt: None,
         };
 
         me.position_queue.push_back((Vec2::new(x, y), tick));
@@ -67,11 +71,11 @@ impl RenderPosition {
         let mut me = confirmed_render_pos.clone();
         if let Some(old_predicted_render_pos) = old_predicted_render_pos_opt {
             me.interp_instant = old_predicted_render_pos.interp_instant;
+            me.last_render_position = old_predicted_render_pos.last_render_position;
         }
         me
     }
 
-    // returns (position, velocity)
     pub fn render(&mut self, client: &WorldClient, duration_ms: f32) -> Vec2 {
         {
             let adjust: f32 = match self.position_queue.len() {
@@ -85,50 +89,55 @@ impl RenderPosition {
             };
             let duration_ms = duration_ms * adjust;
 
-            self.advance_millis(client, duration_ms as u32);
+            self.advance_millis(duration_ms as u32);
+            self.prune_queue(client);
         }
 
-        if self.position_queue.len() < 2 {
-            if self.position_queue.len() < 1 {
-                panic!("queue is empty");
+        let mut render_position = self.interpolated_position(client);
+
+        if let Some((error, old_instant, duration)) = self.error_interpolation_opt {
+            // apply error interpolation
+            let elapsed = old_instant.offset_from(&self.interp_instant);
+            let interp = elapsed as f32 / duration.as_millis() as f32;
+            if interp < 0.0 || interp > 1.0 {
+                panic!("interp out of bounds: {:?}", interp);
             }
-
-            let (position, _) = self.position_queue.get(0).unwrap();
-            return *position;
+            let interp = 1.0 - interp;
+            let interp_error = error * interp;
+            render_position -= interp_error;
         }
 
-        let (prev_pos, prev_instant, next_pos, next_instant) = {
-            let (prev_pos, prev_tick) = self.position_queue.get(0).unwrap();
-            let (next_pos, next_tick) = self.position_queue.get(1).unwrap();
-
-            let prev_instant = client
-                .tick_to_instant(*prev_tick)
-                .expect("client not initialized?");
-            let next_instant = client
-                .tick_to_instant(*next_tick)
-                .expect("client not initialized?");
-
-            (*prev_pos, prev_instant, *next_pos, next_instant)
-        };
-
-        let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
-        if prev_to_interp < 0.0 {
-            return prev_pos;
-        }
-        let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
-        let total = prev_to_interp + interp_to_next;
-        let interp = prev_to_interp / total;
-
-        let interp_x = prev_pos.x + ((next_pos.x - prev_pos.x) * interp);
-        let interp_y = prev_pos.y + ((next_pos.y - prev_pos.y) * interp);
-
-        let interp_pos = Vec2::new(interp_x, interp_y);
-        interp_pos
+        self.last_render_position = render_position;
+        render_position
     }
 
-    pub fn advance_millis(&mut self, client: &WorldClient, millis: u32) {
+    pub fn current_offset_from_last_render(&mut self, client: &WorldClient) -> Vec2 {
+        self.prune_queue(client);
+
+        let render_position = self.interpolated_position(client);
+        let error = render_position - self.last_render_position;
+        error
+    }
+
+    pub fn add_error_interpolation(&mut self, error: Vec2, duration: Duration) {
+        self.error_interpolation_opt = Some((error, self.interp_instant, duration));
+        info!("add_error_interpolation() - error: {:?}, duration: {:?}", error, duration);
+    }
+
+    fn advance_millis(&mut self, millis: u32) {
         self.interp_instant = self.interp_instant.add_millis(millis);
 
+        if let Some((_, old_instant, duration)) = self.error_interpolation_opt {
+            // if duration has passed, remove interpolation
+            let elapsed = old_instant.offset_from(&self.interp_instant);
+            if elapsed >= duration.as_millis() as i32 {
+                self.error_interpolation_opt = None;
+                info!("removing error interpolation");
+            }
+        }
+    }
+
+    fn prune_queue(&mut self, client: &WorldClient) {
         loop {
             if self.position_queue.len() < 1 {
                 panic!("queue is empty");
@@ -184,6 +193,45 @@ impl RenderPosition {
         //         }
         //     }
         // }
+    }
+
+    fn interpolated_position(&mut self, client: &WorldClient) -> Vec2 {
+        if self.position_queue.len() < 2 {
+            if self.position_queue.len() < 1 {
+                panic!("queue is empty");
+            }
+
+            let (position, _) = self.position_queue.get(0).unwrap();
+            return *position;
+        }
+
+        let (prev_pos, prev_instant, next_pos, next_instant) = {
+            let (prev_pos, prev_tick) = self.position_queue.get(0).unwrap();
+            let (next_pos, next_tick) = self.position_queue.get(1).unwrap();
+
+            let prev_instant = client
+                .tick_to_instant(*prev_tick)
+                .expect("client not initialized?");
+            let next_instant = client
+                .tick_to_instant(*next_tick)
+                .expect("client not initialized?");
+
+            (*prev_pos, prev_instant, *next_pos, next_instant)
+        };
+
+        let prev_to_interp = prev_instant.offset_from(&self.interp_instant) as f32;
+        if prev_to_interp < 0.0 {
+            return prev_pos;
+        }
+        let interp_to_next = self.interp_instant.offset_from(&next_instant) as f32;
+        let total = prev_to_interp + interp_to_next;
+        let interp = prev_to_interp / total;
+
+        let interp_x = prev_pos.x + ((next_pos.x - prev_pos.x) * interp);
+        let interp_y = prev_pos.y + ((next_pos.y - prev_pos.y) * interp);
+
+        let interp_pos = Vec2::new(interp_x, interp_y);
+        interp_pos
     }
 }
 

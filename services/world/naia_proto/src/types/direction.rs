@@ -96,7 +96,7 @@ impl Direction {
             (-1, 0) => Some(Direction::West),
             (-1, -1) => Some(Direction::Northwest),
             (0, 0) => None,
-            _ => panic!("Invalid delta"),
+            _ => panic!("Invalid delta: ({:?}, {:?})", dx, dy),
         }
     }
 

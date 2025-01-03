@@ -8,11 +8,10 @@ use crate::{
     components::{velocity::Velocity, NetworkedTileTarget},
     constants::{
         MOVEMENT_ACCELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_ARRIVAL_DISTANCE,
-        TILE_SIZE, MOVEMENT_FRICTION, MOVEMENT_STEERING_DEADZONE
+        TILE_SIZE, MOVEMENT_FRICTION, MOVEMENT_STEERING_DEADZONE, MOVEMENT_VELOCITY_MIN
     },
     types::Direction,
 };
-use crate::constants::{MOVEMENT_INTERMEDIATE_ARRIVAL_DISTANCE, MOVEMENT_VELOCITY_MIN};
 
 #[derive(Component, Clone)]
 pub struct PhysicsController {
@@ -117,8 +116,7 @@ impl PhysicsController {
     pub fn get_steering_vars(
         &self,
         current_direction: Direction,
-        current_target_position: Vec2,
-        future_direction: Option<Direction>
+        current_target_position: Vec2
     ) -> Option<(Vec2, Vec2)> {
         let current_position = self.position();
         let target_distance = current_position.distance(current_target_position);
@@ -218,7 +216,7 @@ fn find_steering(
         if axis_distance_to_target <= MOVEMENT_ARRIVAL_DISTANCE {
             // we have overshot
             let target_offset = target_position - current_position;
-            let target_distance = target_offset.length();
+            // let target_distance = target_offset.length();
             let target_direction = target_offset.normalize_or_zero();
             let desired_velocity = target_direction * MOVEMENT_VELOCITY_MIN;
             let desired_acceleration = desired_velocity - current_velocity;
@@ -226,7 +224,7 @@ fn find_steering(
         }
     }
 
-    let real_distance_to_target = current_position.distance(target_position);
+    // let real_distance_to_target = current_position.distance(target_position);
     let offset_to_axis = axis_ray_nearest_point - current_position;
     let distance_to_axis = offset_to_axis.length();
     let direction_to_axis = offset_to_axis.normalize_or_zero();

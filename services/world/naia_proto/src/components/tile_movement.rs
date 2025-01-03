@@ -7,7 +7,6 @@ use crate::{
     constants::TILE_SIZE,
     types::Direction,
 };
-use crate::constants::MOVEMENT_ARRIVAL_DISTANCE;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum TileMovementType {
@@ -289,7 +288,6 @@ impl TileMovementMovingState {
         if let Some((axis_ray, axis_ray_nearest_point)) = physics.get_steering_vars(
             self.dir,
             target_position,
-            future_direction,
         ) {
             // have not arrived
             physics.update_velocity(

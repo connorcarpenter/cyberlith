@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use bevy_ecs::{
     change_detection::Mut,
@@ -220,10 +220,13 @@ impl RollbackManager {
             }
             warn!("---");
 
-            // TODO: why is this necessary again? should refactor into a separate method
             for (entity, _, _) in unit_q.iter() {
                 let (_, _, mut predicted_render_position, _) = predicted_unit_q.get_mut(entity).unwrap();
-                predicted_render_position.advance_millis(&client, 0);
+                // predicted_render_position.prediction_error() here prunes the queue, maybe refactor?
+                let prediction_error = predicted_render_position.current_offset_from_last_render(&client);
+                if prediction_error.length() > 0.0 {
+                    predicted_render_position.add_error_interpolation(prediction_error, Duration::from_millis(150));
+                }
             }
         });
     }
