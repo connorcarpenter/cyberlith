@@ -17,14 +17,38 @@ pub enum Direction {
 impl Direction {
     pub(crate) fn congruent_with(&self, other: Direction) -> bool {
         match self {
-            Direction::North => matches!(other, Direction::North | Direction::Northeast | Direction::Northwest),
-            Direction::Northeast => matches!(other, Direction::Northeast | Direction::East | Direction::North),
-            Direction::East => matches!(other, Direction::East | Direction::Southeast | Direction::Northeast),
-            Direction::Southeast => matches!(other, Direction::Southeast | Direction::South | Direction::East),
-            Direction::South => matches!(other, Direction::South | Direction::Southeast | Direction::Southwest),
-            Direction::Southwest => matches!(other, Direction::Southwest | Direction::South | Direction::West),
-            Direction::West => matches!(other, Direction::West | Direction::Southwest | Direction::Northwest),
-            Direction::Northwest => matches!(other, Direction::Northwest | Direction::North | Direction::West),
+            Direction::North => matches!(
+                other,
+                Direction::North | Direction::Northeast | Direction::Northwest
+            ),
+            Direction::Northeast => matches!(
+                other,
+                Direction::Northeast | Direction::East | Direction::North
+            ),
+            Direction::East => matches!(
+                other,
+                Direction::East | Direction::Southeast | Direction::Northeast
+            ),
+            Direction::Southeast => matches!(
+                other,
+                Direction::Southeast | Direction::South | Direction::East
+            ),
+            Direction::South => matches!(
+                other,
+                Direction::South | Direction::Southeast | Direction::Southwest
+            ),
+            Direction::Southwest => matches!(
+                other,
+                Direction::Southwest | Direction::South | Direction::West
+            ),
+            Direction::West => matches!(
+                other,
+                Direction::West | Direction::Southwest | Direction::Northwest
+            ),
+            Direction::Northwest => matches!(
+                other,
+                Direction::Northwest | Direction::North | Direction::West
+            ),
         }
     }
 }
@@ -85,24 +109,24 @@ impl Direction {
         }
     }
 
-    pub fn from_delta(dx: i8, dy: i8) -> Option<Self> {
+    pub fn from_delta(dx: i8, dy: i8) -> Result<Option<Self>, ()> {
         match (dx, dy) {
-            (0, -1) => Some(Direction::North),
-            (1, -1) => Some(Direction::Northeast),
-            (1, 0) => Some(Direction::East),
-            (1, 1) => Some(Direction::Southeast),
-            (0, 1) => Some(Direction::South),
-            (-1, 1) => Some(Direction::Southwest),
-            (-1, 0) => Some(Direction::West),
-            (-1, -1) => Some(Direction::Northwest),
-            (0, 0) => None,
-            _ => panic!("Invalid delta: ({:?}, {:?})", dx, dy),
+            (0, -1) => Ok(Some(Direction::North)),
+            (1, -1) => Ok(Some(Direction::Northeast)),
+            (1, 0) => Ok(Some(Direction::East)),
+            (1, 1) => Ok(Some(Direction::Southeast)),
+            (0, 1) => Ok(Some(Direction::South)),
+            (-1, 1) => Ok(Some(Direction::Southwest)),
+            (-1, 0) => Ok(Some(Direction::West)),
+            (-1, -1) => Ok(Some(Direction::Northwest)),
+            (0, 0) => Ok(None),
+            _ => Err(()),
         }
     }
 
     pub fn to_opposite(&self) -> Self {
         let (dx, dy) = self.to_delta();
-        Direction::from_delta(-dx, -dy).unwrap()
+        Direction::from_delta(-dx, -dy).unwrap().unwrap()
     }
 
     pub fn to_radians(&self) -> f32 {

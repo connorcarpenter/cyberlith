@@ -4,23 +4,27 @@ use bevy_ecs::{
     change_detection::Mut,
     entity::Entity,
     prelude::Query,
-    system::{Res, ResMut, SystemState, Resource},
+    system::{Res, ResMut, Resource, SystemState},
     world::World,
 };
 
-use game_engine::{logging::warn, asset::{AssetHandle, AssetManager, UnitData}};
+use game_engine::{
+    asset::{AssetHandle, AssetManager, UnitData},
+    logging::warn,
+};
 
 use game_app_network::{
     naia::{sequence_greater_than, Tick},
     world::{
-        components::{PhysicsController, NetworkedLastCommand, TileMovementType},
+        components::{NetworkedLastCommand, PhysicsController, TileMovementType},
+        constants::MISPREDICTION_CORRECTION_DURATION_MS,
         WorldClient,
     },
 };
 
 use crate::{
     components::{AnimationState, PredictedTileMovement, RenderPosition},
-    resources::{PredictedWorld, Global, TickTracker, InputManager},
+    resources::{Global, InputManager, PredictedWorld, TickTracker},
     systems::world_events::process_tick,
 };
 
@@ -31,9 +35,7 @@ pub struct RollbackManager {
 
 impl Default for RollbackManager {
     fn default() -> Self {
-        Self {
-            events: None,
-        }
+        Self { events: None }
     }
 }
 
@@ -55,20 +57,11 @@ impl RollbackManager {
     }
 
     // Used as a system
-    pub(crate) fn execute_rollback(
-        main_world: &mut World,
-    ) {
+    pub(crate) fn execute_rollback(main_world: &mut World) {
         let (current_tick, owned_entity_opt) = {
-            let mut main_system_state: SystemState<(
-                Res<Global>,
-                ResMut<Self>,
-                Res<TickTracker>,
-            )> = SystemState::new(main_world);
-            let (
-                global,
-                mut me,
-                tick_tracker,
-            ) = main_system_state.get_mut(main_world);
+            let mut main_system_state: SystemState<(Res<Global>, ResMut<Self>, Res<TickTracker>)> =
+                SystemState::new(main_world);
+            let (global, mut me, tick_tracker) = main_system_state.get_mut(main_world);
 
             let Some(server_tick) = std::mem::take(&mut me.events) else {
                 return;
@@ -136,98 +129,102 @@ impl RollbackManager {
             (current_tick, owned_entity_opt)
         };
 
-        main_world.resource_scope(|main_world: &mut World, mut predicted_world: Mut<PredictedWorld>| {
+        main_world.resource_scope(
+            |main_world: &mut World, mut predicted_world: Mut<PredictedWorld>| {
+                // ROLLBACK CLIENT: Replay all stored commands
 
-            // ROLLBACK CLIENT: Replay all stored commands
+                // Set to authoritative state
+                predicted_world.extract(main_world);
 
-            // Set to authoritative state
-            predicted_world.extract(main_world);
+                // PREDICTION ROLLBACK
 
-            // PREDICTION ROLLBACK
-
-            let mut main_system_state: SystemState<
-                (
+                let mut main_system_state: SystemState<(
                     WorldClient,
                     Res<AssetManager>,
                     ResMut<InputManager>,
                     Query<(Entity, &AssetHandle<UnitData>, &NetworkedLastCommand)>,
                 )> = SystemState::new(main_world);
-            let (
-                client,
-                asset_manager,
-                mut input_manager,
-                unit_q,
-            ) = main_system_state.get_mut(main_world);
+                let (client, asset_manager, mut input_manager, unit_q) =
+                    main_system_state.get_mut(main_world);
 
-            let mut predicted_system_state: SystemState<
-                Query<(
-                    &mut PredictedTileMovement,
-                    &mut PhysicsController,
-                    &mut RenderPosition,
-                    &mut AnimationState,
-                )>
-            > = SystemState::new(predicted_world.world_mut());
-            let mut predicted_unit_q = predicted_system_state.get_mut(predicted_world.world_mut());
+                let mut predicted_system_state: SystemState<
+                    Query<(
+                        &mut PredictedTileMovement,
+                        &mut PhysicsController,
+                        &mut RenderPosition,
+                        &mut AnimationState,
+                    )>,
+                > = SystemState::new(predicted_world.world_mut());
+                let mut predicted_unit_q =
+                    predicted_system_state.get_mut(predicted_world.world_mut());
 
-            let replay_commands = input_manager.pop_command_replays(current_tick);
+                let replay_commands = input_manager.pop_command_replays(current_tick);
 
-            // process commands
-            for (command_tick, outgoing_command_opt) in replay_commands {
-                // info!("Replay Command (Tick: {:?})", command_tick);
+                // process commands
+                for (command_tick, outgoing_command_opt) in replay_commands {
+                    // info!("Replay Command (Tick: {:?})", command_tick);
 
-                // process command
-                input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
+                    // process command
+                    input_manager.recv_incoming_command(command_tick, outgoing_command_opt);
 
-                // process movement
-                let player_command = input_manager.pop_incoming_command(command_tick);
+                    // process movement
+                    let player_command = input_manager.pop_incoming_command(command_tick);
 
-                //
-                for (entity, unit_handle, last_command) in unit_q.iter() {
-                    let animated_model_handle = asset_manager.get_unit_animated_model_handle(unit_handle).unwrap();
+                    //
+                    for (entity, unit_handle, last_command) in unit_q.iter() {
+                        let animated_model_handle = asset_manager
+                            .get_unit_animated_model_handle(unit_handle)
+                            .unwrap();
 
-                    let (
-                        mut predicted_tile_movement,
-                        mut predicted_physics,
-                        mut predicted_render_position,
-                        mut predicted_animation_state,
-                    ) = predicted_unit_q.get_mut(entity).unwrap();
+                        let (
+                            mut predicted_tile_movement,
+                            mut predicted_physics,
+                            mut predicted_render_position,
+                            mut predicted_animation_state,
+                        ) = predicted_unit_q.get_mut(entity).unwrap();
 
-                    let next_command = {
-                        if let Some(owned_entity) = owned_entity_opt {
-                            if entity == owned_entity {
-                                player_command.clone()
+                        let next_command = {
+                            if let Some(owned_entity) = owned_entity_opt {
+                                if entity == owned_entity {
+                                    player_command.clone()
+                                } else {
+                                    last_command.to_player_commands()
+                                }
                             } else {
                                 last_command.to_player_commands()
                             }
-                        } else {
-                            last_command.to_player_commands()
-                        }
-                    };
-                    let predicted_tile_movement_2: &mut PredictedTileMovement =
-                        &mut predicted_tile_movement;
-                    process_tick(
-                        &asset_manager,
-                        TileMovementType::ClientPredicted,
-                        command_tick,
-                        next_command,
-                        predicted_tile_movement_2,
-                        &mut predicted_physics,
-                        &mut predicted_render_position,
-                        &mut predicted_animation_state,
-                        &animated_model_handle,
-                    );
+                        };
+                        let predicted_tile_movement_2: &mut PredictedTileMovement =
+                            &mut predicted_tile_movement;
+                        process_tick(
+                            &asset_manager,
+                            TileMovementType::ClientPredicted,
+                            command_tick,
+                            next_command,
+                            predicted_tile_movement_2,
+                            &mut predicted_physics,
+                            &mut predicted_render_position,
+                            &mut predicted_animation_state,
+                            &animated_model_handle,
+                        );
+                    }
                 }
-            }
-            warn!("---");
+                warn!("---");
 
-            for (entity, _, _) in unit_q.iter() {
-                let (_, _, mut predicted_render_position, _) = predicted_unit_q.get_mut(entity).unwrap();
-                // predicted_render_position.prediction_error() here prunes the queue, maybe refactor?
-                let prediction_error = predicted_render_position.current_offset_from_last_render(&client);
-                if prediction_error.length() > 0.0 {
-                    predicted_render_position.add_error_interpolation(prediction_error, Duration::from_millis(150));
+                for (entity, _, _) in unit_q.iter() {
+                    let (_, _, mut predicted_render_position, _) =
+                        predicted_unit_q.get_mut(entity).unwrap();
+                    // predicted_render_position.prediction_error() here prunes the queue, maybe refactor?
+                    let prediction_error =
+                        predicted_render_position.current_offset_from_last_render(&client);
+                    if prediction_error.length() > 0.0 {
+                        predicted_render_position.add_error_interpolation(
+                            prediction_error,
+                            Duration::from_millis(MISPREDICTION_CORRECTION_DURATION_MS),
+                        );
+                    }
                 }
-            }
-        });
+            },
+        );
     }
 }

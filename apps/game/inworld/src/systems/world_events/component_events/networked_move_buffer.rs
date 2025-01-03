@@ -6,13 +6,17 @@ use bevy_ecs::{
     prelude::Query,
 };
 
-use game_engine::{logging::info, asset::{AssetHandle, AssetManager, UnitData}};
+use game_engine::{
+    asset::{AssetHandle, AssetManager, UnitData},
+    logging::info,
+};
 
 use game_app_network::{
     naia::sequence_greater_than,
     world::{
-        WorldClient, components::{NetworkedMoveBuffer, PhysicsController},
-        WorldInsertComponentEvent, WorldRemoveComponentEvent, WorldUpdateComponentEvent,
+        components::{NetworkedMoveBuffer, PhysicsController},
+        WorldClient, WorldInsertComponentEvent, WorldRemoveComponentEvent,
+        WorldUpdateComponentEvent,
     },
 };
 
@@ -30,7 +34,6 @@ pub fn insert_net_move_buffer_events(
         return;
     };
     for event in event_reader.read() {
-
         let entity = event.entity;
 
         info!(
@@ -89,12 +92,13 @@ pub fn update_net_move_buffer_events(
         else {
             continue;
         };
-        let (should_rollback, must_handle_late_update) = tile_movement.recv_updated_net_move_buffer(
-            *update_tick,
-            &net_move_buffer,
-            &mut physics,
-            &mut render_position,
-        );
+        let (should_rollback, must_handle_late_update) = tile_movement
+            .recv_updated_net_move_buffer(
+                *update_tick,
+                &net_move_buffer,
+                &mut physics,
+                &mut render_position,
+            );
         if must_handle_late_update {
             tile_movement.handle_late_update(
                 &asset_manager,

@@ -19,7 +19,10 @@ use naia_bevy_client::{
     events::{DespawnEntityEvent, InsertComponentEvents, SpawnEntityEvent},
 };
 
-use world_server_naia_proto::components::{Alt1, AssetEntry, AssetRef, NetworkedLookDir, Main, NetworkedMoveBuffer, NetworkedTileTarget, NetworkedLastCommand};
+use world_server_naia_proto::components::{
+    Alt1, AssetEntry, AssetRef, Main, NetworkedLastCommand, NetworkedLookDir, NetworkedMoveBuffer,
+    NetworkedTileTarget,
+};
 
 use crate::{
     asset_ref_processor::{AssetProcessor, AssetRefProcessor},

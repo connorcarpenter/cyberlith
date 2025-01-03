@@ -1,15 +1,13 @@
 use bevy_ecs::{event::EventReader, prelude::Query};
 
-use game_engine::{logging::info};
+use game_engine::logging::info;
 
 use game_app_network::world::{
     components::NetworkedLookDir, WorldInsertComponentEvent, WorldRemoveComponentEvent,
     WorldUpdateComponentEvent,
 };
 
-use crate::{
-    components::AnimationState,
-};
+use crate::components::AnimationState;
 
 pub fn insert_net_look_dir_events(
     lookdir_q: Query<&NetworkedLookDir>,

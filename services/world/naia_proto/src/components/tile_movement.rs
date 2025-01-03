@@ -285,10 +285,9 @@ impl TileMovementMovingState {
         }
 
         let target_position = self.target_position();
-        if let Some((axis_ray, axis_ray_nearest_point)) = physics.get_steering_vars(
-            self.dir,
-            target_position,
-        ) {
+        if let Some((axis_ray, axis_ray_nearest_point)) =
+            physics.get_steering_vars(self.dir, target_position)
+        {
             // have not arrived
             physics.update_velocity(
                 self.dir,

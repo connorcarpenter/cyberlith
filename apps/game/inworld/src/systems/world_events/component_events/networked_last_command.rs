@@ -1,4 +1,7 @@
-use bevy_ecs::{system::{Query, ResMut}, event::EventReader};
+use bevy_ecs::{
+    event::EventReader,
+    system::{Query, ResMut},
+};
 
 use game_engine::logging::info;
 

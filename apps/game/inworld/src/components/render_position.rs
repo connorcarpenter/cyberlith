@@ -2,11 +2,15 @@ use std::{collections::VecDeque, time::Duration};
 
 use bevy_ecs::component::Component;
 
-use game_engine::{math::Vec2, logging::info};
+use game_engine::{logging::info, math::Vec2};
 
 use game_app_network::{
     naia::{sequence_less_than, GameInstant, Tick},
-    world::{components::NetworkedTileTarget, constants::TILE_SIZE, WorldClient},
+    world::{
+        components::NetworkedTileTarget,
+        constants::{MISPREDICTION_CORRECTION_FACTOR, TILE_SIZE},
+        WorldClient,
+    },
 };
 
 #[derive(Component, Clone)]
@@ -15,7 +19,7 @@ pub struct RenderPosition {
     position_queue: VecDeque<(Vec2, Tick)>,
     interp_instant: GameInstant,
     last_render_position: Vec2,
-    error_interpolation_opt: Option<(Vec2, GameInstant, Duration)>
+    error_interpolation_opt: Option<(Vec2, GameInstant, Duration)>,
 }
 
 impl RenderPosition {
@@ -67,7 +71,10 @@ impl RenderPosition {
         // );
     }
 
-    pub fn extract(confirmed_render_pos: &Self, old_predicted_render_pos_opt: Option<&Self>) -> Self {
+    pub fn extract(
+        confirmed_render_pos: &Self,
+        old_predicted_render_pos_opt: Option<&Self>,
+    ) -> Self {
         let mut me = confirmed_render_pos.clone();
         if let Some(old_predicted_render_pos) = old_predicted_render_pos_opt {
             me.interp_instant = old_predicted_render_pos.interp_instant;
@@ -102,8 +109,10 @@ impl RenderPosition {
             if interp < 0.0 || interp > 1.0 {
                 panic!("interp out of bounds: {:?}", interp);
             }
-            let interp = 1.0 - interp;
-            let interp_error = error * interp;
+            // interp -> alpha
+            const F: f32 = MISPREDICTION_CORRECTION_FACTOR;
+            let alpha = (F.powf(interp) - F) / (1.0 - F);
+            let interp_error = error * alpha;
             render_position -= interp_error;
         }
 
@@ -121,7 +130,10 @@ impl RenderPosition {
 
     pub fn add_error_interpolation(&mut self, error: Vec2, duration: Duration) {
         self.error_interpolation_opt = Some((error, self.interp_instant, duration));
-        info!("add_error_interpolation() - error: {:?}, duration: {:?}", error, duration);
+        info!(
+            "add_error_interpolation() - error: {:?}, duration: {:?}",
+            error, duration
+        );
     }
 
     fn advance_millis(&mut self, millis: u32) {

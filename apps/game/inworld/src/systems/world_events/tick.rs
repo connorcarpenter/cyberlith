@@ -1,5 +1,8 @@
 use bevy_ecs::{
-    change_detection::ResMut, entity::Entity, event::EventReader, prelude::Query,
+    change_detection::ResMut,
+    entity::Entity,
+    event::EventReader,
+    prelude::Query,
     system::{Res, SystemState},
 };
 
@@ -18,10 +21,10 @@ use game_app_network::{
 
 use crate::{
     components::{
-        AnimationState, ClientTileMovement, ConfirmedTileMovement,
-        PredictedTileMovement, RenderPosition, TickSkipper,
+        AnimationState, ClientTileMovement, ConfirmedTileMovement, PredictedTileMovement,
+        RenderPosition, TickSkipper,
     },
-    resources::{PredictedWorld, Global, InputManager, TickTracker},
+    resources::{Global, InputManager, PredictedWorld, TickTracker},
 };
 
 pub fn client_tick_events(
@@ -50,11 +53,11 @@ pub fn client_tick_events(
             &mut PhysicsController,
             &mut RenderPosition,
             &mut AnimationState,
-        )>> = SystemState::new(predicted_world.world_mut());
+        )>,
+    > = SystemState::new(predicted_world.world_mut());
     let mut character_q = predicted_system_state.get_mut(predicted_world.world_mut());
 
     for client_tick in client_ticks {
-
         // process commands
         if let Some(outgoing_command) = input_manager.pop_outgoing_command() {
             // outgoing_command.log(client_tick);
@@ -79,14 +82,17 @@ pub fn client_tick_events(
 
         for (entity, unit_handle, last_command) in unit_q.iter() {
             let Ok((
-                       mut predicted_tile_movement,
-                       mut predicted_physics,
-                       mut predicted_render_position,
-                       mut predicted_animation_state,
-                   )) = character_q.get_mut(entity) else {
+                mut predicted_tile_movement,
+                mut predicted_physics,
+                mut predicted_render_position,
+                mut predicted_animation_state,
+            )) = character_q.get_mut(entity)
+            else {
                 continue;
             };
-            let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle) else {
+            let Some(animated_model_handle) =
+                asset_manager.get_unit_animated_model_handle(unit_handle)
+            else {
                 continue;
             };
 
@@ -166,17 +172,15 @@ pub fn server_tick_events(
     asset_manager: Res<AssetManager>,
     mut tick_tracker: ResMut<TickTracker>,
     mut tick_reader: EventReader<WorldServerTickEvent>,
-    mut unit_q: Query<
-        (
-            Entity,
-            &mut TickSkipper,
-            &mut ConfirmedTileMovement,
-            &mut PhysicsController,
-            &mut RenderPosition,
-            &mut AnimationState,
-            &AssetHandle<UnitData>,
-        ),
-    >,
+    mut unit_q: Query<(
+        Entity,
+        &mut TickSkipper,
+        &mut ConfirmedTileMovement,
+        &mut PhysicsController,
+        &mut RenderPosition,
+        &mut AnimationState,
+        &AssetHandle<UnitData>,
+    )>,
 ) {
     // TODO here! for components which have received an update for this tick, skip processing!
     for event in tick_reader.read() {
@@ -203,7 +207,9 @@ pub fn server_tick_events(
                 // info!("entity: {:?}, processing tick: {:?}", confirmed_entity, server_tick);
             }
 
-            let Some(animated_model_handle) = asset_manager.get_unit_animated_model_handle(unit_handle) else {
+            let Some(animated_model_handle) =
+                asset_manager.get_unit_animated_model_handle(unit_handle)
+            else {
                 continue;
             };
 

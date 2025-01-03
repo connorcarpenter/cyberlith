@@ -1,6 +1,6 @@
 use bevy_ecs::{
     entity::Entity,
-    system::{SystemState, Query, Res, ResMut},
+    system::{Query, Res, ResMut, SystemState},
 };
 
 use game_engine::{
@@ -16,7 +16,7 @@ use game_app_network::world::WorldClient;
 
 use crate::{
     components::{AnimationState, RenderPosition},
-    resources::{PredictedWorld},
+    resources::PredictedWorld,
 };
 
 pub fn draw_units(
@@ -36,10 +36,8 @@ pub fn draw_units(
 ) {
     let duration_ms = time.get_elapsed_ms();
 
-    let mut predicted_system_state: SystemState<Query<(
-        &AnimationState,
-        &mut RenderPosition
-    )>> = SystemState::new(predicted_world.world_mut());
+    let mut predicted_system_state: SystemState<Query<(&AnimationState, &mut RenderPosition)>> =
+        SystemState::new(predicted_world.world_mut());
     let mut predicted_unit_q = predicted_system_state.get_mut(predicted_world.world_mut());
 
     let mut transform = Transform::default();
@@ -62,7 +60,9 @@ pub fn draw_units(
             continue;
         };
 
-        let Ok((predicted_anim_state, mut predicted_render_position)) = predicted_unit_q.get_mut(entity) else {
+        let Ok((predicted_anim_state, mut predicted_render_position)) =
+            predicted_unit_q.get_mut(entity)
+        else {
             continue;
         };
 

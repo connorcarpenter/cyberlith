@@ -3,7 +3,7 @@ use naia_bevy_shared::Tick;
 use crate::{
     behavior::tick_output::TickOutput,
     components::{
-        NetworkedLookDir, MoveBuffer, PhysicsController, ProcessTickResult, TileMovement,
+        MoveBuffer, NetworkedLookDir, PhysicsController, ProcessTickResult, TileMovement,
         TileMovementType,
     },
     messages::PlayerCommands,
@@ -32,13 +32,18 @@ pub fn process_tick(
     };
 
     if tile_movement_type.processes_commands() {
-        let output_opt: Option<&mut TickOutput> = output_opt.as_mut().map(
-            |output| {
-                let output: &mut TickOutput = output;
-                output
-            }
+        let output_opt: Option<&mut TickOutput> = output_opt.as_mut().map(|output| {
+            let output: &mut TickOutput = output;
+            output
+        });
+        process_command(
+            tile_movement,
+            physics,
+            move_buffer,
+            tick,
+            player_command,
+            output_opt,
         );
-        process_command(tile_movement, physics, move_buffer, tick, player_command, output_opt);
     }
 
     let tick_result = tile_movement.process_tick(

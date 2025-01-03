@@ -1,9 +1,9 @@
 use bevy_ecs::prelude::Component;
 
 use game_engine::{
+    asset::{AssetHandle, AssetManager, UnitData},
     logging::{info, warn},
     math::Vec2,
-    asset::{AssetHandle, AssetManager, UnitData},
 };
 
 use game_app_network::{
@@ -51,10 +51,8 @@ impl ConfirmedTileMovement {
         physics: &mut PhysicsController,
         render_position: &mut RenderPosition,
     ) -> bool {
-        let (next_velocity_x, next_velocity_y) = (
-            net_tile_target.velocity_x(),
-            net_tile_target.velocity_y(),
-        );
+        let (next_velocity_x, next_velocity_y) =
+            (net_tile_target.velocity_x(), net_tile_target.velocity_y());
         info!(
             "Recv NetworkedTileTarget. Tick: {:?}, Next Tile: ({:?}, {:?}), Velocity: ({:?}, {:?})",
             update_tick,
@@ -81,7 +79,7 @@ impl ConfirmedTileMovement {
                         let dx = (next_tile_x - current_tile_x) as i8;
                         let dy = (next_tile_y - current_tile_y) as i8;
 
-                        if let Some(move_dir) = Direction::from_delta(dx, dy) {
+                        if let Ok(Some(move_dir)) = Direction::from_delta(dx, dy) {
                             (current_tile_x, current_tile_y, move_dir)
                         } else {
                             warn!(
@@ -125,8 +123,7 @@ impl ConfirmedTileMovement {
                     let total_dis = from_dis + to_dis;
                     from_dis / total_dis
                 };
-                let (next_to_tile_x, next_to_tile_y) =
-                    (net_tile_target.x(), net_tile_target.y());
+                let (next_to_tile_x, next_to_tile_y) = (net_tile_target.x(), net_tile_target.y());
                 let (next_from_tile_x, next_from_tile_y, next_move_dir) = {
                     let (next_from_tile_x, next_from_tile_y) = if interpolation < 0.5 {
                         (current_from_tile_x, current_from_tile_y)
@@ -143,7 +140,7 @@ impl ConfirmedTileMovement {
 
                     let next_tile_dx = (next_to_tile_x - next_from_tile_x) as i8;
                     let next_tile_dy = (next_to_tile_y - next_from_tile_y) as i8;
-                    if let Some(move_dir) = Direction::from_delta(next_tile_dx, next_tile_dy) {
+                    if let Ok(Some(move_dir)) = Direction::from_delta(next_tile_dx, next_tile_dy) {
                         (next_from_tile_x, next_from_tile_y, move_dir)
                     } else {
                         warn!(
@@ -299,7 +296,7 @@ fn pathfind_to_tile(ax: i16, ay: i16, bx: i16, by: i16) -> (i16, i16, Direction)
         let dx = (bx - cx).min(1).max(-1);
         let dy = (by - cy).min(1).max(-1);
 
-        dir = Direction::from_delta(dx as i8, dy as i8);
+        dir = Direction::from_delta(dx as i8, dy as i8).unwrap();
         if dir.is_none() {
             panic!("unexpected! shouldn't be allowed");
         }

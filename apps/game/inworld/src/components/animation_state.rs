@@ -6,7 +6,7 @@ use game_engine::{
     math::Vec2,
 };
 
-use game_app_network::world::{types::Direction, components::TileMovement};
+use game_app_network::world::{components::TileMovement, types::Direction};
 
 #[derive(Component, Clone)]
 pub struct AnimationState {

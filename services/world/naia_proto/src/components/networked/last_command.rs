@@ -2,7 +2,7 @@ use bevy_ecs::prelude::Component;
 
 use naia_bevy_shared::{Property, Replicate};
 
-use crate::{types::Direction, messages::PlayerCommands};
+use crate::{messages::PlayerCommands, types::Direction};
 
 #[derive(Component, Replicate)]
 pub struct NetworkedLastCommand {
@@ -37,7 +37,6 @@ impl NetworkedLastCommand {
     }
 
     pub fn to_player_commands(&self) -> Option<PlayerCommands> {
-
         let last_move = self.get();
         if last_move.is_none() {
             return None;

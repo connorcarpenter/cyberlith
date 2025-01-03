@@ -18,7 +18,10 @@ use game_app_network::{
     world::{messages::PlayerCommands, types::Direction, WorldClient},
 };
 
-use crate::{components::AnimationState, resources::{Global, PredictedWorld}};
+use crate::{
+    components::AnimationState,
+    resources::{Global, PredictedWorld},
+};
 
 const DOUBLE_TAP_BUFFER: u16 = 150;
 const SEQUENTIAL_TAP_DURATION: u16 = 1000;
@@ -76,7 +79,8 @@ impl InputManager {
         // get prediction's current look direction
         let client_avatar_entity = global.owned_entity.unwrap();
 
-        let mut predicted_system_state: SystemState<Query<&AnimationState>> = SystemState::new(predicted_world.world_mut());
+        let mut predicted_system_state: SystemState<Query<&AnimationState>> =
+            SystemState::new(predicted_world.world_mut());
         let animation_state_q = predicted_system_state.get(predicted_world.world_mut());
         let Ok(animation_state) = animation_state_q.get(client_avatar_entity) else {
             return;

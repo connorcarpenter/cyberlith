@@ -8,10 +8,10 @@ use bevy_ecs::{
 };
 
 use game_engine::{
+    asset::{AssetHandle, AssetManager, UnitData},
     logging::info,
     math::{Quat, Vec3},
     render::components::{RenderLayers, Transform, Visibility},
-    asset::{AssetHandle, AssetManager, UnitData},
 };
 
 use game_app_network::{
@@ -43,7 +43,6 @@ pub fn insert_net_tile_target_events(
     };
 
     for event in event_reader.read() {
-
         let server_tick_instant = client
             .tick_to_instant(server_tick)
             .expect("failed to convert tick to instant");

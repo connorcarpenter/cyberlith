@@ -16,7 +16,10 @@ use world_server_naia_proto::{
     behavior as shared_behavior,
     behavior::TickOutput,
     channels::PlayerCommandChannel,
-    components::{NetworkedLookDir, NetworkedMoveBuffer, NetworkedLastCommand, NetworkedTileTarget, PhysicsController, TileMovementType},
+    components::{
+        NetworkedLastCommand, NetworkedLookDir, NetworkedMoveBuffer, NetworkedTileTarget,
+        PhysicsController, TileMovementType,
+    },
     messages::PlayerCommands,
 };
 
@@ -106,11 +109,7 @@ pub fn tick_events(world: &mut World) {
             // All game logic should happen here, on a tick event
 
             // process movement
-            for (
-                entity,
-                mut tile_movement,
-                mut physics
-            ) in tile_movement_q.iter_mut() {
+            for (entity, mut tile_movement, mut physics) in tile_movement_q.iter_mut() {
                 let Some(user_key) = user_manager.get_user_key_from_entity(&entity) else {
                     continue;
                 };
@@ -136,7 +135,9 @@ pub fn tick_events(world: &mut World) {
                     Some(&mut tick_output),
                 );
 
-                if let Some((outbound_tile_x, outbound_tile_y)) = tick_output.take_outbound_net_tile_target() {
+                if let Some((outbound_tile_x, outbound_tile_y)) =
+                    tick_output.take_outbound_net_tile_target()
+                {
                     // send updates
                     let outbound_velocity = physics.velocity();
                     let Ok(mut net_tile_target) = net_tile_target_q.get_mut(entity) else {
@@ -151,7 +152,8 @@ pub fn tick_events(world: &mut World) {
                         outbound_velocity.y,
                     );
                 }
-                if let Some(outbound_net_move_buffer) = tick_output.take_outbound_net_move_buffer() {
+                if let Some(outbound_net_move_buffer) = tick_output.take_outbound_net_move_buffer()
+                {
                     // send updates
                     let Ok(mut net_move_buffer) = net_move_buffer_q.get_mut(entity) else {
                         panic!("NetworkedMoveBuffer not found for entity: {:?}", entity);

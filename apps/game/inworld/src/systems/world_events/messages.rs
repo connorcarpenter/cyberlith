@@ -17,7 +17,6 @@ pub fn message_events(
 ) {
     for events in message_events.read() {
         for message in events.read::<EntityAssignmentChannel, EntityAssignment>() {
-
             let server_tick = client.server_tick().unwrap();
             let assign = message.assign;
 

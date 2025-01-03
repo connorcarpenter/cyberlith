@@ -13,7 +13,7 @@ use logging::{info, warn};
 
 use world_server_naia_proto::{
     channels::EntityAssignmentChannel,
-    components::{NetworkedLookDir, Main, NetworkedTileTarget, PhysicsController},
+    components::{Main, NetworkedLookDir, NetworkedTileTarget, PhysicsController},
     constants::TILE_COUNT,
     messages::{Auth, EntityAssignment},
     types::Direction,

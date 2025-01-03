@@ -7,8 +7,8 @@ use naia_bevy_shared::Tick;
 use crate::{
     components::{velocity::Velocity, NetworkedTileTarget},
     constants::{
-        MOVEMENT_ACCELERATION, MOVEMENT_VELOCITY_MAX, MOVEMENT_ARRIVAL_DISTANCE,
-        TILE_SIZE, MOVEMENT_FRICTION, MOVEMENT_STEERING_DEADZONE, MOVEMENT_VELOCITY_MIN
+        MOVEMENT_ACCELERATION, MOVEMENT_ARRIVAL_DISTANCE, MOVEMENT_FRICTION,
+        MOVEMENT_STEERING_DEADZONE, MOVEMENT_VELOCITY_MAX, MOVEMENT_VELOCITY_MIN, TILE_SIZE,
     },
     types::Direction,
 };
@@ -116,7 +116,7 @@ impl PhysicsController {
     pub fn get_steering_vars(
         &self,
         current_direction: Direction,
-        current_target_position: Vec2
+        current_target_position: Vec2,
     ) -> Option<(Vec2, Vec2)> {
         let current_position = self.position();
         let target_distance = current_position.distance(current_target_position);
@@ -131,11 +131,9 @@ impl PhysicsController {
             Vec2::new(dx as f32 * -1.0, dy as f32 * -1.0).normalize_or_zero()
         };
 
-        let Some(axis_ray_nearest_point) = closest_point_on_a_ray(
-            current_target_position,
-            axis_ray,
-            current_position,
-        ) else {
+        let Some(axis_ray_nearest_point) =
+            closest_point_on_a_ray(current_target_position, axis_ray, current_position)
+        else {
             // arrived!
             return None;
         };
@@ -209,7 +207,6 @@ fn find_steering(
     axis_ray: Vec2,
     axis_ray_nearest_point: Vec2,
 ) -> Option<Direction> {
-
     let axis_distance_to_target = axis_ray_nearest_point.distance(target_position);
     if future_direction.is_none() {
         // real_distance_to_target IS > MOVEMENT_ARRIVAL_DISTANCE, otherwise wouldn't be here
@@ -220,7 +217,10 @@ fn find_steering(
             let target_direction = target_offset.normalize_or_zero();
             let desired_velocity = target_direction * MOVEMENT_VELOCITY_MIN;
             let desired_acceleration = desired_velocity - current_velocity;
-            return Some(Direction::from_coords(desired_acceleration.x, desired_acceleration.y));
+            return Some(Direction::from_coords(
+                desired_acceleration.x,
+                desired_acceleration.y,
+            ));
         }
     }
 
@@ -352,7 +352,7 @@ fn find_steering(
 
                 if zero_out_y {
                     forward_control_y = 0;
-                } else  {
+                } else {
                     forward_control_x = 0;
                 }
             }
@@ -372,7 +372,7 @@ fn find_steering(
         }
     }
 
-    Direction::from_delta(forward_control_x, forward_control_y)
+    Direction::from_delta(forward_control_x, forward_control_y).unwrap()
 }
 
 fn apply_locomotion(
@@ -383,7 +383,8 @@ fn apply_locomotion(
     if let Some(control_signal) = control_signal {
         // control signal exists, apply acceleration
         let (dx, dy) = control_signal.to_delta();
-        let acceleration = Vec2::new(dx as f32, dy as f32).normalize_or_zero()  * MOVEMENT_ACCELERATION;
+        let acceleration =
+            Vec2::new(dx as f32, dy as f32).normalize_or_zero() * MOVEMENT_ACCELERATION;
 
         *velocity += acceleration;
 
@@ -404,7 +405,6 @@ fn apply_locomotion(
         let friction = if left_speed < 0.0 {
             // currently moving left
             left_direction * MOVEMENT_FRICTION
-
         } else {
             // currently moving right
             left_direction * MOVEMENT_FRICTION * -1.0
@@ -422,19 +422,13 @@ fn apply_locomotion(
 }
 
 fn apply_limitations(velocity: &mut Vec2) {
-
     // limit max speed
     if velocity.length() > MOVEMENT_VELOCITY_MAX {
         *velocity = velocity.normalize_or_zero() * MOVEMENT_VELOCITY_MAX;
     }
 }
 
-fn closest_point_on_a_ray(
-    ray_start: Vec2,
-    ray_dir: Vec2,
-    target: Vec2
-) -> Option<Vec2> {
-
+fn closest_point_on_a_ray(ray_start: Vec2, ray_dir: Vec2, target: Vec2) -> Option<Vec2> {
     // If (a == b), the line is degenerate; just return a.
     if ray_dir.length_squared() < f32::EPSILON {
         return Some(ray_start); // TODO: should be None here?
@@ -451,14 +445,10 @@ fn closest_point_on_a_ray(
     }
 
     // The closest point on the line is then a + t * ab
-    return Some(ray_start + ray_dir * t)
+    return Some(ray_start + ray_dir * t);
 }
 
-fn side_of_line(
-    line_start: Vec2,
-    line_dir: Vec2,
-    target: Vec2
-) -> i8 {
+fn side_of_line(line_start: Vec2, line_dir: Vec2, target: Vec2) -> i8 {
     // Compute the vector from the line anchor to the target
     let pt_to_target = target - line_start;
 
@@ -466,9 +456,9 @@ fn side_of_line(
     let cross_val = line_dir.perp_dot(pt_to_target);
 
     if cross_val.abs() < 1e-7 {
-        0  // ~ collinear
+        0 // ~ collinear
     } else if cross_val > 0.0 {
-        1  // "left"
+        1 // "left"
     } else {
         -1 // "right"
     }

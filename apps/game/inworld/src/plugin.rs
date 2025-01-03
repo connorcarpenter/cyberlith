@@ -9,7 +9,7 @@ use game_app_common::AppState;
 use game_app_network::naia::ReceiveEvents;
 
 use crate::{
-    resources::{PredictedWorld, Global, InputManager, RollbackManager, TickTracker},
+    resources::{Global, InputManager, PredictedWorld, RollbackManager, TickTracker},
     systems,
 };
 
@@ -63,7 +63,6 @@ impl Plugin for InWorldPlugin {
                     .run_if(in_state(AppState::InGame))
                     .in_set(ReceiveEvents),
             )
-
             // Tick Event
             .configure_sets(Update, systems::Tick.after(ReceiveEvents))
             .add_systems(
