@@ -251,6 +251,10 @@ impl TileMovementMovingState {
         }
     }
 
+    pub fn direction(&self) -> Direction {
+        self.dir
+    }
+
     pub(crate) fn target_position(&self) -> Vec2 {
         return Vec2::new(
             self.to_tile_x as f32 * TILE_SIZE,

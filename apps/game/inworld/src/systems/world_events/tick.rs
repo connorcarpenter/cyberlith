@@ -152,7 +152,9 @@ pub fn process_tick(
         animated_model_handle,
         physics.position(),
         physics.velocity(),
+        physics.last_acceleration(),
         10.0,
+        inner_tile_movement,
     );
 
     if let Some(lookdir) = lookdir_opt {

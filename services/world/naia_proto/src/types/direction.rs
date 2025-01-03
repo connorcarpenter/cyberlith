@@ -15,6 +15,21 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub(crate) fn congruent_with(&self, other: Direction) -> bool {
+        match self {
+            Direction::North => matches!(other, Direction::North | Direction::Northeast | Direction::Northwest),
+            Direction::Northeast => matches!(other, Direction::Northeast | Direction::East | Direction::North),
+            Direction::East => matches!(other, Direction::East | Direction::Southeast | Direction::Northeast),
+            Direction::Southeast => matches!(other, Direction::Southeast | Direction::South | Direction::East),
+            Direction::South => matches!(other, Direction::South | Direction::Southeast | Direction::Southwest),
+            Direction::Southwest => matches!(other, Direction::Southwest | Direction::South | Direction::West),
+            Direction::West => matches!(other, Direction::West | Direction::Southwest | Direction::Northwest),
+            Direction::Northwest => matches!(other, Direction::Northwest | Direction::North | Direction::West),
+        }
+    }
+}
+
+impl Direction {
     pub fn random() -> Self {
         let i = gen_range_u32(0, 8);
         match i {

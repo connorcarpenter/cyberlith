@@ -6,7 +6,7 @@ use game_engine::{
     math::Vec2,
 };
 
-use game_app_network::world::types::Direction;
+use game_app_network::world::{types::Direction, components::TileMovement};
 
 #[derive(Component, Clone)]
 pub struct AnimationState {
@@ -38,7 +38,9 @@ impl AnimationState {
         model_data: &AssetHandle<AnimatedModelData>,
         position: Vec2,
         velocity: Vec2,
+        acceleration: Vec2,
         delta_ms: f32,
+        tile_movement: &TileMovement,
     ) {
         let last_position = self.last_pos;
         self.last_pos = position;
@@ -67,10 +69,13 @@ impl AnimationState {
 
         // change direction if needed
         if self.is_moving && is_moving {
-            if velocity.length() > 0.1 {
-                self.lookdir = Direction::from_coords(velocity.x, velocity.y);
-                self.rotation = self.lookdir.to_radians();
+            // if acceleration.length() > 0.5 {
+            //     self.lookdir = Direction::from_coords(acceleration.x, acceleration.y);
+            // }
+            if tile_movement.is_moving() {
+                self.lookdir = tile_movement.as_moving().direction();
             }
+            self.rotation = self.lookdir.to_radians();
         }
 
         // animate

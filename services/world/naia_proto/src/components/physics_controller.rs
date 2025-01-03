@@ -12,12 +12,13 @@ use crate::{
     },
     types::Direction,
 };
-use crate::constants::{MOVEMENT_STOPPING_DISTANCE, MOVEMENT_VELOCITY_MIN};
+use crate::constants::{MOVEMENT_INTERMEDIATE_ARRIVAL_DISTANCE, MOVEMENT_VELOCITY_MIN};
 
 #[derive(Component, Clone)]
 pub struct PhysicsController {
     position: Vec2,
     velocity: Velocity,
+    last_acceleration: Vec2,
 }
 
 impl PhysicsController {
@@ -27,6 +28,7 @@ impl PhysicsController {
         Self {
             position,
             velocity: Velocity::new(0.0, 0.0),
+            last_acceleration: Vec2::ZERO,
         }
     }
 
@@ -99,6 +101,10 @@ impl PhysicsController {
         self.velocity.set_vec2(new_velocity);
     }
 
+    pub fn last_acceleration(&self) -> Vec2 {
+        self.last_acceleration
+    }
+
     pub fn tick_log(&self, _tick: Tick, _is_prediction: bool) {
         // let prediction = if is_prediction {"PREDICTED"} else {"CONFIRMED"};
         // let velocity = self.velocity.get_vec2();
@@ -115,12 +121,11 @@ impl PhysicsController {
         future_direction: Option<Direction>
     ) -> Option<(Vec2, Vec2)> {
         let current_position = self.position();
+        let target_distance = current_position.distance(current_target_position);
 
-        if future_direction.is_none() {
-            if current_position.distance(current_target_position) <= MOVEMENT_ARRIVAL_DISTANCE {
-                // arrived!
-                return None;
-            }
+        if target_distance <= MOVEMENT_ARRIVAL_DISTANCE {
+            // arrived!
+            return None;
         }
 
         let axis_ray = {
@@ -159,6 +164,7 @@ impl PhysicsController {
             future_direction,
             axis_ray,
             axis_ray_nearest_point,
+            &mut self.last_acceleration,
         );
 
         self.velocity.set_vec2(new_velocity);
@@ -177,6 +183,7 @@ fn update(
     future_direction: Option<Direction>,
     axis_ray: Vec2,
     axis_ray_nearest_point: Vec2,
+    last_acceleration: &mut Vec2,
 ) -> Vec2 {
     let mut output_velocity = current_velocity;
 
@@ -189,7 +196,7 @@ fn update(
         axis_ray,
         axis_ray_nearest_point,
     );
-    apply_locomotion(control_signal, &mut output_velocity);
+    apply_locomotion(control_signal, &mut output_velocity, last_acceleration);
     apply_limitations(&mut output_velocity);
 
     output_velocity
@@ -255,8 +262,11 @@ fn find_steering(
 
     let has_non_opposite_future = {
         if let Some(future_direction) = future_direction {
-            let opposite_future_direction = future_direction.to_opposite();
-            current_direction != opposite_future_direction
+            if current_direction.congruent_with(future_direction) {
+                true // will accelerate straight on through
+            } else {
+                false // will try to slow down as approaches target
+            }
         } else {
             false
         }
@@ -273,6 +283,7 @@ fn find_steering(
                 let forward_speed_abs = forward_speed.abs();
                 let ticks_to_target = axis_distance_to_target / forward_speed_abs;
                 let tick_to_deacc = (forward_speed_abs - MOVEMENT_VELOCITY_MIN) / MOVEMENT_FRICTION;
+                // let tick_to_deacc = (forward_speed_abs) / MOVEMENT_FRICTION;
                 if ticks_to_target > tick_to_deacc {
                     true
                 } else {
@@ -369,6 +380,7 @@ fn find_steering(
 fn apply_locomotion(
     control_signal: Option<Direction>,
     velocity: &mut Vec2,
+    last_acceleration: &mut Vec2,
 ) {
     if let Some(control_signal) = control_signal {
         // control signal exists, apply acceleration
@@ -376,6 +388,8 @@ fn apply_locomotion(
         let acceleration = Vec2::new(dx as f32, dy as f32).normalize_or_zero()  * MOVEMENT_ACCELERATION;
 
         *velocity += acceleration;
+
+        *last_acceleration = acceleration;
 
         // apply friction against backwards velocity
         let forward_direction = acceleration.normalize_or_zero();
